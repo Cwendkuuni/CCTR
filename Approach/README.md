@@ -100,7 +100,7 @@ CommandLineTest.java          |    0  |     12    |    0    |  13   | 0.77
 CCTR is computed as:
 
 ```
-CCTR = α.N + β · A + γ · M + δ · T
+CCTR = α ·N + β · A + γ · M + δ · T
 ```
 
 Where:
