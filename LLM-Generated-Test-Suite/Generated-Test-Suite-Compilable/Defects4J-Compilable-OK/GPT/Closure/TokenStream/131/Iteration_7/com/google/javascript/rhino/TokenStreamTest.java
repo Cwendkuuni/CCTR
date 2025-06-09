@@ -1,0 +1,94 @@
+package com.google.javascript.rhino;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+import com.google.javascript.rhino.TokenStream;
+
+public class TokenStreamTest {
+
+    @Test
+    public void testIsKeyword() {
+        // Test valid keywords
+        assertTrue(TokenStream.isKeyword("if"));
+        assertTrue(TokenStream.isKeyword("for"));
+        assertTrue(TokenStream.isKeyword("while"));
+        assertTrue(TokenStream.isKeyword("return"));
+        assertTrue(TokenStream.isKeyword("function"));
+        assertTrue(TokenStream.isKeyword("var"));
+        assertTrue(TokenStream.isKeyword("null"));
+        assertTrue(TokenStream.isKeyword("true"));
+        assertTrue(TokenStream.isKeyword("false"));
+        assertTrue(TokenStream.isKeyword("break"));
+        assertTrue(TokenStream.isKeyword("continue"));
+        assertTrue(TokenStream.isKeyword("switch"));
+        assertTrue(TokenStream.isKeyword("case"));
+        assertTrue(TokenStream.isKeyword("default"));
+        assertTrue(TokenStream.isKeyword("throw"));
+        assertTrue(TokenStream.isKeyword("catch"));
+        assertTrue(TokenStream.isKeyword("try"));
+        assertTrue(TokenStream.isKeyword("finally"));
+        assertTrue(TokenStream.isKeyword("new"));
+        assertTrue(TokenStream.isKeyword("delete"));
+        assertTrue(TokenStream.isKeyword("typeof"));
+        assertTrue(TokenStream.isKeyword("void"));
+        assertTrue(TokenStream.isKeyword("instanceof"));
+        assertTrue(TokenStream.isKeyword("in"));
+        assertTrue(TokenStream.isKeyword("do"));
+        assertTrue(TokenStream.isKeyword("else"));
+        assertTrue(TokenStream.isKeyword("this"));
+        assertTrue(TokenStream.isKeyword("with"));
+
+        // Test invalid keywords
+        assertFalse(TokenStream.isKeyword("notAKeyword"));
+        assertFalse(TokenStream.isKeyword("keyword"));
+        assertFalse(TokenStream.isKeyword("123"));
+        assertFalse(TokenStream.isKeyword("ifelse"));
+        assertFalse(TokenStream.isKeyword("functionality"));
+    }
+
+    @Test
+    public void testIsJSIdentifier() {
+        // Test valid JavaScript identifiers
+        assertTrue(TokenStream.isJSIdentifier("a"));
+        assertTrue(TokenStream.isJSIdentifier("abc"));
+        assertTrue(TokenStream.isJSIdentifier("a1"));
+        assertTrue(TokenStream.isJSIdentifier("_abc"));
+        assertTrue(TokenStream.isJSIdentifier("$abc"));
+        assertTrue(TokenStream.isJSIdentifier("a_b_c"));
+        assertTrue(TokenStream.isJSIdentifier("a$b$c"));
+        assertTrue(TokenStream.isJSIdentifier("A"));
+        assertTrue(TokenStream.isJSIdentifier("A1"));
+        assertTrue(TokenStream.isJSIdentifier("A_B_C"));
+        assertTrue(TokenStream.isJSIdentifier("A$B$C"));
+
+        // Test invalid JavaScript identifiers
+        assertFalse(TokenStream.isJSIdentifier(""));
+        assertFalse(TokenStream.isJSIdentifier("1abc"));
+        assertFalse(TokenStream.isJSIdentifier("123"));
+        assertFalse(TokenStream.isJSIdentifier("a-b-c"));
+        assertFalse(TokenStream.isJSIdentifier("a+b"));
+        assertFalse(TokenStream.isJSIdentifier("a b"));
+        assertFalse(TokenStream.isJSIdentifier("a.b"));
+        assertFalse(TokenStream.isJSIdentifier("a/b"));
+        assertFalse(TokenStream.isJSIdentifier("a*b"));
+        assertFalse(TokenStream.isJSIdentifier("a%b"));
+        assertFalse(TokenStream.isJSIdentifier("a&b"));
+        assertFalse(TokenStream.isJSIdentifier("a|b"));
+        assertFalse(TokenStream.isJSIdentifier("a^b"));
+        assertFalse(TokenStream.isJSIdentifier("a!b"));
+        assertFalse(TokenStream.isJSIdentifier("a@b"));
+        assertFalse(TokenStream.isJSIdentifier("a#b"));
+        assertFalse(TokenStream.isJSIdentifier("a~b"));
+        assertFalse(TokenStream.isJSIdentifier("a`b"));
+        assertFalse(TokenStream.isJSIdentifier("a:b"));
+        assertFalse(TokenStream.isJSIdentifier("a;b"));
+        assertFalse(TokenStream.isJSIdentifier("a,b"));
+        assertFalse(TokenStream.isJSIdentifier("a<b"));
+        assertFalse(TokenStream.isJSIdentifier("a>b"));
+        assertFalse(TokenStream.isJSIdentifier("a=b"));
+        assertFalse(TokenStream.isJSIdentifier("a?b"));
+        assertFalse(TokenStream.isJSIdentifier("a[b]"));
+        assertFalse(TokenStream.isJSIdentifier("a{b}"));
+        assertFalse(TokenStream.isJSIdentifier("a(b)"));
+    }
+}

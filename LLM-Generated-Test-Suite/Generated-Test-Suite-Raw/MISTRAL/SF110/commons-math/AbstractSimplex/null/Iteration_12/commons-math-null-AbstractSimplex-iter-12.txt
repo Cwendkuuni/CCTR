@@ -1,0 +1,174 @@
+```java
+package org.apache.commons.math3.optim.nonlinear.scalar.noderiv;
+
+import org.apache.commons.math3.analysis.MultivariateFunction;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.MathIllegalArgumentException;
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
+import org.apache.commons.math3.exception.NullArgumentException;
+import org.apache.commons.math3.exception.OutOfRangeException;
+import org.apache.commons.math3.exception.ZeroException;
+import org.apache.commons.math3.optim.PointValuePair;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Comparator;
+
+import static org.junit.Assert.*;
+
+public class AbstractSimplexTest {
+
+    private static class TestSimplex extends AbstractSimplex {
+        protected TestSimplex(int n) {
+            super(n);
+        }
+
+        protected TestSimplex(int n, double sideLength) {
+            super(n, sideLength);
+        }
+
+        protected TestSimplex(double[] steps) {
+            super(steps);
+        }
+
+        protected TestSimplex(double[][] referenceSimplex) {
+            super(referenceSimplex);
+        }
+
+        @Override
+        public void iterate(MultivariateFunction function, Comparator<PointValuePair> comparator) {
+            // No-op for testing purposes
+        }
+    }
+
+    private TestSimplex simplex;
+
+    @Before
+    public void setUp() {
+        simplex = new TestSimplex(3);
+    }
+
+    @Test
+    public void testConstructorWithDimension() {
+        assertEquals(3, simplex.getDimension());
+    }
+
+    @Test
+    public void testConstructorWithDimensionAndSideLength() {
+        simplex = new TestSimplex(3, 2.0);
+        assertEquals(3, simplex.getDimension());
+    }
+
+    @Test(expected = NullArgumentException.class)
+    public void testConstructorWithNullSteps() {
+        new TestSimplex(null);
+    }
+
+    @Test(expected = ZeroException.class)
+    public void testConstructorWithZeroLengthSteps() {
+        new TestSimplex(new double[]{});
+    }
+
+    @Test(expected = ZeroException.class)
+    public void testConstructorWithZeroStep() {
+        new TestSimplex(new double[]{0.0});
+    }
+
+    @Test(expected = NotStrictlyPositiveException.class)
+    public void testConstructorWithEmptyReferenceSimplex() {
+        new TestSimplex(new double[][]{});
+    }
+
+    @Test(expected = DimensionMismatchException.class)
+    public void testConstructorWithDimensionMismatch() {
+        new TestSimplex(new double[][]{{1.0, 2.0}, {1.0}});
+    }
+
+    @Test(expected = MathIllegalArgumentException.class)
+    public void testConstructorWithEqualVertices() {
+        new TestSimplex(new double[][]{{1.0, 2.0}, {1.0, 2.0}});
+    }
+
+    @Test
+    public void testGetDimension() {
+        assertEquals(3, simplex.getDimension());
+    }
+
+    @Test
+    public void testGetSize() {
+        simplex.build(new double[]{1.0, 2.0, 3.0});
+        assertEquals(4, simplex.getSize());
+    }
+
+    @Test(expected = DimensionMismatchException.class)
+    public void testBuildWithDimensionMismatch() {
+        simplex.build(new double[]{1.0, 2.0});
+    }
+
+    @Test
+    public void testBuild() {
+        simplex.build(new double[]{1.0, 2.0, 3.0});
+        assertEquals(4, simplex.getSize());
+    }
+
+    @Test
+    public void testEvaluate() {
+        simplex.build(new double[]{1.0, 2.0, 3.0});
+        simplex.evaluate(point -> point[0] + point[1] + point[2], Comparator.naturalOrder());
+        for (PointValuePair point : simplex.getPoints()) {
+            assertFalse(Double.isNaN(point.getValue()));
+        }
+    }
+
+    @Test(expected = OutOfRangeException.class)
+    public void testGetPointWithInvalidIndex() {
+        simplex.build(new double[]{1.0, 2.0, 3.0});
+        simplex.getPoint(-1);
+    }
+
+    @Test
+    public void testGetPoint() {
+        simplex.build(new double[]{1.0, 2.0, 3.0});
+        assertNotNull(simplex.getPoint(0));
+    }
+
+    @Test(expected = OutOfRangeException.class)
+    public void testSetPointWithInvalidIndex() {
+        simplex.build(new double[]{1.0, 2.0, 3.0});
+        simplex.setPoint(-1, new PointValuePair(new double[]{1.0, 2.0, 3.0}, 0.0));
+    }
+
+    @Test
+    public void testSetPoint() {
+        simplex.build(new double[]{1.0, 2.0, 3.0});
+        PointValuePair point = new PointValuePair(new double[]{1.0, 2.0, 3.0}, 0.0);
+        simplex.setPoint(0, point);
+        assertEquals(point, simplex.getPoint(0));
+    }
+
+    @Test(expected = DimensionMismatchException.class)
+    public void testSetPointsWithDimensionMismatch() {
+        simplex.build(new double[]{1.0, 2.0, 3.0});
+        simplex.setPoints(new PointValuePair[]{new PointValuePair(new double[]{1.0, 2.0, 3.0}, 0.0)});
+    }
+
+    @Test
+    public void testSetPoints() {
+        simplex.build(new double[]{1.0, 2.0, 3.0});
+        PointValuePair[] points = new PointValuePair[]{
+                new PointValuePair(new double[]{1.0, 2.0, 3.0}, 0.0),
+                new PointValuePair(new double[]{2.0, 3.0, 4.0}, 0.0),
+                new PointValuePair(new double[]{3.0, 4.0, 5.0}, 0.0),
+                new PointValuePair(new double[]{4.0, 5.0, 6.0}, 0.0)
+        };
+        simplex.setPoints(points);
+        assertArrayEquals(points, simplex.getPoints());
+    }
+
+    @Test
+    public void testCreateHypercubeSteps() {
+        double[] steps = AbstractSimplex.createHypercubeSteps(3, 1.0);
+        assertArrayEquals(new double[]{1.0, 1.0, 1.0}, steps);
+    }
+}
+```

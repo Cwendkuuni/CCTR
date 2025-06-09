@@ -1,0 +1,94 @@
+To create a comprehensive JUnit 4 test suite for the `LocalVariablesSorter` class, we need to test each method, ensuring that the class behaves as expected. Below is a test suite that covers the main functionalities of the class. Note that some methods, like `setLocalType`, are protected and do not have any implementation, so they will not be directly tested. Instead, we focus on the public methods and the behavior they exhibit.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.objectweb.asm.jip.MethodVisitor;
+import org.objectweb.asm.jip.Type;
+import org.objectweb.asm.jip.Label;
+import org.objectweb.asm.jip.Opcodes;
+
+import static org.junit.Assert.*;
+
+public class LocalVariablesSorterTest {
+
+    private LocalVariablesSorter localVariablesSorter;
+    private MethodVisitor mockMethodVisitor;
+
+    @Before
+    public void setUp() {
+        mockMethodVisitor = new MethodVisitor(Opcodes.ASM5) {};
+        localVariablesSorter = new LocalVariablesSorter(Opcodes.ACC_PUBLIC, "(I)V", mockMethodVisitor);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(localVariablesSorter);
+        assertEquals(1, localVariablesSorter.firstLocal);
+    }
+
+    @Test
+    public void testVisitVarInsn() {
+        localVariablesSorter.visitVarInsn(Opcodes.ILOAD, 1);
+        // Since visitVarInsn doesn't return anything, we need to ensure no exceptions are thrown
+    }
+
+    @Test
+    public void testVisitIincInsn() {
+        localVariablesSorter.visitIincInsn(1, 5);
+        // Since visitIincInsn doesn't return anything, we need to ensure no exceptions are thrown
+    }
+
+    @Test
+    public void testVisitMaxs() {
+        localVariablesSorter.visitMaxs(10, 10);
+        // Since visitMaxs doesn't return anything, we need to ensure no exceptions are thrown
+    }
+
+    @Test
+    public void testVisitLocalVariable() {
+        Label start = new Label();
+        Label end = new Label();
+        localVariablesSorter.visitLocalVariable("var", "I", null, start, end, 1);
+        // Since visitLocalVariable doesn't return anything, we need to ensure no exceptions are thrown
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testVisitFrameWithException() {
+        localVariablesSorter.visitFrame(0, 0, new Object[0], 0, new Object[0]);
+    }
+
+    @Test
+    public void testVisitFrameWithoutException() {
+        localVariablesSorter.visitFrame(-1, 0, new Object[0], 0, new Object[0]);
+        // Since visitFrame doesn't return anything, we need to ensure no exceptions are thrown
+    }
+
+    @Test
+    public void testNewLocal() {
+        int localIndex = localVariablesSorter.newLocal(Type.INT_TYPE);
+        assertEquals(1, localIndex);
+    }
+
+    @Test
+    public void testRemap() {
+        int remappedIndex = localVariablesSorter.newLocal(Type.INT_TYPE);
+        assertEquals(1, remappedIndex);
+    }
+
+    @Test
+    public void testNewLocalMapping() {
+        int localIndex = localVariablesSorter.newLocalMapping(Type.INT_TYPE);
+        assertEquals(1, localIndex);
+    }
+}
+```
+
+### Explanation:
+- **Setup**: We create a `LocalVariablesSorter` instance with a mock `MethodVisitor` to simulate the behavior of the class without needing a full implementation of `MethodVisitor`.
+- **Constructor Test**: Verifies that the object is initialized correctly.
+- **Method Tests**: Each method is tested to ensure it behaves as expected. Since many methods do not return values or have side effects that are not easily observable, the tests primarily ensure that no exceptions are thrown during execution.
+- **Exception Test**: The `visitFrame` method is tested to ensure it throws an `IllegalStateException` when called with an incorrect type.
+- **New Local Tests**: Verifies that new local variables are allocated correctly.
+
+This test suite provides a basic framework for testing the `LocalVariablesSorter` class. Depending on the actual implementation of `MethodVisitor` and the context in which `LocalVariablesSorter` is used, additional tests may be necessary to fully validate its behavior.

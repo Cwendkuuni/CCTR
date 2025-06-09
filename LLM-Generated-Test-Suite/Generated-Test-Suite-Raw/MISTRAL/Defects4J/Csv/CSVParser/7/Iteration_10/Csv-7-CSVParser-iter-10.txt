@@ -1,0 +1,135 @@
+```java
+import static org.junit.Assert.*;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+public class CSVParserTest {
+
+    private CSVParser parser;
+    private static final String CSV_STRING = "name,age\nJohn,30\nJane,25";
+    private static final String CSV_FILE_PATH = "src/test/resources/test.csv";
+    private static final String CSV_URL = "http://example.com/test.csv";
+
+    @Before
+    public void setUp() throws Exception {
+        // Initialize parser with a string for most tests
+        parser = CSVParser.parse(CSV_STRING, CSVFormat.DEFAULT);
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (parser != null) {
+            parser.close();
+        }
+    }
+
+    @Test
+    public void testParseFile() throws IOException {
+        File file = new File(CSV_FILE_PATH);
+        CSVParser fileParser = CSVParser.parse(file, CSVFormat.DEFAULT);
+        List<CSVRecord> records = fileParser.getRecords();
+        assertNotNull(records);
+        assertEquals(2, records.size());
+        fileParser.close();
+    }
+
+    @Test
+    public void testParseString() throws IOException {
+        List<CSVRecord> records = parser.getRecords();
+        assertNotNull(records);
+        assertEquals(2, records.size());
+    }
+
+    @Test
+    public void testParseURL() throws IOException {
+        URL url = new URL(CSV_URL);
+        CSVParser urlParser = CSVParser.parse(url, StandardCharsets.UTF_8, CSVFormat.DEFAULT);
+        List<CSVRecord> records = urlParser.getRecords();
+        assertNotNull(records);
+        urlParser.close();
+    }
+
+    @Test
+    public void testGetCurrentLineNumber() {
+        long lineNumber = parser.getCurrentLineNumber();
+        assertEquals(1, lineNumber);
+    }
+
+    @Test
+    public void testGetHeaderMap() {
+        Map<String, Integer> headerMap = parser.getHeaderMap();
+        assertNotNull(headerMap);
+        assertEquals(2, headerMap.size());
+        assertEquals(Integer.valueOf(0), headerMap.get("name"));
+        assertEquals(Integer.valueOf(1), headerMap.get("age"));
+    }
+
+    @Test
+    public void testGetRecordNumber() {
+        long recordNumber = parser.getRecordNumber();
+        assertEquals(0, recordNumber);
+    }
+
+    @Test
+    public void testGetRecords() throws IOException {
+        List<CSVRecord> records = parser.getRecords();
+        assertNotNull(records);
+        assertEquals(2, records.size());
+    }
+
+    @Test
+    public void testIterator() {
+        Iterator<CSVRecord> iterator = parser.iterator();
+        assertTrue(iterator.hasNext());
+        CSVRecord record = iterator.next();
+        assertNotNull(record);
+        assertEquals("John", record.get("name"));
+        assertEquals("30", record.get("age"));
+        assertTrue(iterator.hasNext());
+        record = iterator.next();
+        assertNotNull(record);
+        assertEquals("Jane", record.get("name"));
+        assertEquals("25", record.get("age"));
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testNextRecord() throws IOException {
+        CSVRecord record = parser.nextRecord();
+        assertNotNull(record);
+        assertEquals("John", record.get("name"));
+        assertEquals("30", record.get("age"));
+        record = parser.nextRecord();
+        assertNotNull(record);
+        assertEquals("Jane", record.get("name"));
+        assertEquals("25", record.get("age"));
+        assertNull(parser.nextRecord());
+    }
+
+    @Test(expected = IOException.class)
+    public void testClose() throws IOException {
+        parser.close();
+        parser.nextRecord(); // Should throw IOException
+    }
+
+    @Test
+    public void testIsClosed() throws IOException {
+        assertFalse(parser.isClosed());
+        parser.close();
+        assertTrue(parser.isClosed());
+    }
+}
+```

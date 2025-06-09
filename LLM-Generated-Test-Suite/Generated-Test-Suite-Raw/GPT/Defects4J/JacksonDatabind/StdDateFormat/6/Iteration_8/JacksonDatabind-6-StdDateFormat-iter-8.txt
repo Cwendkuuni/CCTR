@@ -1,0 +1,135 @@
+```java
+import static org.junit.Assert.*;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.ParsePosition;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import com.fasterxml.jackson.databind.util.StdDateFormat;
+
+public class StdDateFormatTest {
+
+    private StdDateFormat stdDateFormat;
+
+    @Before
+    public void setUp() {
+        stdDateFormat = new StdDateFormat();
+    }
+
+    @Test
+    public void testDefaultTimeZone() {
+        assertEquals(TimeZone.getTimeZone("GMT"), StdDateFormat.getDefaultTimeZone());
+    }
+
+    @Test
+    public void testWithTimeZone() {
+        TimeZone tz = TimeZone.getTimeZone("PST");
+        StdDateFormat newFormat = stdDateFormat.withTimeZone(tz);
+        assertNotSame(stdDateFormat, newFormat);
+        assertEquals(tz, newFormat._timezone);
+    }
+
+    @Test
+    public void testWithLocale() {
+        Locale locale = Locale.FRANCE;
+        StdDateFormat newFormat = stdDateFormat.withLocale(locale);
+        assertNotSame(stdDateFormat, newFormat);
+        assertEquals(locale, newFormat._locale);
+    }
+
+    @Test
+    public void testClone() {
+        StdDateFormat clonedFormat = stdDateFormat.clone();
+        assertNotSame(stdDateFormat, clonedFormat);
+        assertEquals(stdDateFormat._locale, clonedFormat._locale);
+        assertEquals(stdDateFormat._timezone, clonedFormat._timezone);
+    }
+
+    @Test
+    public void testParseISO8601() throws ParseException {
+        String dateStr = "2023-10-01T12:00:00.000Z";
+        Date date = stdDateFormat.parse(dateStr);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testParseRFC1123() throws ParseException {
+        String dateStr = "Sun, 01 Oct 2023 12:00:00 GMT";
+        Date date = stdDateFormat.parse(dateStr);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testParsePlainDate() throws ParseException {
+        String dateStr = "2023-10-01";
+        Date date = stdDateFormat.parse(dateStr);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testParseInvalidDate() {
+        String dateStr = "Invalid Date";
+        try {
+            stdDateFormat.parse(dateStr);
+            fail("Expected ParseException");
+        } catch (ParseException e) {
+            assertTrue(e.getMessage().contains("Can not parse date"));
+        }
+    }
+
+    @Test
+    public void testFormat() {
+        Date date = new Date();
+        StringBuffer buffer = new StringBuffer();
+        FieldPosition pos = new FieldPosition(0);
+        StringBuffer result = stdDateFormat.format(date, buffer, pos);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testToString() {
+        String str = stdDateFormat.toString();
+        assertTrue(str.contains("DateFormat"));
+        assertTrue(str.contains("timezone"));
+        assertTrue(str.contains("locale"));
+    }
+
+    @Test
+    public void testLooksLikeISO8601() {
+        assertTrue(stdDateFormat.looksLikeISO8601("2023-10-01T12:00:00.000Z"));
+        assertFalse(stdDateFormat.looksLikeISO8601("Sun, 01 Oct 2023 12:00:00 GMT"));
+    }
+
+    @Test
+    public void testParseAsISO8601() {
+        ParsePosition pos = new ParsePosition(0);
+        Date date = stdDateFormat.parseAsISO8601("2023-10-01T12:00:00.000Z", pos);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testParseAsRFC1123() {
+        ParsePosition pos = new ParsePosition(0);
+        Date date = stdDateFormat.parseAsRFC1123("Sun, 01 Oct 2023 12:00:00 GMT", pos);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testHasTimeZone() {
+        assertTrue(StdDateFormat.hasTimeZone("2023-10-01T12:00:00+0000"));
+        assertFalse(StdDateFormat.hasTimeZone("2023-10-01T12:00:00"));
+    }
+
+    @Test
+    public void testCloneFormat() {
+        DateFormat df = StdDateFormat.getISO8601Format(TimeZone.getTimeZone("GMT"), Locale.US);
+        assertNotNull(df);
+    }
+}
+```

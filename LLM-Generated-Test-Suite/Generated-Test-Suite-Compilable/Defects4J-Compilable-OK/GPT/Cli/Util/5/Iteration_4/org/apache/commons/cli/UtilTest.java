@@ -1,0 +1,95 @@
+package org.apache.commons.cli;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class UtilTest {
+
+    @Test
+    public void testStripLeadingHyphens_NoHyphens() {
+        String input = "example";
+        String expected = "example";
+        String result = Util.stripLeadingHyphens(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testStripLeadingHyphens_SingleHyphen() {
+        String input = "-example";
+        String expected = "example";
+        String result = Util.stripLeadingHyphens(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testStripLeadingHyphens_DoubleHyphen() {
+        String input = "--example";
+        String expected = "example";
+        String result = Util.stripLeadingHyphens(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testStripLeadingHyphens_OnlyHyphens() {
+        String input = "--";
+        String expected = "";
+        String result = Util.stripLeadingHyphens(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testStripLeadingHyphens_MixedContent() {
+        String input = "--example-test";
+        String expected = "example-test";
+        String result = Util.stripLeadingHyphens(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testStripLeadingAndTrailingQuotes_NoQuotes() {
+        String input = "example";
+        String expected = "example";
+        String result = Util.stripLeadingAndTrailingQuotes(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testStripLeadingAndTrailingQuotes_LeadingQuote() {
+        String input = "\"example";
+        String expected = "example";
+        String result = Util.stripLeadingAndTrailingQuotes(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testStripLeadingAndTrailingQuotes_TrailingQuote() {
+        String input = "example\"";
+        String expected = "example";
+        String result = Util.stripLeadingAndTrailingQuotes(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testStripLeadingAndTrailingQuotes_BothQuotes() {
+        String input = "\"example\"";
+        String expected = "example";
+        String result = Util.stripLeadingAndTrailingQuotes(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testStripLeadingAndTrailingQuotes_OnlyQuotes() {
+        String input = "\"\"";
+        String expected = "";
+        String result = Util.stripLeadingAndTrailingQuotes(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testStripLeadingAndTrailingQuotes_MixedContent() {
+        String input = "\"example test\"";
+        String expected = "example test";
+        String result = Util.stripLeadingAndTrailingQuotes(input);
+        assertEquals(expected, result);
+    }
+}

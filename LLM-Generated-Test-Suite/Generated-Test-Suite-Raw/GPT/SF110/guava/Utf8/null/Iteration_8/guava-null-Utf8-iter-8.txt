@@ -1,0 +1,89 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `Utf8` class. This suite tests the `encodedLength`, `isWellFormed`, and `isWellFormedSlowPath` methods. The test cases cover various scenarios, including edge cases and invalid inputs.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import com.google.common.base.Utf8;
+
+public class Utf8Test {
+
+    @Test
+    public void testEncodedLengthBasicAscii() {
+        assertEquals(5, Utf8.encodedLength("Hello"));
+    }
+
+    @Test
+    public void testEncodedLengthExtendedAscii() {
+        assertEquals(6, Utf8.encodedLength("Héllo"));
+    }
+
+    @Test
+    public void testEncodedLengthNonAscii() {
+        assertEquals(9, Utf8.encodedLength("こんにちは"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testEncodedLengthUnpairedSurrogate() {
+        Utf8.encodedLength("\uD800");
+    }
+
+    @Test
+    public void testIsWellFormedBasicAscii() {
+        byte[] bytes = "Hello".getBytes();
+        assertTrue(Utf8.isWellFormed(bytes));
+    }
+
+    @Test
+    public void testIsWellFormedExtendedAscii() {
+        byte[] bytes = "Héllo".getBytes();
+        assertTrue(Utf8.isWellFormed(bytes));
+    }
+
+    @Test
+    public void testIsWellFormedNonAscii() {
+        byte[] bytes = "こんにちは".getBytes();
+        assertTrue(Utf8.isWellFormed(bytes));
+    }
+
+    @Test
+    public void testIsWellFormedInvalidUtf8() {
+        byte[] bytes = {(byte) 0xC3, (byte) 0x28};
+        assertFalse(Utf8.isWellFormed(bytes));
+    }
+
+    @Test
+    public void testIsWellFormedPartialArray() {
+        byte[] bytes = "Hello, 世界".getBytes();
+        assertTrue(Utf8.isWellFormed(bytes, 0, 5)); // "Hello"
+        assertTrue(Utf8.isWellFormed(bytes, 7, 6)); // "世界"
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testIsWellFormedInvalidRange() {
+        byte[] bytes = "Hello".getBytes();
+        Utf8.isWellFormed(bytes, 0, 10);
+    }
+
+    @Test
+    public void testIsWellFormedSlowPath() {
+        byte[] bytes = {(byte) 0xE2, (byte) 0x82, (byte) 0xAC}; // Valid UTF-8 for €
+        assertTrue(Utf8.isWellFormed(bytes));
+    }
+
+    @Test
+    public void testIsWellFormedSlowPathInvalid() {
+        byte[] bytes = {(byte) 0xE2, (byte) 0x28, (byte) 0xA1}; // Invalid UTF-8
+        assertFalse(Utf8.isWellFormed(bytes));
+    }
+}
+```
+
+### Explanation:
+- **Basic ASCII and Extended ASCII**: Tests for simple ASCII and extended ASCII characters.
+- **Non-ASCII Characters**: Tests for multi-byte UTF-8 characters.
+- **Unpaired Surrogate**: Tests for invalid surrogate pairs, expecting an exception.
+- **Partial Array**: Tests for checking well-formedness in a subarray.
+- **Invalid Range**: Tests for invalid range, expecting an exception.
+- **Slow Path**: Tests for well-formedness using the slow path logic for multi-byte sequences.
+
+This test suite should cover the main functionality and edge cases for the `Utf8` class.

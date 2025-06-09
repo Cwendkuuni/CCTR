@@ -1,0 +1,143 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `JsonPointer` class. This test suite covers all the methods in the class, including constructors, factory methods, public API methods, and standard method overrides.
+
+```java
+package com.fasterxml.jackson.core;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class JsonPointerTest {
+
+    @Test
+    public void testEmptyJsonPointer() {
+        JsonPointer pointer = JsonPointer.EMPTY;
+        assertTrue(pointer.matches());
+        assertEquals("", pointer.getMatchingProperty());
+        assertEquals(-1, pointer.getMatchingIndex());
+        assertFalse(pointer.mayMatchProperty());
+        assertFalse(pointer.mayMatchElement());
+        assertNull(pointer.matchProperty("test"));
+        assertNull(pointer.matchElement(0));
+        assertNull(pointer.tail());
+        assertEquals("", pointer.toString());
+        assertEquals(pointer.hashCode(), "".hashCode());
+        assertTrue(pointer.equals(JsonPointer.EMPTY));
+    }
+
+    @Test
+    public void testCompileValidPointer() {
+        JsonPointer pointer = JsonPointer.compile("/test");
+        assertFalse(pointer.matches());
+        assertEquals("test", pointer.getMatchingProperty());
+        assertEquals(-1, pointer.getMatchingIndex());
+        assertTrue(pointer.mayMatchProperty());
+        assertFalse(pointer.mayMatchElement());
+        assertEquals("/test", pointer.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCompileInvalidPointer() {
+        JsonPointer.compile("test");
+    }
+
+    @Test
+    public void testValueOf() {
+        JsonPointer pointer = JsonPointer.valueOf("/test");
+        assertFalse(pointer.matches());
+        assertEquals("test", pointer.getMatchingProperty());
+        assertEquals(-1, pointer.getMatchingIndex());
+        assertTrue(pointer.mayMatchProperty());
+        assertFalse(pointer.mayMatchElement());
+        assertEquals("/test", pointer.toString());
+    }
+
+    @Test
+    public void testMatchProperty() {
+        JsonPointer pointer = JsonPointer.compile("/test");
+        JsonPointer next = pointer.matchProperty("test");
+        assertTrue(next.matches());
+        assertNull(pointer.matchProperty("invalid"));
+    }
+
+    @Test
+    public void testMatchElement() {
+        JsonPointer pointer = JsonPointer.compile("/0");
+        JsonPointer next = pointer.matchElement(0);
+        assertTrue(next.matches());
+        assertNull(pointer.matchElement(1));
+    }
+
+    @Test
+    public void testTail() {
+        JsonPointer pointer = JsonPointer.compile("/test/0");
+        JsonPointer tail = pointer.tail();
+        assertEquals("/0", tail.toString());
+        JsonPointer tail2 = tail.tail();
+        assertTrue(tail2.matches());
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        JsonPointer pointer1 = JsonPointer.compile("/test");
+        JsonPointer pointer2 = JsonPointer.compile("/test");
+        JsonPointer pointer3 = JsonPointer.compile("/test2");
+
+        assertTrue(pointer1.equals(pointer2));
+        assertFalse(pointer1.equals(pointer3));
+        assertEquals(pointer1.hashCode(), pointer2.hashCode());
+        assertNotEquals(pointer1.hashCode(), pointer3.hashCode());
+    }
+
+    @Test
+    public void testParseIndex() {
+        assertEquals(0, JsonPointer._parseIndex("0"));
+        assertEquals(123, JsonPointer._parseIndex("123"));
+        assertEquals(-1, JsonPointer._parseIndex("abc"));
+        assertEquals(-1, JsonPointer._parseIndex("12345678901")); // too long
+    }
+
+    @Test
+    public void testParseTail() {
+        JsonPointer pointer = JsonPointer._parseTail("/test");
+        assertEquals("/test", pointer.toString());
+
+        pointer = JsonPointer._parseTail("/test/0");
+        assertEquals("/test/0", pointer.toString());
+    }
+
+    @Test
+    public void testParseQuotedTail() {
+        JsonPointer pointer = JsonPointer._parseQuotedTail("/test~1test", 5);
+        assertEquals("/test/test", pointer.toString());
+
+        pointer = JsonPointer._parseQuotedTail("/test~0test", 5);
+        assertEquals("/test~test", pointer.toString());
+    }
+
+    @Test
+    public void testAppendEscape() {
+        StringBuilder sb = new StringBuilder();
+        JsonPointer._appendEscape(sb, '0');
+        assertEquals("~", sb.toString());
+
+        sb = new StringBuilder();
+        JsonPointer._appendEscape(sb, '1');
+        assertEquals("/", sb.toString());
+
+        sb = new StringBuilder();
+        JsonPointer._appendEscape(sb, '2');
+        assertEquals("~2", sb.toString());
+    }
+}
+```
+
+This test suite includes tests for:
+- The empty `JsonPointer` instance.
+- The `compile` and `valueOf` factory methods.
+- The `matches`, `getMatchingProperty`, `getMatchingIndex`, `mayMatchProperty`, and `mayMatchElement` methods.
+- The `matchProperty` and `matchElement` methods.
+- The `tail` method.
+- The `equals` and `hashCode` methods.
+- The internal `_parseIndex`, `_parseTail`, `_parseQuotedTail`, and `_appendEscape` methods.
+
+Each test method verifies the expected behavior of the corresponding method in the `JsonPointer` class.

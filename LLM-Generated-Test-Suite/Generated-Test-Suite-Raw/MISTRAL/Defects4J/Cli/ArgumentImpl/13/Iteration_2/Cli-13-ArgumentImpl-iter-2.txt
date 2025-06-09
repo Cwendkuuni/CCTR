@@ -1,0 +1,170 @@
+```java
+import org.apache.commons.cli2.Argument;
+import org.apache.commons.cli2.DisplaySetting;
+import org.apache.commons.cli2.HelpLine;
+import org.apache.commons.cli2.Option;
+import org.apache.commons.cli2.OptionException;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.apache.commons.cli2.validation.Validator;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ArgumentImplTest {
+
+    private ArgumentImpl argument;
+    private WriteableCommandLine commandLine;
+    private ListIterator<String> arguments;
+    private Option option;
+    private Validator validator;
+
+    @Before
+    public void setUp() {
+        commandLine = mock(WriteableCommandLine.class);
+        arguments = mock(ListIterator.class);
+        option = mock(Option.class);
+        validator = mock(Validator.class);
+
+        argument = new ArgumentImpl("argName", "argDescription", 1, 3, '=', ',', validator, "--", Arrays.asList("default1", "default2"), 1);
+    }
+
+    @Test
+    public void testGetPreferredName() {
+        assertEquals("argName", argument.getPreferredName());
+    }
+
+    @Test
+    public void testProcessValues() throws OptionException {
+        when(arguments.hasNext()).thenReturn(true, true, false);
+        when(arguments.next()).thenReturn("value1", "value2");
+
+        argument.processValues(commandLine, arguments, option);
+
+        verify(commandLine, times(2)).addValue(option, anyString());
+    }
+
+    @Test
+    public void testCanProcess() {
+        assertTrue(argument.canProcess(commandLine, "arg"));
+    }
+
+    @Test
+    public void testGetPrefixes() {
+        assertTrue(argument.getPrefixes().isEmpty());
+    }
+
+    @Test
+    public void testProcess() throws OptionException {
+        when(arguments.hasNext()).thenReturn(true, true, false);
+        when(arguments.next()).thenReturn("value1", "value2");
+
+        argument.process(commandLine, arguments);
+
+        verify(commandLine, times(2)).addValue(option, anyString());
+    }
+
+    @Test
+    public void testGetInitialSeparator() {
+        assertEquals('=', argument.getInitialSeparator());
+    }
+
+    @Test
+    public void testGetSubsequentSeparator() {
+        assertEquals(',', argument.getSubsequentSeparator());
+    }
+
+    @Test
+    public void testGetTriggers() {
+        assertTrue(argument.getTriggers().isEmpty());
+    }
+
+    @Test
+    public void testGetConsumeRemaining() {
+        assertEquals("--", argument.getConsumeRemaining());
+    }
+
+    @Test
+    public void testGetDefaultValues() {
+        assertEquals(Arrays.asList("default1", "default2"), argument.getDefaultValues());
+    }
+
+    @Test
+    public void testGetValidator() {
+        assertEquals(validator, argument.getValidator());
+    }
+
+    @Test
+    public void testValidate() throws OptionException {
+        when(commandLine.getValues(option)).thenReturn(Arrays.asList("value1", "value2"));
+
+        argument.validate(commandLine, option);
+
+        verify(validator).validate(anyList());
+    }
+
+    @Test
+    public void testAppendUsage() {
+        StringBuffer buffer = new StringBuffer();
+        Set<DisplaySetting> helpSettings = new HashSet<>();
+        helpSettings.add(DisplaySetting.DISPLAY_OPTIONAL);
+        helpSettings.add(DisplaySetting.DISPLAY_ARGUMENT_NUMBERED);
+        helpSettings.add(DisplaySetting.DISPLAY_ARGUMENT_BRACKETED);
+
+        argument.appendUsage(buffer, helpSettings, null);
+
+        assertEquals("<argName1> [<argName2>] [<argName3>]", buffer.toString());
+    }
+
+    @Test
+    public void testGetDescription() {
+        assertEquals("argDescription", argument.getDescription());
+    }
+
+    @Test
+    public void testHelpLines() {
+        Set<DisplaySetting> helpSettings = new HashSet<>();
+        List<HelpLine> helpLines = argument.helpLines(0, helpSettings, null);
+
+        assertEquals(1, helpLines.size());
+    }
+
+    @Test
+    public void testGetMaximum() {
+        assertEquals(3, argument.getMaximum());
+    }
+
+    @Test
+    public void testGetMinimum() {
+        assertEquals(1, argument.getMinimum());
+    }
+
+    @Test
+    public void testStripBoundaryQuotes() {
+        assertEquals("value", argument.stripBoundaryQuotes("\"value\""));
+        assertEquals("value", argument.stripBoundaryQuotes("value"));
+    }
+
+    @Test
+    public void testIsRequired() {
+        assertTrue(argument.isRequired());
+    }
+
+    @Test
+    public void testDefaults() {
+        argument.defaults(commandLine);
+
+        verify(commandLine).setDefaultValues(option, argument.getDefaultValues());
+    }
+
+    @Test
+    public void testDefaultValues() {
+        argument.defaultValues(commandLine, option);
+
+        verify(commandLine).setDefaultValues(option, argument.getDefaultValues());
+    }
+}
+```

@@ -1,0 +1,148 @@
+```java
+package org.apache.commons.math3.linear;
+
+import org.apache.commons.math3.exception.NonSquareMatrixException;
+import org.apache.commons.math3.exception.MaxCountExceededException;
+import org.apache.commons.math3.util.Precision;
+import org.apache.commons.math3.util.FastMath;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class SchurTransformerTest {
+
+    private SchurTransformer schurTransformer;
+    private RealMatrix matrix;
+
+    @Before
+    public void setUp() {
+        double[][] data = {
+            {1.0, 2.0, 3.0},
+            {4.0, 5.0, 6.0},
+            {7.0, 8.0, 9.0}
+        };
+        matrix = MatrixUtils.createRealMatrix(data);
+        schurTransformer = new SchurTransformer(matrix);
+    }
+
+    @Test(expected = NonSquareMatrixException.class)
+    public void testNonSquareMatrixException() {
+        double[][] nonSquareData = {
+            {1.0, 2.0},
+            {3.0, 4.0},
+            {5.0, 6.0}
+        };
+        RealMatrix nonSquareMatrix = MatrixUtils.createRealMatrix(nonSquareData);
+        new SchurTransformer(nonSquareMatrix);
+    }
+
+    @Test
+    public void testGetP() {
+        RealMatrix p = schurTransformer.getP();
+        assertNotNull(p);
+        assertEquals(matrix.getRowDimension(), p.getRowDimension());
+        assertEquals(matrix.getColumnDimension(), p.getColumnDimension());
+    }
+
+    @Test
+    public void testGetPT() {
+        RealMatrix pt = schurTransformer.getPT();
+        assertNotNull(pt);
+        assertEquals(matrix.getRowDimension(), pt.getColumnDimension());
+        assertEquals(matrix.getColumnDimension(), pt.getRowDimension());
+    }
+
+    @Test
+    public void testGetT() {
+        RealMatrix t = schurTransformer.getT();
+        assertNotNull(t);
+        assertEquals(matrix.getRowDimension(), t.getRowDimension());
+        assertEquals(matrix.getColumnDimension(), t.getColumnDimension());
+    }
+
+    @Test
+    public void testTransform() {
+        // This test is indirect as the transform method is private
+        // We can test the public methods that rely on the transform method
+        RealMatrix p = schurTransformer.getP();
+        RealMatrix pt = schurTransformer.getPT();
+        RealMatrix t = schurTransformer.getT();
+
+        assertNotNull(p);
+        assertNotNull(pt);
+        assertNotNull(t);
+
+        assertEquals(matrix.getRowDimension(), p.getRowDimension());
+        assertEquals(matrix.getColumnDimension(), p.getColumnDimension());
+
+        assertEquals(matrix.getRowDimension(), pt.getColumnDimension());
+        assertEquals(matrix.getColumnDimension(), pt.getRowDimension());
+
+        assertEquals(matrix.getRowDimension(), t.getRowDimension());
+        assertEquals(matrix.getColumnDimension(), t.getColumnDimension());
+    }
+
+    @Test(expected = MaxCountExceededException.class)
+    public void testMaxCountExceededException() {
+        double[][] data = {
+            {1.0, 2.0},
+            {3.0, 4.0}
+        };
+        RealMatrix matrix = MatrixUtils.createRealMatrix(data);
+        SchurTransformer transformer = new SchurTransformer(matrix) {
+            @Override
+            private void transform() {
+                throw new MaxCountExceededException(null, 100, new Object[0]);
+            }
+        };
+        transformer.getP();
+    }
+
+    @Test
+    public void testGetNorm() {
+        double norm = schurTransformer.getNorm();
+        assertTrue(norm > 0);
+    }
+
+    @Test
+    public void testFindSmallSubDiagonalElement() {
+        int startIdx = 2;
+        double norm = schurTransformer.getNorm();
+        int result = schurTransformer.findSmallSubDiagonalElement(startIdx, norm);
+        assertTrue(result >= 0 && result <= startIdx);
+    }
+
+    @Test
+    public void testComputeShift() {
+        int l = 0;
+        int idx = 2;
+        int iteration = 10;
+        SchurTransformer.ShiftInfo shift = new SchurTransformer.ShiftInfo();
+        schurTransformer.computeShift(l, idx, iteration, shift);
+        assertTrue(shift.x != 0 || shift.y != 0 || shift.w != 0 || shift.exShift != 0);
+    }
+
+    @Test
+    public void testInitQRStep() {
+        int il = 0;
+        int iu = 2;
+        SchurTransformer.ShiftInfo shift = new SchurTransformer.ShiftInfo();
+        double[] hVec = new double[3];
+        int result = schurTransformer.initQRStep(il, iu, shift, hVec);
+        assertTrue(result >= il && result <= iu);
+    }
+
+    @Test
+    public void testPerformDoubleQRStep() {
+        int il = 0;
+        int im = 1;
+        int iu = 2;
+        SchurTransformer.ShiftInfo shift = new SchurTransformer.ShiftInfo();
+        double[] hVec = new double[3];
+        schurTransformer.performDoubleQRStep(il, im, iu, shift, hVec);
+        // Indirectly test by checking the state of the matrixT
+        RealMatrix t = schurTransformer.getT();
+        assertNotNull(t);
+    }
+}
+```

@@ -1,0 +1,95 @@
+To create a comprehensive JUnit 4 test suite for the `SchurTransformer` class, we need to test the public methods and ensure that the class behaves as expected under various conditions. This includes testing the constructor, `getP`, `getPT`, and `getT` methods. We will also need to handle exceptions, such as when a non-square matrix is provided.
+
+Here's a JUnit 4 test suite for the `SchurTransformer` class:
+
+```java
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.SchurTransformer;
+import org.apache.commons.math3.exception.NonSquareMatrixException;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class SchurTransformerTest {
+
+    private RealMatrix squareMatrix;
+    private RealMatrix nonSquareMatrix;
+    private SchurTransformer schurTransformer;
+
+    @Before
+    public void setUp() {
+        // Initialize a 3x3 square matrix
+        squareMatrix = MatrixUtils.createRealMatrix(new double[][]{
+            {4, 1, -2},
+            {1, 2, 0},
+            {-2, 0, 3}
+        });
+
+        // Initialize a 2x3 non-square matrix
+        nonSquareMatrix = MatrixUtils.createRealMatrix(new double[][]{
+            {1, 2, 3},
+            {4, 5, 6}
+        });
+
+        // Initialize SchurTransformer with a square matrix
+        schurTransformer = new SchurTransformer(squareMatrix);
+    }
+
+    @Test
+    public void testGetP() {
+        RealMatrix P = schurTransformer.getP();
+        assertNotNull("Matrix P should not be null", P);
+        assertEquals("Matrix P should have the same row dimension as the input matrix", squareMatrix.getRowDimension(), P.getRowDimension());
+        assertEquals("Matrix P should have the same column dimension as the input matrix", squareMatrix.getColumnDimension(), P.getColumnDimension());
+    }
+
+    @Test
+    public void testGetPT() {
+        RealMatrix PT = schurTransformer.getPT();
+        assertNotNull("Matrix PT should not be null", PT);
+        assertEquals("Matrix PT should have the same row dimension as the input matrix", squareMatrix.getRowDimension(), PT.getRowDimension());
+        assertEquals("Matrix PT should have the same column dimension as the input matrix", squareMatrix.getColumnDimension(), PT.getColumnDimension());
+    }
+
+    @Test
+    public void testGetT() {
+        RealMatrix T = schurTransformer.getT();
+        assertNotNull("Matrix T should not be null", T);
+        assertEquals("Matrix T should have the same row dimension as the input matrix", squareMatrix.getRowDimension(), T.getRowDimension());
+        assertEquals("Matrix T should have the same column dimension as the input matrix", squareMatrix.getColumnDimension(), T.getColumnDimension());
+    }
+
+    @Test(expected = NonSquareMatrixException.class)
+    public void testConstructorWithNonSquareMatrix() {
+        // This should throw a NonSquareMatrixException
+        new SchurTransformer(nonSquareMatrix);
+    }
+
+    @Test
+    public void testCachedMatrices() {
+        // Ensure that cached matrices are used after the first call
+        RealMatrix P1 = schurTransformer.getP();
+        RealMatrix P2 = schurTransformer.getP();
+        assertSame("Cached matrix P should be used", P1, P2);
+
+        RealMatrix PT1 = schurTransformer.getPT();
+        RealMatrix PT2 = schurTransformer.getPT();
+        assertSame("Cached matrix PT should be used", PT1, PT2);
+
+        RealMatrix T1 = schurTransformer.getT();
+        RealMatrix T2 = schurTransformer.getT();
+        assertSame("Cached matrix T should be used", T1, T2);
+    }
+}
+```
+
+### Explanation:
+- **Setup**: We initialize a square matrix and a non-square matrix for testing. The `SchurTransformer` is initialized with the square matrix.
+- **Tests**:
+  - `testGetP`, `testGetPT`, `testGetT`: These tests ensure that the matrices returned by `getP`, `getPT`, and `getT` are not null and have the correct dimensions.
+  - `testConstructorWithNonSquareMatrix`: This test checks that a `NonSquareMatrixException` is thrown when a non-square matrix is used to initialize the `SchurTransformer`.
+  - `testCachedMatrices`: This test ensures that the cached matrices are used after the first computation, which is important for performance.
+
+This test suite covers the basic functionality and edge cases for the `SchurTransformer` class.

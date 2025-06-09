@@ -1,0 +1,109 @@
+```java
+package net.sf.xisemele.impl;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.w3c.dom.*;
+import org.w3c.dom.bootstrap.DOMImplementationRegistry;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSParser;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class OperationsHelperImplTest {
+
+    private OperationsHelperImpl operationsHelper;
+    private Document document;
+    private Node rootNode;
+    private Node childNode1;
+    private Node childNode2;
+
+    @Before
+    public void setUp() throws Exception {
+        operationsHelper = new OperationsHelperImpl();
+
+        // Mocking a simple XML structure
+        document = mock(Document.class);
+        rootNode = mock(Node.class);
+        childNode1 = mock(Node.class);
+        childNode2 = mock(Node.class);
+
+        when(document.getDocumentElement()).thenReturn(rootNode);
+        when(rootNode.getNodeName()).thenReturn("root");
+        when(rootNode.getChildNodes()).thenReturn(createNodeList(childNode1, childNode2));
+
+        when(childNode1.getNodeName()).thenReturn("child1");
+        when(childNode1.getNodeType()).thenReturn(Node.ELEMENT_NODE);
+        when(childNode2.getNodeName()).thenReturn("child2");
+        when(childNode2.getNodeType()).thenReturn(Node.ELEMENT_NODE);
+    }
+
+    private NodeList createNodeList(Node... nodes) {
+        NodeList nodeList = mock(NodeList.class);
+        when(nodeList.getLength()).thenReturn(nodes.length);
+        for (int i = 0; i < nodes.length; i++) {
+            when(nodeList.item(i)).thenReturn(nodes[i]);
+        }
+        return nodeList;
+    }
+
+    @Test
+    public void testChildren() {
+        List<Node> children = operationsHelper.children(rootNode);
+        assertEquals(2, children.size());
+        assertTrue(children.contains(childNode1));
+        assertTrue(children.contains(childNode2));
+    }
+
+    @Test
+    public void testFind() {
+        when(childNode1.getChildNodes()).thenReturn(createNodeList());
+        when(childNode2.getChildNodes()).thenReturn(createNodeList());
+
+        Node foundNode = operationsHelper.find(document, "root/child1");
+        assertNotNull(foundNode);
+        assertEquals("child1", foundNode.getNodeName());
+
+        foundNode = operationsHelper.find(document, "root/child2");
+        assertNotNull(foundNode);
+        assertEquals("child2", foundNode.getNodeName());
+
+        foundNode = operationsHelper.find(document, "root/nonexistent");
+        assertNull(foundNode);
+    }
+
+    @Test
+    public void testNodeWithName() {
+        List<Node> nodes = new ArrayList<>();
+        nodes.add(childNode1);
+        nodes.add(childNode2);
+
+        Node foundNode = operationsHelper.nodeWithName(nodes, "child1");
+        assertNotNull(foundNode);
+        assertEquals("child1", foundNode.getNodeName());
+
+        foundNode = operationsHelper.nodeWithName(nodes, "nonexistent");
+        assertNull(foundNode);
+    }
+
+    @Test
+    public void testSublistWithName() {
+        List<Node> nodes = new ArrayList<>();
+        nodes.add(childNode1);
+        nodes.add(childNode2);
+
+        List<Node> sublist = operationsHelper.sublistWithName(nodes, "child1");
+        assertEquals(1, sublist.size());
+        assertEquals("child1", sublist.get(0).getNodeName());
+
+        sublist = operationsHelper.sublistWithName(nodes, "nonexistent");
+        assertTrue(sublist.isEmpty());
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to test the `OperationsHelperImpl` class. It covers all methods in the class, ensuring that they behave as expected under various conditions. The XML structure is mocked to simulate different scenarios for testing.

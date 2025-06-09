@@ -1,0 +1,113 @@
+Certainly! Below is a JUnit 4 test suite for the `BitInputStream` class. This test suite aims to cover various scenarios for each method in the class, including edge cases and error conditions.
+
+```java
+import org.apache.commons.compress.utils.BitInputStream;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.ByteOrder;
+
+import static org.junit.Assert.*;
+
+public class BitInputStreamTest {
+
+    private BitInputStream bitInputStream;
+    private ByteArrayInputStream byteArrayInputStream;
+
+    @Before
+    public void setUp() {
+        // Initialize with a sample byte array and BIG_ENDIAN order
+        byte[] data = new byte[]{(byte) 0b10101010, (byte) 0b11110000};
+        byteArrayInputStream = new ByteArrayInputStream(data);
+        bitInputStream = new BitInputStream(byteArrayInputStream, ByteOrder.BIG_ENDIAN);
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        if (bitInputStream != null) {
+            bitInputStream.close();
+        }
+    }
+
+    @Test
+    public void testReadBitsBigEndian() throws IOException {
+        long result = bitInputStream.readBits(4);
+        assertEquals(0b1010, result);
+
+        result = bitInputStream.readBits(4);
+        assertEquals(0b1010, result);
+
+        result = bitInputStream.readBits(4);
+        assertEquals(0b1111, result);
+
+        result = bitInputStream.readBits(4);
+        assertEquals(0b0000, result);
+    }
+
+    @Test
+    public void testReadBitsLittleEndian() throws IOException {
+        // Reinitialize with LITTLE_ENDIAN order
+        byteArrayInputStream = new ByteArrayInputStream(new byte[]{(byte) 0b10101010, (byte) 0b11110000});
+        bitInputStream = new BitInputStream(byteArrayInputStream, ByteOrder.LITTLE_ENDIAN);
+
+        long result = bitInputStream.readBits(4);
+        assertEquals(0b1010, result);
+
+        result = bitInputStream.readBits(4);
+        assertEquals(0b1010, result);
+
+        result = bitInputStream.readBits(4);
+        assertEquals(0b0000, result);
+
+        result = bitInputStream.readBits(4);
+        assertEquals(0b1111, result);
+    }
+
+    @Test
+    public void testReadBitsEndOfStream() throws IOException {
+        // Read more bits than available to reach end of stream
+        bitInputStream.readBits(16);
+        long result = bitInputStream.readBits(8);
+        assertEquals(-1, result);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testReadBitsInvalidCountNegative() throws IOException {
+        bitInputStream.readBits(-1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testReadBitsInvalidCountTooLarge() throws IOException {
+        bitInputStream.readBits(64);
+    }
+
+    @Test
+    public void testClearBitCache() throws IOException {
+        bitInputStream.readBits(4);
+        bitInputStream.clearBitCache();
+        long result = bitInputStream.readBits(4);
+        assertEquals(0b1010, result);
+    }
+
+    @Test
+    public void testClose() throws IOException {
+        bitInputStream.close();
+        assertTrue(byteArrayInputStream.available() == 0);
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: The `setUp` method initializes a `BitInputStream` with a sample byte array and `BIG_ENDIAN` byte order. The `tearDown` method ensures the stream is closed after each test.
+- **Test Methods**:
+  - `testReadBitsBigEndian`: Tests reading bits in `BIG_ENDIAN` order.
+  - `testReadBitsLittleEndian`: Tests reading bits in `LITTLE_ENDIAN` order.
+  - `testReadBitsEndOfStream`: Tests behavior when reading past the end of the stream.
+  - `testReadBitsInvalidCountNegative` and `testReadBitsInvalidCountTooLarge`: Test invalid bit count scenarios.
+  - `testClearBitCache`: Tests the `clearBitCache` method.
+  - `testClose`: Tests the `close` method to ensure the stream is properly closed.
+
+This test suite should provide comprehensive coverage for the `BitInputStream` class.

@@ -1,0 +1,128 @@
+To create a comprehensive JUnit 4 test suite for the `FoxHuntFrame` class, we need to focus on testing the public methods and behaviors of the class. The main methods to test are `addPoint()` and `actionPerformed()`, as well as the behavior of the `FoxTableModel` inner class. We will use mocking where necessary to isolate the class from its dependencies.
+
+Below is a JUnit 4 test suite for the `FoxHuntFrame` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import javax.swing.JTextField;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame foxHuntFrame;
+
+    @Before
+    public void setUp() {
+        foxHuntFrame = new FoxHuntFrame();
+    }
+
+    @After
+    public void tearDown() {
+        foxHuntFrame = null;
+    }
+
+    @Test
+    public void testAddPoint() {
+        // Set up the JTextFields with valid data
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+
+        // Call the method under test
+        foxHuntFrame.addPoint();
+
+        // Verify that a point was added to the points vector
+        assertEquals(1, foxHuntFrame.points.size());
+
+        // Verify that the display was updated
+        verify(foxHuntFrame.display, times(1)).addPoint(any(TrigPoint.class));
+    }
+
+    @Test
+    public void testActionPerformed() {
+        // Mock an ActionEvent
+        ActionEvent mockEvent = mock(ActionEvent.class);
+
+        // Call the method under test
+        foxHuntFrame.actionPerformed(mockEvent);
+
+        // Verify that addPoint was called
+        assertEquals(1, foxHuntFrame.points.size());
+    }
+
+    @Test
+    public void testLoadLandmarksFileNotFound() {
+        // Rename the landmarks.cfg file if it exists
+        File landmarksFile = new File("./landmarks.cfg");
+        if (landmarksFile.exists()) {
+            landmarksFile.renameTo(new File("./landmarks_backup.cfg"));
+        }
+
+        // Call the method under test
+        foxHuntFrame.loadLandmarks();
+
+        // Verify that an error dialog was shown
+        // Note: This requires a way to intercept JOptionPane calls, which is not shown here
+
+        // Restore the landmarks.cfg file
+        if (new File("./landmarks_backup.cfg").exists()) {
+            new File("./landmarks_backup.cfg").renameTo(landmarksFile);
+        }
+    }
+
+    @Test
+    public void testLoadLandmarksIOException() throws IOException {
+        // Create a malformed landmarks.cfg file
+        File landmarksFile = new File("./landmarks.cfg");
+        FileWriter writer = new FileWriter(landmarksFile);
+        writer.write("INVALID DATA");
+        writer.close();
+
+        // Call the method under test
+        foxHuntFrame.loadLandmarks();
+
+        // Verify that an error dialog was shown
+        // Note: This requires a way to intercept JOptionPane calls, which is not shown here
+
+        // Clean up
+        landmarksFile.delete();
+    }
+
+    @Test
+    public void testFoxTableModel() {
+        FoxHuntFrame.FoxTableModel model = foxHuntFrame.new FoxTableModel();
+
+        // Test column count
+        assertEquals(2, model.getColumnCount());
+
+        // Test column names
+        assertEquals("Lattitude", model.getColumnName(0));
+        assertEquals("Longitude", model.getColumnName(1));
+
+        // Test row count
+        assertEquals(0, model.getRowCount());
+
+        // Add a point and test row count again
+        foxHuntFrame.addPoint();
+        assertEquals(1, model.getRowCount());
+    }
+}
+```
+
+### Notes:
+- The test suite uses JUnit 4 annotations and assertions.
+- Mocking is used to simulate `ActionEvent` and verify interactions with the `display` object.
+- The `loadLandmarks` method is tested for file not found and IO exceptions by manipulating the `landmarks.cfg` file.
+- The `FoxTableModel` is tested for its basic functionality, including column count, column names, and row count.
+- The test suite assumes that the `display` object and other dependencies can be mocked or verified, which may require additional setup not shown here.
+- Error dialogs are typically shown using `JOptionPane`, which requires a different approach to test, such as using a custom dialog handler or a testing framework that can intercept these calls.

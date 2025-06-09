@@ -1,0 +1,203 @@
+package com.allenstudio.ir.util;
+
+import com.allenstudio.ir.util.XmlElement;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Vector;
+
+import static org.junit.Assert.*;
+
+public class XmlElementTest {
+
+    private XmlElement element;
+    private XmlElement childElement;
+
+    @Before
+    public void setUp() {
+        element = new XmlElement("root");
+        childElement = new XmlElement("child");
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        XmlElement defaultElement = new XmlElement();
+        assertNotNull(defaultElement.getAttributes());
+        assertNotNull(defaultElement.getElements());
+    }
+
+    @Test
+    public void testConstructorWithName() {
+        XmlElement namedElement = new XmlElement("testName");
+        assertEquals("testName", namedElement.getName());
+        assertEquals("", namedElement.getData());
+    }
+
+    @Test
+    public void testConstructorWithNameAndAttributes() {
+        Hashtable<String, String> attributes = new Hashtable<>();
+        attributes.put("key", "value");
+        XmlElement elementWithAttributes = new XmlElement("testName", attributes);
+        assertEquals("value", elementWithAttributes.getAttribute("key"));
+    }
+
+    @Test
+    public void testConstructorWithNameAndData() {
+        XmlElement elementWithData = new XmlElement("testName", "testData");
+        assertEquals("testData", elementWithData.getData());
+    }
+
+    @Test
+    public void testAddAttribute() {
+        element.addAttribute("key", "value");
+        assertEquals("value", element.getAttribute("key"));
+    }
+
+    @Test
+    public void testGetAttributeWithDefault() {
+        assertEquals("defaultValue", element.getAttribute("nonExistentKey", "defaultValue"));
+    }
+
+    @Test
+    public void testSetAttributes() {
+        Hashtable<String, String> newAttributes = new Hashtable<>();
+        newAttributes.put("newKey", "newValue");
+        element.setAttributes(newAttributes);
+        assertEquals("newValue", element.getAttribute("newKey"));
+    }
+
+    @Test
+    public void testGetAttributeNames() {
+        element.addAttribute("key1", "value1");
+        element.addAttribute("key2", "value2");
+        Enumeration<String> attributeNames = element.getAttributeNames();
+        assertTrue(attributeNames.hasMoreElements());
+    }
+
+    @Test
+    public void testAddElement() {
+        assertTrue(element.addElement(childElement));
+        assertEquals(childElement, element.getElement(0));
+    }
+
+    @Test
+    public void testRemoveElementByReference() {
+        element.addElement(childElement);
+        assertEquals(childElement, element.removeElement(childElement));
+        assertEquals(0, element.count());
+    }
+
+    @Test
+    public void testRemoveElementByIndex() {
+        element.addElement(childElement);
+        assertEquals(childElement, element.removeElement(0));
+        assertEquals(0, element.count());
+    }
+
+    @Test
+    public void testRemoveAllElements() {
+        element.addElement(childElement);
+        element.removeAllElements();
+        assertEquals(0, element.count());
+    }
+
+    @Test
+    public void testRemoveFromParent() {
+        element.addElement(childElement);
+        childElement.removeFromParent();
+        assertNull(childElement.getParent());
+    }
+
+    @Test
+    public void testAppend() {
+        XmlElement anotherElement = new XmlElement("another");
+        element.append(anotherElement);
+        assertEquals(anotherElement, element.getElement(0));
+    }
+
+    @Test
+    public void testInsertElement() {
+        XmlElement anotherElement = new XmlElement("another");
+        element.insertElement(anotherElement, 0);
+        assertEquals(anotherElement, element.getElement(0));
+    }
+
+    @Test
+    public void testGetElements() {
+        element.addElement(childElement);
+        List<XmlElement> elements = element.getElements();
+        assertEquals(1, elements.size());
+    }
+
+    @Test
+    public void testCount() {
+        element.addElement(childElement);
+        assertEquals(1, element.count());
+    }
+
+    @Test
+    public void testGetElementByPath() {
+        element.addElement(childElement);
+        assertEquals(childElement, element.getElement("child"));
+    }
+
+    @Test
+    public void testAddSubElementByPath() {
+        XmlElement subElement = element.addSubElement("sub.child");
+        assertNotNull(subElement);
+        assertEquals("child", subElement.getName());
+    }
+
+    @Test
+    public void testAddSubElementByReference() {
+        XmlElement subElement = element.addSubElement(childElement);
+        assertEquals(childElement, subElement);
+    }
+
+    @Test
+    public void testAddSubElementByNameAndData() {
+        XmlElement subElement = element.addSubElement("subName", "subData");
+        assertEquals("subData", subElement.getData());
+    }
+
+    @Test
+    public void testSetParent() {
+        childElement.setParent(element);
+        assertEquals(element, childElement.getParent());
+    }
+
+    @Test
+    public void testSetData() {
+        element.setData("newData");
+        assertEquals("newData", element.getData());
+    }
+
+    @Test
+    public void testSetName() {
+        element.setName("newName");
+        assertEquals("newName", element.getName());
+    }
+
+    @Test
+    public void testClone() {
+        element.addElement(childElement);
+        XmlElement clonedElement = (XmlElement) element.clone();
+        assertEquals(element, clonedElement);
+        assertNotSame(element, clonedElement);
+    }
+
+    @Test
+    public void testEquals() {
+        XmlElement anotherElement = new XmlElement("root");
+        assertTrue(element.equals(anotherElement));
+    }
+
+    @Test
+    public void testHashCode() {
+        XmlElement anotherElement = new XmlElement("root");
+        assertEquals(element.hashCode(), anotherElement.hashCode());
+    }
+}

@@ -1,0 +1,134 @@
+package net.sf.sugar.fspath.cli;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Map;
+import net.sf.sugar.fspath.FSPath;
+import net.sf.sugar.fspath.FSPathFactory;
+import net.sf.sugar.fspath.FSPathResultList;
+
+public class FSPathExplorerTest {
+
+    private FSPathExplorer explorer;
+    private ByteArrayOutputStream outContent;
+    private ByteArrayOutputStream errContent;
+
+    @Before
+    public void setUp() {
+        explorer = new FSPathExplorer();
+        outContent = new ByteArrayOutputStream();
+        errContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(explorer.out);
+        assertNotNull(explorer.err);
+        assertNotNull(explorer.prompt);
+        assertEquals("fspath>", explorer.prompt.getPromptText());
+    }
+
+    @Test
+    public void testShowWelcome() {
+        FSPathExplorer.showWelcome();
+        assertTrue(outContent.toString().contains("FSPathExplorer"));
+    }
+
+    @Test
+    public void testShowHelp() {
+        FSPathExplorer.showHelp();
+        assertTrue(outContent.toString().contains("FSPathExplorer help"));
+    }
+
+    @Test
+    public void testConfigureExplorer() {
+        String[] args = {"-path", "/test/path", "-find", "//dir[@name='test']"};
+        explorer.configureExplorer(args);
+        assertEquals(new File("/test/path"), explorer.rootPath);
+        assertEquals("//dir[@name='test']", explorer.fsPathQuery);
+    }
+
+    @Test
+    public void testCreateFSPathWithRootPath() {
+        explorer.rootPath = new File("/test/path");
+        explorer.createFSPath();
+        assertNotNull(explorer.fsPath);
+        assertEquals("/test/path", explorer.fsPath.getRootDirectory().getAbsolutePath());
+    }
+
+    @Test
+    public void testCreateFSPathWithoutRootPath() {
+        explorer.createFSPath();
+        assertNotNull(explorer.fsPath);
+        assertNotNull(explorer.fsPath.getRootDirectory());
+    }
+
+    @Test
+    public void testStartWithExitCommand() throws Exception {
+        explorer.prompt = new MockPrompt(new String[]{"exit"});
+        explorer.start();
+        assertTrue(outContent.toString().contains("exiting....."));
+    }
+
+    @Test
+    public void testStartWithPwdCommand() throws Exception {
+        explorer.prompt = new MockPrompt(new String[]{"pwd"});
+        explorer.createFSPath();
+        explorer.start();
+        assertTrue(outContent.toString().contains("Current directory"));
+    }
+
+    @Test
+    public void testStartWithCdCommand() throws Exception {
+        explorer.prompt = new MockPrompt(new String[]{"cd", "/test/path"});
+        explorer.createFSPath();
+        explorer.start();
+        assertTrue(outContent.toString().contains("changed to"));
+    }
+
+    @Test
+    public void testStartWithHelpCommand() throws Exception {
+        explorer.prompt = new MockPrompt(new String[]{"help"});
+        explorer.start();
+        assertTrue(outContent.toString().contains("FSPathExplorer help"));
+    }
+
+    @Test
+    public void testStartWithFSPathQuery() throws Exception {
+        explorer.prompt = new MockPrompt(new String[]{"//dir[@name='test']"});
+        explorer.createFSPath();
+        explorer.start();
+        // Assuming the query returns some results
+        assertTrue(outContent.toString().contains("test"));
+    }
+
+    private class MockPrompt extends Prompt {
+        private String[] commands;
+        private int index = 0;
+
+        public MockPrompt(String[] commands) {
+            super(System.in, System.out, System.err);
+            this.commands = commands;
+        }
+
+        @Override
+        public String readLine() {
+            if (index < commands.length) {
+                return commands[index++];
+            }
+            return null;
+        }
+
+        @Override
+        public void close() {
+            // Do nothing
+        }
+    }
+}

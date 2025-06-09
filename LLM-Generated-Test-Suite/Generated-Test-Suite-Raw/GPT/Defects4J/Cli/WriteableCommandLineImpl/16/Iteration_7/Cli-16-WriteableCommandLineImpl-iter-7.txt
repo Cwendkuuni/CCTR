@@ -1,0 +1,161 @@
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
+import org.apache.commons.cli2.Argument;
+import org.apache.commons.cli2.Option;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.apache.commons.cli2.option.PropertyOption;
+import org.junit.Before;
+import org.junit.Test;
+
+public class WriteableCommandLineImplTest {
+
+    private Option mockOption;
+    private Argument mockArgument;
+    private WriteableCommandLineImpl commandLine;
+    private List<String> arguments;
+    private Set<String> prefixes;
+
+    @Before
+    public void setUp() {
+        mockOption = mock(Option.class);
+        mockArgument = mock(Argument.class);
+        arguments = new ArrayList<>();
+        prefixes = new HashSet<>(Arrays.asList("-", "--"));
+        when(mockOption.getPrefixes()).thenReturn(prefixes);
+        when(mockOption.getPreferredName()).thenReturn("--test");
+        when(mockOption.getTriggers()).thenReturn(Arrays.asList("--test", "-t"));
+        commandLine = new WriteableCommandLineImpl(mockOption, arguments);
+    }
+
+    @Test
+    public void testAddOption() {
+        commandLine.addOption(mockOption);
+        assertTrue(commandLine.getOptions().contains(mockOption));
+    }
+
+    @Test
+    public void testAddValue() {
+        commandLine.addValue(mockOption, "value1");
+        List<String> values = commandLine.getValues(mockOption, null);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test
+    public void testAddSwitch() {
+        commandLine.addSwitch(mockOption, true);
+        assertTrue(commandLine.getSwitch(mockOption, false));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAddSwitchAlreadySet() {
+        commandLine.addSwitch(mockOption, true);
+        commandLine.addSwitch(mockOption, false); // should throw exception
+    }
+
+    @Test
+    public void testHasOption() {
+        commandLine.addOption(mockOption);
+        assertTrue(commandLine.hasOption(mockOption));
+    }
+
+    @Test
+    public void testGetOption() {
+        commandLine.addOption(mockOption);
+        assertEquals(mockOption, commandLine.getOption("--test"));
+    }
+
+    @Test
+    public void testGetValuesWithDefaults() {
+        List<String> defaultValues = Arrays.asList("default1", "default2");
+        List<String> values = commandLine.getValues(mockOption, defaultValues);
+        assertEquals(defaultValues, values);
+    }
+
+    @Test
+    public void testGetUndefaultedValues() {
+        commandLine.addValue(mockOption, "value1");
+        List<String> values = commandLine.getUndefaultedValues(mockOption);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test
+    public void testGetSwitchWithDefault() {
+        Boolean switchValue = commandLine.getSwitch(mockOption, true);
+        assertTrue(switchValue);
+    }
+
+    @Test
+    public void testAddProperty() {
+        commandLine.addProperty(mockOption, "key", "value");
+        assertEquals("value", commandLine.getProperty(mockOption, "key", null));
+    }
+
+    @Test
+    public void testGetProperties() {
+        commandLine.addProperty(mockOption, "key", "value");
+        Set<String> properties = commandLine.getProperties(mockOption);
+        assertTrue(properties.contains("key"));
+    }
+
+    @Test
+    public void testLooksLikeOption() {
+        assertTrue(commandLine.looksLikeOption("--option"));
+        assertFalse(commandLine.looksLikeOption("value"));
+    }
+
+    @Test
+    public void testToString() {
+        arguments.add("arg1");
+        arguments.add("arg 2");
+        String expected = "arg1 \"arg 2\"";
+        assertEquals(expected, commandLine.toString());
+    }
+
+    @Test
+    public void testGetOptions() {
+        commandLine.addOption(mockOption);
+        List<Option> options = commandLine.getOptions();
+        assertEquals(1, options.size());
+        assertEquals(mockOption, options.get(0));
+    }
+
+    @Test
+    public void testGetOptionTriggers() {
+        commandLine.addOption(mockOption);
+        Set<String> triggers = commandLine.getOptionTriggers();
+        assertTrue(triggers.contains("--test"));
+        assertTrue(triggers.contains("-t"));
+    }
+
+    @Test
+    public void testSetDefaultValues() {
+        List<String> defaults = Arrays.asList("default1", "default2");
+        commandLine.setDefaultValues(mockOption, defaults);
+        List<String> values = commandLine.getValues(mockOption, null);
+        assertEquals(defaults, values);
+    }
+
+    @Test
+    public void testSetDefaultSwitch() {
+        commandLine.setDefaultSwitch(mockOption, true);
+        assertTrue(commandLine.getSwitch(mockOption, false));
+    }
+
+    @Test
+    public void testGetNormalised() {
+        List<String> normalised = commandLine.getNormalised();
+        assertEquals(arguments, normalised);
+    }
+}
+```

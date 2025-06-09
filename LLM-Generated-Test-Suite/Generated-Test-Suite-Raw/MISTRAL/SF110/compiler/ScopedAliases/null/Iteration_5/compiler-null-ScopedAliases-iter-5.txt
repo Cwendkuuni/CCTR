@@ -1,0 +1,299 @@
+```java
+package com.google.javascript.jscomp;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.javascript.jscomp.CompilerOptions.AliasTransformationHandler;
+import com.google.javascript.jscomp.Scope.Var;
+import com.google.javascript.rhino.JSDocInfo;
+import com.google.javascript.rhino.Node;
+import com.google.javascript.rhino.SourcePosition;
+import com.google.javascript.rhino.Token;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
+public class ScopedAliasesTest {
+
+    private AbstractCompiler compiler;
+    private PreprocessorSymbolTable preprocessorSymbolTable;
+    private AliasTransformationHandler transformationHandler;
+    private ScopedAliases scopedAliases;
+
+    @Before
+    public void setUp() {
+        compiler = mock(AbstractCompiler.class);
+        preprocessorSymbolTable = mock(PreprocessorSymbolTable.class);
+        transformationHandler = mock(AliasTransformationHandler.class);
+        scopedAliases = new ScopedAliases(compiler, preprocessorSymbolTable, transformationHandler);
+    }
+
+    @Test
+    public void testProcess() {
+        Node externs = mock(Node.class);
+        Node root = mock(Node.class);
+
+        scopedAliases.process(externs, root);
+
+        verify(scopedAliases).hotSwapScript(root, null);
+    }
+
+    @Test
+    public void testHotSwapScript() {
+        Node root = mock(Node.class);
+        Node originalRoot = mock(Node.class);
+        Traversal traversal = mock(Traversal.class);
+
+        when(traversal.hasErrors()).thenReturn(false);
+        when(traversal.getAliasUsages()).thenReturn(Lists.newArrayList());
+        when(traversal.getAliasDefinitionsInOrder()).thenReturn(Lists.newArrayList());
+        when(traversal.getScopeCalls()).thenReturn(Lists.newArrayList());
+
+        scopedAliases.hotSwapScript(root, originalRoot);
+
+        verify(NodeTraversal.traverse(compiler, root, traversal));
+        verify(traversal.getAliasUsages()).forEach(AliasUsage::applyAlias);
+        verify(traversal.getAliasDefinitionsInOrder()).forEach(Node::detachFromParent);
+        verify(traversal.getScopeCalls()).forEach(scopeCall -> {
+            Node expressionWithScopeCall = scopeCall.getParent();
+            Node scopeClosureBlock = scopeCall.getLastChild().getLastChild();
+            scopeClosureBlock.detachFromParent();
+            expressionWithScopeCall.getParent().replaceChild(expressionWithScopeCall, scopeClosureBlock);
+            NodeUtil.tryMergeBlock(scopeClosureBlock);
+        });
+        verify(compiler, never()).reportCodeChange();
+    }
+
+    @Test
+    public void testAliasedNodeApplyAlias() {
+        Node aliasReference = mock(Node.class);
+        Node aliasDefinition = mock(Node.class);
+        Node parent = mock(Node.class);
+
+        when(aliasReference.getParent()).thenReturn(parent);
+
+        AliasedNode aliasedNode = new AliasedNode(aliasReference, aliasDefinition);
+        aliasedNode.applyAlias();
+
+        verify(parent).replaceChild(aliasReference, aliasDefinition.cloneTree());
+    }
+
+    @Test
+    public void testAliasedTypeNodeApplyAlias() {
+        Node typeReference = mock(Node.class);
+        Node aliasDefinition = mock(Node.class);
+        String aliasName = "alias";
+        String typeName = "alias.Type";
+        String aliasExpanded = "expanded.alias";
+
+        when(typeReference.getString()).thenReturn(typeName);
+        when(aliasDefinition.getQualifiedName()).thenReturn(aliasExpanded);
+
+        AliasedTypeNode aliasedTypeNode = new AliasedTypeNode(typeReference, aliasDefinition, aliasName);
+        aliasedTypeNode.applyAlias();
+
+        verify(typeReference).setString(typeName.replaceFirst(aliasName, aliasExpanded));
+    }
+
+    @Test
+    public void testTraversal() {
+        Traversal traversal = new Traversal();
+
+        assertNotNull(traversal.getAliasDefinitionsInOrder());
+        assertNotNull(traversal.getAliasUsages());
+        assertNotNull(traversal.getScopeCalls());
+        assertFalse(traversal.hasErrors());
+    }
+
+    @Test
+    public void testIsCallToScopeMethod() {
+        Traversal traversal = new Traversal();
+        Node n = mock(Node.class);
+
+        when(n.isCall()).thenReturn(true);
+        when(n.getFirstChild().getQualifiedName()).thenReturn(ScopedAliases.SCOPING_METHOD_NAME);
+
+        assertTrue(traversal.isCallToScopeMethod(n));
+    }
+
+    @Test
+    public void testEnterScope() {
+        Traversal traversal = spy(new Traversal());
+        NodeTraversal t = mock(NodeTraversal.class);
+        Node n = mock(Node.class);
+
+        when(t.getCurrentNode().getParent()).thenReturn(n);
+        when(traversal.isCallToScopeMethod(n)).thenReturn(true);
+
+        traversal.enterScope(t);
+
+        verify(traversal).findAliases(t);
+    }
+
+    @Test
+    public void testExitScope() {
+        Traversal traversal = spy(new Traversal());
+        NodeTraversal t = mock(NodeTraversal.class);
+
+        when(t.getScopeDepth()).thenReturn(3);
+
+        traversal.exitScope(t);
+
+        verify(traversal).findNamespaceShadows(t);
+    }
+
+    @Test
+    public void testShouldTraverse() {
+        Traversal traversal = new Traversal();
+        NodeTraversal t = mock(NodeTraversal.class);
+        Node n = mock(Node.class);
+        Node parent = mock(Node.class);
+
+        when(n.isFunction()).thenReturn(true);
+        when(t.inGlobalScope()).thenReturn(true);
+        when(parent.isCall()).thenReturn(true);
+        when(traversal.isCallToScopeMethod(parent)).thenReturn(true);
+
+        assertTrue(traversal.shouldTraverse(t, n, parent));
+    }
+
+    @Test
+    public void testGetSourceRegion() {
+        Traversal traversal = new Traversal();
+        Node n = mock(Node.class);
+
+        when(n.getNext()).thenReturn(null);
+        when(n.isScript()).thenReturn(true);
+        when(n.getLineno()).thenReturn(1);
+        when(n.getCharno()).thenReturn(1);
+
+        SourcePosition<AliasTransformation> pos = traversal.getSourceRegion(n);
+
+        assertNotNull(pos);
+    }
+
+    @Test
+    public void testReport() {
+        Traversal traversal = new Traversal();
+        NodeTraversal t = mock(NodeTraversal.class);
+        Node n = mock(Node.class);
+        DiagnosticType error = mock(DiagnosticType.class);
+
+        traversal.report(t, n, error, "error");
+
+        verify(compiler).report(t.makeError(n, error, "error"));
+        assertTrue(traversal.hasErrors());
+    }
+
+    @Test
+    public void testFindAliases() {
+        Traversal traversal = spy(new Traversal());
+        NodeTraversal t = mock(NodeTraversal.class);
+        Scope scope = mock(Scope.class);
+        Var v = mock(Var.class);
+        Node n = mock(Node.class);
+        Node parent = mock(Node.class);
+
+        when(t.getScope()).thenReturn(scope);
+        when(scope.getVarIterable()).thenReturn(Lists.newArrayList(v));
+        when(v.getNode()).thenReturn(n);
+        when(n.getParent()).thenReturn(parent);
+        when(parent.isVar()).thenReturn(true);
+        when(n.hasChildren()).thenReturn(true);
+        when(n.getFirstChild().isQualifiedName()).thenReturn(true);
+        when(n.getString()).thenReturn("alias");
+        when(scope.getVar("alias")).thenReturn(v);
+
+        traversal.findAliases(t);
+
+        verify(traversal).report(t, n, ScopedAliases.GOOG_SCOPE_NON_ALIAS_LOCAL, "alias");
+    }
+
+    @Test
+    public void testFindNamespaceShadows() {
+        Traversal traversal = spy(new Traversal());
+        NodeTraversal t = mock(NodeTraversal.class);
+        Scope scope = mock(Scope.class);
+        Var v = mock(Var.class);
+
+        when(t.getScope()).thenReturn(scope);
+        when(scope.getVarIterable()).thenReturn(Lists.newArrayList(v));
+        when(v.getName()).thenReturn("forbidden");
+        traversal.forbiddenLocals.add("forbidden");
+
+        traversal.findNamespaceShadows(t);
+
+        assertTrue(traversal.hasNamespaceShadows);
+    }
+
+    @Test
+    public void testRenameNamespaceShadows() {
+        Traversal traversal = spy(new Traversal());
+        NodeTraversal t = mock(NodeTraversal.class);
+
+        traversal.hasNamespaceShadows = true;
+        traversal.forbiddenLocals.add("forbidden");
+
+        traversal.renameNamespaceShadows(t);
+
+        verify(traversal).renameNamespaceShadows(t);
+    }
+
+    @Test
+    public void testValidateScopeCall() {
+        Traversal traversal = spy(new Traversal());
+        NodeTraversal t = mock(NodeTraversal.class);
+        Node n = mock(Node.class);
+        Node parent = mock(Node.class);
+
+        when(n.getFirstChild()).thenReturn(mock(Node.class));
+        when(n.getChildCount()).thenReturn(2);
+        when(n.getChildAtIndex(1)).thenReturn(mock(Node.class));
+        when(n.getChildAtIndex(1).isFunction()).thenReturn(true);
+        when(NodeUtil.getFunctionName(n.getChildAtIndex(1))).thenReturn(null);
+        when(NodeUtil.getFunctionParameters(n.getChildAtIndex(1))).thenReturn(mock(Node.class));
+        when(NodeUtil.getFunctionParameters(n.getChildAtIndex(1)).hasChildren()).thenReturn(false);
+
+        traversal.validateScopeCall(t, n, parent);
+
+        verify(traversal).report(t, n, ScopedAliases.GOOG_SCOPE_HAS_BAD_PARAMETERS);
+    }
+
+    @Test
+    public void testVisit() {
+        Traversal traversal = spy(new Traversal());
+        NodeTraversal t = mock(NodeTraversal.class);
+        Node n = mock(Node.class);
+        Node parent = mock(Node.class);
+
+        when(t.getScopeDepth()).thenReturn(2);
+        when(n.getType()).thenReturn(Token.NAME);
+        when(n.getString()).thenReturn("alias");
+        when(t.getScope().getVar("alias")).thenReturn(mock(Var.class));
+
+        traversal.visit(t, n, parent);
+
+        verify(traversal).report(t, n, ScopedAliases.GOOG_SCOPE_ALIAS_REDEFINED, "alias");
+    }
+
+    @Test
+    public void testFixTypeNode() {
+        Traversal traversal = spy(new Traversal());
+        Node typeNode = mock(Node.class);
+
+        when(typeNode.isString()).thenReturn(true);
+        when(typeNode.getString()).thenReturn("alias.Type");
+
+        traversal.fixTypeNode(typeNode);
+
+        verify(traversal).fixTypeNode(typeNode);
+    }
+}
+```

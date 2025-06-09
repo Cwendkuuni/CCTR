@@ -1,0 +1,157 @@
+To create a comprehensive JUnit 4 test suite for the `TreeView` class, we need to test its public methods and interactions. Since `TreeView` is a GUI component, testing it involves simulating user interactions and verifying the expected behavior. Below is a JUnit 4 test suite that covers the main functionalities of the `TreeView` class:
+
+```java
+import org.junit.*;
+import static org.junit.Assert.*;
+import org.mockito.*;
+import javax.swing.*;
+import javax.swing.tree.*;
+import java.awt.event.*;
+import org.fixsuite.message.info.*;
+import java.util.*;
+
+public class TreeViewTest {
+
+    private TreeView treeView;
+    private Library mockLibrary;
+    private DictionaryInfo mockDictionary;
+    private MessageInfo mockMessage;
+    private ComponentInfo mockComponent;
+    private FieldInfo mockField;
+
+    @Before
+    public void setUp() {
+        mockLibrary = Mockito.mock(Library.class);
+        mockDictionary = Mockito.mock(DictionaryInfo.class);
+        mockMessage = Mockito.mock(MessageInfo.class);
+        mockComponent = Mockito.mock(ComponentInfo.class);
+        mockField = Mockito.mock(FieldInfo.class);
+
+        Mockito.when(mockLibrary.getDictionaries()).thenReturn(Collections.singletonList(mockDictionary));
+        Mockito.when(mockDictionary.getVersion()).thenReturn("FIX.4.4");
+        Mockito.when(mockDictionary.getMessages()).thenReturn(Collections.singletonList(mockMessage));
+        Mockito.when(mockMessage.getName()).thenReturn("TestMessage");
+        Mockito.when(mockMessage.getMessageType()).thenReturn("D");
+        Mockito.when(mockMessage.getItems()).thenReturn(Collections.singletonList(mockComponent));
+        Mockito.when(mockComponent.getName()).thenReturn("TestComponent");
+        Mockito.when(mockComponent.getItems()).thenReturn(Collections.singletonList(mockField));
+        Mockito.when(mockField.getName()).thenReturn("TestField");
+        Mockito.when(mockField.getTagNumber()).thenReturn(35);
+
+        treeView = new TreeView(mockLibrary);
+    }
+
+    @Test
+    public void testInitGUI() {
+        assertNotNull(treeView);
+        assertNotNull(treeView.getComponent(0)); // JScrollPane
+        assertNotNull(treeView.getComponent(1)); // JToolBar
+    }
+
+    @Test
+    public void testLoadFIXTree() {
+        JTree tree = (JTree) ((JScrollPane) treeView.getComponent(0)).getViewport().getView();
+        TreeModel model = tree.getModel();
+        assertNotNull(model);
+        assertEquals("Dictionaries", ((DefaultMutableTreeNode) model.getRoot()).getUserObject());
+    }
+
+    @Test
+    public void testExpandAll() {
+        treeView.expandAll();
+        JTree tree = (JTree) ((JScrollPane) treeView.getComponent(0)).getViewport().getView();
+        for (int i = 0; i < tree.getRowCount(); i++) {
+            assertTrue(tree.isExpanded(i));
+        }
+    }
+
+    @Test
+    public void testCollapseAll() {
+        treeView.expandAll();
+        treeView.collapseAll();
+        JTree tree = (JTree) ((JScrollPane) treeView.getComponent(0)).getViewport().getView();
+        for (int i = 0; i < tree.getRowCount(); i++) {
+            assertFalse(tree.isExpanded(i));
+        }
+    }
+
+    @Test
+    public void testSearchFunctionality() {
+        JTextField searchField = (JTextField) ((JToolBar) treeView.getComponent(1)).getComponent(3);
+        searchField.setText("TestMessage");
+        JButton searchButton = (JButton) ((JToolBar) treeView.getComponent(1)).getComponent(4);
+        searchButton.doClick();
+
+        JTree tree = (JTree) ((JScrollPane) treeView.getComponent(0)).getViewport().getView();
+        TreeModel model = tree.getModel();
+        FixInfoTreeNode root = (FixInfoTreeNode) model.getRoot();
+        FixInfoTreeNode messageNode = (FixInfoTreeNode) root.getChildAt(0).getChildAt(0);
+
+        assertTrue(messageNode.isHighlighted());
+    }
+
+    @Test
+    public void testClearFunctionality() {
+        JButton clearButton = (JButton) ((JToolBar) treeView.getComponent(1)).getComponent(0);
+        clearButton.doClick();
+
+        JTree tree = (JTree) ((JScrollPane) treeView.getComponent(0)).getViewport().getView();
+        TreeModel model = tree.getModel();
+        FixInfoTreeNode root = (FixInfoTreeNode) model.getRoot();
+        FixInfoTreeNode messageNode = (FixInfoTreeNode) root.getChildAt(0).getChildAt(0);
+
+        assertFalse(messageNode.isHighlighted());
+    }
+
+    @Test
+    public void testActionPerformedExpand() {
+        JButton expandButton = (JButton) ((JToolBar) treeView.getComponent(1)).getComponent(6);
+        expandButton.doClick();
+
+        JTree tree = (JTree) ((JScrollPane) treeView.getComponent(0)).getViewport().getView();
+        for (int i = 0; i < tree.getRowCount(); i++) {
+            assertTrue(tree.isExpanded(i));
+        }
+    }
+
+    @Test
+    public void testActionPerformedCollapse() {
+        JButton collapseButton = (JButton) ((JToolBar) treeView.getComponent(1)).getComponent(7);
+        collapseButton.doClick();
+
+        JTree tree = (JTree) ((JScrollPane) treeView.getComponent(0)).getViewport().getView();
+        for (int i = 0; i < tree.getRowCount(); i++) {
+            assertFalse(tree.isExpanded(i));
+        }
+    }
+
+    @Test
+    public void testKeyPressedEnterTriggersSearch() {
+        JTextField searchField = (JTextField) ((JToolBar) treeView.getComponent(1)).getComponent(3);
+        searchField.setText("TestMessage");
+        KeyEvent enterKeyEvent = new KeyEvent(searchField, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, '\n');
+        treeView.keyPressed(enterKeyEvent);
+
+        JTree tree = (JTree) ((JScrollPane) treeView.getComponent(0)).getViewport().getView();
+        TreeModel model = tree.getModel();
+        FixInfoTreeNode root = (FixInfoTreeNode) model.getRoot();
+        FixInfoTreeNode messageNode = (FixInfoTreeNode) root.getChildAt(0).getChildAt(0);
+
+        assertTrue(messageNode.isHighlighted());
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to create mock objects for `Library`, `DictionaryInfo`, `MessageInfo`, `ComponentInfo`, and `FieldInfo` to simulate the data structure that `TreeView` operates on.
+- **Setup**: The `setUp` method initializes the `TreeView` with a mock library.
+- **Tests**:
+  - `testInitGUI`: Verifies that the GUI components are initialized.
+  - `testLoadFIXTree`: Checks that the tree model is correctly loaded with the root node.
+  - `testExpandAll` and `testCollapseAll`: Ensure that the tree can be fully expanded and collapsed.
+  - `testSearchFunctionality`: Simulates a search and checks if the correct node is highlighted.
+  - `testClearFunctionality`: Tests the clear button functionality.
+  - `testActionPerformedExpand` and `testActionPerformedCollapse`: Verify the expand and collapse actions.
+  - `testKeyPressedEnterTriggersSearch`: Ensures that pressing Enter in the search field triggers a search.
+
+This test suite provides a comprehensive set of tests for the `TreeView` class, focusing on its GUI interactions and internal logic.

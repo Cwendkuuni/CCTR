@@ -1,0 +1,100 @@
+To create a comprehensive JUnit 4 test suite for the `LagoonCLI` class, we need to consider testing the `main`, `getProperty`, and `showTime` methods. Since `main` is a static method that interacts with the system environment (e.g., reading files, printing to console), testing it will require some setup to capture console output and simulate file interactions. The `getProperty` and `showTime` methods are more straightforward to test.
+
+Below is a JUnit 4 test suite for the `LagoonCLI` class:
+
+```java
+import nu.staldal.lagoon.LagoonCLI;
+import nu.staldal.lagoon.core.LagoonException;
+import org.junit.*;
+import java.io.*;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
+
+public class LagoonCLITest {
+
+    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+    private final PrintStream originalOut = System.out;
+    private final PrintStream originalErr = System.err;
+
+    @Before
+    public void setUpStreams() {
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+    }
+
+    @After
+    public void restoreStreams() {
+        System.setOut(originalOut);
+        System.setErr(originalErr);
+    }
+
+    @Test
+    public void testMainNoArguments() {
+        LagoonCLI.main(new String[]{});
+        assertTrue(outContent.toString().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainInvalidInterval() {
+        LagoonCLI.main(new String[]{"test.properties", "invalid"});
+        assertTrue(outContent.toString().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainValidInterval() {
+        // This test requires a valid setup with a mock LagoonProcessor
+        // and a valid properties file or sitemap file.
+        // For demonstration, we assume the setup is correct.
+        LagoonCLI.main(new String[]{"test.sitemap", "10"});
+        assertTrue(outContent.toString().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testGetProperty() throws LagoonException {
+        Properties props = new Properties();
+        props.setProperty("testKey", "testValue");
+        LagoonCLI.properties = props;
+        assertEquals("testValue", LagoonCLI.getProperty("testKey"));
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyException() throws LagoonException {
+        Properties props = new Properties();
+        LagoonCLI.properties = props;
+        LagoonCLI.getProperty("missingKey");
+    }
+
+    @Test
+    public void testShowTimeMilliseconds() {
+        LagoonCLI.showTime(5000);
+        assertTrue(outContent.toString().contains("in 5000 ms"));
+    }
+
+    @Test
+    public void testShowTimeSeconds() {
+        LagoonCLI.showTime(15000);
+        assertTrue(outContent.toString().contains("in 15 s"));
+    }
+}
+```
+
+### Explanation:
+
+1. **Stream Setup and Teardown**: We redirect `System.out` and `System.err` to capture console output for verification in tests. This is done in the `setUpStreams` and `restoreStreams` methods.
+
+2. **Testing `main` Method**:
+   - **No Arguments**: We test the scenario where no arguments are provided, expecting a syntax message.
+   - **Invalid Interval**: We test with an invalid interval argument, expecting a syntax message.
+   - **Valid Interval**: This test assumes a valid setup with a mock `LagoonProcessor` and a valid sitemap or properties file. It checks for the initialization message.
+
+3. **Testing `getProperty` Method**:
+   - **Valid Property**: We test retrieving a valid property.
+   - **Missing Property**: We test the exception thrown when a property is missing.
+
+4. **Testing `showTime` Method**:
+   - **Milliseconds**: We test the output for a time less than 10 seconds.
+   - **Seconds**: We test the output for a time greater than 10 seconds.
+
+Note: The `testMainValidInterval` test is a placeholder for a more complex setup involving mocking or simulating the `LagoonProcessor` and file interactions. In a real-world scenario, you would use mocking frameworks like Mockito to simulate these dependencies.

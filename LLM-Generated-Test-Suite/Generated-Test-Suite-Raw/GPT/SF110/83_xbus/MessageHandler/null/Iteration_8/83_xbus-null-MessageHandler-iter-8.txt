@@ -1,0 +1,101 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import java.util.*;
+
+@RunWith(JUnit4.class)
+public class MessageHandlerTest {
+
+    private MessageHandler messageHandler;
+    private static final String BASENAME = "testMessages";
+
+    @Before
+    public void setUp() {
+        messageHandler = MessageHandler.getInstance(BASENAME);
+    }
+
+    @Test
+    public void testGetInstance() {
+        MessageHandler instance1 = MessageHandler.getInstance(BASENAME);
+        MessageHandler instance2 = MessageHandler.getInstance(BASENAME);
+        assertNotNull(instance1);
+        assertNotNull(instance2);
+        assertSame(instance1, instance2);
+    }
+
+    @Test
+    public void testGetMessageWithExistingKey() {
+        String key = "existingKey";
+        List<String> params = Arrays.asList("param1", "param2");
+        String expectedMessage = "This is a message with param1 and param2";
+        messageHandler.mMessages.put(key, "This is a message with $1$ and $2$");
+        
+        String message = messageHandler.getMessage(key, params);
+        assertEquals(expectedMessage, message);
+    }
+
+    @Test
+    public void testGetMessageWithNonExistingKey() {
+        String key = "nonExistingKey";
+        List<String> params = Arrays.asList("param1", "param2");
+        String expectedMessage = "Key: nonExistingKey not found in message file";
+        
+        String message = messageHandler.getMessage(key, params);
+        assertEquals(expectedMessage, message);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithExistingKey() {
+        String key = "existingKey";
+        List<String> params = Arrays.asList("param1", "param2");
+        String expectedMessage = "This is a message with param1 and param2";
+        messageHandler.mMessages.put(key, "This is a message with $1$ and $2$");
+        
+        String message = messageHandler.getMessageOptional(key, params);
+        assertEquals(expectedMessage, message);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNonExistingKey() {
+        String key = "nonExistingKey";
+        List<String> params = Arrays.asList("param1", "param2");
+        
+        String message = messageHandler.getMessageOptional(key, params);
+        assertNull(message);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNullParams() {
+        String key = "existingKey";
+        String expectedMessage = "This is a message with $1$ and $2$";
+        messageHandler.mMessages.put(key, expectedMessage);
+        
+        String message = messageHandler.getMessageOptional(key, null);
+        assertEquals(expectedMessage, message);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNullMessages() {
+        messageHandler.mMessages = null;
+        String key = "anyKey";
+        List<String> params = Arrays.asList("param1", "param2");
+        
+        String message = messageHandler.getMessageOptional(key, params);
+        assertNull(message);
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `MessageHandler` instance before each test.
+- **Singleton Test**: `testGetInstance` ensures that `getInstance` returns the same instance for the same basename.
+- **Message Retrieval Tests**: 
+  - `testGetMessageWithExistingKey` and `testGetMessageOptionalWithExistingKey` check if messages are correctly formatted with parameters.
+  - `testGetMessageWithNonExistingKey` and `testGetMessageOptionalWithNonExistingKey` verify behavior when a key is not found.
+  - `testGetMessageOptionalWithNullParams` checks handling of null parameters.
+  - `testGetMessageOptionalWithNullMessages` ensures `getMessageOptional` returns null if `mMessages` is null.
+
+These tests cover the main functionalities of the `MessageHandler` class.

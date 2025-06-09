@@ -1,0 +1,111 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `SmallCharMatcher` class. This test suite covers the methods `smear`, `chooseTableSize`, `from`, `matches`, and `setBits`.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import java.util.BitSet;
+
+public class SmallCharMatcherTest {
+
+    @Test
+    public void testSmear() {
+        int hashCode = 12345;
+        int expected = 461845907 * Integer.rotateLeft(hashCode * -862048943, 15);
+        assertEquals(expected, SmallCharMatcher.smear(hashCode));
+    }
+
+    @Test
+    public void testChooseTableSize() {
+        assertEquals(2, SmallCharMatcher.chooseTableSize(1));
+        assertEquals(4, SmallCharMatcher.chooseTableSize(2));
+        assertEquals(8, SmallCharMatcher.chooseTableSize(3));
+        assertEquals(8, SmallCharMatcher.chooseTableSize(4));
+        assertEquals(16, SmallCharMatcher.chooseTableSize(9));
+    }
+
+    @Test
+    public void testFrom() {
+        BitSet bitSet = new BitSet();
+        bitSet.set('a');
+        bitSet.set('b');
+        bitSet.set('c');
+        String description = "abc";
+        SmallCharMatcher matcher = (SmallCharMatcher) SmallCharMatcher.from(bitSet, description);
+
+        assertTrue(matcher.matches('a'));
+        assertTrue(matcher.matches('b'));
+        assertTrue(matcher.matches('c'));
+        assertFalse(matcher.matches('d'));
+        assertFalse(matcher.matches('\0'));
+    }
+
+    @Test
+    public void testMatches() {
+        BitSet bitSet = new BitSet();
+        bitSet.set('x');
+        bitSet.set('y');
+        bitSet.set('z');
+        SmallCharMatcher matcher = (SmallCharMatcher) SmallCharMatcher.from(bitSet, "xyz");
+
+        assertTrue(matcher.matches('x'));
+        assertTrue(matcher.matches('y'));
+        assertTrue(matcher.matches('z'));
+        assertFalse(matcher.matches('a'));
+        assertFalse(matcher.matches('\0'));
+    }
+
+    @Test
+    public void testMatchesWithZero() {
+        BitSet bitSet = new BitSet();
+        bitSet.set(0);
+        bitSet.set('m');
+        bitSet.set('n');
+        SmallCharMatcher matcher = (SmallCharMatcher) SmallCharMatcher.from(bitSet, "mn");
+
+        assertTrue(matcher.matches('\0'));
+        assertTrue(matcher.matches('m'));
+        assertTrue(matcher.matches('n'));
+        assertFalse(matcher.matches('o'));
+    }
+
+    @Test
+    public void testSetBits() {
+        BitSet bitSet = new BitSet();
+        bitSet.set('1');
+        bitSet.set('2');
+        SmallCharMatcher matcher = (SmallCharMatcher) SmallCharMatcher.from(bitSet, "12");
+
+        BitSet result = new BitSet();
+        matcher.setBits(result);
+
+        assertTrue(result.get('1'));
+        assertTrue(result.get('2'));
+        assertFalse(result.get('3'));
+    }
+
+    @Test
+    public void testSetBitsWithZero() {
+        BitSet bitSet = new BitSet();
+        bitSet.set(0);
+        bitSet.set('A');
+        SmallCharMatcher matcher = (SmallCharMatcher) SmallCharMatcher.from(bitSet, "A");
+
+        BitSet result = new BitSet();
+        matcher.setBits(result);
+
+        assertTrue(result.get(0));
+        assertTrue(result.get('A'));
+        assertFalse(result.get('B'));
+    }
+}
+```
+
+This test suite includes:
+
+- Tests for the `smear` method to ensure it calculates the hash correctly.
+- Tests for the `chooseTableSize` method to verify it returns the correct table size based on the input set size.
+- Tests for the `from` method to ensure it creates a `SmallCharMatcher` correctly from a `BitSet`.
+- Tests for the `matches` method to verify character matching functionality.
+- Tests for the `setBits` method to ensure it correctly sets bits in a `BitSet`.
+
+These tests aim to cover various scenarios, including edge cases like matching the null character (`'\0'`).

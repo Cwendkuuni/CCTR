@@ -1,0 +1,133 @@
+```java
+package com.lts.event;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.awt.Component;
+import java.awt.event.KeyEvent;
+
+public class SimpleKeyListenerHelperTest {
+
+    private SimpleKeyListenerHelper helper;
+    private Component mockComponent;
+
+    @Before
+    public void setUp() {
+        mockComponent = new Component() {};
+        helper = new SimpleKeyListenerHelper(mockComponent);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(helper);
+        assertTrue(mockComponent.getKeyListeners().length > 0);
+    }
+
+    @Test
+    public void testDetach() {
+        helper.detach();
+        assertEquals(0, mockComponent.getKeyListeners().length);
+        assertNull(helper.getComponent());
+    }
+
+    @Test
+    public void testNotifyListener() {
+        SimpleKeyListener mockListener = new SimpleKeyListener() {
+            boolean enterCalled = false;
+            boolean insertCalled = false;
+            boolean deleteCalled = false;
+            boolean tabCalled = false;
+
+            @Override
+            public void enter(Component component) {
+                enterCalled = true;
+            }
+
+            @Override
+            public void insert(Component component) {
+                insertCalled = true;
+            }
+
+            @Override
+            public void delete(Component component) {
+                deleteCalled = true;
+            }
+
+            @Override
+            public void tab(Component component) {
+                tabCalled = true;
+            }
+
+            public boolean isEnterCalled() {
+                return enterCalled;
+            }
+
+            public boolean isInsertCalled() {
+                return insertCalled;
+            }
+
+            public boolean isDeleteCalled() {
+                return deleteCalled;
+            }
+
+            public boolean isTabCalled() {
+                return tabCalled;
+            }
+        };
+
+        helper.notifyListener(mockListener, 10, null);
+        assertTrue(mockListener.isEnterCalled());
+
+        helper.notifyListener(mockListener, 155, null);
+        assertTrue(mockListener.isInsertCalled());
+
+        helper.notifyListener(mockListener, 127, null);
+        assertTrue(mockListener.isDeleteCalled());
+
+        helper.notifyListener(mockListener, 9, null);
+        assertTrue(mockListener.isTabCalled());
+    }
+
+    @Test
+    public void testKeyPressed() {
+        KeyEvent mockEvent = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, ' ');
+        helper.keyPressed(mockEvent);
+        // Assuming fire method is tested separately or mocked
+
+        mockEvent = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_INSERT, ' ');
+        helper.keyPressed(mockEvent);
+
+        mockEvent = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_DELETE, ' ');
+        helper.keyPressed(mockEvent);
+
+        mockEvent = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_TAB, ' ');
+        helper.keyPressed(mockEvent);
+    }
+
+    @Test
+    public void testKeyReleased() {
+        KeyEvent mockEvent = new KeyEvent(mockComponent, KeyEvent.KEY_RELEASED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, ' ');
+        helper.keyReleased(mockEvent);
+        // No action expected
+    }
+
+    @Test
+    public void testKeyTyped() {
+        KeyEvent mockEvent = new KeyEvent(mockComponent, KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, KeyEvent.VK_UNDEFINED, 'a');
+        helper.keyTyped(mockEvent);
+        // No action expected
+    }
+
+    private Component getComponent() {
+        return helper.getComponent();
+    }
+}
+
+interface SimpleKeyListener {
+    void enter(Component component);
+    void insert(Component component);
+    void delete(Component component);
+    void tab(Component component);
+}
+```

@@ -1,0 +1,220 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `StdDateFormat` class. This test suite covers all the methods in the class to ensure they function as expected.
+
+```java
+package com.fasterxml.jackson.databind.util;
+
+import static org.junit.Assert.*;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.ParsePosition;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class StdDateFormatTest {
+
+    private StdDateFormat stdDateFormat;
+    private TimeZone defaultTimeZone;
+    private Locale defaultLocale;
+
+    @Before
+    public void setUp() {
+        stdDateFormat = new StdDateFormat();
+        defaultTimeZone = TimeZone.getTimeZone("GMT");
+        defaultLocale = Locale.US;
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertEquals(defaultLocale, stdDateFormat._locale);
+    }
+
+    @Test
+    public void testConstructorWithTimeZone() {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        StdDateFormat format = new StdDateFormat(tz);
+        assertEquals(tz, format._timezone);
+        assertEquals(defaultLocale, format._locale);
+    }
+
+    @Test
+    public void testConstructorWithTimeZoneAndLocale() {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        Locale loc = Locale.FRANCE;
+        StdDateFormat format = new StdDateFormat(tz, loc);
+        assertEquals(tz, format._timezone);
+        assertEquals(loc, format._locale);
+    }
+
+    @Test
+    public void testGetDefaultTimeZone() {
+        assertEquals(defaultTimeZone, StdDateFormat.getDefaultTimeZone());
+    }
+
+    @Test
+    public void testWithTimeZone() {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        StdDateFormat newFormat = stdDateFormat.withTimeZone(tz);
+        assertEquals(tz, newFormat._timezone);
+    }
+
+    @Test
+    public void testWithLocale() {
+        Locale loc = Locale.FRANCE;
+        StdDateFormat newFormat = stdDateFormat.withLocale(loc);
+        assertEquals(loc, newFormat._locale);
+    }
+
+    @Test
+    public void testClone() {
+        StdDateFormat clonedFormat = stdDateFormat.clone();
+        assertEquals(stdDateFormat._timezone, clonedFormat._timezone);
+        assertEquals(stdDateFormat._locale, clonedFormat._locale);
+    }
+
+    @Test
+    public void testGetBlueprintISO8601Format() {
+        DateFormat format = StdDateFormat.getBlueprintISO8601Format();
+        assertTrue(format instanceof SimpleDateFormat);
+        assertEquals(StdDateFormat.DATE_FORMAT_STR_ISO8601, ((SimpleDateFormat) format).toPattern());
+    }
+
+    @Test
+    public void testGetISO8601FormatWithTimeZone() {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        DateFormat format = StdDateFormat.getISO8601Format(tz);
+        assertTrue(format instanceof SimpleDateFormat);
+        assertEquals(StdDateFormat.DATE_FORMAT_STR_ISO8601, ((SimpleDateFormat) format).toPattern());
+        assertEquals(tz, format.getTimeZone());
+    }
+
+    @Test
+    public void testGetISO8601FormatWithTimeZoneAndLocale() {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        Locale loc = Locale.FRANCE;
+        DateFormat format = StdDateFormat.getISO8601Format(tz, loc);
+        assertTrue(format instanceof SimpleDateFormat);
+        assertEquals(StdDateFormat.DATE_FORMAT_STR_ISO8601, ((SimpleDateFormat) format).toPattern());
+        assertEquals(tz, format.getTimeZone());
+        assertEquals(loc, format.getLocale());
+    }
+
+    @Test
+    public void testGetBlueprintRFC1123Format() {
+        DateFormat format = StdDateFormat.getBlueprintRFC1123Format();
+        assertTrue(format instanceof SimpleDateFormat);
+        assertEquals(StdDateFormat.DATE_FORMAT_STR_RFC1123, ((SimpleDateFormat) format).toPattern());
+    }
+
+    @Test
+    public void testGetRFC1123FormatWithTimeZone() {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        DateFormat format = StdDateFormat.getRFC1123Format(tz);
+        assertTrue(format instanceof SimpleDateFormat);
+        assertEquals(StdDateFormat.DATE_FORMAT_STR_RFC1123, ((SimpleDateFormat) format).toPattern());
+        assertEquals(tz, format.getTimeZone());
+    }
+
+    @Test
+    public void testGetRFC1123FormatWithTimeZoneAndLocale() {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        Locale loc = Locale.FRANCE;
+        DateFormat format = StdDateFormat.getRFC1123Format(tz, loc);
+        assertTrue(format instanceof SimpleDateFormat);
+        assertEquals(StdDateFormat.DATE_FORMAT_STR_RFC1123, ((SimpleDateFormat) format).toPattern());
+        assertEquals(tz, format.getTimeZone());
+        assertEquals(loc, format.getLocale());
+    }
+
+    @Test
+    public void testSetTimeZone() {
+        TimeZone tz = TimeZone.getTimeZone("UTC");
+        stdDateFormat.setTimeZone(tz);
+        assertEquals(tz, stdDateFormat._timezone);
+    }
+
+    @Test
+    public void testParseValidISO8601Date() throws ParseException {
+        String dateStr = "2023-10-05T14:48:00.000Z";
+        Date date = stdDateFormat.parse(dateStr);
+        assertNotNull(date);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testParseInvalidDate() throws ParseException {
+        String dateStr = "invalid-date";
+        stdDateFormat.parse(dateStr);
+    }
+
+    @Test
+    public void testParseValidRFC1123Date() throws ParseException {
+        String dateStr = "Thu, 05 Oct 2023 14:48:00 GMT";
+        Date date = stdDateFormat.parse(dateStr);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testFormatDate() {
+        Date date = new Date();
+        StringBuffer formattedDate = stdDateFormat.format(date, new StringBuffer(), null);
+        assertNotNull(formattedDate);
+    }
+
+    @Test
+    public void testToString() {
+        String str = stdDateFormat.toString();
+        assertTrue(str.contains("DateFormat"));
+        assertTrue(str.contains("timezone: " + defaultTimeZone));
+        assertTrue(str.contains("locale: " + defaultLocale));
+    }
+
+    @Test
+    public void testLooksLikeISO8601() {
+        assertTrue(stdDateFormat.looksLikeISO8601("2023-10-05T14:48:00.000Z"));
+        assertFalse(stdDateFormat.looksLikeISO8601("Thu, 05 Oct 2023 14:48:00 GMT"));
+    }
+
+    @Test
+    public void testParseAsISO8601() {
+        String dateStr = "2023-10-05T14:48:00.000Z";
+        ParsePosition pos = new ParsePosition(0);
+        Date date = stdDateFormat.parseAsISO8601(dateStr, pos);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testParseAsRFC1123() {
+        String dateStr = "Thu, 05 Oct 2023 14:48:00 GMT";
+        ParsePosition pos = new ParsePosition(0);
+        Date date = stdDateFormat.parseAsRFC1123(dateStr, pos);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testHasTimeZone() {
+        assertTrue(StdDateFormat.hasTimeZone("2023-10-05T14:48:00.000+0000"));
+        assertFalse(StdDateFormat.hasTimeZone("2023-10-05T14:48:00.000Z"));
+    }
+
+    @Test
+    public void testCloneFormat() {
+        DateFormat df = StdDateFormat._cloneFormat(StdDateFormat.DATE_FORMAT_ISO8601, StdDateFormat.DATE_FORMAT_STR_ISO8601, defaultTimeZone, defaultLocale);
+        assertTrue(df instanceof SimpleDateFormat);
+        assertEquals(StdDateFormat.DATE_FORMAT_STR_ISO8601, ((SimpleDateFormat) df).toPattern());
+    }
+}
+```
+
+This test suite covers the following aspects:
+- Constructor tests
+- Methods for setting and getting time zones and locales
+- Cloning the format
+- Parsing and formatting dates
+- Helper methods for date format detection and cloning
+
+You can extract the test suite by copying the content within the triple backticks.

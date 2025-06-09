@@ -1,0 +1,139 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `TCharHash` class. This test suite assumes that the `TCharHash` class is part of a package that can be accessed by the test suite, and that necessary dependencies such as `Constants`, `HashFunctions`, and `TCharProcedure` are available.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import gnu.trove.procedure.TCharProcedure;
+
+public class TCharHashTest {
+
+    private TCharHash tCharHash;
+
+    @Before
+    public void setUp() {
+        tCharHash = new TCharHash(10) {};
+    }
+
+    @Test
+    public void testConstructorWithNoArgs() {
+        TCharHash hash = new TCharHash() {};
+        assertEquals(Constants.DEFAULT_CHAR_NO_ENTRY_VALUE, hash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacity() {
+        TCharHash hash = new TCharHash(20) {};
+        assertEquals(Constants.DEFAULT_CHAR_NO_ENTRY_VALUE, hash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacityAndLoadFactor() {
+        TCharHash hash = new TCharHash(20, 0.5f) {};
+        assertEquals(Constants.DEFAULT_CHAR_NO_ENTRY_VALUE, hash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithAllParams() {
+        TCharHash hash = new TCharHash(20, 0.5f, 'x') {};
+        assertEquals('x', hash.getNoEntryValue());
+    }
+
+    @Test
+    public void testGetNoEntryValue() {
+        assertEquals(Constants.DEFAULT_CHAR_NO_ENTRY_VALUE, tCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testSetUp() {
+        int capacity = tCharHash.setUp(15);
+        assertTrue(capacity >= 15);
+        assertNotNull(tCharHash._set);
+    }
+
+    @Test
+    public void testContains() {
+        tCharHash.insertKey('a');
+        assertTrue(tCharHash.contains('a'));
+        assertFalse(tCharHash.contains('b'));
+    }
+
+    @Test
+    public void testForEach() {
+        tCharHash.insertKey('a');
+        tCharHash.insertKey('b');
+        TCharProcedure procedure = Mockito.mock(TCharProcedure.class);
+        Mockito.when(procedure.execute(Mockito.anyChar())).thenReturn(true);
+        assertTrue(tCharHash.forEach(procedure));
+        Mockito.verify(procedure, Mockito.times(2)).execute(Mockito.anyChar());
+    }
+
+    @Test
+    public void testForEachWithFalseReturn() {
+        tCharHash.insertKey('a');
+        TCharProcedure procedure = Mockito.mock(TCharProcedure.class);
+        Mockito.when(procedure.execute('a')).thenReturn(false);
+        assertFalse(tCharHash.forEach(procedure));
+    }
+
+    @Test
+    public void testRemoveAt() {
+        tCharHash.insertKey('a');
+        int index = tCharHash.index('a');
+        tCharHash.removeAt(index);
+        assertFalse(tCharHash.contains('a'));
+    }
+
+    @Test
+    public void testIndex() {
+        tCharHash.insertKey('a');
+        assertTrue(tCharHash.index('a') >= 0);
+        assertEquals(-1, tCharHash.index('b'));
+    }
+
+    @Test
+    public void testIndexRehashed() {
+        tCharHash.insertKey('a');
+        int index = tCharHash.index('a');
+        assertEquals(index, tCharHash.indexRehashed('a', index, HashFunctions.hash('a'), (byte) 1));
+    }
+
+    @Test
+    public void testInsertKey() {
+        int index = tCharHash.insertKey('a');
+        assertTrue(index >= 0);
+        assertTrue(tCharHash.contains('a'));
+    }
+
+    @Test
+    public void testInsertKeyRehash() {
+        tCharHash.insertKey('a');
+        int index = tCharHash.insertKeyRehash('b', tCharHash.index('a'), HashFunctions.hash('b'), (byte) 1);
+        assertTrue(index >= 0);
+        assertTrue(tCharHash.contains('b'));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testInsertKeyRehashThrowsException() {
+        TCharHash smallHash = new TCharHash(1) {};
+        smallHash.insertKey('a');
+        smallHash.insertKeyRehash('b', 0, HashFunctions.hash('b'), (byte) 1);
+    }
+
+    @Test
+    public void testInsertKeyAt() {
+        tCharHash.insertKeyAt(0, 'a');
+        assertEquals('a', tCharHash._set[0]);
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `TCharHash` instance before each test.
+- **Constructor Tests**: Tests for different constructors to ensure they initialize the object correctly.
+- **Method Tests**: Each method in `TCharHash` is tested for expected behavior, including edge cases.
+- **Mocking**: `TCharProcedure` is mocked to test the `forEach` method.
+- **Exception Testing**: The test suite includes a test to ensure `IllegalStateException` is thrown when expected.
+
+This test suite should provide comprehensive coverage for the `TCharHash` class.

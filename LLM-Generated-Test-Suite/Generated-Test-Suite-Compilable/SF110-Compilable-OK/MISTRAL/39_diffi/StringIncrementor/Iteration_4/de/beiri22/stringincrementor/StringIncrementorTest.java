@@ -1,0 +1,100 @@
+package de.beiri22.stringincrementor;
+
+import de.beiri22.stringincrementor.helper.*;
+import de.beiri22.stringincrementor.relativestring.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class StringIncrementorTest {
+
+    private String a;
+    private String b;
+    private RelativeString relativeString;
+
+    @Before
+    public void setUp() {
+        a = "abcdefghijklmnopqrstuvwxyz";
+        b = "abcdefghijklmnopqrstuvwxyz1234567890";
+        relativeString = new RelativeString();
+        relativeString.addLink(new StringLink(0, 0, 26));
+        relativeString.setAbsolute("1234567890");
+    }
+
+    @Test
+    public void testDiff() {
+        RelativeString result = StringIncrementor.diff(a, b);
+        assertNotNull(result);
+        assertEquals(1, result.linksCount());
+        assertEquals("1234567890", result.getAbsolute());
+    }
+
+    @Test
+    public void testDiffVerbose() {
+        RelativeString result = StringIncrementor.diff(a, b, true);
+        assertNotNull(result);
+        assertEquals(1, result.linksCount());
+        assertEquals("1234567890", result.getAbsolute());
+    }
+
+    @Test
+    public void testPatch() {
+        String result = StringIncrementor.patch(a, relativeString);
+        assertEquals(b, result);
+    }
+
+    @Test
+    public void testPatchVerbose() {
+        String result = StringIncrementor.patch(a, relativeString, true);
+        assertEquals(b, result);
+    }
+
+    @Test
+    public void testDiffEmptyStrings() {
+        RelativeString result = StringIncrementor.diff("", "");
+        assertNotNull(result);
+        assertEquals(0, result.linksCount());
+        assertEquals("", result.getAbsolute());
+    }
+
+    @Test
+    public void testPatchEmptyStrings() {
+        RelativeString emptyRelativeString = new RelativeString();
+        String result = StringIncrementor.patch("", emptyRelativeString);
+        assertEquals("", result);
+    }
+
+    @Test
+    public void testDiffSameStrings() {
+        RelativeString result = StringIncrementor.diff(a, a);
+        assertNotNull(result);
+        assertEquals(1, result.linksCount());
+        assertEquals("", result.getAbsolute());
+    }
+
+    @Test
+    public void testPatchSameStrings() {
+        RelativeString sameRelativeString = new RelativeString();
+        sameRelativeString.addLink(new StringLink(0, 0, a.length()));
+        String result = StringIncrementor.patch(a, sameRelativeString);
+        assertEquals(a, result);
+    }
+
+    @Test
+    public void testDiffDifferentStrings() {
+        String c = "zyxwvutsrqponmlkjihgfedcba";
+        RelativeString result = StringIncrementor.diff(a, c);
+        assertNotNull(result);
+        assertEquals(0, result.linksCount());
+        assertEquals(c, result.getAbsolute());
+    }
+
+    @Test
+    public void testPatchDifferentStrings() {
+        String c = "zyxwvutsrqponmlkjihgfedcba";
+        RelativeString differentRelativeString = new RelativeString();
+        differentRelativeString.setAbsolute(c);
+        String result = StringIncrementor.patch(a, differentRelativeString);
+        assertEquals(c, result);
+    }
+}

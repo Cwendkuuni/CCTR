@@ -1,0 +1,141 @@
+```java
+import org.jdom2.*;
+import org.jdom2.output.*;
+import org.jdom2.output.support.*;
+import org.junit.*;
+import java.io.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+
+public class XMLOutputterTest {
+
+    private XMLOutputter xmlOutputter;
+    private Format format;
+    private XMLOutputProcessor processor;
+
+    @Before
+    public void setUp() {
+        format = Format.getPrettyFormat();
+        processor = new AbstractXMLOutputProcessor() {
+            @Override
+            protected void printDeclaration(Writer out, FormatStack fstack) throws IOException {
+                // Mock implementation
+            }
+
+            @Override
+            protected void printContent(Writer out, FormatStack fstack, List<? extends Content> content) throws IOException {
+                // Mock implementation
+            }
+        };
+        xmlOutputter = new XMLOutputter(format, processor);
+    }
+
+    @Test
+    public void testConstructorWithFormatAndProcessor() {
+        assertNotNull(xmlOutputter.getFormat());
+        assertNotNull(xmlOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        XMLOutputter defaultOutputter = new XMLOutputter();
+        assertNotNull(defaultOutputter.getFormat());
+        assertNotNull(defaultOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testConstructorWithFormat() {
+        XMLOutputter outputter = new XMLOutputter(format);
+        assertEquals(format, outputter.getFormat());
+    }
+
+    @Test
+    public void testConstructorWithProcessor() {
+        XMLOutputter outputter = new XMLOutputter(processor);
+        assertEquals(processor, outputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testSetAndGetFormat() {
+        Format newFormat = Format.getCompactFormat();
+        xmlOutputter.setFormat(newFormat);
+        assertEquals(newFormat, xmlOutputter.getFormat());
+    }
+
+    @Test
+    public void testSetAndGetXMLOutputProcessor() {
+        XMLOutputProcessor newProcessor = new AbstractXMLOutputProcessor() {
+            @Override
+            protected void printDeclaration(Writer out, FormatStack fstack) throws IOException {
+                // Mock implementation
+            }
+
+            @Override
+            protected void printContent(Writer out, FormatStack fstack, List<? extends Content> content) throws IOException {
+                // Mock implementation
+            }
+        };
+        xmlOutputter.setXMLOutputProcessor(newProcessor);
+        assertEquals(newProcessor, xmlOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testOutputDocumentToOutputStream() throws IOException {
+        Document doc = new Document(new Element("root"));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(doc, out);
+        assertTrue(out.toString().contains("<root"));
+    }
+
+    @Test
+    public void testOutputElementToOutputStream() throws IOException {
+        Element element = new Element("element");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(element, out);
+        assertTrue(out.toString().contains("<element"));
+    }
+
+    @Test
+    public void testOutputStringDocument() {
+        Document doc = new Document(new Element("root"));
+        String result = xmlOutputter.outputString(doc);
+        assertTrue(result.contains("<root"));
+    }
+
+    @Test
+    public void testOutputStringElement() {
+        Element element = new Element("element");
+        String result = xmlOutputter.outputString(element);
+        assertTrue(result.contains("<element"));
+    }
+
+    @Test
+    public void testEscapeAttributeEntities() {
+        String input = "This & That";
+        String escaped = xmlOutputter.escapeAttributeEntities(input);
+        assertEquals("This &amp; That", escaped);
+    }
+
+    @Test
+    public void testEscapeElementEntities() {
+        String input = "This < That";
+        String escaped = xmlOutputter.escapeElementEntities(input);
+        assertEquals("This &lt; That", escaped);
+    }
+
+    @Test
+    public void testClone() {
+        XMLOutputter clonedOutputter = xmlOutputter.clone();
+        assertNotSame(xmlOutputter, clonedOutputter);
+        assertEquals(xmlOutputter.getFormat(), clonedOutputter.getFormat());
+    }
+
+    @Test
+    public void testToString() {
+        String outputterString = xmlOutputter.toString();
+        assertTrue(outputterString.contains("XMLOutputter[omitDeclaration"));
+    }
+}
+```
+This test suite covers the constructors, getters, setters, and various output methods of the `XMLOutputter` class. It also includes tests for the `escapeAttributeEntities`, `escapeElementEntities`, `clone`, and `toString` methods. The `XMLOutputProcessor` is mocked to allow testing without needing a full implementation.

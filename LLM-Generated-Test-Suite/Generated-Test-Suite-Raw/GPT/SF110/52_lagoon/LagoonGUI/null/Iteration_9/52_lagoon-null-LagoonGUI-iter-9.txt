@@ -1,0 +1,155 @@
+To create a comprehensive JUnit 4 test suite for the `LagoonGUI` class, we need to focus on testing the public methods and any significant private methods that can be accessed indirectly. Since `LagoonGUI` is a GUI application, testing it involves simulating user interactions and verifying the expected outcomes. We will use mocking where necessary to isolate the class from its dependencies.
+
+Below is a JUnit 4 test suite for the `LagoonGUI` class:
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.awt.*;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Properties;
+
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class LagoonGUITest {
+
+    @Mock
+    private LagoonProcessor mockProcessor;
+
+    @Mock
+    private InputComponent mockSitemapFile;
+
+    @Mock
+    private InputComponent mockSourceDir;
+
+    @Mock
+    private InputComponent mockTargetURL;
+
+    @Mock
+    private TextArea mockProgressArea;
+
+    @Mock
+    private Label mockStatusLabel;
+
+    @InjectMocks
+    private LagoonGUI lagoonGUI;
+
+    @Before
+    public void setUp() {
+        lagoonGUI = new LagoonGUI();
+        lagoonGUI.processor = mockProcessor;
+        lagoonGUI.sitemapFile = mockSitemapFile;
+        lagoonGUI.sourceDir = mockSourceDir;
+        lagoonGUI.targetURL = mockTargetURL;
+        lagoonGUI.progressArea = mockProgressArea;
+        lagoonGUI.statusLabel = mockStatusLabel;
+    }
+
+    @Test
+    public void testWindowClosing() {
+        WindowEvent mockEvent = mock(WindowEvent.class);
+        lagoonGUI.windowClosing(mockEvent);
+        verify(mockProcessor).destroy();
+    }
+
+    @Test
+    public void testBuild() throws Exception {
+        when(mockSitemapFile.getValue()).thenReturn("sitemap.xml");
+        when(mockSourceDir.getValue()).thenReturn(".");
+        when(mockTargetURL.getValue()).thenReturn("http://example.com");
+        when(mockProcessor.build(false)).thenReturn(true);
+
+        lagoonGUI.build(false);
+
+        verify(mockProcessor).build(false);
+        verify(mockStatusLabel).setText("Ready");
+    }
+
+    @Test
+    public void testExit() throws Exception {
+        lagoonGUI.exit();
+        verify(mockProcessor).destroy();
+    }
+
+    @Test
+    public void testLoadProperties() throws Exception {
+        File tempFile = File.createTempFile("test", ".properties");
+        tempFile.deleteOnExit();
+        Properties properties = new Properties();
+        properties.setProperty("sitemapFile", "sitemap.xml");
+        properties.setProperty("sourceDir", ".");
+        properties.setProperty("targetURL", "http://example.com");
+        FileOutputStream fos = new FileOutputStream(tempFile);
+        properties.store(fos, null);
+        fos.close();
+
+        lagoonGUI.loadProperties(tempFile);
+
+        verify(mockSitemapFile).setValue("sitemap.xml");
+        verify(mockSourceDir).setValue(".");
+        verify(mockTargetURL).setValue("http://example.com");
+    }
+
+    @Test
+    public void testSaveProperties() throws Exception {
+        File tempFile = File.createTempFile("test", ".properties");
+        tempFile.deleteOnExit();
+        when(mockSitemapFile.getValue()).thenReturn("sitemap.xml");
+        when(mockSourceDir.getValue()).thenReturn(".");
+        when(mockTargetURL.getValue()).thenReturn("http://example.com");
+
+        lagoonGUI.savePropertyFile();
+
+        Properties properties = new Properties();
+        FileInputStream fis = new FileInputStream(tempFile);
+        properties.load(fis);
+        fis.close();
+
+        Assert.assertEquals("sitemap.xml", properties.getProperty("sitemapFile"));
+        Assert.assertEquals(".", properties.getProperty("sourceDir"));
+        Assert.assertEquals("http://example.com", properties.getProperty("targetURL"));
+    }
+
+    @Test
+    public void testGetProperty() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("testProperty", "testValue");
+
+        String value = LagoonGUI.getProperty(properties, "testProperty");
+
+        Assert.assertEquals("testValue", value);
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyThrowsException() throws Exception {
+        Properties properties = new Properties();
+        LagoonGUI.getProperty(properties, "missingProperty");
+    }
+
+    @Test
+    public void testShowTime() {
+        String result = LagoonGUI.showTime(5000);
+        Assert.assertEquals("in 5000 ms", result);
+
+        result = LagoonGUI.showTime(15000);
+        Assert.assertEquals("in 15 s", result);
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock dependencies like `LagoonProcessor`, `InputComponent`, `TextArea`, and `Label` to isolate the `LagoonGUI` class and focus on its behavior.
+- **Window Events**: We test the `windowClosing` method to ensure it calls the `exit` method, which should destroy the processor.
+- **Build Method**: We test the `build` method by simulating a successful build process and verifying the interactions with the mocked processor.
+- **Load and Save Properties**: We test loading and saving properties by creating temporary files and verifying the expected behavior.
+- **Utility Methods**: We test static utility methods like `getProperty` and `showTime` to ensure they behave as expected.
+
+This test suite covers the main functionalities of the `LagoonGUI` class. Note that GUI testing can be more complex and might require additional tools or frameworks for comprehensive testing, especially for user interface components.

@@ -1,0 +1,80 @@
+package org.apache.commons.cli;
+
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.Option;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class GnuParserTest {
+
+    private GnuParser parser;
+    private Options options;
+
+    @Before
+    public void setUp() {
+        parser = new GnuParser();
+        options = new Options();
+        options.addOption("a", false, "Option a");
+        options.addOption("b", false, "Option b");
+        options.addOption("c", true, "Option c");
+        options.addOption("D", true, "Option D");
+    }
+
+    @Test
+    public void testFlattenWithSingleCharacterOption() {
+        String[] args = {"-a", "value1", "-b", "value2"};
+        String[] expected = {"-a", "value1", "-b", "value2"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testFlattenWithLongOption() {
+        String[] args = {"--longOption", "value"};
+        String[] expected = {"--longOption", "value"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testFlattenWithSpecialPropertiesOption() {
+        String[] args = {"-Dproperty=value"};
+        String[] expected = {"-D", "property=value"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testFlattenWithStopAtNonOption() {
+        String[] args = {"-a", "value1", "nonOption", "-b", "value2"};
+        String[] expected = {"-a", "value1", "nonOption", "-b", "value2"};
+        assertArrayEquals(expected, parser.flatten(options, args, true));
+    }
+
+    @Test
+    public void testFlattenWithoutStopAtNonOption() {
+        String[] args = {"-a", "value1", "nonOption", "-b", "value2"};
+        String[] expected = {"-a", "value1", "nonOption", "-b", "value2"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testFlattenWithDoubleDash() {
+        String[] args = {"-a", "--", "-b", "value2"};
+        String[] expected = {"-a", "--", "-b", "value2"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testFlattenWithSingleDash() {
+        String[] args = {"-a", "-", "-b", "value2"};
+        String[] expected = {"-a", "-", "-b", "value2"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testFlattenWithUnknownOption() {
+        String[] args = {"-x", "value"};
+        String[] expected = {"-x", "value"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+}

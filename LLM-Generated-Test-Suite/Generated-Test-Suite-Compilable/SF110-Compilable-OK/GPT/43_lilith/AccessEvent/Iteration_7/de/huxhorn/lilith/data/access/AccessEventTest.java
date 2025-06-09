@@ -1,0 +1,145 @@
+package de.huxhorn.lilith.data.access;
+
+import de.huxhorn.lilith.data.access.AccessEvent;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class AccessEventTest {
+
+    private AccessEvent accessEvent;
+
+    @Before
+    public void setUp() {
+        accessEvent = new AccessEvent();
+    }
+
+    @Test
+    public void testGetSetTimeStamp() {
+        Long timeStamp = System.currentTimeMillis();
+        accessEvent.setTimeStamp(timeStamp);
+        assertEquals(timeStamp, accessEvent.getTimeStamp());
+    }
+
+    @Test
+    public void testGetSetLoggerContext() {
+        LoggerContext loggerContext = new LoggerContext();
+        accessEvent.setLoggerContext(loggerContext);
+        assertEquals(loggerContext, accessEvent.getLoggerContext());
+    }
+
+    @Test
+    public void testGetSetRequestURI() {
+        String requestURI = "/test/uri";
+        accessEvent.setRequestURI(requestURI);
+        assertEquals(requestURI, accessEvent.getRequestURI());
+    }
+
+    @Test
+    public void testGetSetRequestURL() {
+        String requestURL = "http://test.url";
+        accessEvent.setRequestURL(requestURL);
+        assertEquals(requestURL, accessEvent.getRequestURL());
+    }
+
+    @Test
+    public void testGetSetRemoteHost() {
+        String remoteHost = "remote.host";
+        accessEvent.setRemoteHost(remoteHost);
+        assertEquals(remoteHost, accessEvent.getRemoteHost());
+    }
+
+    @Test
+    public void testGetSetRemoteUser() {
+        String remoteUser = "remoteUser";
+        accessEvent.setRemoteUser(remoteUser);
+        assertEquals(remoteUser, accessEvent.getRemoteUser());
+    }
+
+    @Test
+    public void testGetSetProtocol() {
+        String protocol = "HTTP/1.1";
+        accessEvent.setProtocol(protocol);
+        assertEquals(protocol, accessEvent.getProtocol());
+    }
+
+    @Test
+    public void testGetSetMethod() {
+        String method = "GET";
+        accessEvent.setMethod(method);
+        assertEquals(method, accessEvent.getMethod());
+    }
+
+    @Test
+    public void testGetSetServerName() {
+        String serverName = "server.name";
+        accessEvent.setServerName(serverName);
+        assertEquals(serverName, accessEvent.getServerName());
+    }
+
+    @Test
+    public void testGetSetRemoteAddress() {
+        String remoteAddress = "192.168.1.1";
+        accessEvent.setRemoteAddress(remoteAddress);
+        assertEquals(remoteAddress, accessEvent.getRemoteAddress());
+    }
+
+    @Test
+    public void testGetSetRequestHeaders() {
+        Map<String, String> requestHeaders = new HashMap<>();
+        requestHeaders.put("Header1", "Value1");
+        accessEvent.setRequestHeaders(requestHeaders);
+        assertEquals(requestHeaders, accessEvent.getRequestHeaders());
+    }
+
+    @Test
+    public void testGetSetResponseHeaders() {
+        Map<String, String> responseHeaders = new HashMap<>();
+        responseHeaders.put("Header2", "Value2");
+        accessEvent.setResponseHeaders(responseHeaders);
+        assertEquals(responseHeaders, accessEvent.getResponseHeaders());
+    }
+
+    @Test
+    public void testGetSetRequestParameters() {
+        Map<String, String[]> requestParameters = new HashMap<>();
+        requestParameters.put("param1", new String[]{"value1"});
+        accessEvent.setRequestParameters(requestParameters);
+        assertEquals(requestParameters, accessEvent.getRequestParameters());
+    }
+
+    @Test
+    public void testGetSetLocalPort() {
+        int localPort = 8080;
+        accessEvent.setLocalPort(localPort);
+        assertEquals(localPort, accessEvent.getLocalPort());
+    }
+
+    @Test
+    public void testGetSetStatusCode() {
+        int statusCode = 200;
+        accessEvent.setStatusCode(statusCode);
+        assertEquals(statusCode, accessEvent.getStatusCode());
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        AccessEvent anotherEvent = new AccessEvent();
+        assertEquals(accessEvent, anotherEvent);
+        assertEquals(accessEvent.hashCode(), anotherEvent.hashCode());
+
+        accessEvent.setTimeStamp(System.currentTimeMillis());
+        assertNotEquals(accessEvent, anotherEvent);
+        assertNotEquals(accessEvent.hashCode(), anotherEvent.hashCode());
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "AccessEvent[loggerContext=null, timeStamp=null]";
+        assertEquals(expected, accessEvent.toString());
+    }
+}

@@ -1,0 +1,109 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `TCharHash` class. This test suite assumes that the `TCharHash` class is not abstract for testing purposes, or that a concrete subclass is available for instantiation. If `TCharHash` is abstract, you would need to create a concrete subclass for testing.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import gnu.trove.impl.hash.TCharHash;
+import gnu.trove.procedure.TCharProcedure;
+
+public class TCharHashTest {
+
+    private TCharHash tCharHash;
+
+    @Before
+    public void setUp() {
+        // Assuming a concrete subclass of TCharHash is available for instantiation
+        tCharHash = new TCharHash(10) {}; // Replace with a concrete subclass if necessary
+    }
+
+    @Test
+    public void testGetNoEntryValue() {
+        assertEquals(Constants.DEFAULT_CHAR_NO_ENTRY_VALUE, tCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testSetUp() {
+        int capacity = tCharHash.setUp(10);
+        assertEquals(10, capacity);
+        assertNotNull(tCharHash._set);
+        assertEquals(10, tCharHash._set.length);
+    }
+
+    @Test
+    public void testContains() {
+        tCharHash.insertKey('a');
+        assertTrue(tCharHash.contains('a'));
+        assertFalse(tCharHash.contains('b'));
+    }
+
+    @Test
+    public void testForEach() {
+        tCharHash.insertKey('a');
+        tCharHash.insertKey('b');
+        TCharProcedure procedure = new TCharProcedure() {
+            @Override
+            public boolean execute(char value) {
+                return value != 'b';
+            }
+        };
+        assertFalse(tCharHash.forEach(procedure));
+    }
+
+    @Test
+    public void testRemoveAt() {
+        int index = tCharHash.insertKey('a');
+        tCharHash.removeAt(index);
+        assertFalse(tCharHash.contains('a'));
+    }
+
+    @Test
+    public void testIndex() {
+        tCharHash.insertKey('a');
+        assertTrue(tCharHash.index('a') >= 0);
+        assertEquals(-1, tCharHash.index('b'));
+    }
+
+    @Test
+    public void testIndexRehashed() {
+        tCharHash.insertKey('a');
+        int index = tCharHash.index('a');
+        assertEquals(index, tCharHash.indexRehashed('a', index, HashFunctions.hash('a'), (byte) 1));
+    }
+
+    @Test
+    public void testInsertKey() {
+        int index = tCharHash.insertKey('a');
+        assertTrue(index >= 0);
+        assertTrue(tCharHash.contains('a'));
+    }
+
+    @Test
+    public void testInsertKeyRehash() {
+        int index = tCharHash.insertKey('a');
+        assertTrue(index >= 0);
+        assertTrue(tCharHash.contains('a'));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testInsertKeyRehashFull() {
+        for (int i = 0; i < tCharHash._set.length; i++) {
+            tCharHash.insertKey((char) ('a' + i));
+        }
+        tCharHash.insertKeyRehash('z', 0, HashFunctions.hash('z'), (byte) 0);
+    }
+
+    @Test
+    public void testInsertKeyAt() {
+        tCharHash.insertKeyAt(0, 'a');
+        assertEquals('a', tCharHash._set[0]);
+        assertEquals(1, tCharHash._states[0]);
+    }
+}
+```
+
+### Notes:
+- The test suite assumes that `Constants.DEFAULT_CHAR_NO_ENTRY_VALUE` and `HashFunctions.hash(char)` are accessible and correctly implemented.
+- The `TCharHash` class is assumed to be non-abstract for testing purposes. If it is abstract, you need to create a concrete subclass for testing.
+- The `testInsertKeyRehashFull` test is designed to trigger an `IllegalStateException` by filling the hash set to capacity and then attempting to insert another element.
+- The `setUp` method initializes the `TCharHash` instance before each test. Adjust the instantiation as needed based on the actual class hierarchy and constructors available.

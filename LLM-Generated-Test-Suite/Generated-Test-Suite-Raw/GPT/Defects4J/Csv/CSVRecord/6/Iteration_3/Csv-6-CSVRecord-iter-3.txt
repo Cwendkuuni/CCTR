@@ -1,0 +1,158 @@
+Certainly! Below is a JUnit 4 test suite for the `CSVRecord` class. This test suite aims to cover all the methods in the class, including edge cases and exceptions.
+
+```java
+import org.apache.commons.csv.CSVRecord;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class CSVRecordTest {
+
+    private CSVRecord csvRecordWithMapping;
+    private CSVRecord csvRecordWithoutMapping;
+    private Map<String, Integer> mapping;
+
+    @Before
+    public void setUp() {
+        mapping = new HashMap<>();
+        mapping.put("name", 0);
+        mapping.put("age", 1);
+        mapping.put("city", 2);
+
+        String[] values = {"John", "30", "New York"};
+        csvRecordWithMapping = new CSVRecord(values, mapping, "This is a comment", 1);
+        csvRecordWithoutMapping = new CSVRecord(values, null, null, 2);
+    }
+
+    @Test
+    public void testGetByEnum() {
+        enum Columns {name, age, city}
+        assertEquals("John", csvRecordWithMapping.get(Columns.name));
+        assertEquals("30", csvRecordWithMapping.get(Columns.age));
+        assertEquals("New York", csvRecordWithMapping.get(Columns.city));
+    }
+
+    @Test
+    public void testGetByIndex() {
+        assertEquals("John", csvRecordWithMapping.get(0));
+        assertEquals("30", csvRecordWithMapping.get(1));
+        assertEquals("New York", csvRecordWithMapping.get(2));
+    }
+
+    @Test
+    public void testGetByName() {
+        assertEquals("John", csvRecordWithMapping.get("name"));
+        assertEquals("30", csvRecordWithMapping.get("age"));
+        assertEquals("New York", csvRecordWithMapping.get("city"));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetByNameWithoutMapping() {
+        csvRecordWithoutMapping.get("name");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetByNameWithInvalidName() {
+        csvRecordWithMapping.get("invalid");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetByNameWithInconsistentRecord() {
+        Map<String, Integer> inconsistentMapping = new HashMap<>();
+        inconsistentMapping.put("name", 0);
+        inconsistentMapping.put("age", 1);
+        inconsistentMapping.put("city", 3); // Invalid index
+        CSVRecord inconsistentRecord = new CSVRecord(new String[]{"John", "30"}, inconsistentMapping, null, 3);
+        inconsistentRecord.get("city");
+    }
+
+    @Test
+    public void testGetComment() {
+        assertEquals("This is a comment", csvRecordWithMapping.getComment());
+        assertNull(csvRecordWithoutMapping.getComment());
+    }
+
+    @Test
+    public void testGetRecordNumber() {
+        assertEquals(1, csvRecordWithMapping.getRecordNumber());
+        assertEquals(2, csvRecordWithoutMapping.getRecordNumber());
+    }
+
+    @Test
+    public void testIsConsistent() {
+        assertTrue(csvRecordWithMapping.isConsistent());
+        assertTrue(csvRecordWithoutMapping.isConsistent());
+
+        Map<String, Integer> inconsistentMapping = new HashMap<>();
+        inconsistentMapping.put("name", 0);
+        inconsistentMapping.put("age", 1);
+        inconsistentMapping.put("city", 3); // Invalid index
+        CSVRecord inconsistentRecord = new CSVRecord(new String[]{"John", "30"}, inconsistentMapping, null, 3);
+        assertFalse(inconsistentRecord.isConsistent());
+    }
+
+    @Test
+    public void testIsMapped() {
+        assertTrue(csvRecordWithMapping.isMapped("name"));
+        assertFalse(csvRecordWithMapping.isMapped("invalid"));
+        assertFalse(csvRecordWithoutMapping.isMapped("name"));
+    }
+
+    @Test
+    public void testIsSet() {
+        assertTrue(csvRecordWithMapping.isSet("name"));
+        assertFalse(csvRecordWithMapping.isSet("invalid"));
+        assertFalse(csvRecordWithoutMapping.isSet("name"));
+    }
+
+    @Test
+    public void testIterator() {
+        Iterator<String> iterator = csvRecordWithMapping.iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("John", iterator.next());
+        assertEquals("30", iterator.next());
+        assertEquals("New York", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testPutIn() {
+        Map<String, String> map = new HashMap<>();
+        csvRecordWithMapping.putIn(map);
+        assertEquals("John", map.get("name"));
+        assertEquals("30", map.get("age"));
+        assertEquals("New York", map.get("city"));
+    }
+
+    @Test
+    public void testSize() {
+        assertEquals(3, csvRecordWithMapping.size());
+        assertEquals(3, csvRecordWithoutMapping.size());
+    }
+
+    @Test
+    public void testToMap() {
+        Map<String, String> map = csvRecordWithMapping.toMap();
+        assertEquals("John", map.get("name"));
+        assertEquals("30", map.get("age"));
+        assertEquals("New York", map.get("city"));
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("[John, 30, New York]", csvRecordWithMapping.toString());
+    }
+
+    @Test
+    public void testValues() {
+        assertArrayEquals(new String[]{"John", "30", "New York"}, csvRecordWithMapping.values());
+    }
+}
+```
+
+This test suite covers all public methods of the `CSVRecord` class, including edge cases and exception handling. Make sure to have the necessary JUnit 4 library in your classpath to run these tests.

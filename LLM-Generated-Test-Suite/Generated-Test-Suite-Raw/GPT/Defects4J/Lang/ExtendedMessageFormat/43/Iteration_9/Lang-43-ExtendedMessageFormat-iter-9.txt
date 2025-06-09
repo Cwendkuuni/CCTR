@@ -1,0 +1,137 @@
+Certainly! Below is a JUnit 4 test suite for the `ExtendedMessageFormat` class. This suite aims to cover the various methods and functionalities provided by the class.
+
+```java
+import static org.junit.Assert.*;
+
+import java.text.Format;
+import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+import org.apache.commons.lang.text.ExtendedMessageFormat;
+import org.apache.commons.lang.text.FormatFactory;
+import org.junit.Before;
+import org.junit.Test;
+
+public class ExtendedMessageFormatTest {
+
+    private static final String PATTERN = "Hello, {0}!";
+    private static final String CUSTOM_PATTERN = "Hello, {0,custom}!";
+    private static final String INVALID_PATTERN = "Hello, {0";
+    private static final Locale LOCALE = Locale.US;
+
+    private Map<String, FormatFactory> registry;
+
+    @Before
+    public void setUp() {
+        registry = new HashMap<>();
+        registry.put("custom", new CustomFormatFactory());
+    }
+
+    @Test
+    public void testConstructorWithPattern() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(PATTERN);
+        assertEquals(PATTERN, emf.toPattern());
+    }
+
+    @Test
+    public void testConstructorWithPatternAndLocale() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(PATTERN, LOCALE);
+        assertEquals(PATTERN, emf.toPattern());
+        assertEquals(LOCALE, emf.getLocale());
+    }
+
+    @Test
+    public void testConstructorWithPatternAndRegistry() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(CUSTOM_PATTERN, registry);
+        assertEquals(CUSTOM_PATTERN, emf.toPattern());
+    }
+
+    @Test
+    public void testConstructorWithPatternLocaleAndRegistry() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(CUSTOM_PATTERN, LOCALE, registry);
+        assertEquals(CUSTOM_PATTERN, emf.toPattern());
+        assertEquals(LOCALE, emf.getLocale());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithInvalidPattern() {
+        new ExtendedMessageFormat(INVALID_PATTERN);
+    }
+
+    @Test
+    public void testApplyPattern() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(PATTERN);
+        emf.applyPattern(CUSTOM_PATTERN);
+        assertEquals(CUSTOM_PATTERN, emf.toPattern());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormat() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(PATTERN);
+        emf.setFormat(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatByArgumentIndex() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(PATTERN);
+        emf.setFormatByArgumentIndex(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormats() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(PATTERN);
+        emf.setFormats(new Format[0]);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatsByArgumentIndex() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(PATTERN);
+        emf.setFormatsByArgumentIndex(new Format[0]);
+    }
+
+    @Test
+    public void testFormat() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(PATTERN);
+        String result = emf.format(new Object[]{"World"});
+        assertEquals("Hello, World!", result);
+    }
+
+    @Test
+    public void testCustomFormat() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(CUSTOM_PATTERN, registry);
+        String result = emf.format(new Object[]{"World"});
+        assertEquals("Hello, CUSTOM: World!", result);
+    }
+
+    private static class CustomFormatFactory implements FormatFactory {
+        @Override
+        public Format getFormat(String name, String args, Locale locale) {
+            return new CustomFormat();
+        }
+    }
+
+    private static class CustomFormat extends Format {
+        @Override
+        public StringBuffer format(Object obj, StringBuffer toAppendTo, java.text.FieldPosition pos) {
+            return toAppendTo.append("CUSTOM: ").append(obj);
+        }
+
+        @Override
+        public Object parseObject(String source, java.text.ParsePosition pos) {
+            return null;
+        }
+    }
+}
+```
+
+### Explanation:
+- **Setup**: A `setUp` method initializes a registry with a custom `FormatFactory` for testing custom formats.
+- **Constructors**: Tests for different constructors ensure that the `ExtendedMessageFormat` is initialized correctly with various parameters.
+- **Pattern Application**: Tests the `applyPattern` method to ensure patterns are applied correctly.
+- **Unsupported Operations**: Tests for methods that should throw `UnsupportedOperationException`.
+- **Formatting**: Tests the `format` method with both standard and custom formats to ensure correct output.
+- **Custom Format**: A custom format is tested to ensure that the registry and custom formatting logic are working as expected.
+
+This test suite should provide a comprehensive check of the `ExtendedMessageFormat` class's functionality.

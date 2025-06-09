@@ -1,0 +1,121 @@
+Certainly! Below is a JUnit 4 test suite for the `TucsonSimple` class. This test suite aims to cover the public methods and some of the private methods by using reflection where necessary.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.lang.reflect.Method;
+
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+
+    @Before
+    public void setUp() {
+        tucsonSimple = new TucsonSimple();
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("format.tucsonsimple", tucsonSimple.toString());
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        assertEquals(".RWL", tucsonSimple.getDefaultExtension());
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        BufferedReader reader = Mockito.mock(BufferedReader.class);
+        tucsonSimple.load(reader);
+    }
+
+    @Test
+    public void testMake6digitCode() throws Exception {
+        Sample sample = Mockito.mock(Sample.class);
+        Mockito.when(sample.meta.containsKey("id")).thenReturn(true);
+        Mockito.when(sample.meta.get("id")).thenReturn("123456789");
+
+        Method method = TucsonSimple.class.getDeclaredMethod("make6digitCode", Sample.class);
+        method.setAccessible(true);
+        String code = (String) method.invoke(tucsonSimple, sample);
+
+        assertEquals("123456", code);
+    }
+
+    @Test
+    public void testMake6digitCodeWithShortId() throws Exception {
+        Sample sample = Mockito.mock(Sample.class);
+        Mockito.when(sample.meta.containsKey("id")).thenReturn(true);
+        Mockito.when(sample.meta.get("id")).thenReturn("123");
+
+        Method method = TucsonSimple.class.getDeclaredMethod("make6digitCode", Sample.class);
+        method.setAccessible(true);
+        String code = (String) method.invoke(tucsonSimple, sample);
+
+        assertEquals("123   ", code);
+    }
+
+    @Test
+    public void testMake6digitCodeWithNoId() throws Exception {
+        Sample sample = Mockito.mock(Sample.class);
+        Mockito.when(sample.meta.containsKey("id")).thenReturn(false);
+
+        Method method = TucsonSimple.class.getDeclaredMethod("make6digitCode", Sample.class);
+        method.setAccessible(true);
+        String code = (String) method.invoke(tucsonSimple, sample);
+
+        assertEquals("000000", code);
+    }
+
+    @Test
+    public void testSaveData() throws Exception {
+        Sample sample = Mockito.mock(Sample.class);
+        BufferedWriter writer = new BufferedWriter(new StringWriter());
+
+        Method method = TucsonSimple.class.getDeclaredMethod("saveData", Sample.class, BufferedWriter.class);
+        method.setAccessible(true);
+        method.invoke(tucsonSimple, sample, writer);
+
+        // Add assertions based on expected output
+    }
+
+    @Test
+    public void testComputeRange() throws Exception {
+        Sample sample = Mockito.mock(Sample.class);
+        Range range = Mockito.mock(Range.class);
+        Year startYear = new Year(500);
+        Mockito.when(range.getStart()).thenReturn(startYear);
+        Mockito.when(sample.range).thenReturn(range);
+
+        Method method = TucsonSimple.class.getDeclaredMethod("computeRange", Sample.class);
+        method.setAccessible(true);
+        Range computedRange = (Range) method.invoke(tucsonSimple, sample);
+
+        // Add assertions based on expected range
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        Sample sample = Mockito.mock(Sample.class);
+        BufferedWriter writer = new BufferedWriter(new StringWriter());
+
+        tucsonSimple.save(sample, writer);
+
+        // Add assertions based on expected output
+    }
+}
+```
+
+### Notes:
+- The `make6digitCode`, `saveData`, and `computeRange` methods are private, so reflection is used to test them.
+- The `saveRowHeader` method is not directly tested because it is a private method and its functionality is indirectly tested through `saveData`.
+- The `saveData` and `computeRange` methods require more detailed assertions based on the expected behavior and output, which would depend on the actual implementation of the `Sample`, `Range`, and `Year` classes.
+- The `Sample`, `Range`, and `Year` classes are mocked using Mockito to simulate their behavior. You may need to adjust the mock setup based on the actual implementation of these classes.

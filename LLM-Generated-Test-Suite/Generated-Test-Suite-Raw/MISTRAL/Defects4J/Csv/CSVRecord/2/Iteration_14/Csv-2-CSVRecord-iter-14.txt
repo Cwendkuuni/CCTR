@@ -1,0 +1,128 @@
+```java
+import org.apache.commons.csv.CSVRecord;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
+public class CSVRecordTest {
+
+    private CSVRecord record;
+    private Map<String, Integer> mapping;
+    private String[] values;
+
+    @Before
+    public void setUp() {
+        values = new String[]{"value1", "value2", "value3"};
+        mapping = new HashMap<>();
+        mapping.put("column1", 0);
+        mapping.put("column2", 1);
+        mapping.put("column3", 2);
+        record = new CSVRecord(values, mapping, "comment", 1);
+    }
+
+    @Test
+    public void testGetByIndex() {
+        assertEquals("value1", record.get(0));
+        assertEquals("value2", record.get(1));
+        assertEquals("value3", record.get(2));
+    }
+
+    @Test(expected = ArrayIndexOutOfBoundsException.class)
+    public void testGetByIndexOutOfBounds() {
+        record.get(3);
+    }
+
+    @Test
+    public void testGetByName() {
+        assertEquals("value1", record.get("column1"));
+        assertEquals("value2", record.get("column2"));
+        assertEquals("value3", record.get("column3"));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetByNameNoMapping() {
+        CSVRecord recordNoMapping = new CSVRecord(values, null, "comment", 1);
+        recordNoMapping.get("column1");
+    }
+
+    @Test
+    public void testGetByNameNotFound() {
+        assertNull(record.get("column4"));
+    }
+
+    @Test
+    public void testIsConsistent() {
+        assertTrue(record.isConsistent());
+    }
+
+    @Test
+    public void testIsConsistentInconsistentRecord() {
+        String[] inconsistentValues = new String[]{"value1", "value2"};
+        CSVRecord inconsistentRecord = new CSVRecord(inconsistentValues, mapping, "comment", 1);
+        assertFalse(inconsistentRecord.isConsistent());
+    }
+
+    @Test
+    public void testIsMapped() {
+        assertTrue(record.isMapped("column1"));
+        assertTrue(record.isMapped("column2"));
+        assertTrue(record.isMapped("column3"));
+        assertFalse(record.isMapped("column4"));
+    }
+
+    @Test
+    public void testIsSet() {
+        assertTrue(record.isSet("column1"));
+        assertTrue(record.isSet("column2"));
+        assertTrue(record.isSet("column3"));
+        assertFalse(record.isSet("column4"));
+    }
+
+    @Test
+    public void testIterator() {
+        Iterator<String> iterator = record.iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals("value1", iterator.next());
+        assertEquals("value2", iterator.next());
+        assertEquals("value3", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testIteratorNoSuchElement() {
+        Iterator<String> iterator = record.iterator();
+        iterator.next();
+        iterator.next();
+        iterator.next();
+        iterator.next();
+    }
+
+    @Test
+    public void testValues() {
+        assertArrayEquals(values, record.values());
+    }
+
+    @Test
+    public void testGetComment() {
+        assertEquals("comment", record.getComment());
+    }
+
+    @Test
+    public void testGetRecordNumber() {
+        assertEquals(1, record.getRecordNumber());
+    }
+
+    @Test
+    public void testSize() {
+        assertEquals(3, record.size());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("[value1, value2, value3]", record.toString());
+    }
+}
+```

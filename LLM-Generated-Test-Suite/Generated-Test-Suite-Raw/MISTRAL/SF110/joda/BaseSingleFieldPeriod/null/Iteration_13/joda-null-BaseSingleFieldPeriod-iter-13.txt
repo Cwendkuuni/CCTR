@@ -1,0 +1,240 @@
+```java
+package org.joda.time.base;
+
+import org.joda.time.*;
+import org.joda.time.chrono.ISOChronology;
+import org.joda.time.field.DurationFieldType;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class BaseSingleFieldPeriodTest {
+
+    private BaseSingleFieldPeriod period;
+
+    @Before
+    public void setUp() {
+        period = new BaseSingleFieldPeriod(10) {
+            @Override
+            public DurationFieldType getFieldType() {
+                return DurationFieldType.days();
+            }
+
+            @Override
+            public PeriodType getPeriodType() {
+                return PeriodType.days();
+            }
+        };
+    }
+
+    @Test
+    public void testBetweenReadableInstant() {
+        ReadableInstant start = new DateTime(2000, 1, 1, 0, 0, 0, 0);
+        ReadableInstant end = new DateTime(2000, 1, 2, 0, 0, 0, 0);
+        assertEquals(1, BaseSingleFieldPeriod.between(start, end, DurationFieldType.days()));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBetweenReadableInstantNull() {
+        BaseSingleFieldPeriod.between(null, new DateTime(), DurationFieldType.days());
+    }
+
+    @Test
+    public void testBetweenReadablePartial() {
+        ReadablePartial start = new LocalDate(2000, 1, 1);
+        ReadablePartial end = new LocalDate(2000, 1, 2);
+        assertEquals(1, BaseSingleFieldPeriod.between(start, end, Period.days(1)));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBetweenReadablePartialNull() {
+        BaseSingleFieldPeriod.between(null, new LocalDate(), Period.days(1));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBetweenReadablePartialDifferentFields() {
+        ReadablePartial start = new LocalDate(2000, 1, 1);
+        ReadablePartial end = new LocalTime(1, 0);
+        BaseSingleFieldPeriod.between(start, end, Period.days(1));
+    }
+
+    @Test
+    public void testStandardPeriodIn() {
+        ReadablePeriod period = Period.days(10);
+        assertEquals(10, BaseSingleFieldPeriod.standardPeriodIn(period, 1));
+    }
+
+    @Test
+    public void testStandardPeriodInNull() {
+        assertEquals(0, BaseSingleFieldPeriod.standardPeriodIn(null, 1));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testStandardPeriodInNotPrecise() {
+        ReadablePeriod period = Period.months(1);
+        BaseSingleFieldPeriod.standardPeriodIn(period, 1);
+    }
+
+    @Test
+    public void testGetValue() {
+        assertEquals(10, period.getValue());
+    }
+
+    @Test
+    public void testSetValue() {
+        period.setValue(20);
+        assertEquals(20, period.getValue());
+    }
+
+    @Test
+    public void testSize() {
+        assertEquals(1, period.size());
+    }
+
+    @Test
+    public void testGetFieldType() {
+        assertEquals(DurationFieldType.days(), period.getFieldType());
+    }
+
+    @Test
+    public void testGetFieldTypeIndex() {
+        assertEquals(DurationFieldType.days(), period.getFieldType(0));
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testGetFieldTypeIndexOutOfBounds() {
+        period.getFieldType(1);
+    }
+
+    @Test
+    public void testGetValueIndex() {
+        assertEquals(10, period.getValue(0));
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testGetValueIndexOutOfBounds() {
+        period.getValue(1);
+    }
+
+    @Test
+    public void testGet() {
+        assertEquals(10, period.get(DurationFieldType.days()));
+        assertEquals(0, period.get(DurationFieldType.hours()));
+    }
+
+    @Test
+    public void testIsSupported() {
+        assertTrue(period.isSupported(DurationFieldType.days()));
+        assertFalse(period.isSupported(DurationFieldType.hours()));
+    }
+
+    @Test
+    public void testToPeriod() {
+        Period p = period.toPeriod();
+        assertEquals(Period.days(10), p);
+    }
+
+    @Test
+    public void testToMutablePeriod() {
+        MutablePeriod mp = period.toMutablePeriod();
+        assertEquals(Period.days(10), mp);
+    }
+
+    @Test
+    public void testEquals() {
+        BaseSingleFieldPeriod other = new BaseSingleFieldPeriod(10) {
+            @Override
+            public DurationFieldType getFieldType() {
+                return DurationFieldType.days();
+            }
+
+            @Override
+            public PeriodType getPeriodType() {
+                return PeriodType.days();
+            }
+        };
+        assertTrue(period.equals(other));
+    }
+
+    @Test
+    public void testEqualsDifferentValue() {
+        BaseSingleFieldPeriod other = new BaseSingleFieldPeriod(20) {
+            @Override
+            public DurationFieldType getFieldType() {
+                return DurationFieldType.days();
+            }
+
+            @Override
+            public PeriodType getPeriodType() {
+                return PeriodType.days();
+            }
+        };
+        assertFalse(period.equals(other));
+    }
+
+    @Test
+    public void testEqualsDifferentType() {
+        BaseSingleFieldPeriod other = new BaseSingleFieldPeriod(10) {
+            @Override
+            public DurationFieldType getFieldType() {
+                return DurationFieldType.hours();
+            }
+
+            @Override
+            public PeriodType getPeriodType() {
+                return PeriodType.hours();
+            }
+        };
+        assertFalse(period.equals(other));
+    }
+
+    @Test
+    public void testHashCode() {
+        BaseSingleFieldPeriod other = new BaseSingleFieldPeriod(10) {
+            @Override
+            public DurationFieldType getFieldType() {
+                return DurationFieldType.days();
+            }
+
+            @Override
+            public PeriodType getPeriodType() {
+                return PeriodType.days();
+            }
+        };
+        assertEquals(period.hashCode(), other.hashCode());
+    }
+
+    @Test
+    public void testCompareTo() {
+        BaseSingleFieldPeriod other = new BaseSingleFieldPeriod(20) {
+            @Override
+            public DurationFieldType getFieldType() {
+                return DurationFieldType.days();
+            }
+
+            @Override
+            public PeriodType getPeriodType() {
+                return PeriodType.days();
+            }
+        };
+        assertTrue(period.compareTo(other) < 0);
+    }
+
+    @Test(expected = ClassCastException.class)
+    public void testCompareToDifferentClass() {
+        BaseSingleFieldPeriod other = new BaseSingleFieldPeriod(10) {
+            @Override
+            public DurationFieldType getFieldType() {
+                return DurationFieldType.hours();
+            }
+
+            @Override
+            public PeriodType getPeriodType() {
+                return PeriodType.hours();
+            }
+        };
+        period.compareTo(other);
+    }
+}
+```

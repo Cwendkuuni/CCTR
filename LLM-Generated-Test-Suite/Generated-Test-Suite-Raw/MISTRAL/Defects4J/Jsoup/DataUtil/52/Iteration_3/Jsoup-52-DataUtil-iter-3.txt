@@ -1,0 +1,129 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `DataUtil` class. This test suite covers all the public and static methods in the `DataUtil` class.
+
+```java
+package org.jsoup.helper;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+
+import static org.junit.Assert.*;
+
+public class DataUtilTest {
+
+    private File testFile;
+    private String testContent;
+    private String baseUri;
+
+    @Before
+    public void setUp() throws IOException {
+        testContent = "<html><head><meta charset=\"UTF-8\"></head><body>Test</body></html>";
+        testFile = File.createTempFile("test", ".html");
+        try (OutputStream out = new java.io.FileOutputStream(testFile)) {
+            out.write(testContent.getBytes(StandardCharsets.UTF_8));
+        }
+        baseUri = "http://example.com";
+    }
+
+    @Test
+    public void testLoadFile() throws IOException {
+        Document doc = DataUtil.load(testFile, "UTF-8", baseUri);
+        assertNotNull(doc);
+        assertEquals("Test", doc.body().text());
+    }
+
+    @Test
+    public void testLoadInputStream() throws IOException {
+        InputStream in = new ByteArrayInputStream(testContent.getBytes(StandardCharsets.UTF_8));
+        Document doc = DataUtil.load(in, "UTF-8", baseUri);
+        assertNotNull(doc);
+        assertEquals("Test", doc.body().text());
+    }
+
+    @Test
+    public void testLoadInputStreamWithParser() throws IOException {
+        InputStream in = new ByteArrayInputStream(testContent.getBytes(StandardCharsets.UTF_8));
+        Document doc = DataUtil.load(in, "UTF-8", baseUri, Parser.xmlParser());
+        assertNotNull(doc);
+        assertEquals("Test", doc.body().text());
+    }
+
+    @Test
+    public void testCrossStreams() throws IOException {
+        InputStream in = new ByteArrayInputStream(testContent.getBytes(StandardCharsets.UTF_8));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        DataUtil.crossStreams(in, out);
+        assertEquals(testContent, out.toString(StandardCharsets.UTF_8.name()));
+    }
+
+    @Test
+    public void testReadToByteBuffer() throws IOException {
+        InputStream in = new ByteArrayInputStream(testContent.getBytes(StandardCharsets.UTF_8));
+        ByteBuffer buffer = DataUtil.readToByteBuffer(in);
+        assertNotNull(buffer);
+        assertEquals(testContent, StandardCharsets.UTF_8.decode(buffer).toString());
+    }
+
+    @Test
+    public void testReadToByteBufferWithMaxSize() throws IOException {
+        InputStream in = new ByteArrayInputStream(testContent.getBytes(StandardCharsets.UTF_8));
+        ByteBuffer buffer = DataUtil.readToByteBuffer(in, 10);
+        assertNotNull(buffer);
+        assertEquals(testContent.substring(0, 10), StandardCharsets.UTF_8.decode(buffer).toString());
+    }
+
+    @Test
+    public void testReadFileToByteBuffer() throws IOException {
+        ByteBuffer buffer = DataUtil.readFileToByteBuffer(testFile);
+        assertNotNull(buffer);
+        assertEquals(testContent, StandardCharsets.UTF_8.decode(buffer).toString());
+    }
+
+    @Test
+    public void testEmptyByteBuffer() {
+        ByteBuffer buffer = DataUtil.emptyByteBuffer();
+        assertNotNull(buffer);
+        assertEquals(0, buffer.capacity());
+    }
+
+    @Test
+    public void testGetCharsetFromContentType() {
+        String contentType = "text/html; charset=UTF-8";
+        String charset = DataUtil.getCharsetFromContentType(contentType);
+        assertEquals("UTF-8", charset);
+    }
+
+    @Test
+    public void testGetCharsetFromContentTypeInvalid() {
+        String contentType = "text/html; charset=INVALID";
+        String charset = DataUtil.getCharsetFromContentType(contentType);
+        assertNull(charset);
+    }
+
+    @Test
+    public void testMimeBoundary() {
+        String boundary = DataUtil.mimeBoundary();
+        assertNotNull(boundary);
+        assertEquals(DataUtil.boundaryLength, boundary.length());
+    }
+
+    @Test
+    public void testDetectCharsetFromBom() {
+        ByteBuffer buffer = ByteBuffer.wrap(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
+        String charset = DataUtil.detectCharsetFromBom(buffer, null);
+        assertEquals("UTF-8", charset);
+    }
+}
+```
+
+This test suite includes tests for each method in the `DataUtil` class, ensuring that all functionalities are covered. Each test method verifies the expected behavior of the corresponding method in the `DataUtil` class.

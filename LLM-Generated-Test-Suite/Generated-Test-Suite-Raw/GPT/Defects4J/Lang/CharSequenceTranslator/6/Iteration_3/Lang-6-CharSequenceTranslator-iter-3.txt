@@ -1,0 +1,95 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import org.junit.Before;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+
+public class CharSequenceTranslatorTest {
+
+    private CharSequenceTranslator translator;
+
+    @Before
+    public void setUp() {
+        // Create a simple CharSequenceTranslator for testing purposes
+        translator = new CharSequenceTranslator() {
+            @Override
+            public int translate(CharSequence input, int index, Writer out) throws IOException {
+                // Simple translation: convert lowercase to uppercase
+                char c = input.charAt(index);
+                if (Character.isLowerCase(c)) {
+                    out.write(Character.toUpperCase(c));
+                    return 1;
+                }
+                return 0;
+            }
+        };
+    }
+
+    @Test
+    public void testTranslateCharSequenceToString() {
+        String input = "hello";
+        String expected = "HELLO";
+        String result = translator.translate(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testTranslateCharSequenceToWriter() throws IOException {
+        String input = "world";
+        String expected = "WORLD";
+        StringWriter writer = new StringWriter();
+        translator.translate(input, writer);
+        assertEquals(expected, writer.toString());
+    }
+
+    @Test
+    public void testTranslateNullCharSequenceToString() {
+        assertNull(translator.translate(null));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTranslateNullWriter() throws IOException {
+        translator.translate("test", null);
+    }
+
+    @Test
+    public void testTranslateEmptyCharSequence() throws IOException {
+        StringWriter writer = new StringWriter();
+        translator.translate("", writer);
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testWithMethod() {
+        CharSequenceTranslator additionalTranslator = new CharSequenceTranslator() {
+            @Override
+            public int translate(CharSequence input, int index, Writer out) throws IOException {
+                // Simple translation: convert 'a' to '@'
+                char c = input.charAt(index);
+                if (c == 'a') {
+                    out.write('@');
+                    return 1;
+                }
+                return 0;
+            }
+        };
+
+        CharSequenceTranslator combinedTranslator = translator.with(additionalTranslator);
+        String input = "java";
+        String expected = "J@V@";
+        String result = combinedTranslator.translate(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testHexMethod() {
+        assertEquals("41", CharSequenceTranslator.hex(65)); // 'A'
+        assertEquals("7A", CharSequenceTranslator.hex(122)); // 'z'
+        assertEquals("1F600", CharSequenceTranslator.hex(0x1F600)); // 😀
+    }
+}
+```
+
+This test suite covers the methods in the `CharSequenceTranslator` class, including the abstract `translate` method, which is implemented in the test setup for testing purposes. The tests include scenarios for translating strings, handling null inputs, combining translators, and converting codepoints to hexadecimal strings.

@@ -1,0 +1,132 @@
+Certainly! Below is a JUnit 4 test suite for the `WriteableCommandLine` interface. Since `WriteableCommandLine` is an interface, we need to create a mock or a simple implementation for testing purposes. For simplicity, I'll create a basic mock implementation within the test suite.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class WriteableCommandLineTest {
+
+    private WriteableCommandLine commandLine;
+    private Option mockOption;
+
+    @Before
+    public void setUp() {
+        commandLine = new MockWriteableCommandLine();
+        mockOption = mock(Option.class);
+    }
+
+    @Test
+    public void testAddOption() {
+        commandLine.addOption(mockOption);
+        assertTrue(((MockWriteableCommandLine) commandLine).options.contains(mockOption));
+    }
+
+    @Test
+    public void testAddValue() {
+        commandLine.addValue(mockOption, "value1");
+        List<Object> values = ((MockWriteableCommandLine) commandLine).values.get(mockOption);
+        assertNotNull(values);
+        assertTrue(values.contains("value1"));
+    }
+
+    @Test
+    public void testSetDefaultValues() {
+        List<Object> defaultValues = new ArrayList<>();
+        defaultValues.add("default1");
+        commandLine.setDefaultValues(mockOption, defaultValues);
+        List<Object> values = ((MockWriteableCommandLine) commandLine).defaultValues.get(mockOption);
+        assertEquals(defaultValues, values);
+    }
+
+    @Test
+    public void testAddSwitch() {
+        commandLine.addSwitch(mockOption, true);
+        Boolean switchValue = ((MockWriteableCommandLine) commandLine).switches.get(mockOption);
+        assertTrue(switchValue);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAddSwitchThrowsException() {
+        commandLine.addSwitch(mockOption, true);
+        commandLine.addSwitch(mockOption, false); // Should throw exception
+    }
+
+    @Test
+    public void testSetDefaultSwitch() {
+        commandLine.setDefaultSwitch(mockOption, true);
+        Boolean defaultSwitch = ((MockWriteableCommandLine) commandLine).defaultSwitches.get(mockOption);
+        assertTrue(defaultSwitch);
+    }
+
+    @Test
+    public void testAddProperty() {
+        commandLine.addProperty("property1", "value1");
+        String propertyValue = ((MockWriteableCommandLine) commandLine).properties.get("property1");
+        assertEquals("value1", propertyValue);
+    }
+
+    @Test
+    public void testLooksLikeOption() {
+        assertTrue(commandLine.looksLikeOption("--option"));
+        assertFalse(commandLine.looksLikeOption("value"));
+    }
+
+    // Mock implementation for testing purposes
+    private class MockWriteableCommandLine implements WriteableCommandLine {
+        List<Option> options = new ArrayList<>();
+        Map<Option, List<Object>> values = new HashMap<>();
+        Map<Option, List<Object>> defaultValues = new HashMap<>();
+        Map<Option, Boolean> switches = new HashMap<>();
+        Map<Option, Boolean> defaultSwitches = new HashMap<>();
+        Map<String, String> properties = new HashMap<>();
+
+        @Override
+        public void addOption(Option option) {
+            options.add(option);
+        }
+
+        @Override
+        public void addValue(Option option, Object value) {
+            values.computeIfAbsent(option, k -> new ArrayList<>()).add(value);
+        }
+
+        @Override
+        public void setDefaultValues(Option option, List defaultValues) {
+            this.defaultValues.put(option, defaultValues);
+        }
+
+        @Override
+        public void addSwitch(Option option, boolean value) throws IllegalStateException {
+            if (switches.containsKey(option)) {
+                throw new IllegalStateException("Switch already added");
+            }
+            switches.put(option, value);
+        }
+
+        @Override
+        public void setDefaultSwitch(Option option, Boolean defaultSwitch) {
+            defaultSwitches.put(option, defaultSwitch);
+        }
+
+        @Override
+        public void addProperty(String property, String value) {
+            properties.put(property, value);
+        }
+
+        @Override
+        public boolean looksLikeOption(String argument) {
+            return argument.startsWith("-");
+        }
+    }
+}
+```
+
+This test suite uses a mock implementation of the `WriteableCommandLine` interface to test each method. The `MockWriteableCommandLine` class is a simple in-memory implementation that stores options, values, switches, and properties. The test cases cover adding options, values, switches, properties, and checking if a string looks like an option.

@@ -1,0 +1,117 @@
+package com.ib.client;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class ComboLegTest {
+
+    private ComboLeg comboLeg1;
+    private ComboLeg comboLeg2;
+    private ComboLeg comboLeg3;
+
+    @Before
+    public void setUp() {
+        comboLeg1 = new ComboLeg(1, 2, "BUY", "NYSE", ComboLeg.OPEN, 1, "Location1");
+        comboLeg2 = new ComboLeg(1, 2, "BUY", "NYSE", ComboLeg.OPEN, 1, "Location1");
+        comboLeg3 = new ComboLeg(2, 3, "SELL", "NASDAQ", ComboLeg.CLOSE, 2, "Location2");
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        ComboLeg defaultComboLeg = new ComboLeg();
+        assertEquals(0, defaultComboLeg.m_conId);
+        assertEquals(0, defaultComboLeg.m_ratio);
+        assertNull(defaultComboLeg.m_action);
+        assertNull(defaultComboLeg.m_exchange);
+        assertEquals(0, defaultComboLeg.m_openClose);
+        assertEquals(0, defaultComboLeg.m_shortSaleSlot);
+        assertNull(defaultComboLeg.m_designatedLocation);
+    }
+
+    @Test
+    public void testConstructorWithFiveParameters() {
+        ComboLeg comboLeg = new ComboLeg(1, 2, "BUY", "NYSE", ComboLeg.OPEN);
+        assertEquals(1, comboLeg.m_conId);
+        assertEquals(2, comboLeg.m_ratio);
+        assertEquals("BUY", comboLeg.m_action);
+        assertEquals("NYSE", comboLeg.m_exchange);
+        assertEquals(ComboLeg.OPEN, comboLeg.m_openClose);
+        assertEquals(0, comboLeg.m_shortSaleSlot);
+        assertNull(comboLeg.m_designatedLocation);
+    }
+
+    @Test
+    public void testConstructorWithSevenParameters() {
+        ComboLeg comboLeg = new ComboLeg(1, 2, "BUY", "NYSE", ComboLeg.OPEN, 1, "Location1");
+        assertEquals(1, comboLeg.m_conId);
+        assertEquals(2, comboLeg.m_ratio);
+        assertEquals("BUY", comboLeg.m_action);
+        assertEquals("NYSE", comboLeg.m_exchange);
+        assertEquals(ComboLeg.OPEN, comboLeg.m_openClose);
+        assertEquals(1, comboLeg.m_shortSaleSlot);
+        assertEquals("Location1", comboLeg.m_designatedLocation);
+    }
+
+    @Test
+    public void testEquals_SameObject() {
+        assertTrue(comboLeg1.equals(comboLeg1));
+    }
+
+    @Test
+    public void testEquals_DifferentObjectNull() {
+        assertFalse(comboLeg1.equals(null));
+    }
+
+    @Test
+    public void testEquals_DifferentObjectSameValues() {
+        assertTrue(comboLeg1.equals(comboLeg2));
+    }
+
+    @Test
+    public void testEquals_DifferentObjectDifferentValues() {
+        assertFalse(comboLeg1.equals(comboLeg3));
+    }
+
+    @Test
+    public void testEquals_DifferentObjectDifferentConId() {
+        ComboLeg differentConId = new ComboLeg(2, 2, "BUY", "NYSE", ComboLeg.OPEN, 1, "Location1");
+        assertFalse(comboLeg1.equals(differentConId));
+    }
+
+    @Test
+    public void testEquals_DifferentObjectDifferentRatio() {
+        ComboLeg differentRatio = new ComboLeg(1, 3, "BUY", "NYSE", ComboLeg.OPEN, 1, "Location1");
+        assertFalse(comboLeg1.equals(differentRatio));
+    }
+
+    @Test
+    public void testEquals_DifferentObjectDifferentAction() {
+        ComboLeg differentAction = new ComboLeg(1, 2, "SELL", "NYSE", ComboLeg.OPEN, 1, "Location1");
+        assertFalse(comboLeg1.equals(differentAction));
+    }
+
+    @Test
+    public void testEquals_DifferentObjectDifferentExchange() {
+        ComboLeg differentExchange = new ComboLeg(1, 2, "BUY", "NASDAQ", ComboLeg.OPEN, 1, "Location1");
+        assertFalse(comboLeg1.equals(differentExchange));
+    }
+
+    @Test
+    public void testEquals_DifferentObjectDifferentOpenClose() {
+        ComboLeg differentOpenClose = new ComboLeg(1, 2, "BUY", "NYSE", ComboLeg.CLOSE, 1, "Location1");
+        assertFalse(comboLeg1.equals(differentOpenClose));
+    }
+
+    @Test
+    public void testEquals_DifferentObjectDifferentShortSaleSlot() {
+        ComboLeg differentShortSaleSlot = new ComboLeg(1, 2, "BUY", "NYSE", ComboLeg.OPEN, 2, "Location1");
+        assertFalse(comboLeg1.equals(differentShortSaleSlot));
+    }
+
+    @Test
+    public void testEquals_DifferentObjectDifferentDesignatedLocation() {
+        ComboLeg differentDesignatedLocation = new ComboLeg(1, 2, "BUY", "NYSE", ComboLeg.OPEN, 1, "Location2");
+        assertFalse(comboLeg1.equals(differentDesignatedLocation));
+    }
+}

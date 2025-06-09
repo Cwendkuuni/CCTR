@@ -1,0 +1,117 @@
+```java
+package org.jsoup.nodes;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Entities;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class EntitiesTest {
+
+    private Map<String, Character> baseEntities;
+    private Map<String, Character> fullEntities;
+    private Map<Character, String> xhtmlByVal;
+    private Map<Character, String> baseByVal;
+    private Map<Character, String> fullByVal;
+
+    @Before
+    public void setUp() {
+        baseEntities = new HashMap<>();
+        baseEntities.put("quot", '"');
+        baseEntities.put("amp", '&');
+        baseEntities.put("lt", '<');
+        baseEntities.put("gt", '>');
+
+        fullEntities = new HashMap<>(baseEntities);
+        fullEntities.put("nbsp", '\u00A0');
+
+        xhtmlByVal = new HashMap<>();
+        xhtmlByVal.put('"', "quot");
+        xhtmlByVal.put('&', "amp");
+        xhtmlByVal.put('<', "lt");
+        xhtmlByVal.put('>', "gt");
+
+        baseByVal = new HashMap<>(xhtmlByVal);
+
+        fullByVal = new HashMap<>(baseByVal);
+        fullByVal.put('\u00A0', "nbsp");
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("quot"));
+        assertTrue(Entities.isNamedEntity("amp"));
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertTrue(Entities.isNamedEntity("gt"));
+        assertTrue(Entities.isNamedEntity("nbsp"));
+        assertFalse(Entities.isNamedEntity("unknown"));
+    }
+
+    @Test
+    public void testIsBaseNamedEntity() {
+        assertTrue(Entities.isBaseNamedEntity("quot"));
+        assertTrue(Entities.isBaseNamedEntity("amp"));
+        assertTrue(Entities.isBaseNamedEntity("lt"));
+        assertTrue(Entities.isBaseNamedEntity("gt"));
+        assertFalse(Entities.isBaseNamedEntity("nbsp"));
+        assertFalse(Entities.isBaseNamedEntity("unknown"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('"'), Entities.getCharacterByName("quot"));
+        assertEquals(Character.valueOf('&'), Entities.getCharacterByName("amp"));
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertEquals(Character.valueOf('>'), Entities.getCharacterByName("gt"));
+        assertEquals(Character.valueOf('\u00A0'), Entities.getCharacterByName("nbsp"));
+        assertNull(Entities.getCharacterByName("unknown"));
+    }
+
+    @Test
+    public void testEscape() {
+        Document.OutputSettings outputSettings = new Document.OutputSettings();
+        outputSettings.escapeMode(Entities.EscapeMode.base);
+
+        assertEquals("&amp;&lt;&gt;&quot;&nbsp;", Entities.escape("&<>\"" + '\u00A0', outputSettings));
+
+        outputSettings.escapeMode(Entities.EscapeMode.xhtml);
+        assertEquals("&amp;&lt;&gt;&quot;\u00A0", Entities.escape("&<>\"" + '\u00A0', outputSettings));
+
+        outputSettings.escapeMode(Entities.EscapeMode.extended);
+        assertEquals("&amp;&lt;&gt;&quot;&nbsp;", Entities.escape("&<>\"" + '\u00A0', outputSettings));
+    }
+
+    @Test
+    public void testUnescape() {
+        assertEquals("&<>\"" + '\u00A0', Entities.unescape("&amp;&lt;&gt;&quot;&nbsp;"));
+        assertEquals("&<>\"" + '\u00A0', Entities.unescape("&amp;&lt;&gt;&quot;&nbsp;", true));
+        assertEquals("&<>\"" + '\u00A0', Entities.unescape("&amp;&lt;&gt;&quot;&nbsp;", false));
+    }
+
+    @Test
+    public void testCanEncode() {
+        assertTrue(Entities.canEncode(Entities.CoreCharset.ascii, 'a', null));
+        assertTrue(Entities.canEncode(Entities.CoreCharset.utf, 'a', null));
+        assertFalse(Entities.canEncode(Entities.CoreCharset.ascii, '\u00A0', null));
+        assertTrue(Entities.canEncode(Entities.CoreCharset.utf, '\u00A0', null));
+    }
+
+    @Test
+    public void testLoadEntities() {
+        Map<String, Character> entities = Entities.loadEntities("entities-base.properties");
+        assertNotNull(entities);
+        assertFalse(entities.isEmpty());
+    }
+
+    @Test
+    public void testToCharacterKey() {
+        Map<Character, String> characterKeyMap = Entities.toCharacterKey(baseEntities);
+        assertEquals(xhtmlByVal, characterKeyMap);
+    }
+}
+```

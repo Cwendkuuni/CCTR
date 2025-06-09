@@ -1,0 +1,112 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `Response` class. This suite includes tests for all public methods and some private methods by leveraging reflection where necessary.
+
+```java
+import org.junit.*;
+import org.mockito.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ResponseTest {
+
+    private HttpURLConnection mockConnection;
+    private InputStream mockInputStream;
+    private InputStream mockErrorStream;
+
+    @Before
+    public void setUp() throws Exception {
+        mockConnection = mock(HttpURLConnection.class);
+        mockInputStream = new ByteArrayInputStream("Success body".getBytes());
+        mockErrorStream = new ByteArrayInputStream("Error body".getBytes());
+    }
+
+    @Test
+    public void testSuccessfulResponse() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getInputStream()).thenReturn(mockInputStream);
+        when(mockConnection.getHeaderFields()).thenReturn(getMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(200, response.getCode());
+        assertEquals("Success body", response.getBody());
+        assertEquals("value1", response.getHeader("header1"));
+        assertNotNull(response.getHeaders());
+        assertEquals(mockInputStream, response.getStream());
+    }
+
+    @Test
+    public void testErrorResponse() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(404);
+        when(mockConnection.getErrorStream()).thenReturn(mockErrorStream);
+        when(mockConnection.getHeaderFields()).thenReturn(getMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("Error body", response.getBody());
+        assertEquals("value1", response.getHeader("header1"));
+        assertNotNull(response.getHeaders());
+        assertEquals(mockErrorStream, response.getStream());
+    }
+
+    @Test
+    public void testUnknownHostException() throws Exception {
+        when(mockConnection.connect()).thenThrow(new UnknownHostException());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("", response.getBody());
+    }
+
+    @Test
+    public void testParseHeaders() throws Exception {
+        when(mockConnection.getHeaderFields()).thenReturn(getMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        Map<String, String> headers = response.getHeaders();
+        assertEquals(2, headers.size());
+        assertEquals("value1", headers.get("header1"));
+        assertEquals("value2", headers.get("header2"));
+    }
+
+    @Test
+    public void testWasSuccessful() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        Response response = new Response(mockConnection);
+        assertTrue(invokeWasSuccessful(response));
+
+        when(mockConnection.getResponseCode()).thenReturn(404);
+        response = new Response(mockConnection);
+        assertFalse(invokeWasSuccessful(response));
+    }
+
+    private Map<String, List<String>> getMockHeaders() {
+        Map<String, List<String>> headers = new HashMap<>();
+        headers.put("header1", Collections.singletonList("value1"));
+        headers.put("header2", Collections.singletonList("value2"));
+        return headers;
+    }
+
+    private boolean invokeWasSuccessful(Response response) throws Exception {
+        java.lang.reflect.Method method = Response.class.getDeclaredMethod("wasSuccessful");
+        method.setAccessible(true);
+        return (boolean) method.invoke(response);
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock `HttpURLConnection` and its behavior to simulate different scenarios.
+- **Test Cases**:
+  - **testSuccessfulResponse**: Tests a successful HTTP response (status code 200).
+  - **testErrorResponse**: Tests an error HTTP response (status code 404).
+  - **testUnknownHostException**: Tests the behavior when an `UnknownHostException` is thrown.
+  - **testParseHeaders**: Verifies that headers are correctly parsed.
+  - **testWasSuccessful**: Uses reflection to test the private `wasSuccessful` method.
+- **Reflection**: Used to access the private `wasSuccessful` method for testing purposes.

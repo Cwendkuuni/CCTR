@@ -1,0 +1,148 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.exceptions.Reporter;
+import org.mockito.internal.configuration.injection.filter.FinalMockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.OngoingInjecter;
+import org.mockito.internal.util.reflection.BeanPropertySetter;
+import org.mockito.internal.util.reflection.FieldSetter;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class FinalMockCandidateFilterTest {
+
+    private FinalMockCandidateFilter filter;
+    private Field field;
+    private Object fieldInstance;
+
+    @Before
+    public void setUp() throws Exception {
+        filter = new FinalMockCandidateFilter();
+        field = TestClass.class.getDeclaredField("testField");
+        fieldInstance = new TestClass();
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMock() throws Exception {
+        Object mock = mock(Object.class);
+        Collection<Object> mocks = Collections.singletonList(mock);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        Object result = injecter.thenInject();
+
+        assertEquals(mock, result);
+        verify(mock, times(0)).toString(); // Just to ensure no unexpected interactions
+    }
+
+    @Test
+    public void testFilterCandidateWithMultipleMocks() throws Exception {
+        Object mock1 = mock(Object.class);
+        Object mock2 = mock(Object.class);
+        Collection<Object> mocks = Arrays.asList(mock1, mock2);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        Object result = injecter.thenInject();
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testFilterCandidateWithEmptyMocks() throws Exception {
+        Collection<Object> mocks = Collections.emptyList();
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        Object result = injecter.thenInject();
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testFilterCandidateWithBeanPropertySetterSuccess() throws Exception {
+        Object mock = mock(Object.class);
+        Collection<Object> mocks = Collections.singletonList(mock);
+
+        BeanPropertySetter beanPropertySetter = mock(BeanPropertySetter.class);
+        when(beanPropertySetter.set(mock)).thenReturn(true);
+
+        FieldSetter fieldSetter = mock(FieldSetter.class);
+
+        // Mock the constructors of BeanPropertySetter and FieldSetter
+        whenNew(BeanPropertySetter.class).withArguments(fieldInstance, field).thenReturn(beanPropertySetter);
+        whenNew(FieldSetter.class).withArguments(fieldInstance, field).thenReturn(fieldSetter);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        Object result = injecter.thenInject();
+
+        assertEquals(mock, result);
+        verify(beanPropertySetter).set(mock);
+        verify(fieldSetter, never()).set(mock);
+    }
+
+    @Test
+    public void testFilterCandidateWithBeanPropertySetterFailure() throws Exception {
+        Object mock = mock(Object.class);
+        Collection<Object> mocks = Collections.singletonList(mock);
+
+        BeanPropertySetter beanPropertySetter = mock(BeanPropertySetter.class);
+        when(beanPropertySetter.set(mock)).thenReturn(false);
+
+        FieldSetter fieldSetter = mock(FieldSetter.class);
+
+        // Mock the constructors of BeanPropertySetter and FieldSetter
+        whenNew(BeanPropertySetter.class).withArguments(fieldInstance, field).thenReturn(beanPropertySetter);
+        whenNew(FieldSetter.class).withArguments(fieldInstance, field).thenReturn(fieldSetter);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        Object result = injecter.thenInject();
+
+        assertEquals(mock, result);
+        verify(beanPropertySetter).set(mock);
+        verify(fieldSetter).set(mock);
+    }
+
+    @Test
+    public void testFilterCandidateWithException() throws Exception {
+        Object mock = mock(Object.class);
+        Collection<Object> mocks = Collections.singletonList(mock);
+
+        BeanPropertySetter beanPropertySetter = mock(BeanPropertySetter.class);
+        when(beanPropertySetter.set(mock)).thenThrow(new RuntimeException("Test Exception"));
+
+        FieldSetter fieldSetter = mock(FieldSetter.class);
+
+        // Mock the constructors of BeanPropertySetter and FieldSetter
+        whenNew(BeanPropertySetter.class).withArguments(fieldInstance, field).thenReturn(beanPropertySetter);
+        whenNew(FieldSetter.class).withArguments(fieldInstance, field).thenReturn(fieldSetter);
+
+        Reporter reporter = mock(Reporter.class);
+        whenNew(Reporter.class).withNoArguments().thenReturn(reporter);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        Object result = injecter.thenInject();
+
+        assertEquals(mock, result);
+        verify(reporter).cannotInjectDependency(field, mock, any(RuntimeException.class));
+    }
+
+    // Helper class for testing
+    public static class TestClass {
+        public String testField;
+    }
+
+    // Helper method to mock constructor calls
+    public static <T> T whenNew(Class<T> clazz) throws Exception {
+        return mock(clazz);
+    }
+
+    public static <T> T whenNew(Class<T> clazz, Object... args) throws Exception {
+        return mock(clazz);
+    }
+}
+```

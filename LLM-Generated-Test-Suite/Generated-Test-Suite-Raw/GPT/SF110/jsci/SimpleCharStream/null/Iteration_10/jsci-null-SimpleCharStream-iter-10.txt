@@ -1,0 +1,146 @@
+To create a comprehensive JUnit 4 test suite for the `SimpleCharStream` class, we need to test each method, especially focusing on edge cases and typical usage scenarios. Below is a test suite that covers the main functionalities of the class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.*;
+
+public class SimpleCharStreamTest {
+
+    private SimpleCharStream simpleCharStream;
+    private Reader reader;
+
+    @Before
+    public void setUp() throws Exception {
+        String testString = "Hello\nWorld\r\nThis is a test.";
+        reader = new StringReader(testString);
+        simpleCharStream = new SimpleCharStream(reader);
+    }
+
+    @Test
+    public void testBeginToken() throws IOException {
+        char c = SimpleCharStream.BeginToken();
+        assertEquals('H', c);
+    }
+
+    @Test
+    public void testReadChar() throws IOException {
+        char c = SimpleCharStream.readChar();
+        assertEquals('H', c);
+        c = SimpleCharStream.readChar();
+        assertEquals('e', c);
+    }
+
+    @Test
+    public void testGetColumn() throws IOException {
+        SimpleCharStream.readChar(); // H
+        SimpleCharStream.readChar(); // e
+        assertEquals(3, SimpleCharStream.getColumn());
+    }
+
+    @Test
+    public void testGetLine() throws IOException {
+        SimpleCharStream.readChar(); // H
+        SimpleCharStream.readChar(); // e
+        assertEquals(1, SimpleCharStream.getLine());
+    }
+
+    @Test
+    public void testGetEndColumn() throws IOException {
+        SimpleCharStream.readChar(); // H
+        SimpleCharStream.readChar(); // e
+        assertEquals(3, SimpleCharStream.getEndColumn());
+    }
+
+    @Test
+    public void testGetEndLine() throws IOException {
+        SimpleCharStream.readChar(); // H
+        SimpleCharStream.readChar(); // e
+        assertEquals(1, SimpleCharStream.getEndLine());
+    }
+
+    @Test
+    public void testGetBeginColumn() throws IOException {
+        SimpleCharStream.BeginToken();
+        SimpleCharStream.readChar(); // H
+        assertEquals(1, SimpleCharStream.getBeginColumn());
+    }
+
+    @Test
+    public void testGetBeginLine() throws IOException {
+        SimpleCharStream.BeginToken();
+        SimpleCharStream.readChar(); // H
+        assertEquals(1, SimpleCharStream.getBeginLine());
+    }
+
+    @Test
+    public void testBackup() throws IOException {
+        SimpleCharStream.readChar(); // H
+        SimpleCharStream.readChar(); // e
+        SimpleCharStream.backup(1);
+        assertEquals('e', SimpleCharStream.readChar());
+    }
+
+    @Test
+    public void testGetImage() throws IOException {
+        SimpleCharStream.BeginToken();
+        SimpleCharStream.readChar(); // H
+        SimpleCharStream.readChar(); // e
+        assertEquals("He", SimpleCharStream.GetImage());
+    }
+
+    @Test
+    public void testGetSuffix() throws IOException {
+        SimpleCharStream.readChar(); // H
+        SimpleCharStream.readChar(); // e
+        char[] suffix = SimpleCharStream.GetSuffix(2);
+        assertArrayEquals(new char[]{'H', 'e'}, suffix);
+    }
+
+    @Test
+    public void testDone() {
+        SimpleCharStream.Done();
+        assertNull(SimpleCharStream.buffer);
+        assertNull(SimpleCharStream.bufline);
+        assertNull(SimpleCharStream.bufcolumn);
+    }
+
+    @Test
+    public void testAdjustBeginLineColumn() throws IOException {
+        SimpleCharStream.BeginToken();
+        SimpleCharStream.readChar(); // H
+        SimpleCharStream.readChar(); // e
+        SimpleCharStream.adjustBeginLineColumn(2, 5);
+        assertEquals(2, SimpleCharStream.getBeginLine());
+        assertEquals(5, SimpleCharStream.getBeginColumn());
+    }
+
+    @Test(expected = IOException.class)
+    public void testFillBuffIOException() throws IOException {
+        SimpleCharStream.Done();
+        SimpleCharStream.FillBuff();
+    }
+
+    @Test
+    public void testExpandBuff() {
+        SimpleCharStream.ExpandBuff(false);
+        assertTrue(SimpleCharStream.bufsize > 4096);
+    }
+
+    @Test
+    public void testReInit() throws IOException {
+        SimpleCharStream.ReInit(reader, 1, 1, 4096);
+        assertEquals(1, SimpleCharStream.getLine());
+        assertEquals(1, SimpleCharStream.getColumn());
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `SimpleCharStream` instance with a `StringReader` containing a test string.
+- **Tests**: Each test method checks a specific functionality of the `SimpleCharStream` class. For example, `testBeginToken` checks if the `BeginToken` method correctly returns the first character.
+- **Edge Cases**: The test suite includes edge cases such as testing the `FillBuff` method when the buffer is null, which should throw an `IOException`.
+- **Assertions**: Each test uses assertions to verify that the actual output matches the expected output.
+
+This test suite provides a comprehensive coverage of the `SimpleCharStream` class's methods, ensuring that they function correctly under various conditions.

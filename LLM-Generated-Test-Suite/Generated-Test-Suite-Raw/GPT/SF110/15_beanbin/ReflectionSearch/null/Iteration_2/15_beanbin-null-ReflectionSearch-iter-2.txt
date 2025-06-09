@@ -1,0 +1,110 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `ReflectionSearch` class. This suite assumes that the necessary classes and methods (like `WildcardSearch`, `Query`, `MethodReflectionCriteria`, `SearchType`, `Conditional`, `ReflectionShelf`, `Criteria`, `ReflectionCriteria`, and `BeanBinException`) are properly defined and available in your testing environment.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ReflectionSearchTest {
+
+    private ReflectionSearch reflectionSearch;
+    private Class<?> testClass;
+
+    @Before
+    public void setUp() {
+        testClass = TestClass.class;
+        reflectionSearch = new ReflectionSearch(testClass);
+    }
+
+    @Test
+    public void testHasAnnotationWithExactMatch() {
+        assertTrue(reflectionSearch.hasAnnotation("@TestAnnotation"));
+    }
+
+    @Test
+    public void testHasAnnotationWithWildcardMatch() {
+        assertTrue(reflectionSearch.hasAnnotation("@Test*"));
+    }
+
+    @Test
+    public void testHasAnnotationWithNoMatch() {
+        assertFalse(reflectionSearch.hasAnnotation("@NonExistent"));
+    }
+
+    @Test
+    public void testMethodsThatHave() throws Exception {
+        ReflectionSearch result = reflectionSearch.methodsThatHave("testMethod");
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testMethodsThatDontHave() throws Exception {
+        ReflectionSearch result = reflectionSearch.methodsThatDontHave("nonExistentMethod");
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testAnd() {
+        ReflectionSearch result = reflectionSearch.and();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOr() {
+        ReflectionSearch result = reflectionSearch.or();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testGetMethods() throws Exception {
+        List<Method> methods = reflectionSearch.getMethods();
+        assertNotNull(methods);
+    }
+
+    @Test
+    public void testIntersect() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        Method method = Mockito.mock(Method.class);
+        master.add(method);
+        toAdd.add(method);
+
+        reflectionSearch.intersect(master, toAdd);
+        assertEquals(1, master.size());
+    }
+
+    @Test
+    public void testUnion() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        Method method = Mockito.mock(Method.class);
+        toAdd.add(method);
+
+        reflectionSearch.union(master, toAdd);
+        assertEquals(1, master.size());
+    }
+
+    // Mock class and annotation for testing
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface TestAnnotation {}
+
+    @TestAnnotation
+    private static class TestClass {
+        public void testMethod() {}
+    }
+}
+```
+
+### Explanation:
+- **Annotations and Mocking**: The test suite uses a mock class `TestClass` and a mock annotation `TestAnnotation` to simulate the environment in which `ReflectionSearch` operates.
+- **Mockito**: Mockito is used to mock `Method` objects for testing `intersect` and `union` methods.
+- **Test Methods**: Each method in `ReflectionSearch` is tested, including private methods like `intersect` and `union`, by using reflection or by testing through public methods that use them.
+- **Assertions**: Various assertions are used to ensure that the methods behave as expected.
+
+Ensure that you have the necessary dependencies for JUnit 4 and Mockito in your project to run these tests successfully.

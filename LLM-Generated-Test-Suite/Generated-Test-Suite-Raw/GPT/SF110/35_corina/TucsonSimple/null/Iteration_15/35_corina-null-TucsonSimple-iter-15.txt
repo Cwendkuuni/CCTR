@@ -1,0 +1,126 @@
+Certainly! Below is a JUnit 4 test suite for the `TucsonSimple` class. This suite tests the public methods and some of the private methods using reflection. Note that testing private methods directly is generally not recommended, but it can be done using reflection for completeness in this context.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+    private Sample sample;
+    private BufferedWriter writer;
+
+    @Before
+    public void setUp() {
+        tucsonSimple = new TucsonSimple();
+        sample = mock(Sample.class);
+        writer = new BufferedWriter(new StringWriter());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("format.tucsonsimple", tucsonSimple.toString());
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        assertEquals(".RWL", tucsonSimple.getDefaultExtension());
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        tucsonSimple.load(new BufferedReader(new StringReader("")));
+    }
+
+    @Test
+    public void testMake6digitCode() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("make6digitCode", Sample.class);
+        method.setAccessible(true);
+
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "1234567");
+        when(sample.meta).thenReturn(meta);
+
+        String code = (String) method.invoke(tucsonSimple, sample);
+        assertEquals("123456", code);
+
+        meta.put("id", "123");
+        code = (String) method.invoke(tucsonSimple, sample);
+        assertEquals("123   ", code);
+
+        meta.remove("id");
+        code = (String) method.invoke(tucsonSimple, sample);
+        assertEquals("000000", code);
+    }
+
+    @Test
+    public void testSaveRowHeader() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("saveRowHeader", BufferedWriter.class, Sample.class, String.class, int.class, Year.class);
+        method.setAccessible(true);
+
+        Range range = mock(Range.class);
+        when(range.getStart()).thenReturn(new Year(2000));
+        when(sample.range).thenReturn(range);
+
+        method.invoke(tucsonSimple, writer, sample, "123456", 6, new Year(1999));
+        writer.flush();
+        assertEquals("2000", writer.toString().trim());
+    }
+
+    @Test
+    public void testSaveData() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("saveData", Sample.class, BufferedWriter.class);
+        method.setAccessible(true);
+
+        Range range = mock(Range.class);
+        when(range.getStart()).thenReturn(new Year(2000));
+        when(range.getEnd()).thenReturn(new Year(2005));
+        when(sample.range).thenReturn(range);
+
+        Map<Year, Integer> data = new HashMap<>();
+        data.put(new Year(2000), 100);
+        data.put(new Year(2001), 200);
+        when(sample.data).thenReturn(data);
+
+        method.invoke(tucsonSimple, sample, writer);
+        writer.flush();
+        assertTrue(writer.toString().contains("100"));
+        assertTrue(writer.toString().contains("200"));
+    }
+
+    @Test
+    public void testComputeRange() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("computeRange", Sample.class);
+        method.setAccessible(true);
+
+        Range range = mock(Range.class);
+        when(range.getStart()).thenReturn(new Year(500));
+        when(sample.range).thenReturn(range);
+
+        Range computedRange = (Range) method.invoke(tucsonSimple, sample);
+        assertNotNull(computedRange);
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        tucsonSimple.save(sample, writer);
+        writer.flush();
+        assertNotNull(writer.toString());
+    }
+}
+```
+
+### Notes:
+- **Mocking**: The `Sample` class and its methods are mocked using Mockito to simulate behavior without needing the actual implementation.
+- **Reflection**: Private methods are tested using reflection, which allows invoking methods that are not accessible directly.
+- **Assertions**: Various assertions are used to verify the expected outcomes of method calls.
+- **Exception Testing**: The `load` method is tested to ensure it throws the expected `WrongFiletypeException`.
+
+This test suite assumes that the `Sample`, `Year`, `Range`, and other related classes/interfaces are available and correctly implemented. Adjust the test cases as necessary to fit the actual implementations of these classes.

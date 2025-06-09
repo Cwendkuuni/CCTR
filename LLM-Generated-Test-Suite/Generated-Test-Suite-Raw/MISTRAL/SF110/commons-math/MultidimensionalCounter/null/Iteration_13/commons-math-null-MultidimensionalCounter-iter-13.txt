@@ -1,0 +1,151 @@
+```java
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
+import org.apache.commons.math3.exception.OutOfRangeException;
+import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Iterator;
+
+import static org.junit.Assert.*;
+
+public class MultidimensionalCounterTest {
+
+    private MultidimensionalCounter counter;
+
+    @Before
+    public void setUp() throws NotStrictlyPositiveException {
+        counter = new MultidimensionalCounter(2, 3, 4);
+    }
+
+    @Test
+    public void testConstructor() {
+        try {
+            new MultidimensionalCounter(0, 1, 2);
+            fail("Expected NotStrictlyPositiveException");
+        } catch (NotStrictlyPositiveException e) {
+            // Expected
+        }
+
+        try {
+            new MultidimensionalCounter(-1, 1, 2);
+            fail("Expected NotStrictlyPositiveException");
+        } catch (NotStrictlyPositiveException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testGetDimension() {
+        assertEquals(3, counter.getDimension());
+    }
+
+    @Test
+    public void testGetCounts() {
+        try {
+            int[] counts = counter.getCounts(0);
+            assertArrayEquals(new int[]{0, 0, 0}, counts);
+
+            counts = counter.getCounts(23);
+            assertArrayEquals(new int[]{1, 1, 3}, counts);
+
+            counter.getCounts(-1);
+            fail("Expected OutOfRangeException");
+        } catch (OutOfRangeException e) {
+            // Expected
+        }
+
+        try {
+            counter.getCounts(24);
+            fail("Expected OutOfRangeException");
+        } catch (OutOfRangeException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testGetCount() {
+        try {
+            assertEquals(0, counter.getCount(0, 0, 0));
+            assertEquals(23, counter.getCount(1, 1, 3));
+
+            counter.getCount(0, 0);
+            fail("Expected DimensionMismatchException");
+        } catch (DimensionMismatchException e) {
+            // Expected
+        }
+
+        try {
+            counter.getCount(1, 1, 4);
+            fail("Expected OutOfRangeException");
+        } catch (OutOfRangeException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testGetSize() {
+        assertEquals(24, counter.getSize());
+    }
+
+    @Test
+    public void testGetSizes() {
+        assertArrayEquals(new int[]{2, 3, 4}, counter.getSizes());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("[0][0][0]", counter.toString());
+    }
+
+    @Test
+    public void testIterator() {
+        Iterator<Integer> iterator = counter.iterator();
+        assertTrue(iterator.hasNext());
+
+        int count = 0;
+        while (iterator.hasNext()) {
+            assertEquals(count, (int) iterator.next());
+            count++;
+        }
+        assertEquals(24, count);
+
+        try {
+            iterator.remove();
+            fail("Expected UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testIteratorGetCount() {
+        Iterator<Integer> iterator = counter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+        }
+        assertEquals(23, iterator.getCount());
+    }
+
+    @Test
+    public void testIteratorGetCounts() {
+        Iterator<Integer> iterator = counter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+        }
+        assertArrayEquals(new int[]{1, 1, 3}, iterator.getCounts());
+    }
+
+    @Test
+    public void testIteratorGetCountDim() {
+        Iterator<Integer> iterator = counter.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+        }
+        assertEquals(1, iterator.getCount(0));
+        assertEquals(1, iterator.getCount(1));
+        assertEquals(3, iterator.getCount(2));
+    }
+}
+```

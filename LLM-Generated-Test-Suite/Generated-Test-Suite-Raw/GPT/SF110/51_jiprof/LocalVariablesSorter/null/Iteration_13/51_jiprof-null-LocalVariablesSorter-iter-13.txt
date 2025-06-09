@@ -1,0 +1,99 @@
+Certainly! Below is a JUnit 4 test suite for the `LocalVariablesSorter` class. This test suite aims to cover the main functionalities of the class, including the remapping of local variables and the handling of different types of instructions.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.objectweb.asm.jip.MethodVisitor;
+import org.objectweb.asm.jip.Type;
+import org.objectweb.asm.jip.Label;
+import org.objectweb.asm.jip.Opcodes;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class LocalVariablesSorterTest {
+
+    private LocalVariablesSorter localVariablesSorter;
+    private MethodVisitor mockMethodVisitor;
+
+    @Before
+    public void setUp() {
+        mockMethodVisitor = mock(MethodVisitor.class);
+        localVariablesSorter = new LocalVariablesSorter(Opcodes.ACC_PUBLIC, "(I)V", mockMethodVisitor);
+    }
+
+    @Test
+    public void testVisitVarInsn() {
+        localVariablesSorter.visitVarInsn(Opcodes.ILOAD, 1);
+        verify(mockMethodVisitor).visitVarInsn(eq(Opcodes.ILOAD), anyInt());
+    }
+
+    @Test
+    public void testVisitIincInsn() {
+        localVariablesSorter.visitIincInsn(1, 5);
+        verify(mockMethodVisitor).visitIincInsn(anyInt(), eq(5));
+    }
+
+    @Test
+    public void testVisitMaxs() {
+        localVariablesSorter.visitMaxs(10, 10);
+        verify(mockMethodVisitor).visitMaxs(10, localVariablesSorter.nextLocal);
+    }
+
+    @Test
+    public void testVisitLocalVariable() {
+        Label start = new Label();
+        Label end = new Label();
+        localVariablesSorter.visitLocalVariable("var", "I", null, start, end, 1);
+        verify(mockMethodVisitor).visitLocalVariable(eq("var"), eq("I"), isNull(), eq(start), eq(end), anyInt());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testVisitFrameWithInvalidType() {
+        localVariablesSorter.visitFrame(0, 0, new Object[0], 0, new Object[0]);
+    }
+
+    @Test
+    public void testVisitFrameWithValidType() {
+        Object[] locals = new Object[]{Opcodes.INTEGER};
+        Object[] stack = new Object[]{};
+        localVariablesSorter.visitFrame(-1, 1, locals, 0, stack);
+        verify(mockMethodVisitor).visitFrame(-1, 1, locals, 0, stack);
+    }
+
+    @Test
+    public void testNewLocal() {
+        int localIndex = localVariablesSorter.newLocal(Type.INT_TYPE);
+        assertEquals(localVariablesSorter.firstLocal, localIndex);
+    }
+
+    @Test
+    public void testRemap() {
+        int remappedIndex = localVariablesSorter.remap(1, Type.INT_TYPE);
+        assertTrue(remappedIndex >= 0);
+    }
+
+    @Test
+    public void testSetFrameLocal() {
+        localVariablesSorter.setFrameLocal(0, Opcodes.INTEGER);
+        assertEquals(Opcodes.INTEGER, localVariablesSorter.newLocals[0]);
+    }
+
+    @Test
+    public void testNewLocalMapping() {
+        int localIndex = localVariablesSorter.newLocalMapping(Type.INT_TYPE);
+        assertTrue(localIndex >= localVariablesSorter.firstLocal);
+    }
+}
+```
+
+### Explanation:
+- **Setup**: A mock `MethodVisitor` is used to verify interactions with the `LocalVariablesSorter`.
+- **Test Methods**:
+  - `testVisitVarInsn`, `testVisitIincInsn`, `testVisitMaxs`, `testVisitLocalVariable`: These tests verify that the corresponding methods in `MethodVisitor` are called with the expected parameters.
+  - `testVisitFrameWithInvalidType`: Tests that an `IllegalStateException` is thrown when an invalid frame type is used.
+  - `testVisitFrameWithValidType`: Verifies that the `visitFrame` method works correctly with valid input.
+  - `testNewLocal`, `testRemap`, `testSetFrameLocal`, `testNewLocalMapping`: These tests check the internal logic of the `LocalVariablesSorter` class, ensuring that local variables are correctly remapped and managed.
+
+This test suite uses Mockito to mock the `MethodVisitor` and verify interactions, ensuring that the `LocalVariablesSorter` behaves as expected.

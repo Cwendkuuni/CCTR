@@ -1,0 +1,97 @@
+Certainly! Below is a JUnit 4 test suite for the `TabbedPane` class. This test suite aims to cover the methods in the class, including the constructor, overridden methods, and the `handleSelectedFile` method.
+
+```java
+package ghm.follow.gui;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import ghm.follow.config.FollowAppAttributes;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+
+public class TabbedPaneTest {
+
+    private TabbedPane tabbedPane;
+    private FollowAppAttributes mockAttributes;
+    private FileFollowingPane mockPane;
+    private File mockFile;
+    private File mockParentFile;
+
+    @Before
+    public void setUp() {
+        mockAttributes = mock(FollowAppAttributes.class);
+        when(mockAttributes.getTabPlacement()).thenReturn(JTabbedPane.TOP);
+        tabbedPane = new TabbedPane(mockAttributes);
+
+        mockPane = mock(FileFollowingPane.class);
+        mockFile = mock(File.class);
+        mockParentFile = mock(File.class);
+
+        when(mockPane.getFollowedFile()).thenReturn(mockFile);
+        when(mockFile.getParentFile()).thenReturn(mockParentFile);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(tabbedPane);
+        assertEquals(JTabbedPane.TOP, tabbedPane.getTabPlacement());
+    }
+
+    @Test
+    public void testFindComponentAt() {
+        Component component = new JButton();
+        tabbedPane.add(component);
+        component.setBounds(10, 10, 100, 100);
+
+        assertNull(tabbedPane.findComponentAt(5, 5)); // Outside component bounds
+        assertEquals(component, tabbedPane.findComponentAt(15, 15)); // Inside component bounds
+    }
+
+    @Test
+    public void testSetSelectedIndex() {
+        tabbedPane.add(mockPane);
+        tabbedPane.setSelectedIndex(0);
+
+        verify(mockAttributes, times(1)).setLastFileChooserDirectory(mockParentFile);
+    }
+
+    @Test
+    public void testSetSelectedComponent() {
+        tabbedPane.add(mockPane);
+        tabbedPane.setSelectedComponent(mockPane);
+
+        verify(mockAttributes, times(1)).setLastFileChooserDirectory(mockParentFile);
+    }
+
+    @Test
+    public void testRemoveTabAt() {
+        tabbedPane.add(mockPane);
+        tabbedPane.removeTabAt(0);
+
+        verify(mockAttributes, times(1)).setLastFileChooserDirectory(mockParentFile);
+    }
+
+    @Test
+    public void testHandleSelectedFileWithNullPane() {
+        tabbedPane.handleSelectedFile();
+        verify(mockAttributes, never()).setLastFileChooserDirectory(any(File.class));
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: We use Mockito to create mock objects for `FollowAppAttributes`, `FileFollowingPane`, `File`, and `File`'s parent directory.
+- **Constructor Test**: Verifies that the `TabbedPane` is initialized correctly with the tab placement from `FollowAppAttributes`.
+- **findComponentAt Test**: Tests the `findComponentAt` method by adding a component and checking if it is correctly found or not based on coordinates.
+- **setSelectedIndex Test**: Tests the `setSelectedIndex` method to ensure it calls `handleSelectedFile` and updates the last file chooser directory.
+- **setSelectedComponent Test**: Similar to `setSelectedIndex`, but for setting the selected component directly.
+- **removeTabAt Test**: Ensures that removing a tab also triggers `handleSelectedFile`.
+- **handleSelectedFileWithNullPane Test**: Ensures that if no pane is selected, `setLastFileChooserDirectory` is not called.
+
+This test suite should provide comprehensive coverage for the `TabbedPane` class methods.

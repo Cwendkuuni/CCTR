@@ -1,0 +1,276 @@
+```java
+package org.jdom2.output;
+
+import org.jdom2.*;
+import org.jdom2.output.support.*;
+import org.junit.*;
+import java.io.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+
+public class XMLOutputterTest {
+
+    private XMLOutputter xmlOutputter;
+    private Format format;
+    private XMLOutputProcessor processor;
+
+    @Before
+    public void setUp() {
+        format = Format.getPrettyFormat();
+        processor = new DefaultXMLProcessor();
+        xmlOutputter = new XMLOutputter(format, processor);
+    }
+
+    @Test
+    public void testConstructorWithFormatAndProcessor() {
+        XMLOutputter outputter = new XMLOutputter(format, processor);
+        assertNotNull(outputter);
+        assertEquals(format, outputter.getFormat());
+        assertEquals(processor, outputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        XMLOutputter outputter = new XMLOutputter();
+        assertNotNull(outputter);
+        assertNotNull(outputter.getFormat());
+        assertNotNull(outputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testConstructorWithXMLOutputter() {
+        XMLOutputter outputter = new XMLOutputter(xmlOutputter);
+        assertNotNull(outputter);
+        assertEquals(xmlOutputter.getFormat(), outputter.getFormat());
+        assertEquals(xmlOutputter.getXMLOutputProcessor(), outputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testConstructorWithFormat() {
+        XMLOutputter outputter = new XMLOutputter(format);
+        assertNotNull(outputter);
+        assertEquals(format, outputter.getFormat());
+        assertNotNull(outputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testConstructorWithProcessor() {
+        XMLOutputter outputter = new XMLOutputter(processor);
+        assertNotNull(outputter);
+        assertNotNull(outputter.getFormat());
+        assertEquals(processor, outputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testSetFormat() {
+        Format newFormat = Format.getCompactFormat();
+        xmlOutputter.setFormat(newFormat);
+        assertEquals(newFormat, xmlOutputter.getFormat());
+    }
+
+    @Test
+    public void testGetFormat() {
+        assertEquals(format, xmlOutputter.getFormat());
+    }
+
+    @Test
+    public void testGetXMLOutputProcessor() {
+        assertEquals(processor, xmlOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testSetXMLOutputProcessor() {
+        XMLOutputProcessor newProcessor = new DefaultXMLProcessor();
+        xmlOutputter.setXMLOutputProcessor(newProcessor);
+        assertEquals(newProcessor, xmlOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testOutputDocumentToOutputStream() throws IOException {
+        Document doc = new Document(new Element("root"));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(doc, out);
+        assertTrue(out.toString().contains("<root/>"));
+    }
+
+    @Test
+    public void testOutputDocTypeToOutputStream() throws IOException {
+        DocType doctype = new DocType("root");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(doctype, out);
+        assertTrue(out.toString().contains("<!DOCTYPE root>"));
+    }
+
+    @Test
+    public void testOutputElementToOutputStream() throws IOException {
+        Element element = new Element("root");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(element, out);
+        assertTrue(out.toString().contains("<root/>"));
+    }
+
+    @Test
+    public void testOutputElementContentToOutputStream() throws IOException {
+        Element element = new Element("root").setText("content");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.outputElementContent(element, out);
+        assertTrue(out.toString().contains("content"));
+    }
+
+    @Test
+    public void testOutputListToOutputStream() throws IOException {
+        List<Content> list = new ArrayList<>();
+        list.add(new Element("root"));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(list, out);
+        assertTrue(out.toString().contains("<root/>"));
+    }
+
+    @Test
+    public void testOutputCDATAToOutputStream() throws IOException {
+        CDATA cdata = new CDATA("content");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(cdata, out);
+        assertTrue(out.toString().contains("<![CDATA[content]]>"));
+    }
+
+    @Test
+    public void testOutputTextToOutputStream() throws IOException {
+        Text text = new Text("content");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(text, out);
+        assertTrue(out.toString().contains("content"));
+    }
+
+    @Test
+    public void testOutputCommentToOutputStream() throws IOException {
+        Comment comment = new Comment("comment");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(comment, out);
+        assertTrue(out.toString().contains("<!--comment-->"));
+    }
+
+    @Test
+    public void testOutputProcessingInstructionToOutputStream() throws IOException {
+        ProcessingInstruction pi = new ProcessingInstruction("target", "data");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(pi, out);
+        assertTrue(out.toString().contains("<?target data?>"));
+    }
+
+    @Test
+    public void testOutputEntityRefToOutputStream() throws IOException {
+        EntityRef entity = new EntityRef("entity");
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(entity, out);
+        assertTrue(out.toString().contains("&entity;"));
+    }
+
+    @Test
+    public void testOutputStringDocument() {
+        Document doc = new Document(new Element("root"));
+        String result = xmlOutputter.outputString(doc);
+        assertTrue(result.contains("<root/>"));
+    }
+
+    @Test
+    public void testOutputStringDocType() {
+        DocType doctype = new DocType("root");
+        String result = xmlOutputter.outputString(doctype);
+        assertTrue(result.contains("<!DOCTYPE root>"));
+    }
+
+    @Test
+    public void testOutputStringElement() {
+        Element element = new Element("root");
+        String result = xmlOutputter.outputString(element);
+        assertTrue(result.contains("<root/>"));
+    }
+
+    @Test
+    public void testOutputStringList() {
+        List<Content> list = new ArrayList<>();
+        list.add(new Element("root"));
+        String result = xmlOutputter.outputString(list);
+        assertTrue(result.contains("<root/>"));
+    }
+
+    @Test
+    public void testOutputStringCDATA() {
+        CDATA cdata = new CDATA("content");
+        String result = xmlOutputter.outputString(cdata);
+        assertTrue(result.contains("<![CDATA[content]]>"));
+    }
+
+    @Test
+    public void testOutputStringText() {
+        Text text = new Text("content");
+        String result = xmlOutputter.outputString(text);
+        assertTrue(result.contains("content"));
+    }
+
+    @Test
+    public void testOutputStringComment() {
+        Comment comment = new Comment("comment");
+        String result = xmlOutputter.outputString(comment);
+        assertTrue(result.contains("<!--comment-->"));
+    }
+
+    @Test
+    public void testOutputStringProcessingInstruction() {
+        ProcessingInstruction pi = new ProcessingInstruction("target", "data");
+        String result = xmlOutputter.outputString(pi);
+        assertTrue(result.contains("<?target data?>"));
+    }
+
+    @Test
+    public void testOutputStringEntityRef() {
+        EntityRef entity = new EntityRef("entity");
+        String result = xmlOutputter.outputString(entity);
+        assertTrue(result.contains("&entity;"));
+    }
+
+    @Test
+    public void testOutputElementContentString() {
+        Element element = new Element("root").setText("content");
+        String result = xmlOutputter.outputElementContentString(element);
+        assertTrue(result.contains("content"));
+    }
+
+    @Test
+    public void testEscapeAttributeEntities() {
+        String str = "&<>";
+        String result = xmlOutputter.escapeAttributeEntities(str);
+        assertEquals("&amp;&lt;&gt;", result);
+    }
+
+    @Test
+    public void testEscapeElementEntities() {
+        String str = "&<>";
+        String result = xmlOutputter.escapeElementEntities(str);
+        assertEquals("&amp;&lt;&gt;", result);
+    }
+
+    @Test
+    public void testClone() {
+        XMLOutputter cloned = xmlOutputter.clone();
+        assertNotSame(xmlOutputter, cloned);
+        assertEquals(xmlOutputter.getFormat(), cloned.getFormat());
+        assertEquals(xmlOutputter.getXMLOutputProcessor(), cloned.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testToString() {
+        String result = xmlOutputter.toString();
+        assertTrue(result.contains("XMLOutputter"));
+        assertTrue(result.contains("omitDeclaration"));
+        assertTrue(result.contains("encoding"));
+        assertTrue(result.contains("omitEncoding"));
+        assertTrue(result.contains("indent"));
+        assertTrue(result.contains("expandEmptyElements"));
+        assertTrue(result.contains("lineSeparator"));
+        assertTrue(result.contains("textMode"));
+    }
+}
+```

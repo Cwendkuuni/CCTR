@@ -1,0 +1,73 @@
+To create a comprehensive JUnit 4 test suite for the `MP3` class, we need to consider testing the constructor and the `run` method. However, testing audio playback functionality can be challenging due to its reliance on external resources and hardware. For this reason, the test suite will focus on verifying the behavior of the constructor and the handling of exceptions within the `run` method.
+
+Here's a basic test suite for the `MP3` class:
+
+```java
+import org.junit.*;
+import static org.junit.Assert.*;
+import java.io.*;
+
+public class MP3Test {
+
+    private static final String VALID_MP3_FILE = "test.mp3";
+    private static final String INVALID_MP3_FILE = "invalid.mp3";
+
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        // Create a dummy valid MP3 file for testing
+        File validFile = new File(VALID_MP3_FILE);
+        if (!validFile.exists()) {
+            try (FileOutputStream fos = new FileOutputStream(validFile)) {
+                fos.write(new byte[100]); // Write dummy data
+            }
+        }
+    }
+
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+        // Clean up the dummy MP3 file
+        File validFile = new File(VALID_MP3_FILE);
+        if (validFile.exists()) {
+            validFile.delete();
+        }
+    }
+
+    @Test
+    public void testConstructor() {
+        MP3 mp3 = new MP3(VALID_MP3_FILE);
+        assertNotNull("MP3 object should not be null", mp3);
+        assertEquals("Filename should be set correctly", VALID_MP3_FILE, mp3.filename);
+    }
+
+    @Test
+    public void testRunWithValidFile() {
+        MP3 mp3 = new MP3(VALID_MP3_FILE);
+        try {
+            mp3.run();
+            // If no exception is thrown, the test passes
+        } catch (Exception e) {
+            fail("Exception should not be thrown for a valid file: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testRunWithInvalidFile() {
+        MP3 mp3 = new MP3(INVALID_MP3_FILE);
+        try {
+            mp3.run();
+            // If no exception is thrown, the test fails
+            fail("Exception should be thrown for an invalid file");
+        } catch (Exception e) {
+            // Expected exception, test passes
+        }
+    }
+}
+```
+
+### Explanation:
+- **setUpClass and tearDownClass**: These methods create and delete a dummy MP3 file for testing purposes. This ensures that the tests have a consistent environment.
+- **testConstructor**: This test verifies that the constructor correctly initializes the `filename` field.
+- **testRunWithValidFile**: This test checks that the `run` method can execute without throwing exceptions when given a valid file.
+- **testRunWithInvalidFile**: This test ensures that the `run` method throws an exception when attempting to process an invalid file.
+
+Note: The actual audio playback functionality is not tested here due to the complexity of simulating audio hardware in a unit test environment.

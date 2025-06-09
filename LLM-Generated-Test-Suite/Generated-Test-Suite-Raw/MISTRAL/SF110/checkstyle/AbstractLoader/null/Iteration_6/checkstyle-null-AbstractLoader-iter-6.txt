@@ -1,0 +1,84 @@
+```java
+package com.puppycrawl.tools.checkstyle.api;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.DefaultHandler;
+
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class AbstractLoaderTest {
+
+    private static class TestLoader extends AbstractLoader {
+        public TestLoader(String publicId, String dtdResourceName) throws SAXException, ParserConfigurationException {
+            super(publicId, dtdResourceName);
+        }
+
+        public TestLoader(Map<String, String> publicIdToResourceNameMap) throws SAXException, ParserConfigurationException {
+            super(publicIdToResourceNameMap);
+        }
+    }
+
+    private TestLoader testLoader;
+
+    @Before
+    public void setUp() throws SAXException, ParserConfigurationException {
+        Map<String, String> publicIdToResourceNameMap = new HashMap<>();
+        publicIdToResourceNameMap.put("testPublicId", "testDtdResourceName");
+        testLoader = new TestLoader(publicIdToResourceNameMap);
+    }
+
+    @Test
+    public void testConstructorWithPublicIdAndDtdResourceName() throws SAXException, ParserConfigurationException {
+        TestLoader loader = new TestLoader("testPublicId", "testDtdResourceName");
+        assertNotNull(loader);
+    }
+
+    @Test
+    public void testConstructorWithMap() throws SAXException, ParserConfigurationException {
+        Map<String, String> publicIdToResourceNameMap = new HashMap<>();
+        publicIdToResourceNameMap.put("testPublicId", "testDtdResourceName");
+        TestLoader loader = new TestLoader(publicIdToResourceNameMap);
+        assertNotNull(loader);
+    }
+
+    @Test
+    public void testParseInputSource() throws IOException, SAXException {
+        // Assuming there is a valid XML input source for testing
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream("test.xml");
+        assertNotNull(inputStream);
+        testLoader.parseInputSource(new InputSource(inputStream));
+    }
+
+    @Test
+    public void testResolveEntity() throws SAXException, IOException {
+        InputSource inputSource = testLoader.resolveEntity("testPublicId", null);
+        assertNotNull(inputSource);
+        assertNotNull(inputSource.getByteStream());
+    }
+
+    @Test
+    public void testResolveEntityWithUnknownPublicId() throws SAXException, IOException {
+        InputSource inputSource = testLoader.resolveEntity("unknownPublicId", null);
+        assertNull(inputSource);
+    }
+
+    @Test(expected = SAXParseException.class)
+    public void testError() throws SAXException {
+        testLoader.error(new SAXParseException("Test error", null));
+    }
+
+    @Test(expected = SAXParseException.class)
+    public void testFatalError() throws SAXException {
+        testLoader.fatalError(new SAXParseException("Test fatal error", null));
+    }
+}
+```

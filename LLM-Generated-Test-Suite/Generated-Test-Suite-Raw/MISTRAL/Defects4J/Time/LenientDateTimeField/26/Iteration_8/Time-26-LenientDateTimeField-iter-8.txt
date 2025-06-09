@@ -1,0 +1,66 @@
+```java
+import org.joda.time.Chronology;
+import org.joda.time.DateTimeField;
+import org.joda.time.chrono.ISOChronology;
+import org.joda.time.field.LenientDateTimeField;
+import org.joda.time.field.StrictDateTimeField;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class LenientDateTimeFieldTest {
+
+    private Chronology baseChronology;
+    private DateTimeField strictField;
+    private DateTimeField lenientField;
+
+    @Before
+    public void setUp() {
+        baseChronology = ISOChronology.getInstanceUTC();
+        strictField = new StrictDateTimeField(baseChronology.dayOfMonth(), baseChronology);
+        lenientField = LenientDateTimeField.getInstance(strictField, baseChronology);
+    }
+
+    @Test
+    public void testGetInstance_NullField() {
+        assertNull(LenientDateTimeField.getInstance(null, baseChronology));
+    }
+
+    @Test
+    public void testGetInstance_AlreadyLenient() {
+        DateTimeField alreadyLenientField = new LenientDateTimeField(strictField, baseChronology);
+        assertSame(alreadyLenientField, LenientDateTimeField.getInstance(alreadyLenientField, baseChronology));
+    }
+
+    @Test
+    public void testGetInstance_StrictField() {
+        assertTrue(LenientDateTimeField.getInstance(strictField, baseChronology) instanceof LenientDateTimeField);
+    }
+
+    @Test
+    public void testIsLenient() {
+        assertTrue(lenientField.isLenient());
+    }
+
+    @Test
+    public void testSet_InBounds() {
+        long instant = baseChronology.getDateTimeMillis(2023, 1, 1, 0, 0, 0, 0);
+        long newInstant = lenientField.set(instant, 10);
+        assertEquals(baseChronology.getDateTimeMillis(2023, 1, 10, 0, 0, 0, 0), newInstant);
+    }
+
+    @Test
+    public void testSet_OutOfBounds() {
+        long instant = baseChronology.getDateTimeMillis(2023, 1, 1, 0, 0, 0, 0);
+        long newInstant = lenientField.set(instant, 40); // January has 31 days
+        assertEquals(baseChronology.getDateTimeMillis(2023, 2, 9, 0, 0, 0, 0), newInstant);
+    }
+
+    @Test
+    public void testSet_NegativeValue() {
+        long instant = baseChronology.getDateTimeMillis(2023, 1, 1, 0, 0, 0, 0);
+        long newInstant = lenientField.set(instant, -10);
+        assertEquals(baseChronology.getDateTimeMillis(2022, 12, 22, 0, 0, 0, 0), newInstant);
+    }
+}
+```

@@ -1,0 +1,78 @@
+package org.apache.commons.cli2;
+
+import org.apache.commons.cli2.Option;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class WriteableCommandLineTest {
+
+    private WriteableCommandLine commandLine;
+    private Option option;
+
+    @Before
+    public void setUp() {
+        commandLine = mock(WriteableCommandLine.class);
+        option = mock(Option.class);
+    }
+
+    @Test
+    public void testAddOption() {
+        commandLine.addOption(option);
+        verify(commandLine).addOption(option);
+    }
+
+    @Test
+    public void testAddValue() {
+        Object value = new Object();
+        commandLine.addValue(option, value);
+        verify(commandLine).addValue(option, value);
+    }
+
+    @Test
+    public void testSetDefaultValues() {
+        List<Object> defaultValues = new ArrayList<>();
+        commandLine.setDefaultValues(option, defaultValues);
+        verify(commandLine).setDefaultValues(option, defaultValues);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAddSwitchThrowsException() {
+        doThrow(new IllegalStateException()).when(commandLine).addSwitch(option, true);
+        commandLine.addSwitch(option, true);
+    }
+
+    @Test
+    public void testAddSwitch() {
+        commandLine.addSwitch(option, true);
+        verify(commandLine).addSwitch(option, true);
+    }
+
+    @Test
+    public void testSetDefaultSwitch() {
+        commandLine.setDefaultSwitch(option, true);
+        verify(commandLine).setDefaultSwitch(option, true);
+    }
+
+    @Test
+    public void testAddProperty() {
+        commandLine.addProperty("property", "value");
+        verify(commandLine).addProperty("property", "value");
+    }
+
+    @Test
+    public void testLooksLikeOption() {
+        when(commandLine.looksLikeOption("--option")).thenReturn(true);
+        assertTrue(commandLine.looksLikeOption("--option"));
+
+        when(commandLine.looksLikeOption("argument")).thenReturn(false);
+        assertFalse(commandLine.looksLikeOption("argument"));
+    }
+}

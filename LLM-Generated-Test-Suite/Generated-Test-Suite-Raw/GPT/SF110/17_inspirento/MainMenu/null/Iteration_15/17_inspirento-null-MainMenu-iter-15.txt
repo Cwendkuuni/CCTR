@@ -1,0 +1,99 @@
+Certainly! Below is a JUnit 4 test suite for the `MainMenu` class. This test suite aims to cover the functionality of the `MainMenu` constructor, `createMenu`, and `addShortcutAndIcon` methods. Note that some methods rely on external resources, so mock objects or stubs are used to simulate these dependencies.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.*;
+import java.net.URL;
+import java.util.MissingResourceException;
+
+public class MainMenuTest {
+
+    private InspirentoMediator mockMediator;
+    private MainMenu mainMenu;
+    private UIResources mockUIResources;
+    private InspirentoUtilities mockUtilities;
+
+    @Before
+    public void setUp() {
+        mockMediator = mock(InspirentoMediator.class);
+        mockUIResources = mock(UIResources.class);
+        mockUtilities = mock(InspirentoUtilities.class);
+
+        // Mocking UIResources and InspirentoUtilities behavior
+        when(mockUIResources.getString("menu")).thenReturn("file edit view");
+        when(mockUtilities.tokenize("file edit view")).thenReturn(new String[]{"file", "edit", "view"});
+        when(mockUIResources.getString("fileLabel")).thenReturn("File");
+        when(mockUIResources.getString("editLabel")).thenReturn("Edit");
+        when(mockUIResources.getString("viewLabel")).thenReturn("View");
+
+        // Initialize MainMenu with mocked dependencies
+        mainMenu = new MainMenu(mockMediator);
+    }
+
+    @Test
+    public void testMainMenuConstructor() {
+        assertNotNull(mainMenu);
+        assertEquals(mockMediator, mainMenu.mediator);
+    }
+
+    @Test
+    public void testCreateMenu() {
+        JMenu fileMenu = mainMenu.createMenu("file");
+        assertNotNull(fileMenu);
+        assertEquals("File", fileMenu.getText());
+
+        JMenu editMenu = mainMenu.createMenu("edit");
+        assertNotNull(editMenu);
+        assertEquals("Edit", editMenu.getText());
+
+        JMenu viewMenu = mainMenu.createMenu("view");
+        assertNotNull(viewMenu);
+        assertEquals("View", viewMenu.getText());
+    }
+
+    @Test
+    public void testAddShortcutAndIcon() {
+        JMenuItem menuItem = new JMenuItem();
+        when(mockUIResources.getString("fileShortcut")).thenReturn("ctrl F");
+        when(mockUIResources.getString("fileIcon")).thenReturn("/icons/file.png");
+
+        URL mockUrl = getClass().getResource("/icons/file.png");
+        assertNotNull(mockUrl);
+
+        mainMenu.addShortcutAndIcon(menuItem, "file");
+
+        assertEquals(KeyStroke.getKeyStroke("ctrl F"), menuItem.getAccelerator());
+        assertNotNull(menuItem.getIcon());
+    }
+
+    @Test
+    public void testAddShortcutAndIconWithMissingResources() {
+        JMenuItem menuItem = new JMenuItem();
+
+        // Simulate missing resources
+        when(mockUIResources.getString("missingShortcut")).thenThrow(new MissingResourceException("Missing", "String", "missingShortcut"));
+        when(mockUIResources.getString("missingIcon")).thenThrow(new MissingResourceException("Missing", "String", "missingIcon"));
+
+        mainMenu.addShortcutAndIcon(menuItem, "missing");
+
+        assertNull(menuItem.getAccelerator());
+        assertNull(menuItem.getIcon());
+    }
+}
+```
+
+### Explanation:
+- **Mocks and Stubs**: The test suite uses Mockito to create mock objects for `InspirentoMediator`, `UIResources`, and `InspirentoUtilities`. This allows us to simulate the behavior of these dependencies without relying on actual implementations or external resources.
+- **Test Methods**:
+  - `testMainMenuConstructor`: Verifies that the `MainMenu` object is correctly instantiated and that the mediator is set.
+  - `testCreateMenu`: Tests the `createMenu` method to ensure it creates menus with the correct labels.
+  - `testAddShortcutAndIcon`: Tests the `addShortcutAndIcon` method to ensure it correctly sets shortcuts and icons for menu items.
+  - `testAddShortcutAndIconWithMissingResources`: Tests the behavior of `addShortcutAndIcon` when resources are missing, ensuring it handles exceptions gracefully.
+
+This test suite provides a comprehensive check of the `MainMenu` class's functionality, focusing on its interaction with external resources and its ability to construct menus and menu items correctly.

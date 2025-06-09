@@ -1,0 +1,112 @@
+Certainly! Below is a JUnit 4 test suite that comprehensively tests the methods in the `Entities` class. This test suite covers the public static methods and some of the static methods that are package-private, assuming they are accessible for testing purposes.
+
+```java
+import org.jsoup.nodes.Entities;
+import org.jsoup.nodes.Document;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class EntitiesTest {
+
+    private Document.OutputSettings outputSettings;
+
+    @Before
+    public void setUp() {
+        outputSettings = new Document.OutputSettings();
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertTrue(Entities.isNamedEntity("amp"));
+        assertFalse(Entities.isNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testIsBaseNamedEntity() {
+        assertTrue(Entities.isBaseNamedEntity("lt"));
+        assertTrue(Entities.isBaseNamedEntity("amp"));
+        assertFalse(Entities.isBaseNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertEquals(Character.valueOf('&'), Entities.getCharacterByName("amp"));
+        assertNull(Entities.getCharacterByName("nonexistent"));
+    }
+
+    @Test
+    public void testEscape() {
+        String input = "This & that < those > \"these\"";
+        String expected = "This &amp; that &lt; those &gt; &quot;these&quot;";
+        String result = Entities.escape(input, outputSettings);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testEscapeWithXhtmlMode() {
+        outputSettings.escapeMode(Entities.EscapeMode.xhtml);
+        String input = "This & that < those > \"these\"";
+        String expected = "This &amp; that &lt; those &gt; \"these\"";
+        String result = Entities.escape(input, outputSettings);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testUnescape() {
+        String input = "This &amp; that &lt; those &gt; &quot;these&quot;";
+        String expected = "This & that < those > \"these\"";
+        String result = Entities.unescape(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testUnescapeStrict() {
+        String input = "This &amp; that &lt; those &gt; &quot;these&quot;";
+        String expected = "This & that < those > \"these\"";
+        String result = Entities.unescape(input, true);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testCanEncodeAscii() {
+        CharsetEncoder encoder = Charset.forName("US-ASCII").newEncoder();
+        assertTrue(Entities.canEncode(Entities.CoreCharset.ascii, 'A', encoder));
+        assertFalse(Entities.canEncode(Entities.CoreCharset.ascii, 'é', encoder));
+    }
+
+    @Test
+    public void testCanEncodeUtf() {
+        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+        assertTrue(Entities.canEncode(Entities.CoreCharset.utf, 'A', encoder));
+        assertTrue(Entities.canEncode(Entities.CoreCharset.utf, 'é', encoder));
+    }
+
+    @Test
+    public void testEscapeModeGetMap() {
+        Map<Character, String> xhtmlMap = Entities.EscapeMode.xhtml.getMap();
+        assertNotNull(xhtmlMap);
+        assertTrue(xhtmlMap.containsKey('<'));
+        assertEquals("lt", xhtmlMap.get('<'));
+    }
+}
+```
+
+### Explanation:
+- **Setup**: A `setUp` method initializes a `Document.OutputSettings` object, which is used in the escape tests.
+- **Test Methods**: Each method tests a specific functionality of the `Entities` class:
+  - `testIsNamedEntity` and `testIsBaseNamedEntity` check if certain strings are recognized as named entities.
+  - `testGetCharacterByName` verifies the correct character is returned for a given entity name.
+  - `testEscape` and `testEscapeWithXhtmlMode` test the escaping of strings with different escape modes.
+  - `testUnescape` and `testUnescapeStrict` test the unescaping of strings.
+  - `testCanEncodeAscii` and `testCanEncodeUtf` test the `canEncode` method for different character sets.
+  - `testEscapeModeGetMap` checks the retrieval of the escape map from an `EscapeMode`.
+
+This test suite assumes that the package-private methods are accessible for testing. If they are not, you might need to adjust the visibility or use reflection for testing purposes.

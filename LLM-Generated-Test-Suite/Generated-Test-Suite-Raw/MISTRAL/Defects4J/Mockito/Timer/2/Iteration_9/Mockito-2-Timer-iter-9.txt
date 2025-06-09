@@ -1,0 +1,64 @@
+```java
+package org.mockito.internal.util;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class TimerTest {
+
+    private Timer timer;
+    private static final long DURATION_MILLIS = 1000;
+
+    @Before
+    public void setUp() {
+        timer = new Timer(DURATION_MILLIS);
+    }
+
+    @Test
+    public void testTimerInitialization() {
+        assertNotNull(timer);
+        assertEquals(DURATION_MILLIS, timer.durationMillis);
+        assertEquals(-1, timer.startTime);
+    }
+
+    @Test
+    public void testStart() {
+        timer.start();
+        long currentTime = System.currentTimeMillis();
+        assertTrue(timer.startTime <= currentTime);
+        assertTrue(timer.startTime >= currentTime - 10); // Allow for a small margin of error
+    }
+
+    @Test
+    public void testIsCountingBeforeStart() {
+        try {
+            timer.isCounting();
+            fail("Expected AssertionError");
+        } catch (AssertionError e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testIsCountingAfterStart() throws InterruptedException {
+        timer.start();
+        assertTrue(timer.isCounting());
+
+        // Sleep for a duration less than the timer duration
+        Thread.sleep(DURATION_MILLIS / 2);
+        assertTrue(timer.isCounting());
+
+        // Sleep for a duration greater than the timer duration
+        Thread.sleep(DURATION_MILLIS / 2 + 1);
+        assertFalse(timer.isCounting());
+    }
+
+    @Test
+    public void testIsCountingExactDuration() throws InterruptedException {
+        timer.start();
+        Thread.sleep(DURATION_MILLIS);
+        assertFalse(timer.isCounting());
+    }
+}
+```

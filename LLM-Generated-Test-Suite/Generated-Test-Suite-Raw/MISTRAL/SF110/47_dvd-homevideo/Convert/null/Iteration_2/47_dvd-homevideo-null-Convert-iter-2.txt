@@ -1,0 +1,94 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ConvertTest {
+
+    private Convert convert;
+    private GUI mockGUI;
+
+    @Before
+    public void setUp() {
+        mockGUI = mock(GUI.class);
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+    }
+
+    @Test
+    public void testConstructorWithFormatAndAspectRatio() {
+        assertEquals(29.97, convert.m_fps, 0.01);
+        assertEquals("dvd-ntsc", convert.m_Format);
+        assertEquals("16:9", convert.m_AspectRatio);
+        assertEquals(mockGUI, convert.m_GUI);
+    }
+
+    @Test
+    public void testConstructorWithQualityFormatAndAspectRatio() {
+        Convert convertWithQuality = new Convert(1, "dvd-ntsc", "16:9", mockGUI);
+        assertEquals(29.97, convertWithQuality.m_fps, 0.01);
+        assertEquals("dvd-ntsc", convertWithQuality.m_Format);
+        assertEquals("16:9", convertWithQuality.m_AspectRatio);
+        assertEquals(mockGUI, convertWithQuality.m_GUI);
+        assertEquals(1, convertWithQuality.m_Quality);
+    }
+
+    @Test
+    public void testInitWithThread() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(true);
+        when(mockGUI.ErrorCheck(anyString())).thenReturn(false);
+
+        boolean result = convert.init();
+
+        assertFalse(result);
+        verify(mockGUI.menuChkThread).isSelected();
+        verify(mockGUI.ErrorCheck(anyString()));
+    }
+
+    @Test
+    public void testInitWithoutThread() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(false);
+        when(mockGUI.ErrorCheck(anyString())).thenReturn(false);
+
+        boolean result = convert.init();
+
+        assertFalse(result);
+        verify(mockGUI.menuChkThread).isSelected();
+        verify(mockGUI.ErrorCheck(anyString()));
+    }
+
+    @Test
+    public void testRun() {
+        convert.run();
+
+        // Verify that Transcode method is called
+        verify(mockGUI.lblConvert).setEnabled(true);
+        verify(mockGUI.prgConvert).setEnabled(true);
+        verify(mockGUI.lblConvertProg).setEnabled(true);
+    }
+
+    @Test
+    public void testTranscode() {
+        when(mockGUI.strOutputDir).thenReturn("/tmp");
+        when(mockGUI.spnMinutes.getValue()).thenReturn(1.0);
+        when(mockGUI.spnSeconds.getValue()).thenReturn(0.0);
+
+        convert.Transcode();
+
+        // Verify that matrix method is called
+        verify(mockGUI.lblConvert).setEnabled(true);
+        verify(mockGUI.prgConvert).setEnabled(true);
+        verify(mockGUI.lblConvertProg).setEnabled(true);
+    }
+
+    @Test
+    public void testMatrix() {
+        when(mockGUI.strOutputDir).thenReturn("/tmp");
+
+        convert.matrix();
+
+        // Verify that matrix.txt is created with the correct content
+        // This test might require additional setup to verify file content
+    }
+}
+```

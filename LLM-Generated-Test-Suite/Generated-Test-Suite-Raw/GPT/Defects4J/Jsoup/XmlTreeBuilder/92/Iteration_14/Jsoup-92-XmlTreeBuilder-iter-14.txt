@@ -1,0 +1,158 @@
+To create a comprehensive JUnit 4 test suite for the `XmlTreeBuilder` class, we need to test each method and ensure that it behaves as expected. Below is a test suite that covers the methods in the `XmlTreeBuilder` class. Note that this test suite assumes the existence of certain classes and methods (like `Token`, `Parser`, etc.) that are not provided in the original code snippet. You may need to adjust the tests to fit the actual implementations of these classes.
+
+```java
+import org.jsoup.nodes.*;
+import org.jsoup.parser.*;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class XmlTreeBuilderTest {
+
+    private XmlTreeBuilder xmlTreeBuilder;
+    private Parser parser;
+
+    @Before
+    public void setUp() {
+        xmlTreeBuilder = new XmlTreeBuilder();
+        parser = mock(Parser.class);
+    }
+
+    @Test
+    public void testDefaultSettings() {
+        assertEquals(ParseSettings.preserveCase, xmlTreeBuilder.defaultSettings());
+    }
+
+    @Test
+    public void testInitialiseParse() {
+        Reader input = new StringReader("<xml></xml>");
+        String baseUri = "http://example.com";
+        xmlTreeBuilder.initialiseParse(input, baseUri, parser);
+
+        assertEquals(Document.OutputSettings.Syntax.xml, xmlTreeBuilder.doc.outputSettings().syntax());
+        assertTrue(xmlTreeBuilder.stack.contains(xmlTreeBuilder.doc));
+    }
+
+    @Test
+    public void testParseWithReader() {
+        Reader input = new StringReader("<xml></xml>");
+        String baseUri = "http://example.com";
+        Document doc = xmlTreeBuilder.parse(input, baseUri);
+
+        assertNotNull(doc);
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    public void testParseWithString() {
+        String input = "<xml></xml>";
+        String baseUri = "http://example.com";
+        Document doc = xmlTreeBuilder.parse(input, baseUri);
+
+        assertNotNull(doc);
+        assertEquals(baseUri, doc.baseUri());
+    }
+
+    @Test
+    public void testProcessStartTag() {
+        Token.StartTag startTag = mock(Token.StartTag.class);
+        when(startTag.name()).thenReturn("tag");
+        when(startTag.isSelfClosing()).thenReturn(false);
+
+        Token token = mock(Token.class);
+        when(token.type).thenReturn(Token.TokenType.StartTag);
+        when(token.asStartTag()).thenReturn(startTag);
+
+        assertTrue(xmlTreeBuilder.process(token));
+    }
+
+    @Test
+    public void testProcessEndTag() {
+        Token.EndTag endTag = mock(Token.EndTag.class);
+        when(endTag.tagName).thenReturn("tag");
+
+        Token token = mock(Token.class);
+        when(token.type).thenReturn(Token.TokenType.EndTag);
+        when(token.asEndTag()).thenReturn(endTag);
+
+        assertTrue(xmlTreeBuilder.process(token));
+    }
+
+    @Test
+    public void testProcessComment() {
+        Token.Comment commentToken = mock(Token.Comment.class);
+        when(commentToken.getData()).thenReturn("comment");
+
+        Token token = mock(Token.class);
+        when(token.type).thenReturn(Token.TokenType.Comment);
+        when(token.asComment()).thenReturn(commentToken);
+
+        assertTrue(xmlTreeBuilder.process(token));
+    }
+
+    @Test
+    public void testProcessCharacter() {
+        Token.Character characterToken = mock(Token.Character.class);
+        when(characterToken.getData()).thenReturn("text");
+
+        Token token = mock(Token.class);
+        when(token.type).thenReturn(Token.TokenType.Character);
+        when(token.asCharacter()).thenReturn(characterToken);
+
+        assertTrue(xmlTreeBuilder.process(token));
+    }
+
+    @Test
+    public void testProcessDoctype() {
+        Token.Doctype doctypeToken = mock(Token.Doctype.class);
+        when(doctypeToken.getName()).thenReturn("html");
+
+        Token token = mock(Token.class);
+        when(token.type).thenReturn(Token.TokenType.Doctype);
+        when(token.asDoctype()).thenReturn(doctypeToken);
+
+        assertTrue(xmlTreeBuilder.process(token));
+    }
+
+    @Test
+    public void testProcessEOF() {
+        Token token = mock(Token.class);
+        when(token.type).thenReturn(Token.TokenType.EOF);
+
+        assertTrue(xmlTreeBuilder.process(token));
+    }
+
+    @Test
+    public void testParseFragmentWithBaseUri() {
+        String inputFragment = "<fragment></fragment>";
+        String baseUri = "http://example.com";
+        List<Node> nodes = xmlTreeBuilder.parseFragment(inputFragment, baseUri, parser);
+
+        assertNotNull(nodes);
+        assertFalse(nodes.isEmpty());
+    }
+
+    @Test
+    public void testParseFragmentWithContext() {
+        String inputFragment = "<fragment></fragment>";
+        Element context = new Element(Tag.valueOf("context"), "");
+        String baseUri = "http://example.com";
+        List<Node> nodes = xmlTreeBuilder.parseFragment(inputFragment, context, baseUri, parser);
+
+        assertNotNull(nodes);
+        assertFalse(nodes.isEmpty());
+    }
+}
+```
+
+### Notes:
+- The test suite uses Mockito to mock dependencies like `Token` and `Parser`.
+- Each test method is designed to test a specific functionality of the `XmlTreeBuilder` class.
+- The `setUp` method initializes the `XmlTreeBuilder` and `Parser` objects before each test.
+- The tests check for expected outcomes, such as the correct syntax settings, the presence of nodes, and the correct handling of different token types.
+- Adjustments may be necessary based on the actual implementations of the `Token`, `Parser`, and other related classes.

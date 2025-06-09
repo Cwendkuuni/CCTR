@@ -1,0 +1,170 @@
+```java
+package Joshua.FoxHunt;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Vector;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame foxHuntFrame;
+
+    @Before
+    public void setUp() {
+        foxHuntFrame = new FoxHuntFrame();
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(foxHuntFrame);
+        assertEquals("Triangulation", foxHuntFrame.getTitle());
+        assertTrue(foxHuntFrame.isVisible());
+    }
+
+    @Test
+    public void testActionPerformed() {
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.05223");
+        foxHuntFrame.lon.setText("-118.24368");
+
+        foxHuntFrame.actionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
+
+        assertEquals(1, foxHuntFrame.points.size());
+    }
+
+    @Test
+    public void testAddPoint() {
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.05223");
+        foxHuntFrame.lon.setText("-118.24368");
+
+        foxHuntFrame.addPoint();
+
+        assertEquals(1, foxHuntFrame.points.size());
+    }
+
+    @Test
+    public void testAddPointWithMultiplePoints() {
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.05223");
+        foxHuntFrame.lon.setText("-118.24368");
+        foxHuntFrame.addPoint();
+
+        foxHuntFrame.theta.setText("90");
+        foxHuntFrame.lat.setText("34.05224");
+        foxHuntFrame.lon.setText("-118.24369");
+        foxHuntFrame.addPoint();
+
+        assertEquals(2, foxHuntFrame.points.size());
+        assertEquals(1, foxHuntFrame.fox.size());
+    }
+
+    @Test
+    public void testLoadLandmarks() {
+        // Assuming the landmarks.cfg file exists and is correctly formatted
+        try {
+            foxHuntFrame.loadLandmarks();
+        } catch (Exception e) {
+            fail("Exception should not be thrown if the file is correctly formatted");
+        }
+    }
+
+    @Test
+    public void testLoadLandmarksFileNotFound() {
+        // Simulate file not found scenario
+        File file = new File("./landmarks.cfg");
+        if (file.exists()) {
+            file.delete();
+        }
+
+        try {
+            foxHuntFrame.loadLandmarks();
+            fail("Expected FileNotFoundException");
+        } catch (Exception e) {
+            assertTrue(e instanceof FileNotFoundException);
+        }
+    }
+
+    @Test
+    public void testLoadLandmarksIOException() {
+        // Simulate IO exception scenario
+        try {
+            File file = new File("./landmarks.cfg");
+            if (!file.exists()) {
+                file.createNewFile();
+            }
+            FileInputStream inFile = new FileInputStream(file);
+            inFile.close();
+            inFile = new FileInputStream(file);
+            inFile.read();
+            inFile.close();
+
+            foxHuntFrame.loadLandmarks();
+            fail("Expected IOException");
+        } catch (Exception e) {
+            assertTrue(e instanceof IOException);
+        }
+    }
+
+    @Test
+    public void testErrorDialogAbort() {
+        JOptionPane.showOptionDialog(foxHuntFrame, "Test Error", "Error", JOptionPane.DEFAULT_OPTION, JOptionPane.ERROR_MESSAGE, null, new Object[]{"Abort", "Continue"}, "Abort");
+        foxHuntFrame.error("Test Error");
+        // Since the error method calls System.exit(1), we cannot directly test the exit behavior in a unit test
+        // Instead, we can verify that the error dialog is shown
+    }
+
+    @Test
+    public void testFoxTableModelGetColumnCount() {
+        FoxHuntFrame.FoxTableModel model = foxHuntFrame.new FoxTableModel();
+        assertEquals(2, model.getColumnCount());
+    }
+
+    @Test
+    public void testFoxTableModelGetRowCount() {
+        FoxHuntFrame.FoxTableModel model = foxHuntFrame.new FoxTableModel();
+        assertEquals(0, model.getRowCount());
+
+        foxHuntFrame.fox.add(new TrigPoint(34.05223, -118.24368, 45));
+        assertEquals(1, model.getRowCount());
+    }
+
+    @Test
+    public void testFoxTableModelGetColumnName() {
+        FoxHuntFrame.FoxTableModel model = foxHuntFrame.new FoxTableModel();
+        assertEquals("Lattitude", model.getColumnName(0));
+        assertEquals("Longitude", model.getColumnName(1));
+    }
+
+    @Test
+    public void testFoxTableModelGetValueAt() {
+        FoxHuntFrame.FoxTableModel model = foxHuntFrame.new FoxTableModel();
+        foxHuntFrame.fox.add(new TrigPoint(34.05223, -118.24368, 45));
+
+        assertEquals("34.05223", model.getValueAt(0, 0));
+        assertEquals("-118.24368", model.getValueAt(0, 1));
+    }
+
+    @Test
+    public void testFoxTableModelGetColumnClass() {
+        FoxHuntFrame.FoxTableModel model = foxHuntFrame.new FoxTableModel();
+        foxHuntFrame.fox.add(new TrigPoint(34.05223, -118.24368, 45));
+
+        assertEquals(String.class, model.getColumnClass(0));
+        assertEquals(String.class, model.getColumnClass(1));
+    }
+
+    @Test
+    public void testFoxTableModelIsCellEditable() {
+        FoxHuntFrame.FoxTableModel model = foxHuntFrame.new FoxTableModel();
+        assertFalse(model.isCellEditable(0, 0));
+        assertFalse(model.isCellEditable(0, 1));
+    }
+}
+```

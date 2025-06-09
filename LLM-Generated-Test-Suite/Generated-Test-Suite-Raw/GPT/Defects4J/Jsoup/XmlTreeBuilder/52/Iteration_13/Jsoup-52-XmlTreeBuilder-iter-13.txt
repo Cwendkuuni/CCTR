@@ -1,0 +1,144 @@
+```java
+import org.jsoup.parser.XmlTreeBuilder;
+import org.jsoup.parser.Token;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.jsoup.nodes.Comment;
+import org.jsoup.nodes.DocumentType;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.parser.ParseErrorList;
+import org.jsoup.parser.Tokeniser;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class XmlTreeBuilderTest {
+
+    private XmlTreeBuilder xmlTreeBuilder;
+    private ParseErrorList errors;
+    private String baseUri;
+
+    @Before
+    public void setUp() {
+        xmlTreeBuilder = new XmlTreeBuilder();
+        errors = new ParseErrorList(0, 0);
+        baseUri = "http://example.com";
+    }
+
+    @Test
+    public void testInitialiseParse() {
+        String input = "<root></root>";
+        xmlTreeBuilder.initialiseParse(input, baseUri, errors);
+        assertNotNull(xmlTreeBuilder.parseFragment(input, baseUri, errors));
+    }
+
+    @Test
+    public void testProcessStartTag() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.name("root");
+        startTag.attributes = new org.jsoup.parser.Attributes();
+        Token token = startTag;
+
+        assertTrue(xmlTreeBuilder.process(token));
+        List<Node> nodes = xmlTreeBuilder.parseFragment("<root></root>", baseUri, errors);
+        assertEquals(1, nodes.size());
+        assertTrue(nodes.get(0) instanceof Element);
+        assertEquals("root", ((Element) nodes.get(0)).tagName());
+    }
+
+    @Test
+    public void testProcessEndTag() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.name("root");
+        startTag.attributes = new org.jsoup.parser.Attributes();
+        xmlTreeBuilder.process(startTag);
+
+        Token.EndTag endTag = new Token.EndTag();
+        endTag.name("root");
+        Token token = endTag;
+
+        assertTrue(xmlTreeBuilder.process(token));
+        List<Node> nodes = xmlTreeBuilder.parseFragment("<root></root>", baseUri, errors);
+        assertEquals(1, nodes.size());
+        assertTrue(nodes.get(0) instanceof Element);
+        assertEquals("root", ((Element) nodes.get(0)).tagName());
+    }
+
+    @Test
+    public void testProcessComment() {
+        Token.Comment commentToken = new Token.Comment();
+        commentToken.data("This is a comment");
+        Token token = commentToken;
+
+        assertTrue(xmlTreeBuilder.process(token));
+        List<Node> nodes = xmlTreeBuilder.parseFragment("<!--This is a comment-->", baseUri, errors);
+        assertEquals(1, nodes.size());
+        assertTrue(nodes.get(0) instanceof Comment);
+        assertEquals("This is a comment", ((Comment) nodes.get(0)).getData());
+    }
+
+    @Test
+    public void testProcessCharacter() {
+        Token.Character characterToken = new Token.Character();
+        characterToken.data("Some text");
+        Token token = characterToken;
+
+        assertTrue(xmlTreeBuilder.process(token));
+        List<Node> nodes = xmlTreeBuilder.parseFragment("Some text", baseUri, errors);
+        assertEquals(1, nodes.size());
+        assertTrue(nodes.get(0) instanceof TextNode);
+        assertEquals("Some text", ((TextNode) nodes.get(0)).getWholeText());
+    }
+
+    @Test
+    public void testProcessDoctype() {
+        Token.Doctype doctypeToken = new Token.Doctype();
+        doctypeToken.name("html");
+        doctypeToken.publicIdentifier("-//W3C//DTD XHTML 1.0 Transitional//EN");
+        doctypeToken.systemIdentifier("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd");
+        Token token = doctypeToken;
+
+        assertTrue(xmlTreeBuilder.process(token));
+        List<Node> nodes = xmlTreeBuilder.parseFragment("<!DOCTYPE html>", baseUri, errors);
+        assertEquals(1, nodes.size());
+        assertTrue(nodes.get(0) instanceof DocumentType);
+        assertEquals("html", ((DocumentType) nodes.get(0)).name());
+    }
+
+    @Test
+    public void testProcessEOF() {
+        Token.EOF eofToken = new Token.EOF();
+        Token token = eofToken;
+
+        assertTrue(xmlTreeBuilder.process(token));
+        List<Node> nodes = xmlTreeBuilder.parseFragment("", baseUri, errors);
+        assertEquals(0, nodes.size());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testProcessUnexpectedToken() {
+        Token token = mock(Token.class);
+        when(token.type).thenReturn(null);
+
+        xmlTreeBuilder.process(token);
+    }
+
+    @Test
+    public void testParseFragment() {
+        String inputFragment = "<root><child>Text</child></root>";
+        List<Node> nodes = xmlTreeBuilder.parseFragment(inputFragment, baseUri, errors);
+        assertEquals(1, nodes.size());
+        assertTrue(nodes.get(0) instanceof Element);
+        Element root = (Element) nodes.get(0);
+        assertEquals("root", root.tagName());
+        assertEquals(1, root.children().size());
+        assertEquals("child", root.child(0).tagName());
+        assertEquals("Text", root.child(0).text());
+    }
+}
+```

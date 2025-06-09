@@ -1,0 +1,197 @@
+```java
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+
+public class CSVPrinterTest {
+
+    private StringWriter writer;
+    private CSVPrinter printer;
+    private CSVFormat format;
+
+    @Before
+    public void setUp() throws IOException {
+        writer = new StringWriter();
+        format = CSVFormat.DEFAULT;
+        printer = new CSVPrinter(writer, format);
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        printer.close();
+    }
+
+    @Test
+    public void testPrint() throws IOException {
+        printer.print("value1");
+        printer.println();
+        printer.print("value2");
+        printer.flush();
+        assertEquals("value1\nvalue2", writer.toString());
+    }
+
+    @Test
+    public void testPrintNull() throws IOException {
+        printer.print(null);
+        printer.println();
+        printer.flush();
+        assertEquals("\n", writer.toString());
+    }
+
+    @Test
+    public void testPrintRecord() throws IOException {
+        printer.printRecord("value1", "value2");
+        printer.flush();
+        assertEquals("value1,value2\n", writer.toString());
+    }
+
+    @Test
+    public void testPrintRecords() throws IOException {
+        printer.printRecords(Arrays.asList("value1", "value2"));
+        printer.flush();
+        assertEquals("value1\nvalue2\n", writer.toString());
+    }
+
+    @Test
+    public void testPrintRecordsArray() throws IOException {
+        printer.printRecords(new Object[]{"value1", "value2"});
+        printer.flush();
+        assertEquals("value1\nvalue2\n", writer.toString());
+    }
+
+    @Test
+    public void testPrintComment() throws IOException {
+        printer.printComment("This is a comment");
+        printer.flush();
+        assertEquals("# This is a comment\n", writer.toString());
+    }
+
+    @Test
+    public void testPrintCommentDisabled() throws IOException {
+        format = format.withCommentMarker(null);
+        printer = new CSVPrinter(writer, format);
+        printer.printComment("This is a comment");
+        printer.flush();
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testPrintRecordWithNull() throws IOException {
+        printer.printRecord("value1", null, "value3");
+        printer.flush();
+        assertEquals("value1,,value3\n", writer.toString());
+    }
+
+    @Test
+    public void testPrintRecordWithSpecialCharacters() throws IOException {
+        printer.printRecord("value1", "value,2", "value\n3");
+        printer.flush();
+        assertEquals("value1,\"value,2\",\"value\n3\"\n", writer.toString());
+    }
+
+    @Test
+    public void testPrintRecordsWithNestedCollections() throws IOException {
+        printer.printRecords(Arrays.asList(
+                Arrays.asList("value1", "value2"),
+                Collections.singletonList("value3")
+        ));
+        printer.flush();
+        assertEquals("value1,value2\nvalue3\n", writer.toString());
+    }
+
+    @Test
+    public void testPrintRecordsWithResultSet() throws SQLException, IOException {
+        ResultSet resultSet = new MockResultSet(new String[]{"col1", "col2"}, new String[][]{{"value1", "value2"}});
+        printer.printRecords(resultSet);
+        printer.flush();
+        assertEquals("value1,value2\n", writer.toString());
+    }
+
+    @Test
+    public void testGetOut() {
+        assertEquals(writer, printer.getOut());
+    }
+
+    @Test(expected = IOException.class)
+    public void testConstructorThrowsIOException() throws IOException {
+        new CSVPrinter(new FailingAppendable(), format);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorThrowsIllegalArgumentException() throws IOException {
+        new CSVPrinter(null, format);
+    }
+
+    private static class MockResultSet implements ResultSet {
+        private final String[] columnNames;
+        private final String[][] data;
+        private int rowIndex = -1;
+
+        public MockResultSet(String[] columnNames, String[][] data) {
+            this.columnNames = columnNames;
+            this.data = data;
+        }
+
+        @Override
+        public boolean next() {
+            rowIndex++;
+            return rowIndex < data.length;
+        }
+
+        @Override
+        public String getString(int columnIndex) {
+            return data[rowIndex][columnIndex - 1];
+        }
+
+        @Override
+        public ResultSetMetaData getMetaData() {
+            return new MockResultSetMetaData(columnNames);
+        }
+
+        // Other methods not implemented for this test
+    }
+
+    private static class MockResultSetMetaData implements ResultSetMetaData {
+        private final String[] columnNames;
+
+        public MockResultSetMetaData(String[] columnNames) {
+            this.columnNames = columnNames;
+        }
+
+        @Override
+        public int getColumnCount() {
+            return columnNames.length;
+        }
+
+        // Other methods not implemented for this test
+    }
+
+    private static class FailingAppendable implements Appendable {
+        @Override
+        public Appendable append(CharSequence csq) throws IOException {
+            throw new IOException("Test exception");
+        }
+
+        @Override
+        public Appendable append(CharSequence csq, int start, int end) throws IOException {
+            throw new IOException("Test exception");
+        }
+
+        @Override
+        public Appendable append(char c) throws IOException {
+            throw new IOException("Test exception");
+        }
+    }
+}
+```

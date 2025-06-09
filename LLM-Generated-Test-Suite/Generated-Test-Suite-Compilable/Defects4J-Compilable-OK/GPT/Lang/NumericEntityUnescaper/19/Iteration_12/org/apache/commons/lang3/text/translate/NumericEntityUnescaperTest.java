@@ -1,0 +1,102 @@
+package org.apache.commons.lang3.text.translate;
+
+import org.apache.commons.lang3.text.translate.NumericEntityUnescaper;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+
+import static org.junit.Assert.assertEquals;
+
+public class NumericEntityUnescaperTest {
+
+    private NumericEntityUnescaper unescaper;
+
+    @Before
+    public void setUp() {
+        unescaper = new NumericEntityUnescaper();
+    }
+
+    @Test
+    public void testTranslateDecimalEntity() throws IOException {
+        String input = "Hello &#65; World";
+        Writer writer = new StringWriter();
+        int result = unescaper.translate(input, 6, writer);
+        assertEquals(5, result);
+        assertEquals("A", writer.toString());
+    }
+
+    @Test
+    public void testTranslateHexEntity() throws IOException {
+        String input = "Hello &#x41; World";
+        Writer writer = new StringWriter();
+        int result = unescaper.translate(input, 6, writer);
+        assertEquals(6, result);
+        assertEquals("A", writer.toString());
+    }
+
+    @Test
+    public void testTranslateHexEntityUpperCase() throws IOException {
+        String input = "Hello &#X41; World";
+        Writer writer = new StringWriter();
+        int result = unescaper.translate(input, 6, writer);
+        assertEquals(6, result);
+        assertEquals("A", writer.toString());
+    }
+
+    @Test
+    public void testTranslateEntityWithoutSemicolon() throws IOException {
+        String input = "Hello &#65 World";
+        Writer writer = new StringWriter();
+        int result = unescaper.translate(input, 6, writer);
+        assertEquals(4, result);
+        assertEquals("A", writer.toString());
+    }
+
+    @Test
+    public void testTranslateInvalidEntity() throws IOException {
+        String input = "Hello &# World";
+        Writer writer = new StringWriter();
+        int result = unescaper.translate(input, 6, writer);
+        assertEquals(0, result);
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testTranslateNonEntity() throws IOException {
+        String input = "Hello & World";
+        Writer writer = new StringWriter();
+        int result = unescaper.translate(input, 6, writer);
+        assertEquals(0, result);
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testTranslateHighCodepointEntity() throws IOException {
+        String input = "Hello &#128512; World"; // 😀 emoji
+        Writer writer = new StringWriter();
+        int result = unescaper.translate(input, 6, writer);
+        assertEquals(8, result);
+        assertEquals("\uD83D\uDE00", writer.toString());
+    }
+
+    @Test
+    public void testTranslateInvalidHexEntity() throws IOException {
+        String input = "Hello &#xZZ; World";
+        Writer writer = new StringWriter();
+        int result = unescaper.translate(input, 6, writer);
+        assertEquals(0, result);
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testTranslateEmptyEntity() throws IOException {
+        String input = "Hello &#; World";
+        Writer writer = new StringWriter();
+        int result = unescaper.translate(input, 6, writer);
+        assertEquals(0, result);
+        assertEquals("", writer.toString());
+    }
+}

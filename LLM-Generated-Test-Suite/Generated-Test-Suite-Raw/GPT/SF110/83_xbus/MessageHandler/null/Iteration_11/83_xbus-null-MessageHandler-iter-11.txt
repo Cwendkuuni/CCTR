@@ -1,0 +1,118 @@
+```java
+import net.sf.xbus.base.core.MessageHandler;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class MessageHandlerTest {
+
+    private MessageHandler messageHandler;
+    private static final String TEST_BASENAME = "testBase";
+
+    @Before
+    public void setUp() {
+        messageHandler = MessageHandler.getInstance(TEST_BASENAME);
+    }
+
+    @Test
+    public void testGetInstance() {
+        MessageHandler instance1 = MessageHandler.getInstance(TEST_BASENAME);
+        MessageHandler instance2 = MessageHandler.getInstance(TEST_BASENAME);
+        assertNotNull(instance1);
+        assertSame(instance1, instance2);
+    }
+
+    @Test
+    public void testGetMessageWithExistingKey() {
+        String key = "existingKey";
+        String expectedMessage = "This is a test message with $1$ and $2$";
+        messageHandler.mMessages.put(key, expectedMessage);
+
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        params.add("param2");
+
+        String result = messageHandler.getMessage(key, params);
+        assertEquals("This is a test message with param1 and param2", result);
+    }
+
+    @Test
+    public void testGetMessageWithNonExistingKey() {
+        String key = "nonExistingKey";
+        String result = messageHandler.getMessage(key, null);
+        assertEquals("Key: nonExistingKey not found in message file", result);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithExistingKey() {
+        String key = "existingKeyOptional";
+        String expectedMessage = "Optional message with $1$";
+        messageHandler.mMessages.put(key, expectedMessage);
+
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+
+        String result = messageHandler.getMessageOptional(key, params);
+        assertEquals("Optional message with param1", result);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNonExistingKey() {
+        String key = "nonExistingKeyOptional";
+        String result = messageHandler.getMessageOptional(key, null);
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNullMessages() {
+        messageHandler.mMessages = null;
+        String result = messageHandler.getMessageOptional("anyKey", null);
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNullParams() {
+        String key = "keyWithNullParams";
+        String expectedMessage = "Message with $1$";
+        messageHandler.mMessages.put(key, expectedMessage);
+
+        String result = messageHandler.getMessageOptional(key, null);
+        assertEquals("Message with $1$", result);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNullParamInList() {
+        String key = "keyWithNullParam";
+        String expectedMessage = "Message with $1$";
+        messageHandler.mMessages.put(key, expectedMessage);
+
+        List<String> params = new ArrayList<>();
+        params.add(null);
+
+        String result = messageHandler.getMessageOptional(key, params);
+        assertEquals("Message with <null>", result);
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `MessageHandler` instance using a test basename.
+- **Test Methods**:
+  - `testGetInstance`: Verifies that `getInstance` returns the same instance for the same basename.
+  - `testGetMessageWithExistingKey`: Tests `getMessage` with a key that exists in `mMessages`.
+  - `testGetMessageWithNonExistingKey`: Tests `getMessage` with a key that does not exist, expecting a specific error message.
+  - `testGetMessageOptionalWithExistingKey`: Tests `getMessageOptional` with a key that exists.
+  - `testGetMessageOptionalWithNonExistingKey`: Tests `getMessageOptional` with a non-existing key, expecting `null`.
+  - `testGetMessageOptionalWithNullMessages`: Tests `getMessageOptional` when `mMessages` is `null`.
+  - `testGetMessageOptionalWithNullParams`: Tests `getMessageOptional` with `null` parameters.
+  - `testGetMessageOptionalWithNullParamInList`: Tests `getMessageOptional` with a `null` parameter in the list, expecting `<null>` in the message.
+
+This test suite covers various scenarios for the `MessageHandler` class, ensuring that both `getMessage` and `getMessageOptional` methods are thoroughly tested.

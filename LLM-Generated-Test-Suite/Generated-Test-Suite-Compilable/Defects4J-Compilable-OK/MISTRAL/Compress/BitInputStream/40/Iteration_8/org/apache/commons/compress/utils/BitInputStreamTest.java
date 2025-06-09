@@ -1,0 +1,184 @@
+package org.apache.commons.compress.utils;
+
+import org.apache.commons.compress.utils.BitInputStream;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.ByteOrder;
+
+import static org.junit.Assert.*;
+
+public class BitInputStreamTest {
+
+    private BitInputStream bitInputStream;
+    private ByteArrayInputStream byteArrayInputStream;
+
+    @Before
+    public void setUp() {
+        byteArrayInputStream = new ByteArrayInputStream(new byte[]{0x01, 0x02, 0x03, 0x04});
+        bitInputStream = new BitInputStream(byteArrayInputStream, ByteOrder.BIG_ENDIAN);
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        bitInputStream.close();
+    }
+
+    @Test
+    public void testReadBits() throws IOException {
+        assertEquals(1L, bitInputStream.readBits(1));
+        assertEquals(0L, bitInputStream.readBits(1));
+        assertEquals(1L, bitInputStream.readBits(2));
+        assertEquals(0L, bitInputStream.readBits(3));
+        assertEquals(1L, bitInputStream.readBits(4));
+        assertEquals(0L, bitInputStream.readBits(5));
+        assertEquals(1L, bitInputStream.readBits(6));
+        assertEquals(0L, bitInputStream.readBits(7));
+        assertEquals(1L, bitInputStream.readBits(8));
+        assertEquals(0L, bitInputStream.readBits(9));
+        assertEquals(1L, bitInputStream.readBits(10));
+        assertEquals(0L, bitInputStream.readBits(11));
+        assertEquals(1L, bitInputStream.readBits(12));
+        assertEquals(0L, bitInputStream.readBits(13));
+        assertEquals(1L, bitInputStream.readBits(14));
+        assertEquals(0L, bitInputStream.readBits(15));
+        assertEquals(1L, bitInputStream.readBits(16));
+        assertEquals(0L, bitInputStream.readBits(17));
+        assertEquals(1L, bitInputStream.readBits(18));
+        assertEquals(0L, bitInputStream.readBits(19));
+        assertEquals(1L, bitInputStream.readBits(20));
+        assertEquals(0L, bitInputStream.readBits(21));
+        assertEquals(1L, bitInputStream.readBits(22));
+        assertEquals(0L, bitInputStream.readBits(23));
+        assertEquals(1L, bitInputStream.readBits(24));
+        assertEquals(0L, bitInputStream.readBits(25));
+        assertEquals(1L, bitInputStream.readBits(26));
+        assertEquals(0L, bitInputStream.readBits(27));
+        assertEquals(1L, bitInputStream.readBits(28));
+        assertEquals(0L, bitInputStream.readBits(29));
+        assertEquals(1L, bitInputStream.readBits(30));
+        assertEquals(0L, bitInputStream.readBits(31));
+        assertEquals(1L, bitInputStream.readBits(32));
+        assertEquals(0L, bitInputStream.readBits(33));
+        assertEquals(1L, bitInputStream.readBits(34));
+        assertEquals(0L, bitInputStream.readBits(35));
+        assertEquals(1L, bitInputStream.readBits(36));
+        assertEquals(0L, bitInputStream.readBits(37));
+        assertEquals(1L, bitInputStream.readBits(38));
+        assertEquals(0L, bitInputStream.readBits(39));
+        assertEquals(1L, bitInputStream.readBits(40));
+        assertEquals(0L, bitInputStream.readBits(41));
+        assertEquals(1L, bitInputStream.readBits(42));
+        assertEquals(0L, bitInputStream.readBits(43));
+        assertEquals(1L, bitInputStream.readBits(44));
+        assertEquals(0L, bitInputStream.readBits(45));
+        assertEquals(1L, bitInputStream.readBits(46));
+        assertEquals(0L, bitInputStream.readBits(47));
+        assertEquals(1L, bitInputStream.readBits(48));
+        assertEquals(0L, bitInputStream.readBits(49));
+        assertEquals(1L, bitInputStream.readBits(50));
+        assertEquals(0L, bitInputStream.readBits(51));
+        assertEquals(1L, bitInputStream.readBits(52));
+        assertEquals(0L, bitInputStream.readBits(53));
+        assertEquals(1L, bitInputStream.readBits(54));
+        assertEquals(0L, bitInputStream.readBits(55));
+        assertEquals(1L, bitInputStream.readBits(56));
+        assertEquals(0L, bitInputStream.readBits(57));
+        assertEquals(1L, bitInputStream.readBits(58));
+        assertEquals(0L, bitInputStream.readBits(59));
+        assertEquals(1L, bitInputStream.readBits(60));
+        assertEquals(0L, bitInputStream.readBits(61));
+        assertEquals(1L, bitInputStream.readBits(62));
+        assertEquals(0L, bitInputStream.readBits(63));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testReadBitsInvalidCount() throws IOException {
+        bitInputStream.readBits(64);
+    }
+
+    @Test
+    public void testClearBitCache() throws IOException {
+        bitInputStream.readBits(8);
+        bitInputStream.clearBitCache();
+        assertEquals(0L, bitInputStream.readBits(8));
+    }
+
+    @Test
+    public void testClose() throws IOException {
+        bitInputStream.close();
+        assertThrows(IOException.class, () -> bitInputStream.readBits(1));
+    }
+
+    @Test
+    public void testReadBitsLittleEndian() throws IOException {
+        bitInputStream = new BitInputStream(byteArrayInputStream, ByteOrder.LITTLE_ENDIAN);
+        assertEquals(1L, bitInputStream.readBits(1));
+        assertEquals(0L, bitInputStream.readBits(1));
+        assertEquals(1L, bitInputStream.readBits(2));
+        assertEquals(0L, bitInputStream.readBits(3));
+        assertEquals(1L, bitInputStream.readBits(4));
+        assertEquals(0L, bitInputStream.readBits(5));
+        assertEquals(1L, bitInputStream.readBits(6));
+        assertEquals(0L, bitInputStream.readBits(7));
+        assertEquals(1L, bitInputStream.readBits(8));
+        assertEquals(0L, bitInputStream.readBits(9));
+        assertEquals(1L, bitInputStream.readBits(10));
+        assertEquals(0L, bitInputStream.readBits(11));
+        assertEquals(1L, bitInputStream.readBits(12));
+        assertEquals(0L, bitInputStream.readBits(13));
+        assertEquals(1L, bitInputStream.readBits(14));
+        assertEquals(0L, bitInputStream.readBits(15));
+        assertEquals(1L, bitInputStream.readBits(16));
+        assertEquals(0L, bitInputStream.readBits(17));
+        assertEquals(1L, bitInputStream.readBits(18));
+        assertEquals(0L, bitInputStream.readBits(19));
+        assertEquals(1L, bitInputStream.readBits(20));
+        assertEquals(0L, bitInputStream.readBits(21));
+        assertEquals(1L, bitInputStream.readBits(22));
+        assertEquals(0L, bitInputStream.readBits(23));
+        assertEquals(1L, bitInputStream.readBits(24));
+        assertEquals(0L, bitInputStream.readBits(25));
+        assertEquals(1L, bitInputStream.readBits(26));
+        assertEquals(0L, bitInputStream.readBits(27));
+        assertEquals(1L, bitInputStream.readBits(28));
+        assertEquals(0L, bitInputStream.readBits(29));
+        assertEquals(1L, bitInputStream.readBits(30));
+        assertEquals(0L, bitInputStream.readBits(31));
+        assertEquals(1L, bitInputStream.readBits(32));
+        assertEquals(0L, bitInputStream.readBits(33));
+        assertEquals(1L, bitInputStream.readBits(34));
+        assertEquals(0L, bitInputStream.readBits(35));
+        assertEquals(1L, bitInputStream.readBits(36));
+        assertEquals(0L, bitInputStream.readBits(37));
+        assertEquals(1L, bitInputStream.readBits(38));
+        assertEquals(0L, bitInputStream.readBits(39));
+        assertEquals(1L, bitInputStream.readBits(40));
+        assertEquals(0L, bitInputStream.readBits(41));
+        assertEquals(1L, bitInputStream.readBits(42));
+        assertEquals(0L, bitInputStream.readBits(43));
+        assertEquals(1L, bitInputStream.readBits(44));
+        assertEquals(0L, bitInputStream.readBits(45));
+        assertEquals(1L, bitInputStream.readBits(46));
+        assertEquals(0L, bitInputStream.readBits(47));
+        assertEquals(1L, bitInputStream.readBits(48));
+        assertEquals(0L, bitInputStream.readBits(49));
+        assertEquals(1L, bitInputStream.readBits(50));
+        assertEquals(0L, bitInputStream.readBits(51));
+        assertEquals(1L, bitInputStream.readBits(52));
+        assertEquals(0L, bitInputStream.readBits(53));
+        assertEquals(1L, bitInputStream.readBits(54));
+        assertEquals(0L, bitInputStream.readBits(55));
+        assertEquals(1L, bitInputStream.readBits(56));
+        assertEquals(0L, bitInputStream.readBits(57));
+        assertEquals(1L, bitInputStream.readBits(58));
+        assertEquals(0L, bitInputStream.readBits(59));
+        assertEquals(1L, bitInputStream.readBits(60));
+        assertEquals(0L, bitInputStream.readBits(61));
+        assertEquals(1L, bitInputStream.readBits(62));
+        assertEquals(0L, bitInputStream.readBits(63));
+    }
+}

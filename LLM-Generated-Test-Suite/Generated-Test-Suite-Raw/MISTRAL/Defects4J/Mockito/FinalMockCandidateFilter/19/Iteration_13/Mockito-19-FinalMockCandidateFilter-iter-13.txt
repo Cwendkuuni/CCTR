@@ -1,0 +1,105 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.exceptions.Reporter;
+import org.mockito.internal.configuration.injection.filter.FinalMockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.OngoingInjecter;
+import org.mockito.internal.util.reflection.BeanPropertySetter;
+import org.mockito.internal.util.reflection.FieldSetter;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class FinalMockCandidateFilterTest {
+
+    private FinalMockCandidateFilter filter;
+    private Field mockField;
+    private Object mockFieldInstance;
+    private Object mockMatchingMock;
+
+    @Before
+    public void setUp() throws Exception {
+        filter = new FinalMockCandidateFilter();
+        mockField = mock(Field.class);
+        mockFieldInstance = new Object();
+        mockMatchingMock = new Object();
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMock() throws Exception {
+        Collection<Object> mocks = Collections.singletonList(mockMatchingMock);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, mockField, mockFieldInstance);
+        Object result = injecter.thenInject();
+
+        assertEquals(mockMatchingMock, result);
+
+        verify(mockField, times(1)).getName();
+    }
+
+    @Test
+    public void testFilterCandidateWithMultipleMocks() throws Exception {
+        Collection<Object> mocks = Arrays.asList(new Object(), new Object());
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, mockField, mockFieldInstance);
+        Object result = injecter.thenInject();
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMockAndBeanPropertySetterSuccess() throws Exception {
+        Collection<Object> mocks = Collections.singletonList(mockMatchingMock);
+        BeanPropertySetter mockSetter = mock(BeanPropertySetter.class);
+        when(mockSetter.set(mockMatchingMock)).thenReturn(true);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, mockField, mockFieldInstance);
+        Object result = injecter.thenInject();
+
+        assertEquals(mockMatchingMock, result);
+
+        verify(mockSetter, times(1)).set(mockMatchingMock);
+        verify(mockField, times(1)).getName();
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMockAndBeanPropertySetterFailure() throws Exception {
+        Collection<Object> mocks = Collections.singletonList(mockMatchingMock);
+        BeanPropertySetter mockSetter = mock(BeanPropertySetter.class);
+        when(mockSetter.set(mockMatchingMock)).thenReturn(false);
+        FieldSetter mockFieldSetter = mock(FieldSetter.class);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, mockField, mockFieldInstance);
+        Object result = injecter.thenInject();
+
+        assertEquals(mockMatchingMock, result);
+
+        verify(mockSetter, times(1)).set(mockMatchingMock);
+        verify(mockFieldSetter, times(1)).set(mockMatchingMock);
+        verify(mockField, times(1)).getName();
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMockAndException() throws Exception {
+        Collection<Object> mocks = Collections.singletonList(mockMatchingMock);
+        BeanPropertySetter mockSetter = mock(BeanPropertySetter.class);
+        when(mockSetter.set(mockMatchingMock)).thenThrow(new RuntimeException("Test Exception"));
+        Reporter mockReporter = mock(Reporter.class);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, mockField, mockFieldInstance);
+        Object result = injecter.thenInject();
+
+        assertEquals(mockMatchingMock, result);
+
+        verify(mockSetter, times(1)).set(mockMatchingMock);
+        verify(mockReporter, times(1)).cannotInjectDependency(mockField, mockMatchingMock, any(RuntimeException.class));
+        verify(mockField, times(1)).getName();
+    }
+}
+```

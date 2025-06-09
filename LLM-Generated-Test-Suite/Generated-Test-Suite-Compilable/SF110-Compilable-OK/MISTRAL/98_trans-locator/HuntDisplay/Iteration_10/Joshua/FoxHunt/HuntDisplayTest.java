@@ -1,0 +1,78 @@
+package Joshua.FoxHunt;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import javax.swing.*;
+import java.awt.*;
+import java.util.Vector;
+
+public class HuntDisplayTest {
+
+    private HuntDisplay huntDisplay;
+
+    @Before
+    public void setUp() {
+        huntDisplay = new HuntDisplay();
+    }
+
+    @Test
+    public void testConstructor() {
+        assertEquals(new Dimension(50, 50), huntDisplay.getMinimumSize());
+        assertEquals(new Dimension(200, 200), huntDisplay.getPreferredSize());
+        assertEquals(Color.WHITE, huntDisplay.getBackground());
+        assertNotNull(huntDisplay.points);
+        assertNotNull(huntDisplay.landmarks);
+    }
+
+    @Test
+    public void testGetPreferredSize() {
+        assertEquals(new Dimension(200, 200), huntDisplay.getPreferredSize());
+    }
+
+    @Test
+    public void testGetMinimumSize() {
+        assertEquals(new Dimension(50, 50), huntDisplay.getMinimumSize());
+    }
+
+    @Test
+    public void testAddPoint() {
+        TrigPoint point = new TrigPoint(45.0, 90.0, 0.0, false);
+        huntDisplay.addPoint(point);
+        assertEquals(1, huntDisplay.points.size());
+        TrigPoint addedPoint = (TrigPoint) huntDisplay.points.get(0);
+        assertEquals(0.5, addedPoint.getY(), 0.001);
+        assertEquals(0.5, addedPoint.getX(), 0.001);
+        assertEquals(0.0, addedPoint.getTheta(), 0.001);
+        assertFalse(addedPoint.isFox());
+    }
+
+    @Test
+    public void testAddLandMark() {
+        Landmark landmark = new Landmark(45.0, 90.0, new ImageIcon());
+        huntDisplay.addLandMark(landmark);
+        assertEquals(1, huntDisplay.landmarks.size());
+        Landmark addedLandmark = (Landmark) huntDisplay.landmarks.get(0);
+        assertEquals(0.5, addedLandmark.getLat(), 0.001);
+        assertEquals(0.5, addedLandmark.getLon(), 0.001);
+        assertNotNull(addedLandmark.getIcon());
+    }
+
+    @Test
+    public void testPaintComponent() {
+        // This test is more of a sanity check since paintComponent involves graphics
+        // and is difficult to test without a graphical environment.
+        TrigPoint point = new TrigPoint(45.0, 90.0, 0.0, false);
+        huntDisplay.addPoint(point);
+        Landmark landmark = new Landmark(45.0, 90.0, new ImageIcon());
+        huntDisplay.addLandMark(landmark);
+
+        // Mocking the Graphics object is complex and typically requires a graphical environment.
+        // Here we just ensure that the method does not throw an exception.
+        try {
+            huntDisplay.paintComponent(huntDisplay.getGraphics());
+        } catch (Exception e) {
+            fail("paintComponent should not throw an exception");
+        }
+    }
+}

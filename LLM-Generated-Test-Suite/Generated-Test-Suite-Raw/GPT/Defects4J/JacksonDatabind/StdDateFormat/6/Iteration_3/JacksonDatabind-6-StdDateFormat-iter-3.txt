@@ -1,0 +1,122 @@
+Here is a JUnit 4 test suite for the `StdDateFormat` class. This suite aims to cover the various methods and functionalities provided by the class:
+
+```java
+import com.fasterxml.jackson.databind.util.StdDateFormat;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import static org.junit.Assert.*;
+
+public class StdDateFormatTest {
+
+    private StdDateFormat stdDateFormat;
+
+    @Before
+    public void setUp() {
+        stdDateFormat = new StdDateFormat();
+    }
+
+    @Test
+    public void testDefaultTimeZone() {
+        assertEquals(TimeZone.getTimeZone("GMT"), StdDateFormat.getDefaultTimeZone());
+    }
+
+    @Test
+    public void testWithTimeZone() {
+        TimeZone tz = TimeZone.getTimeZone("PST");
+        StdDateFormat newFormat = stdDateFormat.withTimeZone(tz);
+        assertNotSame(stdDateFormat, newFormat);
+        assertEquals(tz, newFormat._timezone);
+    }
+
+    @Test
+    public void testWithLocale() {
+        Locale locale = Locale.FRANCE;
+        StdDateFormat newFormat = stdDateFormat.withLocale(locale);
+        assertNotSame(stdDateFormat, newFormat);
+        assertEquals(locale, newFormat._locale);
+    }
+
+    @Test
+    public void testClone() {
+        StdDateFormat clonedFormat = stdDateFormat.clone();
+        assertNotSame(stdDateFormat, clonedFormat);
+        assertEquals(stdDateFormat._locale, clonedFormat._locale);
+        assertEquals(stdDateFormat._timezone, clonedFormat._timezone);
+    }
+
+    @Test
+    public void testParseISO8601() throws ParseException {
+        String dateStr = "2023-10-01T12:45:30.000Z";
+        Date date = stdDateFormat.parse(dateStr);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testParseRFC1123() throws ParseException {
+        String dateStr = "Sun, 01 Oct 2023 12:45:30 GMT";
+        Date date = stdDateFormat.parse(dateStr);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testParseTimestamp() throws ParseException {
+        String dateStr = "1696161930000"; // Equivalent to a timestamp
+        Date date = stdDateFormat.parse(dateStr);
+        assertNotNull(date);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testParseInvalidDate() throws ParseException {
+        String dateStr = "Invalid Date String";
+        stdDateFormat.parse(dateStr);
+    }
+
+    @Test
+    public void testFormat() {
+        Date date = new Date(1696161930000L); // Equivalent to a timestamp
+        StringBuffer buffer = new StringBuffer();
+        stdDateFormat.format(date, buffer, new java.text.FieldPosition(0));
+        assertTrue(buffer.toString().startsWith("2023-10-01T"));
+    }
+
+    @Test
+    public void testToString() {
+        String str = stdDateFormat.toString();
+        assertTrue(str.contains("DateFormat"));
+        assertTrue(str.contains("locale: " + stdDateFormat._locale));
+    }
+
+    @Test
+    public void testLooksLikeISO8601() {
+        assertTrue(stdDateFormat.looksLikeISO8601("2023-10-01T12:45:30.000Z"));
+        assertFalse(stdDateFormat.looksLikeISO8601("Sun, 01 Oct 2023 12:45:30 GMT"));
+    }
+
+    @Test
+    public void testHasTimeZone() {
+        assertTrue(StdDateFormat.hasTimeZone("2023-10-01T12:45:30+0000"));
+        assertFalse(StdDateFormat.hasTimeZone("2023-10-01T12:45:30"));
+    }
+
+    @Test
+    public void testGetISO8601Format() {
+        DateFormat df = StdDateFormat.getISO8601Format(TimeZone.getTimeZone("PST"), Locale.US);
+        assertNotNull(df);
+    }
+
+    @Test
+    public void testGetRFC1123Format() {
+        DateFormat df = StdDateFormat.getRFC1123Format(TimeZone.getTimeZone("PST"), Locale.US);
+        assertNotNull(df);
+    }
+}
+```
+
+This test suite covers the main functionalities of the `StdDateFormat` class, including parsing and formatting dates, handling time zones and locales, and checking the string representation of the class. It also tests the utility methods for detecting ISO8601 formats and time zones.

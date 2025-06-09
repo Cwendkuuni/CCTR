@@ -1,0 +1,114 @@
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import com.allenstudio.ir.core.InspirentoMediator;
+import com.allenstudio.ir.util.InspirentoUtilities;
+import com.allenstudio.ir.util.UIResources;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.swing.*;
+import java.net.URL;
+import java.util.MissingResourceException;
+
+@RunWith(MockitoJUnitRunner.class)
+public class MainMenuTest {
+
+    @Mock
+    private InspirentoMediator mockMediator;
+
+    @Before
+    public void setUp() {
+        // Mocking static methods in UIResources and InspirentoUtilities
+        mockStatic(UIResources.class);
+        mockStatic(InspirentoUtilities.class);
+    }
+
+    @Test
+    public void testMainMenuConstructor() {
+        // Arrange
+        String[] menus = {"file", "edit", "view"};
+        when(InspirentoUtilities.tokenize(anyString())).thenReturn(menus);
+        when(UIResources.getString(anyString())).thenReturn("MenuLabel");
+
+        // Act
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        // Assert
+        assertEquals(menus.length, mainMenu.getMenuCount());
+    }
+
+    @Test
+    public void testCreateMenu() {
+        // Arrange
+        String menuName = "file";
+        String[] items = {"new", "open", "-", "exit"};
+        when(UIResources.getString(menuName + "Label")).thenReturn("File");
+        when(InspirentoUtilities.tokenize(anyString())).thenReturn(items);
+        when(UIResources.getString(anyString())).thenReturn("ItemLabel");
+
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        // Act
+        JMenu menu = mainMenu.createMenu(menuName);
+
+        // Assert
+        assertEquals("File", menu.getText());
+        assertEquals(items.length, menu.getItemCount());
+    }
+
+    @Test
+    public void testAddShortcutAndIcon() {
+        // Arrange
+        JMenuItem menuItem = new JMenuItem();
+        String key = "new";
+        when(UIResources.getString(key + "Shortcut")).thenReturn("ctrl N");
+        when(UIResources.getString(key + "Icon")).thenReturn("/path/to/icon.png");
+        URL mockUrl = mock(URL.class);
+        when(mockUrl.toString()).thenReturn("/path/to/icon.png");
+        when(MainMenu.class.getResource("/path/to/icon.png")).thenReturn(mockUrl);
+
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        // Act
+        mainMenu.addShortcutAndIcon(menuItem, key);
+
+        // Assert
+        assertEquals(KeyStroke.getKeyStroke("ctrl N"), menuItem.getAccelerator());
+        assertNotNull(menuItem.getIcon());
+    }
+
+    @Test
+    public void testAddShortcutAndIconWithMissingResources() {
+        // Arrange
+        JMenuItem menuItem = new JMenuItem();
+        String key = "new";
+        when(UIResources.getString(key + "Shortcut")).thenThrow(new MissingResourceException("Missing", "String", key));
+        when(UIResources.getString(key + "Icon")).thenThrow(new MissingResourceException("Missing", "String", key));
+
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        // Act
+        mainMenu.addShortcutAndIcon(menuItem, key);
+
+        // Assert
+        assertNull(menuItem.getAccelerator());
+        assertNull(menuItem.getIcon());
+    }
+
+    @Test
+    public void testChanged() {
+        // Arrange
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        // Act & Assert
+        mainMenu.changed(); // No exception should be thrown
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to test the `MainMenu` class. It covers the constructor, `createMenu`, `addShortcutAndIcon`, and `changed` methods. The tests mock the static methods from `UIResources` and `InspirentoUtilities` to simulate different scenarios, including handling missing resources.

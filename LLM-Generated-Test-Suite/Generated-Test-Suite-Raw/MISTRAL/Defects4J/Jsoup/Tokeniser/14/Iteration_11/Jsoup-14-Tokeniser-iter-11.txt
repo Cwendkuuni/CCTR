@@ -1,0 +1,292 @@
+```java
+package org.jsoup.parser;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Entities;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class TokeniserTest {
+
+    private Tokeniser tokeniser;
+    private CharacterReader mockReader;
+
+    @Before
+    public void setUp() {
+        mockReader = new MockCharacterReader();
+        tokeniser = new Tokeniser(mockReader);
+    }
+
+    @Test
+    public void testRead() {
+        // Mock the reader to simulate input
+        mockReader.setInput("test");
+
+        Token token = tokeniser.read();
+        assertNotNull(token);
+        assertTrue(token instanceof Token.Character);
+        assertEquals("test", ((Token.Character) token).getData());
+    }
+
+    @Test
+    public void testEmitToken() {
+        Token token = new Token.StartTag();
+        tokeniser.emit(token);
+
+        assertTrue(tokeniser.isEmitPending);
+        assertEquals(token, tokeniser.emitPending);
+    }
+
+    @Test
+    public void testEmitString() {
+        tokeniser.emit("test");
+        assertEquals("test", tokeniser.charBuffer.toString());
+    }
+
+    @Test
+    public void testEmitChar() {
+        tokeniser.emit('a');
+        assertEquals("a", tokeniser.charBuffer.toString());
+    }
+
+    @Test
+    public void testGetState() {
+        assertEquals(TokeniserState.Data, tokeniser.getState());
+    }
+
+    @Test
+    public void testTransition() {
+        tokeniser.transition(TokeniserState.TagOpen);
+        assertEquals(TokeniserState.TagOpen, tokeniser.getState());
+    }
+
+    @Test
+    public void testAdvanceTransition() {
+        tokeniser.advanceTransition(TokeniserState.TagOpen);
+        assertEquals(TokeniserState.TagOpen, tokeniser.getState());
+        assertEquals(1, mockReader.getPosition());
+    }
+
+    @Test
+    public void testAcknowledgeSelfClosingFlag() {
+        tokeniser.acknowledgeSelfClosingFlag();
+        assertTrue(tokeniser.selfClosingFlagAcknowledged);
+    }
+
+    @Test
+    public void testConsumeCharacterReference() {
+        mockReader.setInput("&#x3C;");
+        Character result = tokeniser.consumeCharacterReference(null, false);
+        assertEquals(Character.valueOf('<'), result);
+    }
+
+    @Test
+    public void testCreateTagPending() {
+        Token.Tag tag = tokeniser.createTagPending(true);
+        assertTrue(tag instanceof Token.StartTag);
+        assertEquals(tag, tokeniser.tagPending);
+    }
+
+    @Test
+    public void testEmitTagPending() {
+        tokeniser.createTagPending(true);
+        tokeniser.emitTagPending();
+        assertTrue(tokeniser.isEmitPending);
+        assertTrue(tokeniser.emitPending instanceof Token.StartTag);
+    }
+
+    @Test
+    public void testCreateCommentPending() {
+        tokeniser.createCommentPending();
+        assertNotNull(tokeniser.commentPending);
+    }
+
+    @Test
+    public void testEmitCommentPending() {
+        tokeniser.createCommentPending();
+        tokeniser.emitCommentPending();
+        assertTrue(tokeniser.isEmitPending);
+        assertTrue(tokeniser.emitPending instanceof Token.Comment);
+    }
+
+    @Test
+    public void testCreateDoctypePending() {
+        tokeniser.createDoctypePending();
+        assertNotNull(tokeniser.doctypePending);
+    }
+
+    @Test
+    public void testEmitDoctypePending() {
+        tokeniser.createDoctypePending();
+        tokeniser.emitDoctypePending();
+        assertTrue(tokeniser.isEmitPending);
+        assertTrue(tokeniser.emitPending instanceof Token.Doctype);
+    }
+
+    @Test
+    public void testCreateTempBuffer() {
+        tokeniser.createTempBuffer();
+        assertNotNull(tokeniser.dataBuffer);
+    }
+
+    @Test
+    public void testIsAppropriateEndTagToken() {
+        tokeniser.createTagPending(true);
+        tokeniser.tagPending.tagName = "div";
+        tokeniser.lastStartTag = (Token.StartTag) tokeniser.tagPending;
+
+        tokeniser.createTagPending(false);
+        tokeniser.tagPending.tagName = "div";
+
+        assertTrue(tokeniser.isAppropriateEndTagToken());
+    }
+
+    @Test
+    public void testIsTrackErrors() {
+        assertTrue(tokeniser.isTrackErrors());
+    }
+
+    @Test
+    public void testSetTrackErrors() {
+        tokeniser.setTrackErrors(false);
+        assertFalse(tokeniser.isTrackErrors());
+    }
+
+    @Test
+    public void testError() {
+        tokeniser.error("Test error");
+        assertEquals(1, tokeniser.errors.size());
+        assertEquals("Test error", tokeniser.errors.get(0).getErrorMessage());
+    }
+
+    @Test
+    public void testEofError() {
+        tokeniser.eofError(TokeniserState.Data);
+        assertEquals(1, tokeniser.errors.size());
+        assertEquals("Unexpectedly reached end of file (EOF)", tokeniser.errors.get(0).getErrorMessage());
+    }
+
+    @Test
+    public void testCurrentNodeInHtmlNS() {
+        assertTrue(tokeniser.currentNodeInHtmlNS());
+    }
+
+    private class MockCharacterReader extends CharacterReader {
+        private String input;
+        private int position = 0;
+
+        public void setInput(String input) {
+            this.input = input;
+            this.position = 0;
+        }
+
+        @Override
+        public boolean isEmpty() {
+            return position >= input.length();
+        }
+
+        @Override
+        public char current() {
+            return input.charAt(position);
+        }
+
+        @Override
+        public void advance() {
+            position++;
+        }
+
+        @Override
+        public void mark() {
+            // No-op for this mock
+        }
+
+        @Override
+        public void rewindToMark() {
+            // No-op for this mock
+        }
+
+        @Override
+        public boolean matchConsume(char c) {
+            if (current() == c) {
+                advance();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean matchConsumeIgnoreCase(String sequence) {
+            if (input.regionMatches(true, position, sequence, 0, sequence.length())) {
+                position += sequence.length();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean matchesAny(char... seq) {
+            for (char c : seq) {
+                if (current() == c) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean matches(char c) {
+            return current() == c;
+        }
+
+        @Override
+        public boolean matchesLetter() {
+            return Character.isLetter(current());
+        }
+
+        @Override
+        public boolean matchesDigit() {
+            return Character.isDigit(current());
+        }
+
+        @Override
+        public String consumeLetterSequence() {
+            int start = position;
+            while (position < input.length() && Character.isLetter(input.charAt(position))) {
+                position++;
+            }
+            return input.substring(start, position);
+        }
+
+        @Override
+        public String consumeDigitSequence() {
+            int start = position;
+            while (position < input.length() && Character.isDigit(input.charAt(position))) {
+                position++;
+            }
+            return input.substring(start, position);
+        }
+
+        @Override
+        public String consumeHexSequence() {
+            int start = position;
+            while (position < input.length() && isHexDigit(input.charAt(position))) {
+                position++;
+            }
+            return input.substring(start, position);
+        }
+
+        private boolean isHexDigit(char c) {
+            return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+        }
+
+        public int getPosition() {
+            return position;
+        }
+    }
+}
+```

@@ -1,0 +1,221 @@
+```java
+package com.google.common.util.concurrent;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+
+public class MonitorTest {
+
+    private Monitor monitor;
+    private Monitor fairMonitor;
+    private Guard mockGuard;
+
+    @Before
+    public void setUp() {
+        monitor = new Monitor();
+        fairMonitor = new Monitor(true);
+        mockGuard = new Guard(monitor) {
+            @Override
+            public boolean isSatisfied() {
+                return true;
+            }
+        };
+    }
+
+    @Test
+    public void testEnter() {
+        monitor.enter();
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterInterruptibly() throws InterruptedException {
+        monitor.enterInterruptibly();
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterWithTimeout() throws InterruptedException {
+        assertTrue(monitor.enter(1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterInterruptiblyWithTimeout() throws InterruptedException {
+        assertTrue(monitor.enterInterruptibly(1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testTryEnter() {
+        assertTrue(monitor.tryEnter());
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterWhen() throws InterruptedException {
+        monitor.enterWhen(mockGuard);
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterWhenUninterruptibly() {
+        monitor.enterWhenUninterruptibly(mockGuard);
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterWhenWithTimeout() throws InterruptedException {
+        assertTrue(monitor.enterWhen(mockGuard, 1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterWhenUninterruptiblyWithTimeout() {
+        assertTrue(monitor.enterWhenUninterruptibly(mockGuard, 1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterIf() {
+        assertTrue(monitor.enterIf(mockGuard));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterIfInterruptibly() throws InterruptedException {
+        assertTrue(monitor.enterIfInterruptibly(mockGuard));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterIfWithTimeout() {
+        assertTrue(monitor.enterIf(mockGuard, 1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterIfInterruptiblyWithTimeout() throws InterruptedException {
+        assertTrue(monitor.enterIfInterruptibly(mockGuard, 1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testTryEnterIf() {
+        assertTrue(monitor.tryEnterIf(mockGuard));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testWaitFor() throws InterruptedException {
+        monitor.enter();
+        monitor.waitFor(mockGuard);
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testWaitForUninterruptibly() {
+        monitor.enter();
+        monitor.waitForUninterruptibly(mockGuard);
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testWaitForWithTimeout() throws InterruptedException {
+        monitor.enter();
+        assertTrue(monitor.waitFor(mockGuard, 1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testWaitForUninterruptiblyWithTimeout() {
+        monitor.enter();
+        assertTrue(monitor.waitForUninterruptibly(mockGuard, 1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testLeave() {
+        monitor.enter();
+        monitor.leave();
+        assertFalse(monitor.isOccupiedByCurrentThread());
+    }
+
+    @Test
+    public void testIsFair() {
+        assertFalse(monitor.isFair());
+        assertTrue(fairMonitor.isFair());
+    }
+
+    @Test
+    public void testIsOccupied() {
+        monitor.enter();
+        assertTrue(monitor.isOccupied());
+        monitor.leave();
+        assertFalse(monitor.isOccupied());
+    }
+
+    @Test
+    public void testIsOccupiedByCurrentThread() {
+        monitor.enter();
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+        assertFalse(monitor.isOccupiedByCurrentThread());
+    }
+
+    @Test
+    public void testGetOccupiedDepth() {
+        monitor.enter();
+        assertEquals(1, monitor.getOccupiedDepth());
+        monitor.leave();
+        assertEquals(0, monitor.getOccupiedDepth());
+    }
+
+    @Test
+    public void testGetQueueLength() {
+        assertEquals(0, monitor.getQueueLength());
+    }
+
+    @Test
+    public void testHasQueuedThreads() {
+        assertFalse(monitor.hasQueuedThreads());
+    }
+
+    @Test
+    public void testHasQueuedThread() {
+        assertFalse(monitor.hasQueuedThread(Thread.currentThread()));
+    }
+
+    @Test
+    public void testHasWaiters() {
+        assertFalse(monitor.hasWaiters(mockGuard));
+    }
+
+    @Test
+    public void testGetWaitQueueLength() {
+        assertEquals(0, monitor.getWaitQueueLength(mockGuard));
+    }
+}
+```

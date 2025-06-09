@@ -1,0 +1,91 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the methods in the `TypeInfoFactory` class. This test suite assumes the existence of the `TypeInfo`, `TypeInfoArray`, `TypeUtils`, `Preconditions`, `ParameterizedTypeImpl`, and `GenericArrayTypeImpl` classes, as well as any necessary utility methods.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import java.lang.reflect.*;
+import com.google.gson.*;
+
+public class TypeInfoFactoryTest {
+
+    @Test
+    public void testGetTypeInfoForArray_ValidArrayType() {
+        Type arrayType = String[].class;
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(arrayType);
+        assertNotNull(typeInfoArray);
+        assertEquals(arrayType, typeInfoArray.getType());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArray_InvalidArrayType() {
+        Type nonArrayType = String.class;
+        TypeInfoFactory.getTypeInfoForArray(nonArrayType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField_SimpleField() throws NoSuchFieldException {
+        Field field = SampleClass.class.getDeclaredField("simpleField");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, SampleClass.class);
+        assertNotNull(typeInfo);
+        assertEquals(String.class, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetTypeInfoForField_ParameterizedField() throws NoSuchFieldException {
+        Field field = SampleClass.class.getDeclaredField("parameterizedField");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, SampleClass.class);
+        assertNotNull(typeInfo);
+        assertTrue(typeInfo.getType() instanceof ParameterizedType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField_TypeVariableField() throws NoSuchFieldException {
+        Field field = GenericClass.class.getDeclaredField("genericField");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, GenericClass.class);
+        assertNotNull(typeInfo);
+        assertEquals(Integer.class, typeInfo.getType());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetTypeInfoForField_UnsupportedTypeVariable() throws NoSuchFieldException {
+        Field field = GenericClass.class.getDeclaredField("genericField");
+        TypeInfoFactory.getTypeInfoForField(field, Object.class);
+    }
+
+    @Test
+    public void testGetTypeInfoForField_WildcardTypeField() throws NoSuchFieldException {
+        Field field = SampleClass.class.getDeclaredField("wildcardField");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, SampleClass.class);
+        assertNotNull(typeInfo);
+        assertEquals(Number.class, typeInfo.getType());
+    }
+
+    // Sample classes for testing
+    static class SampleClass {
+        String simpleField;
+        java.util.List<String> parameterizedField;
+        java.util.List<? extends Number> wildcardField;
+    }
+
+    static class GenericClass<T> {
+        T genericField;
+    }
+}
+```
+
+### Explanation:
+
+- **Test for `getTypeInfoForArray`:** 
+  - `testGetTypeInfoForArray_ValidArrayType`: Tests the method with a valid array type.
+  - `testGetTypeInfoForArray_InvalidArrayType`: Tests the method with a non-array type, expecting an `IllegalArgumentException`.
+
+- **Test for `getTypeInfoForField`:**
+  - `testGetTypeInfoForField_SimpleField`: Tests a simple field type.
+  - `testGetTypeInfoForField_ParameterizedField`: Tests a parameterized field type.
+  - `testGetTypeInfoForField_TypeVariableField`: Tests a field with a type variable, using a generic class.
+  - `testGetTypeInfoForField_UnsupportedTypeVariable`: Tests unsupported type variable scenarios, expecting an `UnsupportedOperationException`.
+  - `testGetTypeInfoForField_WildcardTypeField`: Tests a field with a wildcard type.
+
+### Note:
+- The test suite assumes the existence of the `TypeInfo`, `TypeInfoArray`, `TypeUtils`, `Preconditions`, `ParameterizedTypeImpl`, and `GenericArrayTypeImpl` classes, as well as any necessary utility methods.
+- The `SampleClass` and `GenericClass` are used as helper classes to provide fields for testing. Adjust these classes as necessary to fit the actual implementation details of your project.

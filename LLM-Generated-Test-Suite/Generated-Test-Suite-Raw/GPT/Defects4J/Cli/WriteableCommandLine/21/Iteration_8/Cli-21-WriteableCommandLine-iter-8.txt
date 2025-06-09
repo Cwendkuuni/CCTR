@@ -1,0 +1,105 @@
+To create a comprehensive JUnit 4 test suite for the `WriteableCommandLine` interface, we need to consider that interfaces cannot be directly instantiated. Therefore, the test suite will assume the existence of a concrete implementation of this interface. For the purpose of this test suite, let's assume there is a class named `WriteableCommandLineImpl` that implements `WriteableCommandLine`. 
+
+Below is a JUnit 4 test suite that tests all methods in the `WriteableCommandLine` interface:
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.apache.commons.cli2.Option;
+import org.apache.commons.cli2.WriteableCommandLine;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class WriteableCommandLineTest {
+
+    private WriteableCommandLine commandLine;
+    private Option testOption;
+
+    @Before
+    public void setUp() {
+        // Assuming WriteableCommandLineImpl is a concrete implementation of WriteableCommandLine
+        commandLine = new WriteableCommandLineImpl();
+        testOption = new Option("test", "test option");
+    }
+
+    @Test
+    public void testAddOption() {
+        commandLine.addOption(testOption);
+        assertTrue(commandLine.hasOption(testOption));
+    }
+
+    @Test
+    public void testAddValue() {
+        commandLine.addValue(testOption, "value1");
+        List values = commandLine.getUndefaultedValues(testOption);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test
+    public void testGetUndefaultedValues() {
+        commandLine.addValue(testOption, "value1");
+        commandLine.addValue(testOption, "value2");
+        List values = commandLine.getUndefaultedValues(testOption);
+        assertEquals(2, values.size());
+        assertTrue(values.contains("value1"));
+        assertTrue(values.contains("value2"));
+    }
+
+    @Test
+    public void testSetDefaultValues() {
+        List<String> defaultValues = new ArrayList<>();
+        defaultValues.add("default1");
+        defaultValues.add("default2");
+        commandLine.setDefaultValues(testOption, defaultValues);
+        List values = commandLine.getUndefaultedValues(testOption);
+        assertTrue(values.isEmpty());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAddSwitchThrowsExceptionIfAlreadyAdded() {
+        commandLine.addSwitch(testOption, true);
+        commandLine.addSwitch(testOption, false); // Should throw IllegalStateException
+    }
+
+    @Test
+    public void testAddSwitch() {
+        commandLine.addSwitch(testOption, true);
+        assertTrue(commandLine.hasOption(testOption));
+    }
+
+    @Test
+    public void testSetDefaultSwitch() {
+        commandLine.setDefaultSwitch(testOption, Boolean.TRUE);
+        assertTrue(commandLine.hasOption(testOption));
+    }
+
+    @Test
+    public void testAddPropertyWithOption() {
+        commandLine.addProperty(testOption, "property1", "value1");
+        assertEquals("value1", commandLine.getProperty(testOption, "property1"));
+    }
+
+    @Test
+    public void testAddPropertyWithoutOption() {
+        commandLine.addProperty("property2", "value2");
+        assertEquals("value2", commandLine.getProperty("property2"));
+    }
+
+    @Test
+    public void testLooksLikeOption() {
+        assertTrue(commandLine.looksLikeOption("-test"));
+        assertFalse(commandLine.looksLikeOption("notAnOption"));
+    }
+}
+```
+
+### Notes:
+- This test suite assumes the existence of a concrete class `WriteableCommandLineImpl` that implements the `WriteableCommandLine` interface.
+- The `Option` class is assumed to have a constructor that takes a name and description.
+- The `WriteableCommandLine` interface methods like `hasOption`, `getProperty`, and `getUndefaultedValues` are assumed to be part of the `CommandLine` interface or implemented in `WriteableCommandLineImpl`.
+- The test suite includes tests for adding options, values, switches, properties, and checking if an argument looks like an option.
+- The `IllegalStateException` test checks that adding a switch twice throws an exception, as specified in the interface documentation.

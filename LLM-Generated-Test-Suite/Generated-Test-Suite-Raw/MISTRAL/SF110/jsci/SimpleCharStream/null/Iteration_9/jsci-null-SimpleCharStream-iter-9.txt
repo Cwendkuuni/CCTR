@@ -1,0 +1,156 @@
+```java
+package JSci.maths.symbolic;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+
+public class SimpleCharStreamTest {
+
+    private SimpleCharStream simpleCharStream;
+    private Reader reader;
+
+    @Before
+    public void setUp() {
+        reader = new StringReader("Test string for SimpleCharStream");
+        simpleCharStream = new SimpleCharStream(reader);
+    }
+
+    @Test
+    public void testStaticFlag() {
+        assertTrue(SimpleCharStream.staticFlag);
+    }
+
+    @Test
+    public void testBeginToken() throws IOException {
+        char c = SimpleCharStream.BeginToken();
+        assertEquals('T', c);
+    }
+
+    @Test
+    public void testReadChar() throws IOException {
+        char c = SimpleCharStream.readChar();
+        assertEquals('T', c);
+        c = SimpleCharStream.readChar();
+        assertEquals('e', c);
+    }
+
+    @Test
+    public void testGetColumn() throws IOException {
+        SimpleCharStream.readChar();
+        assertEquals(1, SimpleCharStream.getColumn());
+    }
+
+    @Test
+    public void testGetLine() throws IOException {
+        SimpleCharStream.readChar();
+        assertEquals(1, SimpleCharStream.getLine());
+    }
+
+    @Test
+    public void testGetEndColumn() throws IOException {
+        SimpleCharStream.readChar();
+        assertEquals(1, SimpleCharStream.getEndColumn());
+    }
+
+    @Test
+    public void testGetEndLine() throws IOException {
+        SimpleCharStream.readChar();
+        assertEquals(1, SimpleCharStream.getEndLine());
+    }
+
+    @Test
+    public void testGetBeginColumn() throws IOException {
+        SimpleCharStream.BeginToken();
+        assertEquals(0, SimpleCharStream.getBeginColumn());
+    }
+
+    @Test
+    public void testGetBeginLine() throws IOException {
+        SimpleCharStream.BeginToken();
+        assertEquals(1, SimpleCharStream.getBeginLine());
+    }
+
+    @Test
+    public void testBackup() throws IOException {
+        SimpleCharStream.readChar();
+        SimpleCharStream.backup(1);
+        assertEquals(0, SimpleCharStream.bufpos);
+    }
+
+    @Test
+    public void testGetImage() throws IOException {
+        SimpleCharStream.BeginToken();
+        SimpleCharStream.readChar();
+        SimpleCharStream.readChar();
+        assertEquals("Te", SimpleCharStream.GetImage());
+    }
+
+    @Test
+    public void testGetSuffix() throws IOException {
+        SimpleCharStream.readChar();
+        SimpleCharStream.readChar();
+        char[] suffix = SimpleCharStream.GetSuffix(2);
+        assertEquals('e', suffix[0]);
+        assertEquals('s', suffix[1]);
+    }
+
+    @Test
+    public void testDone() {
+        SimpleCharStream.Done();
+        assertNull(SimpleCharStream.buffer);
+        assertNull(SimpleCharStream.bufline);
+        assertNull(SimpleCharStream.bufcolumn);
+    }
+
+    @Test
+    public void testAdjustBeginLineColumn() throws IOException {
+        SimpleCharStream.BeginToken();
+        SimpleCharStream.readChar();
+        SimpleCharStream.adjustBeginLineColumn(2, 5);
+        assertEquals(2, SimpleCharStream.getBeginLine());
+        assertEquals(5, SimpleCharStream.getBeginColumn());
+    }
+
+    @Test
+    public void testReInit() throws IOException {
+        SimpleCharStream.ReInit(new StringReader("New test string"), 1, 1);
+        char c = SimpleCharStream.readChar();
+        assertEquals('N', c);
+    }
+
+    @Test
+    public void testExpandBuff() {
+        SimpleCharStream.bufsize = 10;
+        SimpleCharStream.available = 10;
+        SimpleCharStream.tokenBegin = 5;
+        SimpleCharStream.bufpos = 5;
+        SimpleCharStream.buffer = new char[10];
+        SimpleCharStream.bufline = new int[10];
+        SimpleCharStream.bufcolumn = new int[10];
+
+        SimpleCharStream.ExpandBuff(false);
+
+        assertEquals(2058, SimpleCharStream.bufsize);
+        assertEquals(2058, SimpleCharStream.available);
+        assertEquals(0, SimpleCharStream.tokenBegin);
+    }
+
+    @Test
+    public void testFillBuff() throws IOException {
+        SimpleCharStream.maxNextCharInd = SimpleCharStream.available;
+        SimpleCharStream.FillBuff();
+        assertTrue(SimpleCharStream.maxNextCharInd > SimpleCharStream.available);
+    }
+
+    @Test
+    public void testUpdateLineColumn() {
+        SimpleCharStream.UpdateLineColumn('\n');
+        assertEquals(2, SimpleCharStream.line);
+        assertEquals(1, SimpleCharStream.column);
+    }
+}
+```

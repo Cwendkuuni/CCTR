@@ -1,0 +1,127 @@
+Certainly! Below is a JUnit 4 test suite for the `TucsonSimple` class. This test suite aims to cover the public methods and some of the private methods using reflection. Note that testing private methods directly is generally not recommended, but for the sake of completeness, I've included them here.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
+@RunWith(JUnit4.class)
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+    private Sample sample;
+
+    @Before
+    public void setUp() {
+        tucsonSimple = new TucsonSimple();
+        sample = new Sample();
+        sample.meta = new HashMap<>();
+        sample.range = new Range(new Year(1000), new Year(1010));
+        sample.data = new ArrayList<>();
+        for (int i = 0; i < 11; i++) {
+            sample.data.add(i);
+        }
+        sample.count = new ArrayList<>();
+        for (int i = 0; i < 11; i++) {
+            sample.count.add(1);
+        }
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("format.tucsonsimple", tucsonSimple.toString());
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        assertEquals(".RWL", tucsonSimple.getDefaultExtension());
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        BufferedReader reader = new BufferedReader(new StringReader(""));
+        tucsonSimple.load(reader);
+    }
+
+    @Test
+    public void testMake6digitCode() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("make6digitCode", Sample.class);
+        method.setAccessible(true);
+
+        sample.meta.put("id", "123");
+        String code = (String) method.invoke(tucsonSimple, sample);
+        assertEquals("123   ", code);
+
+        sample.meta.put("id", "1234567");
+        code = (String) method.invoke(tucsonSimple, sample);
+        assertEquals("123456", code);
+
+        sample.meta.remove("id");
+        code = (String) method.invoke(tucsonSimple, sample);
+        assertEquals("000000", code);
+    }
+
+    @Test
+    public void testSaveRowHeader() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("saveRowHeader", BufferedWriter.class, Sample.class, String.class, int.class, Year.class);
+        method.setAccessible(true);
+
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(stringWriter);
+
+        method.invoke(tucsonSimple, writer, sample, "123456", 6, new Year(1000));
+        writer.flush();
+        assertEquals("1234561000", stringWriter.toString().trim());
+    }
+
+    @Test
+    public void testSaveData() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("saveData", Sample.class, BufferedWriter.class);
+        method.setAccessible(true);
+
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(stringWriter);
+
+        method.invoke(tucsonSimple, sample, writer);
+        writer.flush();
+        assertTrue(stringWriter.toString().contains("   999"));
+    }
+
+    @Test
+    public void testComputeRange() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("computeRange", Sample.class);
+        method.setAccessible(true);
+
+        Range range = (Range) method.invoke(tucsonSimple, sample);
+        assertEquals(sample.range, range);
+
+        sample.range = new Range(new Year(-5000), new Year(-4990));
+        range = (Range) method.invoke(tucsonSimple, sample);
+        assertEquals(new Year(3000), range.getStart());
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(stringWriter);
+
+        tucsonSimple.save(sample, writer);
+        writer.flush();
+        assertTrue(stringWriter.toString().contains("   999"));
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `TucsonSimple` instance and a `Sample` object with mock data.
+- **Public Methods**: Tests for `toString`, `getDefaultExtension`, `load`, and `save` methods are straightforward.
+- **Private Methods**: Reflection is used to access and test private methods like `make6digitCode`, `saveRowHeader`, `saveData`, and `computeRange`.
+- **Assertions**: The tests use assertions to verify that the methods return expected results or throw expected exceptions.
+
+Please ensure that the `Sample`, `Range`, `Year`, and `WrongFiletypeException` classes are correctly defined in your project for this test suite to work.

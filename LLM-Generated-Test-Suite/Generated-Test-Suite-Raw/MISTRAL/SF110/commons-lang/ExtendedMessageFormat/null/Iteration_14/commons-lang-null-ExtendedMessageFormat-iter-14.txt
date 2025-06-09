@@ -1,0 +1,187 @@
+```java
+package org.apache.commons.lang3.text;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.Assert;
+
+import java.text.Format;
+import java.text.ParsePosition;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+public class ExtendedMessageFormatTest {
+
+    private ExtendedMessageFormat messageFormat;
+    private Map<String, FormatFactory> registry;
+
+    @Before
+    public void setUp() {
+        registry = new HashMap<>();
+        messageFormat = new ExtendedMessageFormat("Test pattern", registry);
+    }
+
+    @Test
+    public void testConstructorWithPattern() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Test pattern");
+        Assert.assertNotNull(emf);
+    }
+
+    @Test
+    public void testConstructorWithPatternAndLocale() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Test pattern", Locale.ENGLISH);
+        Assert.assertNotNull(emf);
+    }
+
+    @Test
+    public void testConstructorWithPatternAndRegistry() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Test pattern", registry);
+        Assert.assertNotNull(emf);
+    }
+
+    @Test
+    public void testConstructorWithPatternLocaleAndRegistry() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Test pattern", Locale.ENGLISH, registry);
+        Assert.assertNotNull(emf);
+    }
+
+    @Test
+    public void testToPattern() {
+        String pattern = "Test pattern";
+        messageFormat.applyPattern(pattern);
+        Assert.assertEquals(pattern, messageFormat.toPattern());
+    }
+
+    @Test
+    public void testApplyPattern() {
+        String pattern = "Test pattern {0}";
+        messageFormat.applyPattern(pattern);
+        Assert.assertEquals(pattern, messageFormat.toPattern());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormat() {
+        messageFormat.setFormat(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatByArgumentIndex() {
+        messageFormat.setFormatByArgumentIndex(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormats() {
+        messageFormat.setFormats(new Format[0]);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatsByArgumentIndex() {
+        messageFormat.setFormatsByArgumentIndex(new Format[0]);
+    }
+
+    @Test
+    public void testEquals() {
+        ExtendedMessageFormat emf1 = new ExtendedMessageFormat("Test pattern", registry);
+        ExtendedMessageFormat emf2 = new ExtendedMessageFormat("Test pattern", registry);
+        Assert.assertEquals(emf1, emf2);
+    }
+
+    @Test
+    public void testHashCode() {
+        ExtendedMessageFormat emf1 = new ExtendedMessageFormat("Test pattern", registry);
+        ExtendedMessageFormat emf2 = new ExtendedMessageFormat("Test pattern", registry);
+        Assert.assertEquals(emf1.hashCode(), emf2.hashCode());
+    }
+
+    @Test
+    public void testGetFormat() {
+        registry.put("test", new FormatFactory() {
+            @Override
+            public Format getFormat(String name, String arguments, Locale locale) {
+                return new SimpleFormat();
+            }
+        });
+        messageFormat = new ExtendedMessageFormat("Test pattern {0,test}", registry);
+        Format format = messageFormat.getFormat("test");
+        Assert.assertNotNull(format);
+    }
+
+    @Test
+    public void testReadArgumentIndex() {
+        String pattern = "Test pattern {0}";
+        ParsePosition pos = new ParsePosition(0);
+        int index = messageFormat.readArgumentIndex(pattern, pos);
+        Assert.assertEquals(0, index);
+    }
+
+    @Test
+    public void testParseFormatDescription() {
+        String pattern = "Test pattern {0,test}";
+        ParsePosition pos = new ParsePosition(0);
+        String description = messageFormat.parseFormatDescription(pattern, pos);
+        Assert.assertEquals("test", description);
+    }
+
+    @Test
+    public void testInsertFormats() {
+        String pattern = "Test pattern {0}";
+        ArrayList<String> customPatterns = new ArrayList<>();
+        customPatterns.add("test");
+        String result = messageFormat.insertFormats(pattern, customPatterns);
+        Assert.assertEquals("Test pattern {0,test}", result);
+    }
+
+    @Test
+    public void testSeekNonWs() {
+        String pattern = "Test pattern";
+        ParsePosition pos = new ParsePosition(0);
+        messageFormat.seekNonWs(pattern, pos);
+        Assert.assertEquals(0, pos.getIndex());
+    }
+
+    @Test
+    public void testNext() {
+        ParsePosition pos = new ParsePosition(0);
+        messageFormat.next(pos);
+        Assert.assertEquals(1, pos.getIndex());
+    }
+
+    @Test
+    public void testAppendQuotedString() {
+        String pattern = "Test 'pattern'";
+        ParsePosition pos = new ParsePosition(0);
+        StringBuilder sb = new StringBuilder();
+        messageFormat.appendQuotedString(pattern, pos, sb, true);
+        Assert.assertEquals("Test 'pattern'", sb.toString());
+    }
+
+    @Test
+    public void testGetQuotedString() {
+        String pattern = "Test 'pattern'";
+        ParsePosition pos = new ParsePosition(0);
+        messageFormat.getQuotedString(pattern, pos, true);
+        Assert.assertEquals(12, pos.getIndex());
+    }
+
+    @Test
+    public void testContainsElements() {
+        ArrayList<String> list = new ArrayList<>();
+        list.add("test");
+        boolean result = messageFormat.containsElements(list);
+        Assert.assertTrue(result);
+    }
+
+    private static class SimpleFormat extends Format {
+        @Override
+        public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
+            return toAppendTo.append(obj.toString());
+        }
+
+        @Override
+        public Object parseObject(String source, ParsePosition pos) {
+            return source;
+        }
+    }
+}
+```

@@ -1,0 +1,109 @@
+Certainly! Below is a JUnit 4 test suite for the `Entities` class. This suite tests the public methods of the class, ensuring that they behave as expected.
+
+```java
+import org.jsoup.nodes.Entities;
+import org.jsoup.nodes.Document;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class EntitiesTest {
+
+    private Document.OutputSettings outputSettings;
+
+    @Before
+    public void setUp() {
+        outputSettings = new Document.OutputSettings();
+        outputSettings.charset(Charset.forName("UTF-8"));
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertTrue(Entities.isNamedEntity("amp"));
+        assertFalse(Entities.isNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testIsBaseNamedEntity() {
+        assertTrue(Entities.isBaseNamedEntity("lt"));
+        assertTrue(Entities.isBaseNamedEntity("amp"));
+        assertFalse(Entities.isBaseNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertEquals(Character.valueOf('&'), Entities.getCharacterByName("amp"));
+        assertNull(Entities.getCharacterByName("nonexistent"));
+    }
+
+    @Test
+    public void testEscape() {
+        String input = "This is a <test> & \"example\".";
+        String expected = "This is a &lt;test&gt; &amp; &quot;example&quot;.";
+        assertEquals(expected, Entities.escape(input, outputSettings));
+    }
+
+    @Test
+    public void testUnescape() {
+        String input = "This is a &lt;test&gt; &amp; &quot;example&quot;.";
+        String expected = "This is a <test> & \"example\".";
+        assertEquals(expected, Entities.unescape(input));
+    }
+
+    @Test
+    public void testUnescapeStrict() {
+        String input = "This is a &lt;test&gt; &amp; &quot;example&quot;.";
+        String expected = "This is a <test> & \"example\".";
+        assertEquals(expected, Entities.unescape(input, true));
+    }
+
+    @Test
+    public void testEscapeModeGetMap() {
+        Map<Character, String> xhtmlMap = Entities.EscapeMode.xhtml.getMap();
+        assertNotNull(xhtmlMap);
+        assertTrue(xhtmlMap.containsKey('<'));
+        assertEquals("lt", xhtmlMap.get('<'));
+
+        Map<Character, String> baseMap = Entities.EscapeMode.base.getMap();
+        assertNotNull(baseMap);
+        assertTrue(baseMap.containsKey('<'));
+        assertEquals("lt", baseMap.get('<'));
+
+        Map<Character, String> extendedMap = Entities.EscapeMode.extended.getMap();
+        assertNotNull(extendedMap);
+        assertTrue(extendedMap.containsKey('<'));
+        assertEquals("lt", extendedMap.get('<'));
+    }
+
+    @Test
+    public void testCanEncode() {
+        CharsetEncoder encoder = Charset.forName("US-ASCII").newEncoder();
+        assertTrue(Entities.canEncode(Entities.CoreCharset.ascii, 'A', encoder));
+        assertFalse(Entities.canEncode(Entities.CoreCharset.ascii, '€', encoder));
+
+        encoder = Charset.forName("UTF-8").newEncoder();
+        assertTrue(Entities.canEncode(Entities.CoreCharset.utf, 'A', encoder));
+        assertTrue(Entities.canEncode(Entities.CoreCharset.utf, '€', encoder));
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `Document.OutputSettings` object with UTF-8 encoding, which is used in the escape tests.
+- **Test Methods**:
+  - `testIsNamedEntity`: Verifies if known entities are correctly identified.
+  - `testIsBaseNamedEntity`: Checks if entities are recognized in the base set.
+  - `testGetCharacterByName`: Tests retrieval of character values by entity name.
+  - `testEscape`: Ensures that strings are correctly escaped.
+  - `testUnescape` and `testUnescapeStrict`: Validate the unescaping of strings, both in normal and strict modes.
+  - `testEscapeModeGetMap`: Confirms that the escape mode maps are correctly initialized and accessible.
+  - `testCanEncode`: Tests the `canEncode` method for different character sets.
+
+This suite covers the main functionalities provided by the `Entities` class.

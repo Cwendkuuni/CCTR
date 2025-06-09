@@ -1,0 +1,130 @@
+```java
+package org.scribe.model;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ResponseTest {
+
+    private HttpURLConnection connection;
+    private Response response;
+
+    @Before
+    public void setUp() throws IOException {
+        connection = mock(HttpURLConnection.class);
+    }
+
+    @Test
+    public void testResponseConstructorSuccess() throws IOException {
+        when(connection.getResponseCode()).thenReturn(200);
+        when(connection.getInputStream()).thenReturn(new ByteArrayInputStream("Success".getBytes()));
+        when(connection.getHeaderFields()).thenReturn(getSampleHeaders());
+
+        response = new Response(connection);
+
+        assertEquals(200, response.getCode());
+        assertEquals("Success", response.getBody());
+        assertEquals("application/json", response.getHeader("Content-Type"));
+    }
+
+    @Test
+    public void testResponseConstructorFailure() throws IOException {
+        when(connection.getResponseCode()).thenReturn(404);
+        when(connection.getErrorStream()).thenReturn(new ByteArrayInputStream("Not Found".getBytes()));
+        when(connection.getHeaderFields()).thenReturn(getSampleHeaders());
+
+        response = new Response(connection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("Not Found", response.getBody());
+        assertEquals("application/json", response.getHeader("Content-Type"));
+    }
+
+    @Test
+    public void testResponseConstructorUnknownHostException() throws IOException {
+        when(connection.connect()).thenThrow(new UnknownHostException());
+
+        response = new Response(connection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("", response.getBody());
+    }
+
+    @Test
+    public void testGetBody() throws IOException {
+        when(connection.getResponseCode()).thenReturn(200);
+        when(connection.getInputStream()).thenReturn(new ByteArrayInputStream("Body Content".getBytes()));
+        when(connection.getHeaderFields()).thenReturn(getSampleHeaders());
+
+        response = new Response(connection);
+
+        assertEquals("Body Content", response.getBody());
+    }
+
+    @Test
+    public void testGetStream() throws IOException {
+        InputStream inputStream = new ByteArrayInputStream("Stream Content".getBytes());
+        when(connection.getResponseCode()).thenReturn(200);
+        when(connection.getInputStream()).thenReturn(inputStream);
+        when(connection.getHeaderFields()).thenReturn(getSampleHeaders());
+
+        response = new Response(connection);
+
+        assertEquals(inputStream, response.getStream());
+    }
+
+    @Test
+    public void testGetCode() throws IOException {
+        when(connection.getResponseCode()).thenReturn(200);
+        when(connection.getHeaderFields()).thenReturn(getSampleHeaders());
+
+        response = new Response(connection);
+
+        assertEquals(200, response.getCode());
+    }
+
+    @Test
+    public void testGetHeaders() throws IOException {
+        when(connection.getResponseCode()).thenReturn(200);
+        when(connection.getHeaderFields()).thenReturn(getSampleHeaders());
+
+        response = new Response(connection);
+
+        Map<String, String> headers = response.getHeaders();
+        assertEquals("application/json", headers.get("Content-Type"));
+        assertEquals("close", headers.get("Connection"));
+    }
+
+    @Test
+    public void testGetHeader() throws IOException {
+        when(connection.getResponseCode()).thenReturn(200);
+        when(connection.getHeaderFields()).thenReturn(getSampleHeaders());
+
+        response = new Response(connection);
+
+        assertEquals("application/json", response.getHeader("Content-Type"));
+        assertNull(response.getHeader("Non-Existent-Header"));
+    }
+
+    private Map<String, java.util.List<String>> getSampleHeaders() {
+        Map<String, java.util.List<String>> headers = new HashMap<>();
+        headers.put("Content-Type", java.util.Collections.singletonList("application/json"));
+        headers.put("Connection", java.util.Collections.singletonList("close"));
+        return headers;
+    }
+}
+```
+
+This test suite uses Mockito to mock the `HttpURLConnection` and simulate different scenarios for the `Response` class. It covers the constructor, `getBody`, `getStream`, `getCode`, `getHeaders`, and `getHeader` methods.

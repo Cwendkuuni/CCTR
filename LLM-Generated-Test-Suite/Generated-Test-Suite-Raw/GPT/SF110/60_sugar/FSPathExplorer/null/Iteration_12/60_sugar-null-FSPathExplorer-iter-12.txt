@@ -1,0 +1,145 @@
+Certainly! Below is a JUnit 4 test suite for the `FSPathExplorer` class. This suite aims to cover the main functionalities of the class, including the configuration of the explorer, creation of the FSPath, and the command processing logic. Note that some methods, such as `main`, `showWelcome`, and `showHelp`, are static and primarily involve printing to the console, so they are not included in this test suite.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintStream;
+
+import net.sf.sugar.fspath.FSPath;
+import net.sf.sugar.fspath.FSPathFactory;
+import net.sf.sugar.fspath.FSPathResult;
+import net.sf.sugar.fspath.FSPathResultList;
+import net.sf.sugar.fspath.cli.FSPathExplorer;
+import net.sf.sugar.fspath.cli.Prompt;
+import org.junit.Before;
+import org.junit.Test;
+
+public class FSPathExplorerTest {
+
+    private FSPathExplorer explorer;
+    private ByteArrayOutputStream outContent;
+    private ByteArrayOutputStream errContent;
+    private PrintStream originalOut;
+    private PrintStream originalErr;
+
+    @Before
+    public void setUp() {
+        explorer = new FSPathExplorer();
+        outContent = new ByteArrayOutputStream();
+        errContent = new ByteArrayOutputStream();
+        originalOut = System.out;
+        originalErr = System.err;
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+    }
+
+    @Test
+    public void testConfigureExplorerWithPathAndQuery() {
+        String[] args = {"-path", "/some/path", "-find", "//dir[@name='test']"};
+        explorer.configureExplorer(args);
+
+        assertEquals(new File("/some/path"), explorer.rootPath);
+        assertEquals("//dir[@name='test']", explorer.fsPathQuery);
+    }
+
+    @Test
+    public void testConfigureExplorerWithOnlyQuery() {
+        String[] args = {"-find", "//dir[@name='test']"};
+        explorer.configureExplorer(args);
+
+        assertNull(explorer.rootPath);
+        assertEquals("//dir[@name='test']", explorer.fsPathQuery);
+    }
+
+    @Test
+    public void testCreateFSPathWithRootPath() {
+        explorer.rootPath = new File("/some/path");
+        explorer.createFSPath();
+
+        assertNotNull(explorer.fsPath);
+        assertEquals(explorer.rootPath, explorer.fsPath.getRootDirectory());
+    }
+
+    @Test
+    public void testCreateFSPathWithoutRootPath() {
+        explorer.createFSPath();
+
+        assertNotNull(explorer.fsPath);
+        assertNull(explorer.rootPath);
+    }
+
+    @Test
+    public void testStartWithExitCommand() throws IOException {
+        String input = "exit\n";
+        explorer.prompt = new Prompt(new ByteArrayInputStream(input.getBytes()), System.out, System.err);
+        explorer.start();
+
+        assertTrue(outContent.toString().contains("exiting....."));
+    }
+
+    @Test
+    public void testStartWithPwdCommand() throws IOException {
+        explorer.fsPath = FSPathFactory.newFSPath(new File("/some/path"));
+        String input = "pwd\nexit\n";
+        explorer.prompt = new Prompt(new ByteArrayInputStream(input.getBytes()), System.out, System.err);
+        explorer.start();
+
+        assertTrue(outContent.toString().contains("Current directory : /some/path"));
+    }
+
+    @Test
+    public void testStartWithCdCommand() throws IOException {
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(true);
+        when(mockDir.isDirectory()).thenReturn(true);
+        when(mockDir.canRead()).thenReturn(true);
+        when(mockDir.getAbsolutePath()).thenReturn("/new/path");
+
+        explorer.fsPath = FSPathFactory.newFSPath(new File("/some/path"));
+        String input = "cd /new/path\nexit\n";
+        explorer.prompt = new Prompt(new ByteArrayInputStream(input.getBytes()), System.out, System.err);
+        explorer.start();
+
+        assertTrue(outContent.toString().contains("changed to : /new/path"));
+    }
+
+    @Test
+    public void testStartWithFsPathQuery() throws IOException {
+        FSPathResultList mockResults = mock(FSPathResultList.class);
+        FSPathResult mockResult = mock(FSPathResult.class);
+        when(mockResult.getFile()).thenReturn(new File("/some/path/file.txt"));
+        when(mockResults.iterator()).thenReturn(java.util.Collections.singletonList(mockResult).iterator());
+
+        FSPath mockFSPath = mock(FSPath.class);
+        when(mockFSPath.query(anyString())).thenReturn(mockResults);
+        explorer.fsPath = mockFSPath;
+
+        String input = "//dir[@name='test']\nexit\n";
+        explorer.prompt = new Prompt(new ByteArrayInputStream(input.getBytes()), System.out, System.err);
+        explorer.start();
+
+        assertTrue(outContent.toString().contains("/some/path/file.txt"));
+    }
+
+    @After
+    public void tearDown() {
+        System.setOut(originalOut);
+        System.setErr(originalErr);
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: The `setUp` method initializes the `FSPathExplorer` instance and redirects `System.out` and `System.err` to capture output for verification. The `tearDown` method restores the original `System.out` and `System.err`.
+- **Test Methods**: Each test method focuses on a specific functionality of the `FSPathExplorer` class:
+  - `testConfigureExplorerWithPathAndQuery` and `testConfigureExplorerWithOnlyQuery` test the `configureExplorer` method with different arguments.
+  - `testCreateFSPathWithRootPath` and `testCreateFSPathWithoutRootPath` test the `createFSPath` method.
+  - `testStartWithExitCommand`, `testStartWithPwdCommand`, `testStartWithCdCommand`, and `testStartWithFsPathQuery` test the `start` method with different commands and queries.
+- **Mocking**: The test suite uses Mockito to mock dependencies like `File` and `FSPath` to isolate the tests from the file system and focus on the logic within `FSPathExplorer`.
+
+This test suite provides a comprehensive coverage of the `FSPathExplorer` class's methods and their interactions.

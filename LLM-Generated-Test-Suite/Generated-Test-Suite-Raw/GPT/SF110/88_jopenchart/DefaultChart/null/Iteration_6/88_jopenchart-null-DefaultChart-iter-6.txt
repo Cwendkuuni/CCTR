@@ -1,0 +1,108 @@
+Certainly! Below is a JUnit 4 test suite for the `DefaultChart` class. This test suite aims to cover the constructors and the `render` method. Note that due to the abstract nature of some methods and dependencies on other classes, some tests will use mocks or stubs.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import de.progra.charting.DefaultChart;
+import de.progra.charting.model.ChartDataModel;
+import de.progra.charting.render.AbstractChartRenderer;
+import de.progra.charting.render.CoordSystem;
+import de.progra.charting.render.Legend;
+import de.progra.charting.render.RowColorModel;
+import de.progra.charting.render.Title;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.awt.*;
+import java.awt.geom.Rectangle2D;
+import java.util.HashMap;
+
+public class DefaultChartTest {
+
+    private ChartDataModel mockModel;
+    private Graphics2D mockGraphics;
+    private DefaultChart chart;
+
+    @Before
+    public void setUp() {
+        mockModel = mock(ChartDataModel.class);
+        mockGraphics = mock(Graphics2D.class);
+    }
+
+    @Test
+    public void testConstructorWithModelAndTitle() {
+        String title = "Test Chart";
+        chart = new DefaultChart(mockModel, title);
+
+        assertNotNull(chart.getChartDataModel());
+        assertNotNull(chart.getRowColorModel());
+        assertNotNull(chart.getLegend());
+        assertNotNull(chart.getTitle());
+        assertEquals(title, chart.getTitle().getText());
+    }
+
+    @Test
+    public void testConstructorWithModelTitleAndCoord() {
+        String title = "Test Chart";
+        chart = new DefaultChart(mockModel, title, DefaultChart.LINEAR_X_LINEAR_Y);
+
+        assertNotNull(chart.getCoordSystem());
+    }
+
+    @Test
+    public void testConstructorWithModelTitleCoordAndAxes() {
+        String title = "Test Chart";
+        String xAxis = "X Axis";
+        String yAxis = "Y Axis";
+        chart = new DefaultChart(mockModel, title, DefaultChart.LINEAR_X_LINEAR_Y, xAxis, yAxis);
+
+        assertNotNull(chart.getCoordSystem());
+        assertEquals(xAxis, chart.getCoordSystem().getXAxisUnit());
+        assertEquals(yAxis, chart.getCoordSystem().getYAxisUnit());
+    }
+
+    @Test
+    public void testRender() {
+        chart = new DefaultChart(mockModel, "Test Chart", DefaultChart.LINEAR_X_LINEAR_Y);
+        chart.setChartRenderer(new HashMap<String, AbstractChartRenderer>());
+
+        Title mockTitle = mock(Title.class);
+        Legend mockLegend = mock(Legend.class);
+        CoordSystem mockCoordSystem = mock(CoordSystem.class);
+
+        chart.setTitle(mockTitle);
+        chart.setLegend(mockLegend);
+        chart.setCoordSystem(mockCoordSystem);
+
+        when(mockTitle.getPreferredSize()).thenReturn(new Dimension(100, 20));
+        when(mockLegend.getPreferredSize()).thenReturn(new Dimension(50, 100));
+        when(mockGraphics.getClipBounds()).thenReturn(new Rectangle(0, 0, 200, 200));
+
+        chart.render(mockGraphics);
+
+        verify(mockGraphics).setColor(Color.white);
+        verify(mockGraphics).fillRect(0, 0, 200, 200);
+        verify(mockGraphics).setColor(Color.black);
+
+        verify(mockTitle).render(mockGraphics);
+        verify(mockLegend).render(mockGraphics);
+        verify(mockCoordSystem).render(mockGraphics);
+    }
+
+    @Test
+    public void testGetPreferredSize() {
+        chart = new DefaultChart(mockModel, "Test Chart");
+        assertNull(chart.getPreferredSize());
+    }
+}
+```
+
+### Explanation:
+- **Mocks and Stubs**: The test suite uses Mockito to create mock objects for dependencies like `ChartDataModel`, `Graphics2D`, `Title`, `Legend`, and `CoordSystem`.
+- **Constructor Tests**: Tests are provided for each constructor to ensure that the objects are initialized correctly.
+- **Render Method Test**: The `render` method is tested by verifying that the correct methods are called on the `Graphics2D` object and that the components are rendered.
+- **Preferred Size Test**: The `getPreferredSize` method is tested to ensure it returns `null` as expected.
+
+This test suite provides a basic structure and can be expanded with more detailed tests as needed.

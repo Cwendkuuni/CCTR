@@ -1,0 +1,112 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `ReflectionSearch` class. This suite includes tests for each public method and some of the protected methods, ensuring that the class behaves as expected under various scenarios.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ReflectionSearchTest {
+
+    private ReflectionSearch reflectionSearch;
+    private Class<?> testClass;
+
+    @Before
+    public void setUp() {
+        testClass = TestClass.class;
+        reflectionSearch = new ReflectionSearch(testClass);
+    }
+
+    @Test
+    public void testHasAnnotationWithExactMatch() {
+        assertTrue(reflectionSearch.hasAnnotation("@TestAnnotation"));
+    }
+
+    @Test
+    public void testHasAnnotationWithWildcardMatch() {
+        assertTrue(reflectionSearch.hasAnnotation("@Test*"));
+    }
+
+    @Test
+    public void testHasAnnotationWithNoMatch() {
+        assertFalse(reflectionSearch.hasAnnotation("@NonExistent"));
+    }
+
+    @Test
+    public void testMethodsThatHave() throws Exception {
+        ReflectionSearch result = reflectionSearch.methodsThatHave("testMethod");
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testMethodsThatDontHave() throws Exception {
+        ReflectionSearch result = reflectionSearch.methodsThatDontHave("nonExistentMethod");
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testAnd() {
+        ReflectionSearch result = reflectionSearch.and();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOr() {
+        ReflectionSearch result = reflectionSearch.or();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testGetMethods() throws Exception {
+        List<Method> methods = reflectionSearch.getMethods();
+        assertNotNull(methods);
+    }
+
+    @Test
+    public void testIntersect() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        Method method = Mockito.mock(Method.class);
+        master.add(method);
+        toAdd.add(method);
+
+        reflectionSearch.intersect(master, toAdd);
+        assertEquals(1, master.size());
+    }
+
+    @Test
+    public void testUnion() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        Method method = Mockito.mock(Method.class);
+        toAdd.add(method);
+
+        reflectionSearch.union(master, toAdd);
+        assertEquals(1, master.size());
+    }
+
+    // Test class and annotation for testing purposes
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface TestAnnotation {}
+
+    @TestAnnotation
+    private static class TestClass {
+        public void testMethod() {}
+    }
+}
+```
+
+### Explanation:
+- **Setup**: A `TestClass` with a `TestAnnotation` is used to simulate a class with annotations and methods.
+- **Annotation Tests**: Tests are included for exact matches, wildcard matches, and non-existent annotations.
+- **Method Criteria Tests**: Tests for `methodsThatHave` and `methodsThatDontHave` ensure that these methods return a non-null `ReflectionSearch` object.
+- **Logical Operator Tests**: Tests for `and` and `or` ensure that these methods return a non-null `ReflectionSearch` object.
+- **Method Retrieval Test**: `getMethods` is tested to ensure it returns a non-null list.
+- **Intersection and Union Tests**: These tests ensure that the `intersect` and `union` methods behave correctly when manipulating lists of methods.
+
+This test suite uses JUnit 4 and Mockito for mocking `Method` objects where necessary. Adjust the test cases as needed based on the actual behavior and dependencies of your environment.

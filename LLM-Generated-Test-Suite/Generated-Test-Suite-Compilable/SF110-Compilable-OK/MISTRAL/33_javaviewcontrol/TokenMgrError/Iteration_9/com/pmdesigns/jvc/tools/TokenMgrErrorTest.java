@@ -1,0 +1,51 @@
+package com.pmdesigns.jvc.tools;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class TokenMgrErrorTest {
+
+    @Test
+    public void testAddEscapes() {
+        assertEquals("\\t\\n\\\"\\'\\\\", TokenMgrError.addEscapes("\t\n\"\'\\"));
+        assertEquals("\\u0000\\u0001\\u0002", TokenMgrError.addEscapes("\u0000\u0001\u0002"));
+        assertEquals("abc", TokenMgrError.addEscapes("abc"));
+    }
+
+    @Test
+    public void testLexicalError() {
+        String expected = "Lexical error at line 1, column 1.  Encountered: \"a\" (97), after : \"\"";
+        assertEquals(expected, TokenMgrError.LexicalError(false, 0, 1, 1, "", 'a'));
+
+        expected = "Lexical error at line 2, column 2.  Encountered: <EOF> , after : \"test\"";
+        assertEquals(expected, TokenMgrError.LexicalError(true, 0, 2, 2, "test", '\0'));
+    }
+
+    @Test
+    public void testGetMessage() {
+        TokenMgrError error = new TokenMgrError("Test Message", 0);
+        assertEquals("Test Message", error.getMessage());
+    }
+
+    @Test
+    public void testConstructorWithMessageAndReason() {
+        TokenMgrError error = new TokenMgrError("Test Message", 1);
+        assertEquals("Test Message", error.getMessage());
+        assertEquals(1, error.errorCode);
+    }
+
+    @Test
+    public void testConstructorWithLexicalError() {
+        TokenMgrError error = new TokenMgrError(false, 0, 1, 1, "", 'a', 2);
+        String expected = "Lexical error at line 1, column 1.  Encountered: \"a\" (97), after : \"\"";
+        assertEquals(expected, error.getMessage());
+        assertEquals(2, error.errorCode);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        TokenMgrError error = new TokenMgrError();
+        assertNull(error.getMessage());
+        assertEquals(0, error.errorCode);
+    }
+}

@@ -1,0 +1,90 @@
+package org.apache.commons.collections4.sequence;
+
+import org.apache.commons.collections4.sequence.EditScript;
+import org.apache.commons.collections4.sequence.SequencesComparator;
+import org.apache.commons.collections4.functors.DefaultEquator;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class SequencesComparatorTest {
+
+    private List<String> sequence1;
+    private List<String> sequence2;
+
+    @Before
+    public void setUp() {
+        sequence1 = Arrays.asList("A", "B", "C", "D");
+        sequence2 = Arrays.asList("A", "C", "E", "D");
+    }
+
+    @Test
+    public void testGetScriptWithDefaultEquator() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2);
+        EditScript<String> script = comparator.getScript();
+
+        assertNotNull(script);
+        assertEquals(5, script.getModifications());
+    }
+
+    @Test
+    public void testGetScriptWithCustomEquator() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2, DefaultEquator.defaultEquator());
+        EditScript<String> script = comparator.getScript();
+
+        assertNotNull(script);
+        assertEquals(5, script.getModifications());
+    }
+
+    @Test
+    public void testGetScriptWithIdenticalSequences() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence1);
+        EditScript<String> script = comparator.getScript();
+
+        assertNotNull(script);
+        assertEquals(0, script.getModifications());
+    }
+
+    @Test
+    public void testGetScriptWithEmptySequences() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(Collections.emptyList(), Collections.emptyList());
+        EditScript<String> script = comparator.getScript();
+
+        assertNotNull(script);
+        assertEquals(0, script.getModifications());
+    }
+
+    @Test
+    public void testGetScriptWithFirstSequenceEmpty() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(Collections.emptyList(), sequence2);
+        EditScript<String> script = comparator.getScript();
+
+        assertNotNull(script);
+        assertEquals(sequence2.size(), script.getModifications());
+    }
+
+    @Test
+    public void testGetScriptWithSecondSequenceEmpty() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, Collections.emptyList());
+        EditScript<String> script = comparator.getScript();
+
+        assertNotNull(script);
+        assertEquals(sequence1.size(), script.getModifications());
+    }
+
+    @Test
+    public void testGetScriptWithNoCommonElements() {
+        List<String> seq1 = Arrays.asList("X", "Y", "Z");
+        List<String> seq2 = Arrays.asList("A", "B", "C");
+        SequencesComparator<String> comparator = new SequencesComparator<>(seq1, seq2);
+        EditScript<String> script = comparator.getScript();
+
+        assertNotNull(script);
+        assertEquals(seq1.size() + seq2.size(), script.getModifications());
+    }
+}

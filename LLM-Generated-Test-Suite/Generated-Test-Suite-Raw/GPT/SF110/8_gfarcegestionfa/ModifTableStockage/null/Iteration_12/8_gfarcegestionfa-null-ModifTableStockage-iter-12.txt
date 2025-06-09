@@ -1,0 +1,102 @@
+To create a comprehensive JUnit 4 test suite for the `ModifTableStockage` class, we need to test each method thoroughly. This involves creating mock or stub implementations of the `TableStockage` class, as it is used extensively within `ModifTableStockage`. Since the `TableStockage` class is not provided, I'll assume its basic functionality based on the methods used in `ModifTableStockage`.
+
+Below is a JUnit 4 test suite for the `ModifTableStockage` class. This suite includes tests for each method, ensuring that they behave as expected under various conditions.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ModifTableStockageTest {
+
+    private TableStockage mockTableStockage;
+    private ModifTableStockage modifTableStockage;
+
+    @Before
+    public void setUp() {
+        mockTableStockage = mock(TableStockage.class);
+        when(mockTableStockage.getColumnCount()).thenReturn(3);
+        when(mockTableStockage.getRowCount()).thenReturn(2);
+        when(mockTableStockage.getColumnName(anyInt())).thenReturn("Column");
+        when(mockTableStockage.getColumnClass(anyInt())).thenReturn(String.class);
+        when(mockTableStockage.getValueAt(anyInt(), anyInt())).thenReturn("Value");
+
+        modifTableStockage = new ModifTableStockage(mockTableStockage);
+    }
+
+    @Test
+    public void testAjouterColonne() {
+        TableStockage result = modifTableStockage.ajouterColonne("New Column", Integer.class);
+        assertEquals(4, result.getColumnCount());
+        assertEquals("New Column", result.getColumnName(3));
+    }
+
+    @Test
+    public void testAjouterLigne() {
+        TableStockage result = modifTableStockage.ajouterLigne();
+        assertEquals(4, result.getRowCount());
+        assertEquals("", result.getValueAt(3, 0));
+    }
+
+    @Test
+    public void testSupprimerColonne() {
+        TableStockage result = modifTableStockage.supprimerColonne(1);
+        assertEquals(2, result.getColumnCount());
+    }
+
+    @Test
+    public void testSupprimerLigne() {
+        TableStockage result = modifTableStockage.supprimerLigne(1);
+        assertEquals(2, result.getRowCount());
+    }
+
+    @Test
+    public void testSeparerColonne() {
+        when(mockTableStockage.getColumnClass(0)).thenReturn(String.class);
+        when(mockTableStockage.getValueAt(0, 0)).thenReturn("Value 1");
+
+        TableStockage result = modifTableStockage.separerColonne(0);
+        assertEquals(4, result.getColumnCount());
+    }
+
+    @Test
+    public void testFusionnerColonnes() {
+        when(mockTableStockage.getColumnClass(0)).thenReturn(String.class);
+        when(mockTableStockage.getColumnClass(1)).thenReturn(String.class);
+
+        TableStockage result = modifTableStockage.fusionnerColonnes(0);
+        assertEquals(2, result.getColumnCount());
+    }
+
+    @Test
+    public void testColonneMail() {
+        TableStockage result = modifTableStockage.colonneMail();
+        assertEquals(4, result.getColumnCount());
+        assertEquals(Boolean.class, result.getColumnClass(3));
+    }
+
+    @Test
+    public void testSelectMail() {
+        when(mockTableStockage.getColumnName(anyInt())).thenReturn("Envoyer E-Mail a:");
+        when(mockTableStockage.getValueAt(anyInt(), anyInt())).thenReturn(true);
+
+        TableStockage result = modifTableStockage.selectMail();
+        assertTrue(result.getRowCount() <= 3);
+    }
+}
+```
+
+### Notes:
+1. **Mocking `TableStockage`:** The `TableStockage` class is mocked using Mockito to simulate its behavior. This allows us to test `ModifTableStockage` without needing the actual implementation of `TableStockage`.
+
+2. **Test Methods:**
+   - Each method in `ModifTableStockage` is tested to ensure it behaves correctly.
+   - The tests check the expected number of rows and columns after operations like adding or removing columns/rows.
+   - The tests also verify that the correct data types and values are set in the `TableStockage`.
+
+3. **Assumptions:** The tests assume certain behaviors of the `TableStockage` class, such as returning a default column name and class. Adjust these assumptions based on the actual implementation of `TableStockage`.
+
+4. **Error Handling:** The tests do not currently handle GUI interactions (e.g., `JOptionPane` dialogs). If needed, these can be tested using additional mocking or by verifying that the method returns the expected result when an error condition is triggered.

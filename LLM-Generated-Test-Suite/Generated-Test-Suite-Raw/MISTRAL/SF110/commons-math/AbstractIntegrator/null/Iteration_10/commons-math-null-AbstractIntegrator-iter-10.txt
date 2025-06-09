@@ -1,0 +1,262 @@
+```java
+package org.apache.commons.math3.ode;
+
+import org.apache.commons.math3.ode.events.*;
+import org.apache.commons.math3.analysis.solvers.*;
+import org.apache.commons.math3.exception.*;
+import org.apache.commons.math3.ode.sampling.*;
+import java.util.*;
+import org.apache.commons.math3.util.*;
+import org.apache.commons.math3.exception.util.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+
+public class AbstractIntegratorTest {
+
+    private static class TestIntegrator extends AbstractIntegrator {
+        public TestIntegrator(String name) {
+            super(name);
+        }
+
+        @Override
+        public void integrate(ExpandableStatefulODE p0, double p1) throws NumberIsTooSmallException, DimensionMismatchException, MaxCountExceededException, NoBracketingException {
+            // Implementation not needed for testing
+        }
+    }
+
+    @Test
+    public void testConstructorWithName() {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        assertEquals("TestIntegrator", integrator.getName());
+    }
+
+    @Test
+    public void testConstructorWithoutName() {
+        TestIntegrator integrator = new TestIntegrator(null);
+        assertNull(integrator.getName());
+    }
+
+    @Test
+    public void testAddStepHandler() {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        StepHandler handler = new DummyStepHandler();
+        integrator.addStepHandler(handler);
+        assertTrue(integrator.getStepHandlers().contains(handler));
+    }
+
+    @Test
+    public void testClearStepHandlers() {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        StepHandler handler = new DummyStepHandler();
+        integrator.addStepHandler(handler);
+        integrator.clearStepHandlers();
+        assertTrue(integrator.getStepHandlers().isEmpty());
+    }
+
+    @Test
+    public void testAddEventHandler() {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        EventHandler handler = new DummyEventHandler();
+        integrator.addEventHandler(handler, 1.0, 1e-6, 100);
+        assertTrue(integrator.getEventHandlers().contains(handler));
+    }
+
+    @Test
+    public void testClearEventHandlers() {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        EventHandler handler = new DummyEventHandler();
+        integrator.addEventHandler(handler, 1.0, 1e-6, 100);
+        integrator.clearEventHandlers();
+        assertTrue(integrator.getEventHandlers().isEmpty());
+    }
+
+    @Test
+    public void testSetMaxEvaluations() {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        integrator.setMaxEvaluations(100);
+        assertEquals(100, integrator.getMaxEvaluations());
+    }
+
+    @Test
+    public void testGetEvaluations() {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        assertEquals(0, integrator.getEvaluations());
+    }
+
+    @Test
+    public void testInitIntegration() {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        double t0 = 0.0;
+        double[] y0 = new double[]{1.0};
+        double t = 1.0;
+        integrator.initIntegration(t0, y0, t);
+        assertEquals(0, integrator.getEvaluations());
+    }
+
+    @Test
+    public void testSetEquations() {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        ExpandableStatefulODE equations = new ExpandableStatefulODE(new DummyFirstOrderDifferentialEquations());
+        integrator.setEquations(equations);
+        assertEquals(equations, integrator.getExpandable());
+    }
+
+    @Test
+    public void testIntegrate() throws Exception {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        FirstOrderDifferentialEquations equations = new DummyFirstOrderDifferentialEquations();
+        double t0 = 0.0;
+        double[] y0 = new double[]{1.0};
+        double t = 1.0;
+        double[] y = new double[1];
+        double result = integrator.integrate(equations, t0, y0, t, y);
+        assertEquals(t, result, 0.0);
+    }
+
+    @Test
+    public void testComputeDerivatives() throws Exception {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        ExpandableStatefulODE equations = new ExpandableStatefulODE(new DummyFirstOrderDifferentialEquations());
+        integrator.setEquations(equations);
+        double t = 0.0;
+        double[] y = new double[]{1.0};
+        double[] yDot = new double[1];
+        integrator.computeDerivatives(t, y, yDot);
+        assertEquals(1, integrator.getEvaluations());
+    }
+
+    @Test
+    public void testAcceptStep() throws Exception {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        ExpandableStatefulODE equations = new ExpandableStatefulODE(new DummyFirstOrderDifferentialEquations());
+        integrator.setEquations(equations);
+        AbstractStepInterpolator interpolator = new DummyStepInterpolator();
+        double[] y = new double[]{1.0};
+        double[] yDot = new double[1];
+        double tEnd = 1.0;
+        double result = integrator.acceptStep(interpolator, y, yDot, tEnd);
+        assertEquals(tEnd, result, 0.0);
+    }
+
+    @Test
+    public void testSanityChecks() throws Exception {
+        TestIntegrator integrator = new TestIntegrator("TestIntegrator");
+        ExpandableStatefulODE equations = new ExpandableStatefulODE(new DummyFirstOrderDifferentialEquations());
+        double t = 1.0;
+        integrator.sanityChecks(equations, t);
+    }
+
+    private static class DummyStepHandler implements StepHandler {
+        @Override
+        public void init(double t0, double[] y0, double t) {
+            // Implementation not needed for testing
+        }
+
+        @Override
+        public void handleStep(StepInterpolator interpolator, boolean isLast) {
+            // Implementation not needed for testing
+        }
+    }
+
+    private static class DummyEventHandler implements EventHandler {
+        @Override
+        public void init(double t0, double[] y0, double t) {
+            // Implementation not needed for testing
+        }
+
+        @Override
+        public double g(double t, double[] y) {
+            return 0;
+        }
+
+        @Override
+        public Action eventOccurred(double t, double[] y, boolean increasing) {
+            return Action.CONTINUE;
+        }
+
+        @Override
+        public void resetState(double t, double[] y) {
+            // Implementation not needed for testing
+        }
+    }
+
+    private static class DummyFirstOrderDifferentialEquations implements FirstOrderDifferentialEquations {
+        @Override
+        public int getDimension() {
+            return 1;
+        }
+
+        @Override
+        public void computeDerivatives(double t, double[] y, double[] yDot) {
+            yDot[0] = 1.0;
+        }
+    }
+
+    private static class DummyStepInterpolator extends AbstractStepInterpolator {
+        @Override
+        public double getCurrentTime() {
+            return 0;
+        }
+
+        @Override
+        public double getInterpolatedTime() {
+            return 0;
+        }
+
+        @Override
+        public double[] getInterpolatedState() {
+            return new double[0];
+        }
+
+        @Override
+        public double[] getInterpolatedDerivatives() {
+            return new double[0];
+        }
+
+        @Override
+        public boolean isForward() {
+            return false;
+        }
+
+        @Override
+        public double getSoftPreviousTime() {
+            return 0;
+        }
+
+        @Override
+        public double getSoftCurrentTime() {
+            return 0;
+        }
+
+        @Override
+        public double getGlobalPreviousTime() {
+            return 0;
+        }
+
+        @Override
+        public double getGlobalCurrentTime() {
+            return 0;
+        }
+
+        @Override
+        public void setInterpolatedTime(double time) {
+            // Implementation not needed for testing
+        }
+
+        @Override
+        public void setSoftPreviousTime(double previousTime) {
+            // Implementation not needed for testing
+        }
+
+        @Override
+        public void setSoftCurrentTime(double currentTime) {
+            // Implementation not needed for testing
+        }
+
+        @Override
+        public double[] getInterpolatedSecondaryState(int index) {
+            return new double[0];
+        }
+    }
+}
+```

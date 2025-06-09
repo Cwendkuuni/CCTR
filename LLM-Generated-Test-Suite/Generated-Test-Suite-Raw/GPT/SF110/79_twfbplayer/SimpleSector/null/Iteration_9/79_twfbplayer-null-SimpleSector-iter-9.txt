@@ -1,0 +1,140 @@
+Certainly! Below is a JUnit 4 test suite for the `SimpleSector` class. This test suite aims to cover the various methods and functionalities provided by the class.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import java.util.HashSet;
+import java.util.Set;
+
+public class SimpleSectorTest {
+    private SimpleSector sector;
+    private CharacterClass mockClass;
+    private CombatantSide mockSide;
+    private SectorObserver mockObserver;
+    private Area mockArea;
+    private Combatant mockCombatant;
+    private Weapon mockWeapon;
+
+    @Before
+    public void setUp() {
+        mockClass = Mockito.mock(CharacterClass.class);
+        mockSide = Mockito.mock(CombatantSide.class);
+        mockObserver = Mockito.mock(SectorObserver.class);
+        mockArea = Mockito.mock(Area.class);
+        mockCombatant = Mockito.mock(Combatant.class);
+        mockWeapon = Mockito.mock(Weapon.class);
+
+        sector = new SimpleSector(10, true, false, 5, 3, true, 2, mockClass);
+    }
+
+    @Test
+    public void testFree() {
+        sector.gainControl(mockSide);
+        sector.free();
+        assertNull(sector.getOccupier());
+    }
+
+    @Test
+    public void testGainControl() {
+        sector.gainControl(mockSide);
+        assertEquals(mockSide, sector.getOccupier());
+    }
+
+    @Test
+    public void testIsOccupied() {
+        assertFalse(sector.isOccupied());
+        sector.gainControl(mockSide);
+        assertTrue(sector.isOccupied());
+    }
+
+    @Test
+    public void testGetHeight() {
+        assertEquals(10, sector.getHeight());
+    }
+
+    @Test
+    public void testIsDefenderSpawn() {
+        assertTrue(sector.isDefenderSpawn());
+    }
+
+    @Test
+    public void testIsAttackerSpawn() {
+        assertFalse(sector.isAttackerSpawn());
+    }
+
+    @Test
+    public void testIsFlag() {
+        assertTrue(sector.isFlag());
+    }
+
+    @Test
+    public void testGetBonus() {
+        SectorBonus bonus = sector.getBonus(mockClass);
+        assertEquals(5 + 2, bonus.getAttackBonus());
+        assertEquals(3 + 2, bonus.getDefenseBonus());
+    }
+
+    @Test
+    public void testGetAreas() {
+        Set<Area> areas = sector.getAreas();
+        assertTrue(areas.isEmpty());
+    }
+
+    @Test
+    public void testAddArea() {
+        sector._addArea(mockArea);
+        assertTrue(sector.getAreas().contains(mockArea));
+    }
+
+    @Test
+    public void testAddObserver() {
+        sector.addObserver(mockObserver);
+        sector.gainControl(mockSide);
+        Mockito.verify(mockObserver).occupierChanged();
+    }
+
+    @Test
+    public void testRemoveObserver() {
+        sector.addObserver(mockObserver);
+        sector.removeObserver(mockObserver);
+        sector.gainControl(mockSide);
+        Mockito.verify(mockObserver, Mockito.never()).occupierChanged();
+    }
+
+    @Test
+    public void testHashCode() {
+        SimpleSector anotherSector = new SimpleSector(10, true, false, 5, 3, true, 2, mockClass);
+        assertEquals(sector.hashCode(), anotherSector.hashCode());
+    }
+
+    @Test
+    public void testEquals() {
+        SimpleSector anotherSector = new SimpleSector(10, true, false, 5, 3, true, 2, mockClass);
+        assertTrue(sector.equals(anotherSector));
+        assertFalse(sector.equals(null));
+        assertFalse(sector.equals(new Object()));
+    }
+
+    @Test
+    public void testGetBonusFromWeapons() {
+        Mockito.when(mockArea.isOccupied()).thenReturn(true);
+        Mockito.when(mockArea.getOccupier()).thenReturn(mockCombatant);
+        Mockito.when(mockCombatant.getWeapon()).thenReturn(mockWeapon);
+        Mockito.when(mockWeapon.getSectorBonus(SectorBonus.BonusType.ATTACK)).thenReturn(5);
+
+        sector._addArea(mockArea);
+        int attackBonus = sector.getAttackBonus(mockClass);
+        assertEquals(5 + 2 + 5, attackBonus);
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes the `SimpleSector` instance and mocks necessary dependencies using Mockito.
+- **Test Methods**: Each method tests a specific functionality of the `SimpleSector` class, ensuring that the class behaves as expected under various conditions.
+- **Mockito**: Used for mocking dependencies like `CharacterClass`, `CombatantSide`, `SectorObserver`, `Area`, `Combatant`, and `Weapon` to isolate the unit tests from external dependencies.
+- **Assertions**: Various assertions are used to verify the expected outcomes of method calls.
+
+This test suite should provide a comprehensive coverage of the `SimpleSector` class's functionality.

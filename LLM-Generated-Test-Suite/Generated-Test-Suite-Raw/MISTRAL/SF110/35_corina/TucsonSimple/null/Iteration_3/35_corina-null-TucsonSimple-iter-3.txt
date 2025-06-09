@@ -1,0 +1,129 @@
+```java
+package corina.formats;
+
+import corina.ui.*;
+import java.io.*;
+import corina.util.*;
+import corina.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+    private Sample sample;
+    private BufferedWriter writer;
+    private BufferedReader reader;
+
+    @Before
+    public void setUp() throws Exception {
+        tucsonSimple = new TucsonSimple();
+        sample = new Sample();
+        writer = new BufferedWriter(new StringWriter());
+        reader = new BufferedReader(new StringReader(""));
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        writer.close();
+        reader.close();
+    }
+
+    @Test
+    public void testToString() {
+        String expected = I18n.getText("format.tucsonsimple");
+        String actual = tucsonSimple.toString();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        String expected = ".RWL";
+        String actual = tucsonSimple.getDefaultExtension();
+        assertEquals(expected, actual);
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        tucsonSimple.load(reader);
+    }
+
+    @Test
+    public void testMake6digitCode() {
+        sample.meta.put("id", "123456789");
+        String expected = "123456";
+        String actual = tucsonSimple.make6digitCode(sample);
+        assertEquals(expected, actual);
+
+        sample.meta.clear();
+        expected = "000000";
+        actual = tucsonSimple.make6digitCode(sample);
+        assertEquals(expected, actual);
+
+        sample.meta.put("id", "123");
+        expected = "123   ";
+        actual = tucsonSimple.make6digitCode(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testSaveRowHeader() throws IOException {
+        sample.range = new Range(new Year(2000), new Year(2001));
+        String code = "123456";
+        int yearWidth = 6;
+        Year year = new Year(2000);
+
+        tucsonSimple.saveRowHeader(writer, sample, code, yearWidth, year);
+        writer.flush();
+        String expected = "123456 2000";
+        String actual = ((StringWriter) writer.getWriter()).toString().trim();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testSaveData() throws IOException {
+        // Mock data for testing
+        sample.range = new Range(new Year(2000), new Year(2001));
+        sample.data.put(0, 100);
+        sample.count.put(0, 1);
+
+        tucsonSimple.saveData(sample, writer);
+        writer.flush();
+        String expected = "000000 2000   100   1\n";
+        String actual = ((StringWriter) writer.getWriter()).toString().trim();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testComputeRange() {
+        sample.range = new Range(new Year(-1000), new Year(2000));
+        Range expected = new Range(new Year(1001), new Year(2000));
+        Range actual = tucsonSimple.computeRange(sample);
+        assertEquals(expected, actual);
+
+        sample.range = new Range(new Year(1), new Year(2000));
+        expected = new Range(new Year(1), new Year(2000));
+        actual = tucsonSimple.computeRange(sample);
+        assertEquals(expected, actual);
+
+        sample.range = new Range(new Year(-8000), new Year(2000));
+        expected = new Range(new Year(1), new Year(2000));
+        actual = tucsonSimple.computeRange(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        // Mock data for testing
+        sample.range = new Range(new Year(2000), new Year(2001));
+        sample.data.put(0, 100);
+        sample.count.put(0, 1);
+
+        tucsonSimple.save(sample, writer);
+        writer.flush();
+        String expected = "000000 2000   100   1\n";
+        String actual = ((StringWriter) writer.getWriter()).toString().trim();
+        assertEquals(expected, actual);
+    }
+}
+```

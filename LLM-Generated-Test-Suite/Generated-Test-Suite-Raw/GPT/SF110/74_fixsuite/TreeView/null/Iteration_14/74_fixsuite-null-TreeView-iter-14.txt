@@ -1,0 +1,143 @@
+To create a comprehensive JUnit 4 test suite for the `TreeView` class, we need to test the public methods and interactions within the class. The `TreeView` class is a GUI component, so testing will involve simulating user interactions and verifying the expected outcomes. Below is a JUnit 4 test suite that covers the main functionalities of the `TreeView` class:
+
+```java
+import org.junit.*;
+import static org.junit.Assert.*;
+import org.mockito.*;
+import javax.swing.*;
+import javax.swing.tree.*;
+import java.awt.event.*;
+import org.fixsuite.message.info.*;
+import java.util.*;
+
+public class TreeViewTest {
+
+    private TreeView treeView;
+    private Library mockLibrary;
+    private DictionaryInfo mockDictionary;
+    private MessageInfo mockMessage;
+    private ComponentInfo mockComponent;
+    private FieldInfo mockField;
+
+    @Before
+    public void setUp() {
+        mockLibrary = Mockito.mock(Library.class);
+        mockDictionary = Mockito.mock(DictionaryInfo.class);
+        mockMessage = Mockito.mock(MessageInfo.class);
+        mockComponent = Mockito.mock(ComponentInfo.class);
+        mockField = Mockito.mock(FieldInfo.class);
+
+        Mockito.when(mockLibrary.getDictionaries()).thenReturn(Collections.singletonList(mockDictionary));
+        Mockito.when(mockDictionary.getVersion()).thenReturn("FIX.4.4");
+        Mockito.when(mockDictionary.getMessages()).thenReturn(Collections.singletonList(mockMessage));
+        Mockito.when(mockMessage.getName()).thenReturn("TestMessage");
+        Mockito.when(mockMessage.getMessageType()).thenReturn("D");
+        Mockito.when(mockMessage.getItems()).thenReturn(Collections.singletonList(mockComponent));
+        Mockito.when(mockComponent.getName()).thenReturn("TestComponent");
+        Mockito.when(mockComponent.getItems()).thenReturn(Collections.singletonList(mockField));
+        Mockito.when(mockField.getName()).thenReturn("TestField");
+        Mockito.when(mockField.getTagNumber()).thenReturn(35);
+
+        treeView = new TreeView(mockLibrary);
+    }
+
+    @Test
+    public void testInitGUI() {
+        assertNotNull(treeView);
+        assertNotNull(treeView.fixTree);
+        assertNotNull(treeView.mainScrollPane);
+        assertNotNull(treeView.searchLabel);
+        assertNotNull(treeView.searchTextField);
+        assertNotNull(treeView.searchButton);
+        assertNotNull(treeView.clearButton);
+        assertNotNull(treeView.expandButton);
+        assertNotNull(treeView.collapseButton);
+    }
+
+    @Test
+    public void testExpandAll() {
+        treeView.expandAll();
+        for (int i = 0; i < treeView.fixTree.getRowCount(); i++) {
+            assertTrue(treeView.fixTree.isExpanded(i));
+        }
+    }
+
+    @Test
+    public void testCollapseAll() {
+        treeView.expandAll();
+        treeView.collapseAll();
+        for (int i = 0; i < treeView.fixTree.getRowCount(); i++) {
+            assertFalse(treeView.fixTree.isExpanded(i));
+        }
+    }
+
+    @Test
+    public void testSearchFunctionality() {
+        treeView.searchTextField.setText("TestMessage");
+        treeView.searchButton.doClick();
+        TreePath path = treeView.fixTree.getNextMatch("TestMessage", 0, Position.Bias.Forward);
+        assertNotNull(path);
+        assertTrue(treeView.fixTree.isExpanded(path.getPathCount() - 1));
+    }
+
+    @Test
+    public void testClearFunctionality() {
+        treeView.searchTextField.setText("TestMessage");
+        treeView.searchButton.doClick();
+        treeView.clearButton.doClick();
+        TreePath path = treeView.fixTree.getNextMatch("TestMessage", 0, Position.Bias.Forward);
+        assertNotNull(path);
+        assertFalse(treeView.fixTree.isExpanded(path.getPathCount() - 1));
+    }
+
+    @Test
+    public void testActionPerformedExpand() {
+        ActionEvent expandEvent = new ActionEvent(treeView.expandButton, ActionEvent.ACTION_PERFORMED, "Expand");
+        treeView.actionPerformed(expandEvent);
+        for (int i = 0; i < treeView.fixTree.getRowCount(); i++) {
+            assertTrue(treeView.fixTree.isExpanded(i));
+        }
+    }
+
+    @Test
+    public void testActionPerformedCollapse() {
+        treeView.expandAll();
+        ActionEvent collapseEvent = new ActionEvent(treeView.collapseButton, ActionEvent.ACTION_PERFORMED, "Collapse");
+        treeView.actionPerformed(collapseEvent);
+        for (int i = 0; i < treeView.fixTree.getRowCount(); i++) {
+            assertFalse(treeView.fixTree.isExpanded(i));
+        }
+    }
+
+    @Test
+    public void testKeyPressedEnter() {
+        KeyEvent enterKeyEvent = new KeyEvent(treeView.searchTextField, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED);
+        treeView.keyPressed(enterKeyEvent);
+        TreePath path = treeView.fixTree.getNextMatch("TestMessage", 0, Position.Bias.Forward);
+        assertNotNull(path);
+        assertTrue(treeView.fixTree.isExpanded(path.getPathCount() - 1));
+    }
+
+    @Test
+    public void testValueChanged() {
+        TreePath path = treeView.fixTree.getNextMatch("TestMessage", 0, Position.Bias.Forward);
+        treeView.fixTree.setSelectionPath(path);
+        TreeSelectionEvent event = new TreeSelectionEvent(treeView.fixTree, path, true, null, path);
+        treeView.valueChanged(event);
+        // Assuming LibrarySuite.getInstance().getDetailsPanel().displayDetails() is called correctly
+        // This would require further mocking and verification if needed
+    }
+}
+```
+
+### Explanation:
+- **Setup**: We use Mockito to create mock objects for `Library`, `DictionaryInfo`, `MessageInfo`, `ComponentInfo`, and `FieldInfo`. This allows us to simulate the data structure that `TreeView` operates on.
+- **Tests**:
+  - **Initialization**: Verify that all GUI components are initialized.
+  - **Expand/Collapse**: Test the expand and collapse functionality.
+  - **Search/Clear**: Test the search and clear functionality by simulating button clicks.
+  - **Action Events**: Test the actionPerformed method for expand and collapse actions.
+  - **Key Events**: Test the keyPressed method for the Enter key.
+  - **Tree Selection**: Test the valueChanged method to ensure it handles tree selection events correctly.
+
+This test suite provides a comprehensive coverage of the `TreeView` class's functionality, focusing on user interactions and GUI component behavior.

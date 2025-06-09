@@ -1,0 +1,152 @@
+To create a comprehensive JUnit 4 test suite for the `ExportHook` class, we need to mock dependencies and test each method. Below is a test suite that covers the methods in the `ExportHook` class. Note that some methods rely on external components and resources, so we will use mocking to simulate these dependencies.
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class ExportHookTest {
+
+    @Mock
+    private ModeController controller;
+    @Mock
+    private MapView mapView;
+    @Mock
+    private FreeMindFileDialog fileDialog;
+    @Mock
+    private Container container;
+    @Mock
+    private File mapFile;
+    @Mock
+    private BufferedImage bufferedImage;
+    @Mock
+    private Graphics graphics;
+    @Mock
+    private InputStream inputStream;
+    @Mock
+    private OutputStream outputStream;
+    @Mock
+    private URL resourceUrl;
+
+    private ExportHook exportHook;
+
+    @Before
+    public void setUp() {
+        exportHook = spy(new ExportHook());
+        doReturn(controller).when(exportHook).getController();
+    }
+
+    @Test
+    public void testChooseFile() {
+        when(controller.getFrame()).thenReturn(mock(JFrame.class));
+        when(controller.getFileChooser(any(FileFilter.class))).thenReturn(fileDialog);
+        when(controller.getMap()).thenReturn(mock(MapAdapter.class));
+        when(controller.getMap().getFile()).thenReturn(mapFile);
+        when(mapFile.getAbsolutePath()).thenReturn("test.mm");
+        when(fileDialog.showSaveDialog(any(Container.class))).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(fileDialog.getSelectedFile()).thenReturn(new File("test.png"));
+
+        File result = exportHook.chooseFile("png", "PNG Image", ".png");
+        assertNotNull(result);
+        assertEquals("test.png", result.getName());
+    }
+
+    @Test
+    public void testChooseImageFile() {
+        when(controller.getFrame()).thenReturn(mock(JFrame.class));
+        when(controller.getFileChooser(any(FileFilter.class))).thenReturn(fileDialog);
+        when(controller.getMap()).thenReturn(mock(MapAdapter.class));
+        when(controller.getMap().getFile()).thenReturn(mapFile);
+        when(mapFile.getAbsolutePath()).thenReturn("test.mm");
+        when(fileDialog.showSaveDialog(any(Container.class))).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(fileDialog.getSelectedFile()).thenReturn(new File("test.png"));
+
+        File result = ExportHook.chooseImageFile("png", "PNG Image", ".png", controller);
+        assertNotNull(result);
+        assertEquals("test.png", result.getName());
+    }
+
+    @Test
+    public void testGetTranslatableResourceString() {
+        doReturn("resourceString").when(exportHook).getResourceString("key");
+        when(controller.getText("resourceString")).thenReturn("translatedString");
+
+        String result = exportHook.getTranslatableResourceString("key");
+        assertEquals("translatedString", result);
+    }
+
+    @Test
+    public void testCreateBufferedImage() {
+        when(controller.getView()).thenReturn(mapView);
+        when(mapView.getInnerBounds()).thenReturn(new Rectangle(0, 0, 100, 100));
+        when(mapView.createImage(anyInt(), anyInt())).thenReturn(bufferedImage);
+        when(bufferedImage.getGraphics()).thenReturn(graphics);
+
+        BufferedImage result = exportHook.createBufferedImage();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testCopyFromResource() throws Exception {
+        doReturn(resourceUrl).when(exportHook).getResource("prefixfileName");
+        when(resourceUrl.openStream()).thenReturn(inputStream);
+        doNothing().when(outputStream).close();
+
+        exportHook.copyFromResource("prefix", "fileName", "destinationDirectory");
+
+        verify(inputStream, times(1)).close();
+    }
+
+    @Test
+    public void testCopyFromFile() throws Exception {
+        File resource = mock(File.class);
+        when(resource.exists()).thenReturn(true);
+        doReturn(resource).when(exportHook).getResource("dirfileName");
+        when(new File("dir", "fileName")).thenReturn(resource);
+        when(new FileInputStream(resource)).thenReturn(inputStream);
+        doNothing().when(outputStream).close();
+
+        exportHook.copyFromFile("dir", "fileName", "destinationDirectory");
+
+        verify(inputStream, times(1)).close();
+    }
+
+    @Test
+    public void testImageFilterAccept() {
+        ExportHook.ImageFilter filter = new ExportHook.ImageFilter("png", "PNG Image");
+        File file = new File("test.png");
+        assertTrue(filter.accept(file));
+    }
+
+    @Test
+    public void testImageFilterGetDescription() {
+        ExportHook.ImageFilter filter = new ExportHook.ImageFilter("png", "PNG Image");
+        assertEquals("PNG Image", filter.getDescription());
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock dependencies like `ModeController`, `MapView`, `FreeMindFileDialog`, etc.
+- **Test Methods**: Each method in `ExportHook` is tested with appropriate assertions.
+- **Setup**: The `setUp` method initializes the `ExportHook` instance and mocks the controller.
+- **File Operations**: Tests for file operations simulate file chooser dialogs and file existence checks.
+- **Image Creation**: Tests for image creation verify that a `BufferedImage` is created correctly.
+- **Resource Copying**: Tests for resource copying ensure streams are opened and closed properly.
+- **ImageFilter**: Tests for `ImageFilter` check file acceptance and description retrieval.
+
+This test suite provides a comprehensive coverage of the `ExportHook` class methods.

@@ -1,0 +1,179 @@
+```java
+package org.apache.commons.lang3.text;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.text.Format;
+import java.text.ParsePosition;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class ExtendedMessageFormatTest {
+
+    private ExtendedMessageFormat messageFormat;
+    private Map<String, FormatFactory> registry;
+
+    @Before
+    public void setUp() {
+        registry = new HashMap<>();
+        messageFormat = new ExtendedMessageFormat("Test pattern", registry);
+    }
+
+    @Test
+    public void testConstructorWithPattern() {
+        ExtendedMessageFormat format = new ExtendedMessageFormat("Test pattern");
+        assertNotNull(format);
+        assertEquals("Test pattern", format.toPattern());
+    }
+
+    @Test
+    public void testConstructorWithPatternAndLocale() {
+        Locale locale = Locale.FRANCE;
+        ExtendedMessageFormat format = new ExtendedMessageFormat("Test pattern", locale);
+        assertNotNull(format);
+        assertEquals("Test pattern", format.toPattern());
+        assertEquals(locale, format.getLocale());
+    }
+
+    @Test
+    public void testConstructorWithPatternAndRegistry() {
+        ExtendedMessageFormat format = new ExtendedMessageFormat("Test pattern", registry);
+        assertNotNull(format);
+        assertEquals("Test pattern", format.toPattern());
+        assertEquals(registry, format.registry);
+    }
+
+    @Test
+    public void testConstructorWithPatternLocaleAndRegistry() {
+        Locale locale = Locale.FRANCE;
+        ExtendedMessageFormat format = new ExtendedMessageFormat("Test pattern", locale, registry);
+        assertNotNull(format);
+        assertEquals("Test pattern", format.toPattern());
+        assertEquals(locale, format.getLocale());
+        assertEquals(registry, format.registry);
+    }
+
+    @Test
+    public void testToPattern() {
+        assertEquals("Test pattern", messageFormat.toPattern());
+    }
+
+    @Test
+    public void testApplyPattern() {
+        messageFormat.applyPattern("New pattern");
+        assertEquals("New pattern", messageFormat.toPattern());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormat() {
+        messageFormat.setFormat(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatByArgumentIndex() {
+        messageFormat.setFormatByArgumentIndex(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormats() {
+        messageFormat.setFormats(new Format[0]);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatsByArgumentIndex() {
+        messageFormat.setFormatsByArgumentIndex(new Format[0]);
+    }
+
+    @Test
+    public void testEquals() {
+        ExtendedMessageFormat format1 = new ExtendedMessageFormat("Test pattern", registry);
+        ExtendedMessageFormat format2 = new ExtendedMessageFormat("Test pattern", registry);
+        assertTrue(format1.equals(format2));
+    }
+
+    @Test
+    public void testHashCode() {
+        ExtendedMessageFormat format1 = new ExtendedMessageFormat("Test pattern", registry);
+        ExtendedMessageFormat format2 = new ExtendedMessageFormat("Test pattern", registry);
+        assertEquals(format1.hashCode(), format2.hashCode());
+    }
+
+    @Test
+    public void testGetFormat() {
+        registry.put("test", new FormatFactory() {
+            @Override
+            public Format getFormat(String name, String arguments, Locale locale) {
+                return new java.text.SimpleDateFormat();
+            }
+        });
+        Format format = messageFormat.getFormat("test");
+        assertNotNull(format);
+        assertTrue(format instanceof java.text.SimpleDateFormat);
+    }
+
+    @Test
+    public void testReadArgumentIndex() {
+        ParsePosition pos = new ParsePosition(0);
+        int index = messageFormat.readArgumentIndex("{0}", pos);
+        assertEquals(0, index);
+    }
+
+    @Test
+    public void testParseFormatDescription() {
+        ParsePosition pos = new ParsePosition(0);
+        String description = messageFormat.parseFormatDescription("{0,date}", pos);
+        assertEquals("date", description);
+    }
+
+    @Test
+    public void testInsertFormats() {
+        ArrayList<String> customPatterns = new ArrayList<>();
+        customPatterns.add("date");
+        String pattern = messageFormat.insertFormats("{0}", customPatterns);
+        assertEquals("{0,date}", pattern);
+    }
+
+    @Test
+    public void testSeekNonWs() {
+        ParsePosition pos = new ParsePosition(0);
+        messageFormat.seekNonWs("  Test", pos);
+        assertEquals(2, pos.getIndex());
+    }
+
+    @Test
+    public void testNext() {
+        ParsePosition pos = new ParsePosition(0);
+        messageFormat.next(pos);
+        assertEquals(1, pos.getIndex());
+    }
+
+    @Test
+    public void testAppendQuotedString() {
+        ParsePosition pos = new ParsePosition(0);
+        StringBuilder sb = new StringBuilder();
+        messageFormat.appendQuotedString("'Test'", pos, sb, true);
+        assertEquals("Test", sb.toString());
+    }
+
+    @Test
+    public void testGetQuotedString() {
+        ParsePosition pos = new ParsePosition(0);
+        messageFormat.getQuotedString("'Test'", pos, true);
+        assertEquals(6, pos.getIndex());
+    }
+
+    @Test
+    public void testContainsElements() {
+        ArrayList<String> list = new ArrayList<>();
+        list.add("Test");
+        assertTrue(messageFormat.containsElements(list));
+    }
+}
+```

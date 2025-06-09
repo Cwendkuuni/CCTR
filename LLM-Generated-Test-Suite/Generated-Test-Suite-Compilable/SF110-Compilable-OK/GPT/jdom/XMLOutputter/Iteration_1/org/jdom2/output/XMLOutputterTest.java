@@ -1,0 +1,253 @@
+package org.jdom2.output;
+
+import org.jdom2.output.XMLOutputter;
+import org.jdom2.output.Format;
+import org.jdom2.output.support.XMLOutputProcessor;
+import org.jdom2.Document;
+import org.jdom2.DocType;
+import org.jdom2.Element;
+import org.jdom2.CDATA;
+import org.jdom2.Text;
+import org.jdom2.Comment;
+import org.jdom2.ProcessingInstruction;
+import org.jdom2.EntityRef;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.StringWriter;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class XMLOutputterTest {
+
+    private XMLOutputter xmlOutputter;
+    private Format mockFormat;
+    private XMLOutputProcessor mockProcessor;
+
+    @Before
+    public void setUp() {
+        mockFormat = mock(Format.class);
+        mockProcessor = mock(XMLOutputProcessor.class);
+        xmlOutputter = new XMLOutputter(mockFormat, mockProcessor);
+    }
+
+    @Test
+    public void testConstructorWithFormatAndProcessor() {
+        assertNotNull(xmlOutputter.getFormat());
+        assertNotNull(xmlOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        XMLOutputter defaultOutputter = new XMLOutputter();
+        assertNotNull(defaultOutputter.getFormat());
+        assertNotNull(defaultOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testConstructorWithFormat() {
+        XMLOutputter outputter = new XMLOutputter(mockFormat);
+        assertNotNull(outputter.getFormat());
+        assertNotNull(outputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testConstructorWithProcessor() {
+        XMLOutputter outputter = new XMLOutputter(mockProcessor);
+        assertNotNull(outputter.getFormat());
+        assertNotNull(outputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testSetAndGetFormat() {
+        Format newFormat = mock(Format.class);
+        xmlOutputter.setFormat(newFormat);
+        assertEquals(newFormat, xmlOutputter.getFormat());
+    }
+
+    @Test
+    public void testSetAndGetXMLOutputProcessor() {
+        XMLOutputProcessor newProcessor = mock(XMLOutputProcessor.class);
+        xmlOutputter.setXMLOutputProcessor(newProcessor);
+        assertEquals(newProcessor, xmlOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testOutputDocumentToOutputStream() throws IOException {
+        Document mockDoc = mock(Document.class);
+        OutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(mockDoc, out);
+        verify(mockProcessor).process(any(), eq(mockFormat), eq(mockDoc));
+    }
+
+    @Test
+    public void testOutputDocTypeToOutputStream() throws IOException {
+        DocType mockDocType = mock(DocType.class);
+        OutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(mockDocType, out);
+        verify(mockProcessor).process(any(), eq(mockFormat), eq(mockDocType));
+    }
+
+    @Test
+    public void testOutputElementToOutputStream() throws IOException {
+        Element mockElement = mock(Element.class);
+        OutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(mockElement, out);
+        verify(mockProcessor).process(any(), eq(mockFormat), eq(mockElement));
+    }
+
+    @Test
+    public void testOutputElementContentToOutputStream() throws IOException {
+        Element mockElement = mock(Element.class);
+        when(mockElement.getContent()).thenReturn(Collections.emptyList());
+        OutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.outputElementContent(mockElement, out);
+        verify(mockProcessor).process(any(), eq(mockFormat), eq(Collections.emptyList()));
+    }
+
+    @Test
+    public void testOutputListToOutputStream() throws IOException {
+        OutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(Collections.emptyList(), out);
+        verify(mockProcessor).process(any(), eq(mockFormat), eq(Collections.emptyList()));
+    }
+
+    @Test
+    public void testOutputCDATAtoOutputStream() throws IOException {
+        CDATA mockCDATA = mock(CDATA.class);
+        OutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(mockCDATA, out);
+        verify(mockProcessor).process(any(), eq(mockFormat), eq(mockCDATA));
+    }
+
+    @Test
+    public void testOutputTextToOutputStream() throws IOException {
+        Text mockText = mock(Text.class);
+        OutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(mockText, out);
+        verify(mockProcessor).process(any(), eq(mockFormat), eq(mockText));
+    }
+
+    @Test
+    public void testOutputCommentToOutputStream() throws IOException {
+        Comment mockComment = mock(Comment.class);
+        OutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(mockComment, out);
+        verify(mockProcessor).process(any(), eq(mockFormat), eq(mockComment));
+    }
+
+    @Test
+    public void testOutputProcessingInstructionToOutputStream() throws IOException {
+        ProcessingInstruction mockPI = mock(ProcessingInstruction.class);
+        OutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(mockPI, out);
+        verify(mockProcessor).process(any(), eq(mockFormat), eq(mockPI));
+    }
+
+    @Test
+    public void testOutputEntityRefToOutputStream() throws IOException {
+        EntityRef mockEntity = mock(EntityRef.class);
+        OutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(mockEntity, out);
+        verify(mockProcessor).process(any(), eq(mockFormat), eq(mockEntity));
+    }
+
+    @Test
+    public void testOutputStringDocument() {
+        Document mockDoc = mock(Document.class);
+        String result = xmlOutputter.outputString(mockDoc);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOutputStringDocType() {
+        DocType mockDocType = mock(DocType.class);
+        String result = xmlOutputter.outputString(mockDocType);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOutputStringElement() {
+        Element mockElement = mock(Element.class);
+        String result = xmlOutputter.outputString(mockElement);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOutputStringList() {
+        String result = xmlOutputter.outputString(Collections.emptyList());
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOutputStringCDATA() {
+        CDATA mockCDATA = mock(CDATA.class);
+        String result = xmlOutputter.outputString(mockCDATA);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOutputStringText() {
+        Text mockText = mock(Text.class);
+        String result = xmlOutputter.outputString(mockText);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOutputStringComment() {
+        Comment mockComment = mock(Comment.class);
+        String result = xmlOutputter.outputString(mockComment);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOutputStringProcessingInstruction() {
+        ProcessingInstruction mockPI = mock(ProcessingInstruction.class);
+        String result = xmlOutputter.outputString(mockPI);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOutputStringEntityRef() {
+        EntityRef mockEntity = mock(EntityRef.class);
+        String result = xmlOutputter.outputString(mockEntity);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOutputElementContentString() {
+        Element mockElement = mock(Element.class);
+        String result = xmlOutputter.outputElementContentString(mockElement);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testEscapeAttributeEntities() {
+        String result = xmlOutputter.escapeAttributeEntities("test");
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testEscapeElementEntities() {
+        String result = xmlOutputter.escapeElementEntities("test");
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testClone() {
+        XMLOutputter clone = xmlOutputter.clone();
+        assertNotNull(clone);
+        assertNotSame(xmlOutputter, clone);
+    }
+
+    @Test
+    public void testToString() {
+        String result = xmlOutputter.toString();
+        assertNotNull(result);
+    }
+}

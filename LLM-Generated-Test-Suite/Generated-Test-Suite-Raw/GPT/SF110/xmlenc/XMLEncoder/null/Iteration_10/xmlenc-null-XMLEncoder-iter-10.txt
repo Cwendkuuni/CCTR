@@ -1,0 +1,127 @@
+Certainly! Below is a JUnit 4 test suite for the `XMLEncoder` class. This suite aims to comprehensively test the various methods and edge cases of the class.
+
+```java
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+import java.io.IOException;
+import static org.junit.Assert.*;
+
+public class XMLEncoderTest {
+
+    private XMLEncoder xmlEncoderUTF8;
+    private XMLEncoder xmlEncoderASCII;
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    @Before
+    public void setUp() throws UnsupportedEncodingException {
+        xmlEncoderUTF8 = XMLEncoder.getEncoder("UTF-8");
+        xmlEncoderASCII = XMLEncoder.getEncoder("US-ASCII");
+    }
+
+    @Test
+    public void testGetEncoderWithNullEncoding() throws UnsupportedEncodingException {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("encoding == null");
+        XMLEncoder.getEncoder(null);
+    }
+
+    @Test
+    public void testGetEncoderWithUnsupportedEncoding() throws UnsupportedEncodingException {
+        thrown.expect(UnsupportedEncodingException.class);
+        XMLEncoder.getEncoder("UNSUPPORTED");
+    }
+
+    @Test
+    public void testGetEncoding() {
+        assertEquals("UTF-8", xmlEncoderUTF8.getEncoding());
+        assertEquals("US-ASCII", xmlEncoderASCII.getEncoding());
+    }
+
+    @Test
+    public void testDeclaration() throws IOException {
+        StringWriter writer = new StringWriter();
+        xmlEncoderUTF8.declaration(writer);
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", writer.toString());
+    }
+
+    @Test
+    public void testTextWithValidInput() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        xmlEncoderUTF8.text(writer, "Hello & World <XML>", true);
+        assertEquals("Hello &amp; World &lt;XML&gt;", writer.toString());
+    }
+
+    @Test
+    public void testTextWithInvalidXMLCharacter() throws IOException, InvalidXMLException {
+        thrown.expect(InvalidXMLException.class);
+        StringWriter writer = new StringWriter();
+        xmlEncoderASCII.text(writer, "Invalid \u0001 character", true);
+    }
+
+    @Test
+    public void testTextWithChar() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        xmlEncoderUTF8.text(writer, '<');
+        assertEquals("&lt;", writer.toString());
+    }
+
+    @Test
+    public void testTextWithCharAndEscapeAmpersands() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        xmlEncoderUTF8.text(writer, '&', true);
+        assertEquals("&amp;", writer.toString());
+    }
+
+    @Test
+    public void testWhitespace() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        xmlEncoderUTF8.whitespace(writer, " \t\n");
+        assertEquals(" \t\n", writer.toString());
+    }
+
+    @Test
+    public void testWhitespaceWithInvalidXMLCharacter() throws IOException, InvalidXMLException {
+        thrown.expect(InvalidXMLException.class);
+        StringWriter writer = new StringWriter();
+        xmlEncoderASCII.whitespace(writer, "Invalid \u0001 character");
+    }
+
+    @Test
+    public void testAttributeWithValidInput() throws IOException {
+        StringWriter writer = new StringWriter();
+        xmlEncoderUTF8.attribute(writer, "name", "value & more", '"', true);
+        assertEquals(" name=\"value &amp; more\"", writer.toString());
+    }
+
+    @Test
+    public void testAttributeWithInvalidQuotationMark() throws IOException {
+        thrown.expect(IllegalArgumentException.class);
+        StringWriter writer = new StringWriter();
+        xmlEncoderUTF8.attribute(writer, "name", "value", 'x', true);
+    }
+
+    @After
+    public void tearDown() {
+        xmlEncoderUTF8 = null;
+        xmlEncoderASCII = null;
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: The `setUp` method initializes two `XMLEncoder` instances with different encodings. The `tearDown` method cleans up these instances.
+- **Tests for `getEncoder`**: These tests check for null and unsupported encoding inputs.
+- **Tests for `getEncoding`**: These tests verify that the correct encoding is returned.
+- **Tests for `declaration`**: This test checks if the XML declaration is correctly written.
+- **Tests for `text` methods**: These tests cover valid and invalid inputs, including special characters and escape sequences.
+- **Tests for `whitespace`**: These tests ensure that whitespace is handled correctly and invalid characters throw exceptions.
+- **Tests for `attribute`**: These tests verify attribute writing with valid inputs and handle invalid quotation marks.
+
+This suite should provide a comprehensive test coverage for the `XMLEncoder` class.

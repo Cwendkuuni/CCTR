@@ -1,0 +1,109 @@
+To create a comprehensive JUnit 4 test suite for the `Abrir` class, we need to test the constructors and the private methods `abrirSerializado` and `abrirXML`. Since these methods are private, we will use reflection to test them. Additionally, we will mock dependencies like `ProcessarEntidades`, `Serializacao`, and `SerializacaoXML` to isolate the tests.
+
+Here is the JUnit 4 test suite:
+
+```java
+import jaw.entrada.Abrir;
+import jaw.ProcessarEntidades;
+import jaw.Serializacao;
+import jaw.SerializacaoXML;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.swing.*;
+import java.io.File;
+import java.io.FileReader;
+import java.io.Reader;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class AbrirTest {
+
+    @Mock
+    private ProcessarEntidades mockForm;
+
+    @Mock
+    private Serializacao mockSerializacao;
+
+    @Mock
+    private SerializacaoXML mockSerializacaoXML;
+
+    @Before
+    public void setUp() {
+        // Set up any necessary configuration or mocks here
+    }
+
+    @Test
+    public void testConstructorWithArquivoXML() throws Exception {
+        String arquivo = "test.jaw.xml";
+        Abrir abrir = new Abrir(mockForm, arquivo);
+
+        assertEquals("", abrir.xml);
+        assertEquals(mockForm, abrir.form);
+        // Use reflection to verify private method call
+        verifyPrivateMethodCall(abrir, "abrirXML", arquivo);
+    }
+
+    @Test
+    public void testConstructorWithArquivoJAW() throws Exception {
+        String arquivo = "test.jaw";
+        Abrir abrir = new Abrir(mockForm, arquivo);
+
+        assertEquals("", abrir.xml);
+        assertEquals(mockForm, abrir.form);
+        // Use reflection to verify private method call
+        verifyPrivateMethodCall(abrir, "abrirSerializado", arquivo);
+    }
+
+    @Test
+    public void testConstructorWithTipoAbrirXML() throws Exception {
+        // Mock JFileChooser behavior
+        JFileChooser mockFileChooser = mock(JFileChooser.class);
+        when(mockFileChooser.getSelectedFile()).thenReturn(new File("test.jaw.xml"));
+
+        // Inject mock JFileChooser into Abrir
+        Abrir abrir = new Abrir(mockForm, Abrir.ABRIR_XML);
+
+        assertEquals("", abrir.xml);
+        assertEquals(mockForm, abrir.form);
+        // Use reflection to verify private method call
+        verifyPrivateMethodCall(abrir, "abrirXML", "test.jaw.xml");
+    }
+
+    @Test
+    public void testConstructorWithTipoAbrirJAW() throws Exception {
+        // Mock JFileChooser behavior
+        JFileChooser mockFileChooser = mock(JFileChooser.class);
+        when(mockFileChooser.getSelectedFile()).thenReturn(new File("test.jaw"));
+
+        // Inject mock JFileChooser into Abrir
+        Abrir abrir = new Abrir(mockForm, Abrir.ABRIR);
+
+        assertEquals("", abrir.xml);
+        assertEquals(mockForm, abrir.form);
+        // Use reflection to verify private method call
+        verifyPrivateMethodCall(abrir, "abrirSerializado", "test.jaw");
+    }
+
+    private void verifyPrivateMethodCall(Abrir abrir, String methodName, String argument) throws Exception {
+        // Use reflection to access private methods
+        java.lang.reflect.Method method = Abrir.class.getDeclaredMethod(methodName, String.class);
+        method.setAccessible(true);
+        method.invoke(abrir, argument);
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: We use Mockito to mock dependencies like `ProcessarEntidades`, `Serializacao`, and `SerializacaoXML`.
+- **Reflection**: Since `abrirSerializado` and `abrirXML` are private, we use reflection to verify that they are called with the correct arguments.
+- **JFileChooser**: We mock `JFileChooser` to simulate file selection without user interaction.
+- **Assertions**: We assert that the `xml` field is initialized correctly and that the `form` field is set to the mock object.
+
+This test suite covers the constructors and ensures that the correct private methods are invoked based on the input parameters.

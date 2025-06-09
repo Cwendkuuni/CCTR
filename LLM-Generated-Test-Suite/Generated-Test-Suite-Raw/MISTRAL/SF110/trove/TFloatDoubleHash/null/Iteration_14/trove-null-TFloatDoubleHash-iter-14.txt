@@ -1,0 +1,176 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import gnu.trove.impl.hash.TFloatDoubleHash;
+import gnu.trove.procedure.TFloatProcedure;
+
+public class TFloatDoubleHashTest {
+
+    private TFloatDoubleHash hash;
+
+    @Before
+    public void setUp() {
+        hash = new TFloatDoubleHash() {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertEquals(0.0f, hash.getNoEntryKey(), 0.0f);
+        assertEquals(0.0, hash.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacity() {
+        TFloatDoubleHash hashWithCapacity = new TFloatDoubleHash(10) {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+        assertEquals(0.0f, hashWithCapacity.getNoEntryKey(), 0.0f);
+        assertEquals(0.0, hashWithCapacity.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacityAndLoadFactor() {
+        TFloatDoubleHash hashWithCapacityAndLoadFactor = new TFloatDoubleHash(10, 0.5f) {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+        assertEquals(0.0f, hashWithCapacityAndLoadFactor.getNoEntryKey(), 0.0f);
+        assertEquals(0.0, hashWithCapacityAndLoadFactor.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testConstructorWithAllParameters() {
+        TFloatDoubleHash hashWithAllParams = new TFloatDoubleHash(10, 0.5f, 1.0f, 2.0) {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+        assertEquals(1.0f, hashWithAllParams.getNoEntryKey(), 0.0f);
+        assertEquals(2.0, hashWithAllParams.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testGetNoEntryKey() {
+        assertEquals(0.0f, hash.getNoEntryKey(), 0.0f);
+    }
+
+    @Test
+    public void testGetNoEntryValue() {
+        assertEquals(0.0, hash.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testSetUp() {
+        int capacity = hash.setUp(10);
+        assertEquals(10, capacity);
+        assertNotNull(hash._set);
+        assertEquals(10, hash._set.length);
+    }
+
+    @Test
+    public void testContains() {
+        hash.insertKey(1.0f);
+        assertTrue(hash.contains(1.0f));
+        assertFalse(hash.contains(2.0f));
+    }
+
+    @Test
+    public void testForEach() {
+        hash.insertKey(1.0f);
+        hash.insertKey(2.0f);
+        TFloatProcedure procedure = new TFloatProcedure() {
+            @Override
+            public boolean execute(float value) {
+                return value != 1.0f;
+            }
+        };
+        assertFalse(hash.forEach(procedure));
+    }
+
+    @Test
+    public void testRemoveAt() {
+        hash.insertKey(1.0f);
+        int index = hash.index(1.0f);
+        hash.removeAt(index);
+        assertFalse(hash.contains(1.0f));
+    }
+
+    @Test
+    public void testIndex() {
+        hash.insertKey(1.0f);
+        assertEquals(0, hash.index(1.0f));
+        assertEquals(-1, hash.index(2.0f));
+    }
+
+    @Test
+    public void testInsertKey() {
+        int index = hash.insertKey(1.0f);
+        assertEquals(0, index);
+        assertTrue(hash.contains(1.0f));
+    }
+
+    @Test
+    public void testInsertKeyRehash() {
+        hash.insertKey(1.0f);
+        int index = hash.insertKey(1.0f);
+        assertEquals(-1, index);
+    }
+
+    @Test
+    public void testInsertKeyAt() {
+        hash.insertKeyAt(0, 1.0f);
+        assertTrue(hash.contains(1.0f));
+    }
+
+    @Test
+    public void testXinsertKey() {
+        int index = hash.XinsertKey(1.0f);
+        assertEquals(0, index);
+        assertTrue(hash.contains(1.0f));
+    }
+
+    @Test
+    public void testWriteExternal() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(out);
+        hash.writeExternal(oos);
+        oos.close();
+        byte[] data = out.toByteArray();
+        assertTrue(data.length > 0);
+    }
+
+    @Test
+    public void testReadExternal() throws Exception {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(out);
+        hash.writeExternal(oos);
+        oos.close();
+
+        ByteArrayInputStream in = new ByteArrayInputStream(out.toByteArray());
+        ObjectInputStream ois = new ObjectInputStream(in);
+        TFloatDoubleHash newHash = new TFloatDoubleHash() {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+        newHash.readExternal(ois);
+        ois.close();
+
+        assertEquals(hash.getNoEntryKey(), newHash.getNoEntryKey(), 0.0f);
+        assertEquals(hash.getNoEntryValue(), newHash.getNoEntryValue(), 0.0);
+    }
+}
+```

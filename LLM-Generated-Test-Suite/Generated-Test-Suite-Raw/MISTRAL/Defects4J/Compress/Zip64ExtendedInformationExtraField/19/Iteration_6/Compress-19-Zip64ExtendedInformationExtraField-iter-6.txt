@@ -1,0 +1,150 @@
+```java
+import org.apache.commons.compress.archivers.zip.Zip64ExtendedInformationExtraField;
+import org.apache.commons.compress.archivers.zip.ZipEightByteInteger;
+import org.apache.commons.compress.archivers.zip.ZipLong;
+import org.apache.commons.compress.archivers.zip.ZipShort;
+import org.apache.commons.compress.archivers.zip.ZipException;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class Zip64ExtendedInformationExtraFieldTest {
+
+    private Zip64ExtendedInformationExtraField field;
+    private ZipEightByteInteger size;
+    private ZipEightByteInteger compressedSize;
+    private ZipEightByteInteger relativeHeaderOffset;
+    private ZipLong diskStart;
+
+    @Before
+    public void setUp() {
+        size = new ZipEightByteInteger(100L);
+        compressedSize = new ZipEightByteInteger(50L);
+        relativeHeaderOffset = new ZipEightByteInteger(200L);
+        diskStart = new ZipLong(1L);
+        field = new Zip64ExtendedInformationExtraField(size, compressedSize, relativeHeaderOffset, diskStart);
+    }
+
+    @Test
+    public void testGetHeaderId() {
+        assertEquals(Zip64ExtendedInformationExtraField.HEADER_ID, field.getHeaderId());
+    }
+
+    @Test
+    public void testGetLocalFileDataLength() {
+        assertEquals(new ZipShort(2 * ZipConstants.DWORD), field.getLocalFileDataLength());
+    }
+
+    @Test
+    public void testGetCentralDirectoryLength() {
+        assertEquals(new ZipShort(3 * ZipConstants.DWORD + ZipConstants.WORD), field.getCentralDirectoryLength());
+    }
+
+    @Test
+    public void testGetLocalFileDataData() {
+        byte[] data = field.getLocalFileDataData();
+        assertEquals(2 * ZipConstants.DWORD, data.length);
+        assertArrayEquals(size.getBytes(), Arrays.copyOfRange(data, 0, ZipConstants.DWORD));
+        assertArrayEquals(compressedSize.getBytes(), Arrays.copyOfRange(data, ZipConstants.DWORD, 2 * ZipConstants.DWORD));
+    }
+
+    @Test
+    public void testGetCentralDirectoryData() {
+        byte[] data = field.getCentralDirectoryData();
+        assertEquals(3 * ZipConstants.DWORD + ZipConstants.WORD, data.length);
+        assertArrayEquals(size.getBytes(), Arrays.copyOfRange(data, 0, ZipConstants.DWORD));
+        assertArrayEquals(compressedSize.getBytes(), Arrays.copyOfRange(data, ZipConstants.DWORD, 2 * ZipConstants.DWORD));
+        assertArrayEquals(relativeHeaderOffset.getBytes(), Arrays.copyOfRange(data, 2 * ZipConstants.DWORD, 3 * ZipConstants.DWORD));
+        assertArrayEquals(diskStart.getBytes(), Arrays.copyOfRange(data, 3 * ZipConstants.DWORD, 3 * ZipConstants.DWORD + ZipConstants.WORD));
+    }
+
+    @Test
+    public void testParseFromLocalFileData() throws ZipException {
+        byte[] buffer = new byte[3 * ZipConstants.DWORD + ZipConstants.WORD];
+        System.arraycopy(size.getBytes(), 0, buffer, 0, ZipConstants.DWORD);
+        System.arraycopy(compressedSize.getBytes(), 0, buffer, ZipConstants.DWORD, ZipConstants.DWORD);
+        System.arraycopy(relativeHeaderOffset.getBytes(), 0, buffer, 2 * ZipConstants.DWORD, ZipConstants.DWORD);
+        System.arraycopy(diskStart.getBytes(), 0, buffer, 3 * ZipConstants.DWORD, ZipConstants.WORD);
+
+        Zip64ExtendedInformationExtraField parsedField = new Zip64ExtendedInformationExtraField();
+        parsedField.parseFromLocalFileData(buffer, 0, buffer.length);
+
+        assertEquals(size, parsedField.getSize());
+        assertEquals(compressedSize, parsedField.getCompressedSize());
+        assertEquals(relativeHeaderOffset, parsedField.getRelativeHeaderOffset());
+        assertEquals(diskStart, parsedField.getDiskStartNumber());
+    }
+
+    @Test
+    public void testParseFromCentralDirectoryData() throws ZipException {
+        byte[] buffer = new byte[3 * ZipConstants.DWORD + ZipConstants.WORD];
+        System.arraycopy(size.getBytes(), 0, buffer, 0, ZipConstants.DWORD);
+        System.arraycopy(compressedSize.getBytes(), 0, buffer, ZipConstants.DWORD, ZipConstants.DWORD);
+        System.arraycopy(relativeHeaderOffset.getBytes(), 0, buffer, 2 * ZipConstants.DWORD, ZipConstants.DWORD);
+        System.arraycopy(diskStart.getBytes(), 0, buffer, 3 * ZipConstants.DWORD, ZipConstants.WORD);
+
+        Zip64ExtendedInformationExtraField parsedField = new Zip64ExtendedInformationExtraField();
+        parsedField.parseFromCentralDirectoryData(buffer, 0, buffer.length);
+
+        assertEquals(size, parsedField.getSize());
+        assertEquals(compressedSize, parsedField.getCompressedSize());
+        assertEquals(relativeHeaderOffset, parsedField.getRelativeHeaderOffset());
+        assertEquals(diskStart, parsedField.getDiskStartNumber());
+    }
+
+    @Test
+    public void testReparseCentralDirectoryData() throws ZipException {
+        byte[] buffer = new byte[3 * ZipConstants.DWORD + ZipConstants.WORD];
+        System.arraycopy(size.getBytes(), 0, buffer, 0, ZipConstants.DWORD);
+        System.arraycopy(compressedSize.getBytes(), 0, buffer, ZipConstants.DWORD, ZipConstants.DWORD);
+        System.arraycopy(relativeHeaderOffset.getBytes(), 0, buffer, 2 * ZipConstants.DWORD, ZipConstants.DWORD);
+        System.arraycopy(diskStart.getBytes(), 0, buffer, 3 * ZipConstants.DWORD, ZipConstants.WORD);
+
+        Zip64ExtendedInformationExtraField parsedField = new Zip64ExtendedInformationExtraField();
+        parsedField.parseFromCentralDirectoryData(buffer, 0, buffer.length);
+        parsedField.reparseCentralDirectoryData(true, true, true, true);
+
+        assertEquals(size, parsedField.getSize());
+        assertEquals(compressedSize, parsedField.getCompressedSize());
+        assertEquals(relativeHeaderOffset, parsedField.getRelativeHeaderOffset());
+        assertEquals(diskStart, parsedField.getDiskStartNumber());
+    }
+
+    @Test
+    public void testGettersAndSetters() {
+        field.setSize(new ZipEightByteInteger(200L));
+        assertEquals(new ZipEightByteInteger(200L), field.getSize());
+
+        field.setCompressedSize(new ZipEightByteInteger(100L));
+        assertEquals(new ZipEightByteInteger(100L), field.getCompressedSize());
+
+        field.setRelativeHeaderOffset(new ZipEightByteInteger(300L));
+        assertEquals(new ZipEightByteInteger(300L), field.getRelativeHeaderOffset());
+
+        field.setDiskStartNumber(new ZipLong(2L));
+        assertEquals(new ZipLong(2L), field.getDiskStartNumber());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithNullSize() {
+        new Zip64ExtendedInformationExtraField(null, compressedSize);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithNullCompressedSize() {
+        new Zip64ExtendedInformationExtraField(size, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetLocalFileDataDataWithNullSize() {
+        field.setSize(null);
+        field.getLocalFileDataData();
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetLocalFileDataDataWithNullCompressedSize() {
+        field.setCompressedSize(null);
+        field.getLocalFileDataData();
+    }
+}
+```

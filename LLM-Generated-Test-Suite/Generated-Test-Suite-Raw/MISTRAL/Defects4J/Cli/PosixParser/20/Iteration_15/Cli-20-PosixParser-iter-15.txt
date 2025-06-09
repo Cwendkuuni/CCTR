@@ -1,0 +1,115 @@
+```java
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
+public class PosixParserTest {
+
+    private PosixParser parser;
+    private Options options;
+
+    @Before
+    public void setUp() {
+        parser = new PosixParser();
+        options = new Options();
+        options.addOption(Option.builder("a").hasArg().build());
+        options.addOption(Option.builder("b").build());
+        options.addOption(Option.builder("c").build());
+    }
+
+    @Test
+    public void testFlattenWithLongOption() {
+        String[] arguments = {"--foo", "--bar=baz"};
+        String[] expected = {"--foo", "--bar", "baz"};
+        String[] result = parser.flatten(options, arguments, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithSingleHyphen() {
+        String[] arguments = {"-"};
+        String[] expected = {"-"};
+        String[] result = parser.flatten(options, arguments, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithShortOption() {
+        String[] arguments = {"-a", "value"};
+        String[] expected = {"-a", "value"};
+        String[] result = parser.flatten(options, arguments, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithBursting() {
+        String[] arguments = {"-abc"};
+        String[] expected = {"-a", "-b", "-c"};
+        String[] result = parser.flatten(options, arguments, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithStopAtNonOption() {
+        String[] arguments = {"-a", "value", "nonOption"};
+        String[] expected = {"-a", "value", "nonOption"};
+        String[] result = parser.flatten(options, arguments, true);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithInvalidOption() {
+        String[] arguments = {"-x"};
+        String[] expected = {"-x"};
+        String[] result = parser.flatten(options, arguments, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testGobble() {
+        List<String> tokens = new ArrayList<>();
+        tokens.add("-a");
+        tokens.add("value");
+        parser.gobble(Arrays.asList("extra1", "extra2").iterator());
+        assertEquals(4, tokens.size());
+        assertEquals("extra1", tokens.get(2));
+        assertEquals("extra2", tokens.get(3));
+    }
+
+    @Test
+    public void testProcess() {
+        List<String> tokens = new ArrayList<>();
+        parser.process("value");
+        assertEquals(2, tokens.size());
+        assertEquals("--", tokens.get(0));
+        assertEquals("value", tokens.get(1));
+    }
+
+    @Test
+    public void testProcessOptionToken() {
+        List<String> tokens = new ArrayList<>();
+        parser.processOptionToken("-a", false);
+        assertEquals(1, tokens.size());
+        assertEquals("-a", tokens.get(0));
+    }
+
+    @Test
+    public void testBurstToken() {
+        List<String> tokens = new ArrayList<>();
+        parser.burstToken("-abc", false);
+        assertEquals(3, tokens.size());
+        assertEquals("-a", tokens.get(0));
+        assertEquals("-b", tokens.get(1));
+        assertEquals("-c", tokens.get(2));
+    }
+}
+```

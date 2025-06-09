@@ -1,0 +1,183 @@
+To create a comprehensive JUnit 4 test suite for the `Request` class, we need to test all public methods and ensure that the class behaves as expected under various conditions. Below is a test suite that covers the functionality of the `Request` class. Note that some methods, such as `send()` and `doSend()`, involve network operations, so we'll need to mock the `HttpURLConnection` to test them effectively.
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.scribe.exceptions.OAuthException;
+import org.scribe.model.Request;
+import org.scribe.model.Response;
+import org.scribe.model.Verb;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class RequestTest {
+
+    @Mock
+    private HttpURLConnection mockConnection;
+
+    private Request request;
+
+    @Before
+    public void setUp() {
+        request = new Request(Verb.GET, "http://example.com");
+    }
+
+    @Test
+    public void testAddHeader() {
+        request.addHeader("Content-Type", "application/json");
+        assertEquals("application/json", request.getHeaders().get("Content-Type"));
+    }
+
+    @Test
+    public void testAddBodyParameter() {
+        request.addBodyParameter("key", "value");
+        assertEquals("value", request.getBodyParams().get("key"));
+    }
+
+    @Test
+    public void testAddQuerystringParameter() {
+        request.addQuerystringParameter("param", "value");
+        assertEquals("value", request.getQueryStringParams().get("param"));
+    }
+
+    @Test
+    public void testAddPayloadString() {
+        request.addPayload("payload");
+        assertEquals("payload", request.getBodyContents());
+    }
+
+    @Test
+    public void testAddPayloadBytes() {
+        byte[] payload = "payload".getBytes();
+        request.addPayload(payload);
+        assertArrayEquals(payload, request.getByteBodyContents());
+    }
+
+    @Test
+    public void testGetQueryStringParams() throws MalformedURLException {
+        request.addQuerystringParameter("param", "value");
+        Map<String, String> params = request.getQueryStringParams();
+        assertEquals("value", params.get("param"));
+    }
+
+    @Test
+    public void testGetBodyParams() {
+        request.addBodyParameter("key", "value");
+        assertEquals("value", request.getBodyParams().get("key"));
+    }
+
+    @Test
+    public void testGetUrl() {
+        assertEquals("http://example.com", request.getUrl());
+    }
+
+    @Test
+    public void testGetSanitizedUrl() {
+        request = new Request(Verb.GET, "http://example.com:8080?param=value");
+        assertEquals("http://example.com", request.getSanitizedUrl());
+    }
+
+    @Test
+    public void testGetBodyContents() {
+        request.addPayload("payload");
+        assertEquals("payload", request.getBodyContents());
+    }
+
+    @Test
+    public void testGetByteBodyContents() {
+        request.addPayload("payload");
+        assertArrayEquals("payload".getBytes(), request.getByteBodyContents());
+    }
+
+    @Test
+    public void testGetVerb() {
+        assertEquals(Verb.GET, request.getVerb());
+    }
+
+    @Test
+    public void testGetHeaders() {
+        request.addHeader("Content-Type", "application/json");
+        assertEquals("application/json", request.getHeaders().get("Content-Type"));
+    }
+
+    @Test
+    public void testGetCharset() {
+        assertEquals(Charset.defaultCharset().name(), request.getCharset());
+        request.setCharset("UTF-8");
+        assertEquals("UTF-8", request.getCharset());
+    }
+
+    @Test
+    public void testSetConnectTimeout() {
+        request.setConnection(mockConnection);
+        request.setConnectTimeout(10, TimeUnit.SECONDS);
+        verify(mockConnection).setConnectTimeout(10000);
+    }
+
+    @Test
+    public void testSetReadTimeout() {
+        request.setConnection(mockConnection);
+        request.setReadTimeout(10, TimeUnit.SECONDS);
+        verify(mockConnection).setReadTimeout(10000);
+    }
+
+    @Test
+    public void testSetCharset() {
+        request.setCharset("UTF-8");
+        assertEquals("UTF-8", request.getCharset());
+    }
+
+    @Test
+    public void testSetConnectionKeepAlive() {
+        request.setConnectionKeepAlive(true);
+        // This would be tested indirectly through the send method
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("@Request(GET http://example.com)", request.toString());
+    }
+
+    @Test(expected = OAuthException.class)
+    public void testSendThrowsExceptionOnMalformedUrl() throws IOException {
+        request = new Request(Verb.GET, "malformed-url");
+        request.send();
+    }
+
+    @Test
+    public void testSend() throws IOException {
+        request.setConnection(mockConnection);
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        Response response = request.send();
+        assertNotNull(response);
+        verify(mockConnection).setRequestMethod("GET");
+    }
+
+    @Test(expected = OAuthException.class)
+    public void testDoSendThrowsExceptionOnIOException() throws IOException {
+        request.setConnection(mockConnection);
+        doThrow(new IOException()).when(mockConnection).setRequestMethod(anyString());
+        request.doSend();
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock `HttpURLConnection` to test methods that involve network operations without actually making HTTP requests.
+- **Setup**: The `setUp()` method initializes a `Request` object before each test.
+- **Tests**: Each test method checks a specific functionality of the `Request` class, ensuring that methods behave as expected.
+- **Exception Handling**: Tests are included to ensure that exceptions are thrown as expected, such as when a malformed URL is used.
+- **Edge Cases**: Tests cover edge cases, such as setting timeouts and handling different payload types.
+
+This test suite provides a comprehensive check of the `Request` class's functionality.

@@ -1,0 +1,104 @@
+To create a comprehensive JUnit 4 test suite for the `SchurTransformer` class, we need to test the public methods and ensure that the class behaves as expected under various conditions. This includes testing the constructor, `getP()`, `getPT()`, and `getT()` methods. We will also need to handle exceptions, such as when a non-square matrix is provided.
+
+Below is a JUnit 4 test suite for the `SchurTransformer` class:
+
+```java
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.SchurTransformer;
+import org.apache.commons.math3.exception.NonSquareMatrixException;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class SchurTransformerTest {
+
+    private RealMatrix squareMatrix;
+    private RealMatrix nonSquareMatrix;
+
+    @Before
+    public void setUp() {
+        // Initialize a 3x3 square matrix
+        squareMatrix = MatrixUtils.createRealMatrix(new double[][]{
+            {4, 1, 2},
+            {1, 3, 1},
+            {2, 1, 3}
+        });
+
+        // Initialize a 2x3 non-square matrix
+        nonSquareMatrix = MatrixUtils.createRealMatrix(new double[][]{
+            {1, 2, 3},
+            {4, 5, 6}
+        });
+    }
+
+    @Test
+    public void testConstructorWithSquareMatrix() {
+        // Test that the constructor does not throw an exception for a square matrix
+        SchurTransformer transformer = new SchurTransformer(squareMatrix);
+        assertNotNull(transformer);
+    }
+
+    @Test(expected = NonSquareMatrixException.class)
+    public void testConstructorWithNonSquareMatrix() {
+        // Test that the constructor throws an exception for a non-square matrix
+        new SchurTransformer(nonSquareMatrix);
+    }
+
+    @Test
+    public void testGetP() {
+        SchurTransformer transformer = new SchurTransformer(squareMatrix);
+        RealMatrix P = transformer.getP();
+        assertNotNull(P);
+        assertEquals(squareMatrix.getRowDimension(), P.getRowDimension());
+        assertEquals(squareMatrix.getColumnDimension(), P.getColumnDimension());
+    }
+
+    @Test
+    public void testGetPT() {
+        SchurTransformer transformer = new SchurTransformer(squareMatrix);
+        RealMatrix PT = transformer.getPT();
+        assertNotNull(PT);
+        assertEquals(squareMatrix.getRowDimension(), PT.getRowDimension());
+        assertEquals(squareMatrix.getColumnDimension(), PT.getColumnDimension());
+
+        // Check if PT is the transpose of P
+        RealMatrix P = transformer.getP();
+        assertEquals(P.transpose(), PT);
+    }
+
+    @Test
+    public void testGetT() {
+        SchurTransformer transformer = new SchurTransformer(squareMatrix);
+        RealMatrix T = transformer.getT();
+        assertNotNull(T);
+        assertEquals(squareMatrix.getRowDimension(), T.getRowDimension());
+        assertEquals(squareMatrix.getColumnDimension(), T.getColumnDimension());
+    }
+
+    @Test
+    public void testSchurDecompositionProperties() {
+        SchurTransformer transformer = new SchurTransformer(squareMatrix);
+        RealMatrix P = transformer.getP();
+        RealMatrix PT = transformer.getPT();
+        RealMatrix T = transformer.getT();
+
+        // Check if P * T * PT is approximately equal to the original matrix
+        RealMatrix reconstructedMatrix = P.multiply(T).multiply(PT);
+        for (int i = 0; i < squareMatrix.getRowDimension(); i++) {
+            for (int j = 0; j < squareMatrix.getColumnDimension(); j++) {
+                assertEquals(squareMatrix.getEntry(i, j), reconstructedMatrix.getEntry(i, j), 1e-10);
+            }
+        }
+    }
+}
+```
+
+### Explanation:
+- **Setup**: We initialize a square matrix and a non-square matrix for testing.
+- **Constructor Tests**: We test the constructor with both square and non-square matrices to ensure it behaves correctly.
+- **Method Tests**: We test `getP()`, `getPT()`, and `getT()` to ensure they return matrices of the correct dimensions and properties.
+- **Schur Decomposition Properties**: We verify that the decomposition satisfies the property \( P \times T \times P^T \approx \text{original matrix} \).
+
+This test suite covers the basic functionality and edge cases for the `SchurTransformer` class.

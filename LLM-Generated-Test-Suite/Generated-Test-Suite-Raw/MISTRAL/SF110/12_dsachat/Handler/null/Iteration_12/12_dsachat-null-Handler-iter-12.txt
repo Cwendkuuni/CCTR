@@ -1,0 +1,173 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
+import java.util.Vector;
+
+import dsachat.server.Handler;
+import dsachat.share.ConnectionEndpoint;
+import dsachat.share.InputEvent;
+import dsachat.share.UserEvent;
+import dsachat.share.hero.Challenge;
+import dsachat.share.hero.ChallReq;
+import dsachat.share.hero.Hero;
+
+public class HandlerTest {
+
+    private Handler handler;
+    private ConnectionEndpoint mockConnection;
+    private InputEvent mockInputEvent;
+
+    @Before
+    public void setUp() {
+        handler = new Handler();
+        mockConnection = mock(ConnectionEndpoint.class);
+        mockInputEvent = mock(InputEvent.class);
+    }
+
+    @Test
+    public void testAddConnection() {
+        when(mockConnection.isConnected()).thenReturn(true);
+        handler.addConnection(mockConnection);
+        verify(mockConnection, times(1)).send(any(UserEvent.class));
+        assertEquals(1, handler.clients.size());
+    }
+
+    @Test
+    public void testRemoveConnection() {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        handler.addConnection(mockConnection);
+        handler.removeConnection(mockConnection);
+        assertEquals(0, handler.clients.size());
+    }
+
+    @Test
+    public void testHandleInputStringCommand() {
+        when(mockInputEvent.getData()).thenReturn("/whisper user1 Hello");
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+        handler.handleInput(mockInputEvent);
+        verify(mockConnection, times(1)).send(anyString());
+    }
+
+    @Test
+    public void testHandleInputChallenge() {
+        Challenge challenge = mock(Challenge.class);
+        when(mockInputEvent.getData()).thenReturn(challenge);
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+        when(challenge.roll()).thenReturn("Roll result");
+        handler.handleInput(mockInputEvent);
+        verify(mockConnection, times(1)).send("Roll result");
+    }
+
+    @Test
+    public void testHandleInputChallReq() {
+        ChallReq challReq = mock(ChallReq.class);
+        when(mockInputEvent.getData()).thenReturn(challReq);
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+        when(challReq.getTo()).thenReturn("user1");
+        handler.handleInput(mockInputEvent);
+        verify(mockConnection, times(1)).send(any(ChallReq.class));
+    }
+
+    @Test
+    public void testHandleInputHero() {
+        Hero hero = mock(Hero.class);
+        when(mockInputEvent.getData()).thenReturn(hero);
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+        when(hero.getName()).thenReturn("hero1");
+        handler.handleInput(mockInputEvent);
+        verify(mockConnection, times(1)).send("Welcome hero1");
+    }
+
+    @Test
+    public void testHandleInputUserEvent() {
+        UserEvent userEvent = mock(UserEvent.class);
+        when(mockInputEvent.getData()).thenReturn(userEvent);
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+        when(userEvent.getName()).thenReturn("Gamemaster");
+        handler.handleInput(mockInputEvent);
+        verify(mockConnection, times(1)).send("Welcome Gamemaster");
+    }
+
+    @Test
+    public void testSendHeros() {
+        Hero hero = mock(Hero.class);
+        handler.clients.add(new Handler.Entry(mockConnection, "user1", hero));
+        handler.sendHeros(mockConnection);
+        verify(mockConnection, times(1)).send(any(Vector.class));
+    }
+
+    @Test
+    public void testIsGmConnected() {
+        handler.clients.add(new Handler.Entry(mockConnection, "Gamemaster", null));
+        assertTrue(handler.isGmConnected());
+    }
+
+    @Test
+    public void testSendOneSystemMsg() {
+        handler.sendOneSystemMsg(mockConnection, "Test message");
+        verify(mockConnection, times(1)).send("Test message");
+    }
+
+    @Test
+    public void testSendAllSystemMsg() {
+        handler.clients.add(new Handler.Entry(mockConnection, "user1", null));
+        handler.sendAllSystemMsg("Test message");
+        verify(mockConnection, times(1)).send("Test message");
+    }
+
+    @Test
+    public void testWhisper() {
+        handler.clients.add(new Handler.Entry(mockConnection, "user1", null));
+        handler.whisper(mockConnection, "user1 Hello");
+        verify(mockConnection, times(1)).send("You whisper to user1: Hello");
+    }
+
+    @Test
+    public void testRollDice() {
+        handler.clients.add(new Handler.Entry(mockConnection, "user1", null));
+        handler.rollDice(mockConnection, "1d6");
+        verify(mockConnection, times(1)).send(anyString());
+    }
+
+    @Test
+    public void testSendToOneStr() {
+        handler.clients.add(new Handler.Entry(mockConnection, "user1", null));
+        handler.sendToOneStr(mockConnection, "user1", "Test message");
+        verify(mockConnection, times(1)).send("user1: Test message");
+    }
+
+    @Test
+    public void testUpdateHero() {
+        Hero hero = mock(Hero.class);
+        when(hero.getName()).thenReturn("hero1");
+        handler.clients.add(new Handler.Entry(mockConnection, "", null));
+        String result = handler.updateHero(mockConnection, hero);
+        assertEquals("hero1", result);
+    }
+
+    @Test
+    public void testSendAllStr() {
+        handler.clients.add(new Handler.Entry(mockConnection, "user1", null));
+        handler.sendAllStr(mockConnection, "Test message");
+        verify(mockConnection, times(1)).send("user1: Test message");
+    }
+
+    @Test
+    public void testSendAllObj() {
+        handler.clients.add(new Handler.Entry(mockConnection, "user1", null));
+        handler.sendAllObj("Test object");
+        verify(mockConnection, times(1)).send("Test object");
+    }
+
+    @Test
+    public void testGetName() {
+        handler.clients.add(new Handler.Entry(mockConnection, "user1", null));
+        String name = handler.getName(mockConnection);
+        assertEquals("user1", name);
+    }
+}
+```

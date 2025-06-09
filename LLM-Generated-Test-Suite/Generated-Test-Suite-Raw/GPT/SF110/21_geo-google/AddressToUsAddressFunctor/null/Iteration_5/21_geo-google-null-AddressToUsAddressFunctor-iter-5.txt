@@ -1,0 +1,140 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `AddressToUsAddressFunctor` class. This suite covers various scenarios, including cases where different parts of the address are missing or present.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import geo.google.datamodel.*;
+import geo.google.mapping.AddressToUsAddressFunctor;
+import oasis.names.tc.ciq.xsdschema.xal._2.*;
+import java.util.*;
+
+public class AddressToUsAddressFunctorTest {
+
+    private AddressToUsAddressFunctor functor;
+    private GeoAddress geoAddress;
+    private AddressDetails addressDetails;
+    private AddressDetails.Country country;
+    private AdministrativeArea adminArea;
+    private AdministrativeArea.SubAdministrativeArea subAdminArea;
+    private Locality locality;
+    private PostalCode postalCode;
+    private Thoroughfare thoroughfare;
+
+    @Before
+    public void setUp() {
+        functor = AddressToUsAddressFunctor.getInstance();
+        geoAddress = Mockito.mock(GeoAddress.class);
+        addressDetails = Mockito.mock(AddressDetails.class);
+        country = Mockito.mock(AddressDetails.Country.class);
+        adminArea = Mockito.mock(AdministrativeArea.class);
+        subAdminArea = Mockito.mock(AdministrativeArea.SubAdministrativeArea.class);
+        locality = Mockito.mock(Locality.class);
+        postalCode = Mockito.mock(PostalCode.class);
+        thoroughfare = Mockito.mock(Thoroughfare.class);
+
+        Mockito.when(geoAddress.getAddressDetails()).thenReturn(addressDetails);
+        Mockito.when(addressDetails.getCountry()).thenReturn(country);
+        Mockito.when(country.getAdministrativeArea()).thenReturn(adminArea);
+        Mockito.when(adminArea.getSubAdministrativeArea()).thenReturn(subAdminArea);
+        Mockito.when(adminArea.getLocality()).thenReturn(locality);
+        Mockito.when(subAdminArea.getLocality()).thenReturn(locality);
+        Mockito.when(locality.getPostalCode()).thenReturn(postalCode);
+        Mockito.when(locality.getThoroughfare()).thenReturn(thoroughfare);
+    }
+
+    @Test
+    public void testExecuteWithCompleteAddress() {
+        // Setup mock data
+        Mockito.when(country.getCountryNameCode()).thenReturn(Collections.singletonList(new AddressDetails.Country.CountryNameCode("US")));
+        Mockito.when(adminArea.getAdministrativeAreaName()).thenReturn(Collections.singletonList(new AdministrativeArea.AdministrativeAreaName("California")));
+        Mockito.when(subAdminArea.getSubAdministrativeAreaName()).thenReturn(Collections.singletonList(new AdministrativeArea.SubAdministrativeArea.SubAdministrativeAreaName("Santa Clara")));
+        Mockito.when(locality.getLocalityName()).thenReturn(Collections.singletonList(new Locality.LocalityName("San Jose")));
+        Mockito.when(postalCode.getPostalCodeNumber()).thenReturn(Collections.singletonList(new PostalCode.PostalCodeNumber("95129")));
+        Mockito.when(thoroughfare.getThoroughfareName()).thenReturn(Arrays.asList(new ThoroughfareNameType("123 Main St"), new ThoroughfareNameType("Apt 4")));
+
+        GeoUsAddress result = functor.execute(geoAddress);
+
+        assertEquals("US", result.getCountry());
+        assertEquals("California", result.getState());
+        assertEquals("Santa Clara", result.getCounty());
+        assertEquals("San Jose", result.getCity());
+        assertEquals("95129", result.getPostalCode());
+        assertEquals("123 Main St", result.getAddressLine1());
+        assertEquals("Apt 4", result.getAddressLine2());
+    }
+
+    @Test
+    public void testExecuteWithPartialAddress() {
+        // Setup mock data
+        Mockito.when(country.getCountryNameCode()).thenReturn(Collections.singletonList(new AddressDetails.Country.CountryNameCode("US")));
+        Mockito.when(adminArea.getAdministrativeAreaName()).thenReturn(Collections.singletonList(new AdministrativeArea.AdministrativeAreaName("California")));
+        Mockito.when(locality.getLocalityName()).thenReturn(Collections.singletonList(new Locality.LocalityName("San Jose")));
+        Mockito.when(postalCode.getPostalCodeNumber()).thenReturn(Collections.singletonList(new PostalCode.PostalCodeNumber("95129")));
+        Mockito.when(thoroughfare.getThoroughfareName()).thenReturn(Collections.singletonList(new ThoroughfareNameType("123 Main St")));
+
+        GeoUsAddress result = functor.execute(geoAddress);
+
+        assertEquals("US", result.getCountry());
+        assertEquals("California", result.getState());
+        assertNull(result.getCounty());
+        assertEquals("San Jose", result.getCity());
+        assertEquals("95129", result.getPostalCode());
+        assertEquals("123 Main St", result.getAddressLine1());
+        assertNull(result.getAddressLine2());
+    }
+
+    @Test
+    public void testExecuteWithMinimalAddress() {
+        // Setup mock data
+        Mockito.when(country.getCountryNameCode()).thenReturn(Collections.singletonList(new AddressDetails.Country.CountryNameCode("US")));
+
+        GeoUsAddress result = functor.execute(geoAddress);
+
+        assertEquals("US", result.getCountry());
+        assertNull(result.getState());
+        assertNull(result.getCounty());
+        assertNull(result.getCity());
+        assertNull(result.getPostalCode());
+        assertNull(result.getAddressLine1());
+        assertNull(result.getAddressLine2());
+    }
+
+    @Test
+    public void testExecuteWithNullAddress() {
+        GeoUsAddress result = functor.execute(null);
+
+        assertNull(result.getCountry());
+        assertNull(result.getState());
+        assertNull(result.getCounty());
+        assertNull(result.getCity());
+        assertNull(result.getPostalCode());
+        assertNull(result.getAddressLine1());
+        assertNull(result.getAddressLine2());
+    }
+
+    @Test
+    public void testExecuteWithCoordinateAndAccuracy() {
+        GeoCoordinate coordinate = Mockito.mock(GeoCoordinate.class);
+        Mockito.when(geoAddress.getCoordinate()).thenReturn(coordinate);
+        Mockito.when(geoAddress.getAccuracy()).thenReturn(GeoAddress.Accuracy.PRECISE);
+
+        GeoUsAddress result = functor.execute(geoAddress);
+
+        assertEquals(coordinate, result.getCoordinate());
+        assertEquals(GeoAddress.Accuracy.PRECISE, result.getAccuracy());
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes the necessary mock objects using Mockito to simulate the behavior of the `GeoAddress` and its components.
+- **Test Cases**:
+  - **Complete Address**: Tests the scenario where all address components are present.
+  - **Partial Address**: Tests the scenario where some components like county and address line 2 are missing.
+  - **Minimal Address**: Tests the scenario where only the country is present.
+  - **Null Address**: Tests the scenario where the input address is null.
+  - **Coordinate and Accuracy**: Tests the scenario where the address has coordinate and accuracy information.
+
+This test suite ensures that the `AddressToUsAddressFunctor` class is thoroughly tested for various input scenarios.

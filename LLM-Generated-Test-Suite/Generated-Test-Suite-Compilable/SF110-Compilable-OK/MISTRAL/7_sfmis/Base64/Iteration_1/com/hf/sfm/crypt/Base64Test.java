@@ -1,0 +1,73 @@
+package com.hf.sfm.crypt;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class Base64Test {
+
+    @Test
+    public void testAltBase64ToByteArray() {
+        String input = "!\"#$%&'()*,-.:;<>@[\\]^`_{|}~abcdefghijklmnopqrstuvwxyz0123456789+?";
+        byte[] expected = new byte[64]; // Assuming the input string decodes to 64 bytes
+        byte[] result = Base64.altBase64ToByteArray(input);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAltBase64ToByteArrayInvalidLength() {
+        String input = "!\"#$%&'()*,-.:;<>@[\\]^`_{|}~abcdefghijklmnopqrstuvwxyz0123456789+?=";
+        Base64.altBase64ToByteArray(input);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAltBase64ToByteArrayInvalidCharacter() {
+        String input = "!\"#$%&'()*,-.:;<>@[\\]^`_{|}~abcdefghijklmnopqrstuvwxyz0123456789+?X";
+        Base64.altBase64ToByteArray(input);
+    }
+
+    @Test
+    public void testBase64ToByteArray() {
+        String input = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        byte[] expected = new byte[64]; // Assuming the input string decodes to 64 bytes
+        byte[] result = Base64.base64ToByteArray(input);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBase64ToByteArrayInvalidLength() {
+        String input = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/=";
+        Base64.base64ToByteArray(input);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBase64ToByteArrayInvalidCharacter() {
+        String input = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/X";
+        Base64.base64ToByteArray(input);
+    }
+
+    @Test
+    public void testByteArrayToAltBase64() {
+        byte[] input = new byte[64]; // Assuming the input byte array encodes to a specific string
+        String expected = "!\"#$%&'()*,-.:;<>@[\\]^`_{|}~abcdefghijklmnopqrstuvwxyz0123456789+?";
+        String result = Base64.byteArrayToAltBase64(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testByteArrayToBase64() {
+        byte[] input = new byte[64]; // Assuming the input byte array encodes to a specific string
+        String expected = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/";
+        String result = Base64.byteArrayToBase64(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testMain() {
+        String input = "0123456789";
+        byte[] byteArray = input.getBytes();
+        String base64Encoded = Base64.byteArrayToBase64(byteArray);
+        byte[] decodedByteArray = Base64.base64ToByteArray(base64Encoded);
+        String decodedString = new String(decodedByteArray);
+        assertEquals(input, decodedString);
+    }
+}

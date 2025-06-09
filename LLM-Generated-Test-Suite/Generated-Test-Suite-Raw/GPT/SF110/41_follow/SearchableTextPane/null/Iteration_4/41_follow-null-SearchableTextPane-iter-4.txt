@@ -1,0 +1,102 @@
+```java
+import ghm.follow.search.SearchableTextPane;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import java.awt.*;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class SearchableTextPaneTest {
+
+    private SearchableTextPane textPane;
+    private Document mockDocument;
+
+    @Before
+    public void setUp() {
+        textPane = new SearchableTextPane(new Font("Arial", Font.PLAIN, 12), 4);
+        mockDocument = mock(Document.class);
+        textPane.setDocument(mockDocument);
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth_NoParent() {
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth_WithParent() {
+        Component mockParent = mock(Component.class);
+        when(mockParent.getSize()).thenReturn(new Dimension(100, 100));
+        textPane.setParent(mockParent);
+
+        ComponentUI mockUI = mock(ComponentUI.class);
+        when(mockUI.getPreferredSize(textPane)).thenReturn(new Dimension(50, 50));
+        textPane.setUI(mockUI);
+
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+
+        when(mockUI.getPreferredSize(textPane)).thenReturn(new Dimension(150, 50));
+        assertFalse(textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testHighlight_NoTerm() throws BadLocationException {
+        List<LineResult> results = textPane.highlight("", 0);
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    public void testHighlight_WithTerm() throws BadLocationException {
+        when(mockDocument.getText(0, 0)).thenReturn("This is a test text.");
+        List<LineResult> results = textPane.highlight("test", 0);
+        assertFalse(results.isEmpty());
+    }
+
+    @Test
+    public void testRemoveHighlights() {
+        textPane.removeHighlights();
+        // No exception should be thrown
+    }
+
+    @Test
+    public void testSearch_NoTerm() {
+        int pos = textPane.search("");
+        assertEquals(-1, pos);
+    }
+
+    @Test
+    public void testSearch_WithTerm() throws BadLocationException {
+        when(mockDocument.getText(0, 0)).thenReturn("This is a test text.");
+        int pos = textPane.search("test");
+        assertEquals(10, pos);
+    }
+
+    @Test
+    public void testSearch_WithTermAndStartPos() throws BadLocationException {
+        when(mockDocument.getText(0, 0)).thenReturn("This is a test text.");
+        int pos = textPane.search("test", 5);
+        assertEquals(10, pos);
+    }
+
+    @Test
+    public void testSearch_WithTermNotFound() throws BadLocationException {
+        when(mockDocument.getText(0, 0)).thenReturn("This is a test text.");
+        int pos = textPane.search("notfound");
+        assertEquals(-1, pos);
+    }
+
+    @Test
+    public void testSearch_WithBadLocationException() throws BadLocationException {
+        when(mockDocument.getText(0, 0)).thenThrow(new BadLocationException("Error", 0));
+        int pos = textPane.search("test");
+        assertEquals(-1, pos);
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to test the `SearchableTextPane` class. It covers the main functionalities of the class, including the `highlight`, `removeHighlights`, and `search` methods. The tests ensure that the methods behave as expected under various conditions, including edge cases and exceptions.

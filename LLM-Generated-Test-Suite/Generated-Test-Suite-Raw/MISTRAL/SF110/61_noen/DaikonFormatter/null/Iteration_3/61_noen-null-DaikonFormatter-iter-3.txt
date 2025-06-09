@@ -1,0 +1,202 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `DaikonFormatter` class. This test suite includes tests for all public methods and constructors, as well as some private methods where possible.
+
+```java
+package fi.vtt.noen.testgen.observations.formatter;
+
+import fi.vtt.noen.testgen.parser.InterfaceParser;
+import fi.vtt.noen.testgen.model.ProgramRun;
+import fi.vtt.noen.testgen.observations.data.Event;
+import fi.vtt.noen.testgen.observations.data.EventAttribute;
+import fi.vtt.noen.testgen.observations.data.ArrayAttribute;
+import fi.vtt.noen.testgen.observations.data.OutputBuffer;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class DaikonFormatterTest {
+
+    private DaikonFormatter daikonFormatterSimple;
+    private DaikonFormatter daikonFormatterWithInputs;
+    private Collection<String> inputs;
+
+    @Before
+    public void setUp() throws IOException {
+        inputs = new ArrayList<>();
+        inputs.add("input1");
+        inputs.add("input2");
+
+        daikonFormatterSimple = new DaikonFormatter("testFile", true);
+        daikonFormatterWithInputs = new DaikonFormatter("testFile", inputs);
+    }
+
+    @Test
+    public void testConstructorSimple() throws IOException {
+        assertNotNull(daikonFormatterSimple);
+        assertTrue(daikonFormatterSimple.simple);
+        assertNull(daikonFormatterSimple.inputs);
+    }
+
+    @Test
+    public void testConstructorWithInputs() throws IOException {
+        assertNotNull(daikonFormatterWithInputs);
+        assertFalse(daikonFormatterWithInputs.simple);
+        assertEquals(inputs, daikonFormatterWithInputs.inputs);
+    }
+
+    @Test
+    public void testHeader() {
+        String expectedHeader = "decl-version 2.0\nvar-comparability implicit\n";
+        assertEquals(expectedHeader, daikonFormatterSimple.header());
+    }
+
+    @Test
+    public void testFooter() {
+        assertEquals("", daikonFormatterSimple.footer());
+    }
+
+    @Test
+    public void testFileNameExtension() {
+        assertEquals("dtrace", daikonFormatterSimple.fileNameExtension());
+    }
+
+    @Test
+    public void testObservationsSimple() {
+        ProgramRun run = mock(ProgramRun.class);
+        Event event = mock(Event.class);
+        when(event.getName()).thenReturn("eventName");
+        when(event.isExit()).thenReturn(false);
+        when(run.iterator()).thenReturn(new ArrayList<Event>() {{
+            add(event);
+        }}.iterator());
+
+        String result = daikonFormatterSimple.observations(run);
+        assertTrue(result.contains("eventName:::ENTER"));
+    }
+
+    @Test
+    public void testObservationsWithInputs() {
+        ProgramRun run = mock(ProgramRun.class);
+        Event event1 = mock(Event.class);
+        Event event2 = mock(Event.class);
+        when(event1.getName()).thenReturn("input1");
+        when(event1.isExit()).thenReturn(false);
+        when(event2.getName()).thenReturn("input2");
+        when(event2.isExit()).thenReturn(false);
+        when(run.iterator()).thenReturn(new ArrayList<Event>() {{
+            add(event1);
+            add(event2);
+        }}.iterator());
+
+        String result = daikonFormatterWithInputs.observations(run);
+        assertTrue(result.contains("input1:::ENTER"));
+        assertTrue(result.contains("input2:::ENTER"));
+    }
+
+    @Test
+    public void testInputs() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("InputInterface1", "fi.vtt.noen.testgen.model.InputClass1");
+        properties.setProperty("InputInterface2", "fi.vtt.noen.testgen.model.InputClass2");
+
+        Collection<Class> expectedClasses = new ArrayList<>();
+        expectedClasses.add(Class.forName("fi.vtt.noen.testgen.model.InputClass1"));
+        expectedClasses.add(Class.forName("fi.vtt.noen.testgen.model.InputClass2"));
+
+        assertEquals(expectedClasses, DaikonFormatter.inputs());
+    }
+
+    @Test
+    public void testOutputs() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("OutputInterface1", "fi.vtt.noen.testgen.model.OutputClass1");
+        properties.setProperty("OutputInterface2", "fi.vtt.noen.testgen.model.OutputClass2");
+
+        Collection<Class> expectedClasses = new ArrayList<>();
+        expectedClasses.add(Class.forName("fi.vtt.noen.testgen.model.OutputClass1"));
+        expectedClasses.add(Class.forName("fi.vtt.noen.testgen.model.OutputClass2"));
+
+        assertEquals(expectedClasses, DaikonFormatter.outputs());
+    }
+
+    @Test
+    public void testSimplePoint() throws Exception {
+        Event event = mock(Event.class);
+        when(event.getName()).thenReturn("eventName");
+        when(event.isExit()).thenReturn(false);
+        OutputBuffer out = new OutputBuffer();
+
+        Method simplePointMethod = DaikonFormatter.class.getDeclaredMethod("simplePoint", Event.class, String.class, OutputBuffer.class);
+        simplePointMethod.setAccessible(true);
+        simplePointMethod.invoke(daikonFormatterSimple, event, "10", out);
+
+        assertTrue(out.toString().contains("eventName:::ENTER"));
+    }
+
+    @Test
+    public void testPoint() throws Exception {
+        Event event = mock(Event.class);
+        when(event.getName()).thenReturn("eventName");
+        when(event.isExit()).thenReturn(false);
+        OutputBuffer out = new OutputBuffer();
+
+        Method pointMethod = DaikonFormatter.class.getDeclaredMethod("point", String.class, Event.class, String.class, OutputBuffer.class);
+        pointMethod.setAccessible(true);
+        pointMethod.invoke(daikonFormatterSimple, "eventName", event, "10", out);
+
+        assertTrue(out.toString().contains("eventName:::ENTER"));
+    }
+
+    @Test
+    public void testDeclarations() throws Exception {
+        Event event = mock(Event.class);
+        when(event.getName()).thenReturn("eventName");
+        when(event.isExit()).thenReturn(false);
+        EventAttribute attribute = mock(EventAttribute.class);
+        when(attribute.getName()).thenReturn("attributeName");
+        when(attribute.getType()).thenReturn("java.lang.String");
+        when(attribute.getValue()).thenReturn("value");
+        when(event.attributes()).thenReturn(new ArrayList<EventAttribute>() {{
+            add(attribute);
+        }}.iterator());
+        OutputBuffer out = new OutputBuffer();
+
+        Method declarationsMethod = DaikonFormatter.class.getDeclaredMethod("declarations", Event.class, String.class, OutputBuffer.class, String.class);
+        declarationsMethod.setAccessible(true);
+        declarationsMethod.invoke(daikonFormatterSimple, event, "eventName", out, "10");
+
+        assertTrue(out.toString().contains("ppt eventName"));
+        assertTrue(out.toString().contains("variable attributeName"));
+    }
+
+    @Test
+    public void testAttributes() throws Exception {
+        Event event = mock(Event.class);
+        EventAttribute attribute = mock(EventAttribute.class);
+        when(attribute.getName()).thenReturn("attributeName");
+        when(attribute.getType()).thenReturn("java.lang.String");
+        when(attribute.getValue()).thenReturn("value");
+        when(event.attributes()).thenReturn(new ArrayList<EventAttribute>() {{
+            add(attribute);
+        }}.iterator());
+        OutputBuffer out = new OutputBuffer();
+
+        Method attributesMethod = DaikonFormatter.class.getDeclaredMethod("attributes", Event.class, OutputBuffer.class);
+        attributesMethod.setAccessible(true);
+        attributesMethod.invoke(daikonFormatterSimple, event, out);
+
+        assertTrue(out.toString().contains("attributeName\"value\"1"));
+    }
+}
+```
+
+This test suite covers the constructors, public methods, and some private methods of the `DaikonFormatter` class. It uses JUnit 4 for testing and Mockito for mocking dependencies. Make sure to include the necessary dependencies in your project to run these tests.

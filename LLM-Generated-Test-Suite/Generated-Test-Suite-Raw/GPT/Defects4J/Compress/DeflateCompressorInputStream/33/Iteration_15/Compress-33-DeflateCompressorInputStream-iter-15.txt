@@ -1,0 +1,108 @@
+Certainly! Below is a JUnit 4 test suite for the `DeflateCompressorInputStream` class. This test suite aims to cover the methods provided in the class, including constructors and overridden methods from the `CompressorInputStream` class.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
+import org.apache.commons.compress.compressors.deflate.DeflateParameters;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+
+public class DeflateCompressorInputStreamTest {
+
+    private byte[] compressedData;
+    private byte[] uncompressedData;
+
+    @Before
+    public void setUp() throws IOException {
+        uncompressedData = "This is a test string for compression".getBytes("UTF-8");
+        compressedData = compressData(uncompressedData);
+    }
+
+    private byte[] compressData(byte[] data) throws IOException {
+        Deflater deflater = new Deflater();
+        ByteArrayOutputStream byteArrayOutputStream = new ByteArrayOutputStream();
+        try (DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(byteArrayOutputStream, deflater)) {
+            deflaterOutputStream.write(data);
+        }
+        return byteArrayOutputStream.toByteArray();
+    }
+
+    @Test
+    public void testConstructorWithInputStream() throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(compressedData);
+        DeflateCompressorInputStream deflateStream = new DeflateCompressorInputStream(inputStream);
+        assertNotNull(deflateStream);
+    }
+
+    @Test
+    public void testConstructorWithInputStreamAndParameters() throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(compressedData);
+        DeflateParameters parameters = new DeflateParameters();
+        DeflateCompressorInputStream deflateStream = new DeflateCompressorInputStream(inputStream, parameters);
+        assertNotNull(deflateStream);
+    }
+
+    @Test
+    public void testReadSingleByte() throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(compressedData);
+        DeflateCompressorInputStream deflateStream = new DeflateCompressorInputStream(inputStream);
+        int byteRead = deflateStream.read();
+        assertNotEquals(-1, byteRead);
+    }
+
+    @Test
+    public void testReadByteArray() throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(compressedData);
+        DeflateCompressorInputStream deflateStream = new DeflateCompressorInputStream(inputStream);
+        byte[] buffer = new byte[uncompressedData.length];
+        int bytesRead = deflateStream.read(buffer, 0, buffer.length);
+        assertEquals(uncompressedData.length, bytesRead);
+        assertArrayEquals(uncompressedData, buffer);
+    }
+
+    @Test
+    public void testSkip() throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(compressedData);
+        DeflateCompressorInputStream deflateStream = new DeflateCompressorInputStream(inputStream);
+        long skipped = deflateStream.skip(5);
+        assertEquals(5, skipped);
+    }
+
+    @Test
+    public void testAvailable() throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(compressedData);
+        DeflateCompressorInputStream deflateStream = new DeflateCompressorInputStream(inputStream);
+        int available = deflateStream.available();
+        assertTrue(available > 0);
+    }
+
+    @Test
+    public void testClose() throws IOException {
+        InputStream inputStream = new ByteArrayInputStream(compressedData);
+        DeflateCompressorInputStream deflateStream = new DeflateCompressorInputStream(inputStream);
+        deflateStream.close();
+        try {
+            deflateStream.read();
+            fail("Expected IOException");
+        } catch (IOException e) {
+            // Expected exception
+        }
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method prepares compressed data using `DeflaterOutputStream` for testing.
+- **Constructor Tests**: Tests for both constructors to ensure they initialize correctly.
+- **Read Tests**: Tests for reading single bytes and byte arrays to ensure data is decompressed correctly.
+- **Skip Test**: Tests the `skip` method to ensure it skips the correct number of bytes.
+- **Available Test**: Tests the `available` method to ensure it returns a positive number of bytes available.
+- **Close Test**: Tests the `close` method to ensure the stream is closed properly and throws an exception on further read attempts.
+
+This test suite should provide comprehensive coverage for the `DeflateCompressorInputStream` class.

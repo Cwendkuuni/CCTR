@@ -1,0 +1,150 @@
+```java
+package net.sourceforge.beanbin.reflect;
+
+import net.sourceforge.beanbin.search.*;
+import net.sourceforge.beanbin.*;
+import net.sourceforge.beanbin.query.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class ReflectionSearchTest {
+
+    private ReflectionSearch reflectionSearch;
+
+    @Mock
+    private Query query;
+
+    @Mock
+    private ReflectionShelf reflectionShelf;
+
+    @Mock
+    private MethodReflectionCriteria methodReflectionCriteria;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        reflectionSearch = new ReflectionSearch(TestClass.class);
+        reflectionSearch.query = query;
+        ReflectionShelf.setInstance(reflectionShelf);
+    }
+
+    @Test
+    public void testHasAnnotation() {
+        Annotation annotation = mock(Annotation.class);
+        when(annotation.annotationType()).thenReturn(TestAnnotation.class);
+        when(TestClass.class.getAnnotations()).thenReturn(new Annotation[]{annotation});
+
+        assertTrue(reflectionSearch.hasAnnotation("TestAnnotation"));
+        assertFalse(reflectionSearch.hasAnnotation("NonExistentAnnotation"));
+    }
+
+    @Test
+    public void testHasWildcard() throws Exception {
+        Method hasWildcardMethod = ReflectionSearch.class.getDeclaredMethod("hasWildcard", String.class);
+        hasWildcardMethod.setAccessible(true);
+
+        assertTrue((boolean) hasWildcardMethod.invoke(reflectionSearch, "*Test*"));
+        assertFalse((boolean) hasWildcardMethod.invoke(reflectionSearch, "Test"));
+    }
+
+    @Test
+    public void testMethodsThatHave() throws BeanBinException {
+        when(query.add(any(MethodReflectionCriteria.class))).thenReturn(query);
+
+        reflectionSearch.methodsThatHave("testMethod");
+
+        verify(query).add(any(MethodReflectionCriteria.class));
+    }
+
+    @Test
+    public void testMethodsThatDontHave() throws BeanBinException {
+        when(query.add(any(MethodReflectionCriteria.class))).thenReturn(query);
+
+        reflectionSearch.methodsThatDontHave("testMethod");
+
+        verify(query).add(any(MethodReflectionCriteria.class));
+    }
+
+    @Test
+    public void testAnd() {
+        reflectionSearch.and();
+
+        verify(query).setNextConditional(Conditional.AND);
+    }
+
+    @Test
+    public void testOr() {
+        reflectionSearch.or();
+
+        verify(query).setNextConditional(Conditional.OR);
+    }
+
+    @Test
+    public void testGetMethods() throws BeanBinException {
+        List<Method> methods = new ArrayList<>();
+        when(reflectionShelf.get(query)).thenReturn(methods);
+
+        List<Method> result = reflectionSearch.getMethods();
+
+        assertEquals(methods, result);
+    }
+
+    @Test
+    public void testIntersect() throws Exception {
+        Method intersectMethod = ReflectionSearch.class.getDeclaredMethod("intersect", List.class, List.class);
+        intersectMethod.setAccessible(true);
+
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+
+        Method method1 = mock(Method.class);
+        Method method2 = mock(Method.class);
+
+        master.add(method1);
+        toAdd.add(method2);
+
+        intersectMethod.invoke(reflectionSearch, master, toAdd);
+
+        assertTrue(master.isEmpty());
+    }
+
+    @Test
+    public void testUnion() throws Exception {
+        Method unionMethod = ReflectionSearch.class.getDeclaredMethod("union", List.class, List.class);
+        unionMethod.setAccessible(true);
+
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+
+        Method method1 = mock(Method.class);
+        Method method2 = mock(Method.class);
+
+        master.add(method1);
+        toAdd.add(method2);
+
+        unionMethod.invoke(reflectionSearch, master, toAdd);
+
+        assertEquals(2, master.size());
+    }
+
+    @TestAnnotation
+    private static class TestClass {
+    }
+
+    private @interface TestAnnotation {
+    }
+}
+```

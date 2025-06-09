@@ -1,0 +1,104 @@
+To create a comprehensive JUnit 4 test suite for the `FontChooserDialog` class, we need to test the constructor, the `setVisible` method, and the `reset` method. Additionally, we should test the behavior of the `Closer` and `DisposeOnClose` inner classes. Since the class relies on UI components, we will use `Mockito` to mock the `JFontChooser` and `ActionListener` dependencies.
+
+Here is the JUnit 4 test suite:
+
+```java
+import org.junit.*;
+import org.mockito.*;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+import static org.mockito.Mockito.*;
+
+public class FontChooserDialogTest {
+
+    private FontChooserDialog dialog;
+    private JFontChooser mockChooserPane;
+    private ActionListener mockOkListener;
+    private ActionListener mockCancelListener;
+    private Component mockComponent;
+
+    @Before
+    public void setUp() {
+        mockChooserPane = mock(JFontChooser.class);
+        mockOkListener = mock(ActionListener.class);
+        mockCancelListener = mock(ActionListener.class);
+        mockComponent = mock(Component.class);
+
+        dialog = new FontChooserDialog(mockComponent, "Test Title", true, mockChooserPane, mockOkListener, mockCancelListener);
+    }
+
+    @Test
+    public void testConstructor() {
+        Assert.assertNotNull(dialog);
+        Assert.assertEquals("Test Title", dialog.getTitle());
+        Assert.assertTrue(dialog.isModal());
+    }
+
+    @Test
+    public void testSetVisibleTrue() {
+        Font mockFont = mock(Font.class);
+        when(mockChooserPane.getFont()).thenReturn(mockFont);
+
+        dialog.setVisible(true);
+
+        Assert.assertEquals(mockFont, dialog.initialFont);
+        verify(mockChooserPane).getFont();
+    }
+
+    @Test
+    public void testSetVisibleFalse() {
+        dialog.setVisible(false);
+        // No exception means the test passes for visibility toggle
+    }
+
+    @Test
+    public void testReset() {
+        Font mockFont = mock(Font.class);
+        dialog.initialFont = mockFont;
+
+        dialog.reset();
+
+        verify(mockChooserPane).setFont(mockFont);
+    }
+
+    @Test
+    public void testCloserWindowClosing() {
+        Window mockWindow = mock(Window.class);
+        WindowEvent mockEvent = new WindowEvent(mockWindow, WindowEvent.WINDOW_CLOSING);
+
+        FontChooserDialog.Closer closer = new FontChooserDialog.Closer();
+        closer.windowClosing(mockEvent);
+
+        verify(mockWindow).setVisible(false);
+    }
+
+    @Test
+    public void testDisposeOnCloseComponentHidden() {
+        Window mockWindow = mock(Window.class);
+        ComponentEvent mockEvent = new ComponentEvent(mockWindow, ComponentEvent.COMPONENT_HIDDEN);
+
+        FontChooserDialog.DisposeOnClose disposeOnClose = new FontChooserDialog.DisposeOnClose();
+        disposeOnClose.componentHidden(mockEvent);
+
+        verify(mockWindow).dispose();
+    }
+}
+```
+
+### Explanation:
+
+1. **Setup**: We use `Mockito` to create mock objects for `JFontChooser`, `ActionListener`, and `Component`. This allows us to test the `FontChooserDialog` without relying on actual UI components.
+
+2. **Constructor Test**: We verify that the dialog is created with the correct title and modality.
+
+3. **setVisible Method Tests**: We test both setting the dialog visible and invisible. When visible, we check that the initial font is set correctly.
+
+4. **reset Method Test**: We verify that the `reset` method sets the font of the chooser pane to the initial font.
+
+5. **Closer Class Test**: We simulate a window closing event and verify that the window is set to invisible.
+
+6. **DisposeOnClose Class Test**: We simulate a component hidden event and verify that the window is disposed.
+
+This test suite covers the main functionalities of the `FontChooserDialog` class.

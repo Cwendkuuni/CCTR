@@ -1,0 +1,121 @@
+```java
+package com.google.gson;
+
+import static org.junit.Assert.*;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import org.junit.Before;
+import org.junit.Test;
+
+public class DefaultDateTypeAdapterTest {
+
+    private DefaultDateTypeAdapter adapter;
+    private DateFormat enUsFormat;
+    private DateFormat localFormat;
+
+    @Before
+    public void setUp() {
+        enUsFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US);
+        localFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT);
+        adapter = new DefaultDateTypeAdapter(Date.class, enUsFormat, localFormat);
+    }
+
+    @Test
+    public void testWriteNullValue() throws IOException {
+        JsonWriter writer = new JsonWriter(new java.io.StringWriter());
+        adapter.write(writer, null);
+        assertEquals("null", writer.toString());
+    }
+
+    @Test
+    public void testWriteDateValue() throws IOException {
+        Date date = new Date();
+        JsonWriter writer = new JsonWriter(new java.io.StringWriter());
+        adapter.write(writer, date);
+        assertEquals("\"" + enUsFormat.format(date) + "\"", writer.toString());
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testReadNonStringValue() throws IOException {
+        JsonReader reader = new JsonReader(new java.io.StringReader("12345"));
+        adapter.read(reader);
+    }
+
+    @Test
+    public void testReadDateValue() throws IOException {
+        Date date = new Date();
+        String dateString = enUsFormat.format(date);
+        JsonReader reader = new JsonReader(new java.io.StringReader("\"" + dateString + "\""));
+        Date result = adapter.read(reader);
+        assertEquals(date, result);
+    }
+
+    @Test
+    public void testReadTimestampValue() throws IOException {
+        Date date = new Date();
+        String dateString = enUsFormat.format(date);
+        JsonReader reader = new JsonReader(new java.io.StringReader("\"" + dateString + "\""));
+        adapter = new DefaultDateTypeAdapter(Timestamp.class, enUsFormat, localFormat);
+        Timestamp result = (Timestamp) adapter.read(reader);
+        assertEquals(new Timestamp(date.getTime()), result);
+    }
+
+    @Test
+    public void testReadSqlDateValue() throws IOException {
+        Date date = new Date();
+        String dateString = enUsFormat.format(date);
+        JsonReader reader = new JsonReader(new java.io.StringReader("\"" + dateString + "\""));
+        adapter = new DefaultDateTypeAdapter(java.sql.Date.class, enUsFormat, localFormat);
+        java.sql.Date result = (java.sql.Date) adapter.read(reader);
+        assertEquals(new java.sql.Date(date.getTime()), result);
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("DefaultDateTypeAdapter(SimpleDateFormat)", adapter.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidDateType() {
+        new DefaultDateTypeAdapter(java.util.Calendar.class, enUsFormat, localFormat);
+    }
+
+    @Test
+    public void testConstructorWithDatePattern() {
+        String datePattern = "yyyy-MM-dd";
+        adapter = new DefaultDateTypeAdapter(Date.class, datePattern);
+        assertNotNull(adapter);
+    }
+
+    @Test
+    public void testConstructorWithStyle() {
+        int style = DateFormat.SHORT;
+        adapter = new DefaultDateTypeAdapter(Date.class, style);
+        assertNotNull(adapter);
+    }
+
+    @Test
+    public void testConstructorWithDateStyleAndTimeStyle() {
+        int dateStyle = DateFormat.SHORT;
+        int timeStyle = DateFormat.SHORT;
+        adapter = new DefaultDateTypeAdapter(dateStyle, timeStyle);
+        assertNotNull(adapter);
+    }
+
+    @Test
+    public void testConstructorWithDateTypeAndDateStyleAndTimeStyle() {
+        int dateStyle = DateFormat.SHORT;
+        int timeStyle = DateFormat.SHORT;
+        adapter = new DefaultDateTypeAdapter(Date.class, dateStyle, timeStyle);
+        assertNotNull(adapter);
+    }
+}
+```

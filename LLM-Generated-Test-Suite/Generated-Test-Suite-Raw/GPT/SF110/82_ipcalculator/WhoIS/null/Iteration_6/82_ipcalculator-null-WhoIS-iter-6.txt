@@ -1,0 +1,143 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
+public class WhoISTest {
+
+    private WhoIS whoIS;
+
+    @Before
+    public void setUp() {
+        whoIS = new WhoIS();
+    }
+
+    @Test
+    public void testInitialValues() {
+        assertEquals("APNIC", whoIS.WHOIS_NAME);
+        assertEquals("whois.apnic.net", whoIS.WHOIS_ADDRESS);
+        assertEquals(43, whoIS.WHOIS_PORT);
+    }
+
+    @Test
+    public void testQueryPanelComponents() {
+        assertNotNull(whoIS.queryTextField);
+        assertNotNull(whoIS.queryButton);
+        assertNotNull(whoIS.resetButton);
+    }
+
+    @Test
+    public void testAdditionalQueriesPanelComponents() {
+        assertNotNull(whoIS.lowercaseL);
+        assertNotNull(whoIS.uppercaseL);
+        assertNotNull(whoIS.lowercaseM);
+        assertNotNull(whoIS.uppercaseM);
+        assertNotNull(whoIS.lowercaseX);
+        assertNotNull(whoIS.lowercaseD);
+        assertNotNull(whoIS.inverseQueries);
+        assertNotNull(whoIS.miscList);
+    }
+
+    @Test
+    public void testPopupMenuComponents() {
+        assertNotNull(whoIS.popupMenu);
+        assertEquals(4, whoIS.popupMenu.getComponentCount());
+    }
+
+    @Test
+    public void testActionPerformedQueryButton() {
+        ActionEvent mockEvent = Mockito.mock(ActionEvent.class);
+        Mockito.when(mockEvent.getSource()).thenReturn(whoIS.queryButton);
+
+        whoIS.queryTextField.setText("test query");
+        whoIS.actionPerformed(mockEvent);
+
+        // Since startQuery() is private, we can't directly test its effects.
+        // We assume it works correctly if no exceptions are thrown.
+    }
+
+    @Test
+    public void testActionPerformedResetButton() {
+        ActionEvent mockEvent = Mockito.mock(ActionEvent.class);
+        Mockito.when(mockEvent.getSource()).thenReturn(whoIS.resetButton);
+
+        whoIS.queryTextField.setText("test query");
+        whoIS.lowercaseD.setSelected(true);
+        whoIS.inverseQueries.setSelectedIndex(1);
+        whoIS.miscList.setSelectedIndex(1);
+
+        whoIS.actionPerformed(mockEvent);
+
+        assertEquals("", whoIS.queryTextField.getText());
+        assertFalse(whoIS.lowercaseD.isSelected());
+        assertEquals(0, whoIS.inverseQueries.getSelectedIndex());
+        assertEquals(0, whoIS.miscList.getSelectedIndex());
+    }
+
+    @Test
+    public void testGetQuery() {
+        whoIS.queryTextField.setText("test query");
+        whoIS.lowercaseL.setSelected(true);
+        whoIS.lowercaseD.setSelected(true);
+        whoIS.inverseQueries.setSelectedIndex(1); // admin-c
+
+        String query = whoIS.getQuery();
+        assertEquals("-d -l -i admin-c test query", query);
+    }
+
+    @Test
+    public void testReset() {
+        whoIS.queryTextField.setText("test query");
+        whoIS.lowercaseD.setSelected(true);
+        whoIS.inverseQueries.setSelectedIndex(1);
+        whoIS.miscList.setSelectedIndex(1);
+
+        whoIS.reset();
+
+        assertEquals("", whoIS.queryTextField.getText());
+        assertFalse(whoIS.lowercaseD.isSelected());
+        assertEquals(0, whoIS.inverseQueries.getSelectedIndex());
+        assertEquals(0, whoIS.miscList.getSelectedIndex());
+    }
+
+    @Test
+    public void testQueryUnknownHostException() {
+        whoIS.WHOIS_ADDRESS = "invalid.address";
+        whoIS.queryTextField.setText("test query");
+
+        try {
+            whoIS.query("test query");
+            fail("Expected UnknownHostException");
+        } catch (UnknownHostException e) {
+            // Expected exception
+        } catch (IOException e) {
+            fail("Expected UnknownHostException, but got IOException");
+        }
+    }
+
+    @Test
+    public void testQueryIOException() {
+        whoIS.WHOIS_ADDRESS = "localhost";
+        whoIS.WHOIS_PORT = 9999; // Assuming this port is not open
+        whoIS.queryTextField.setText("test query");
+
+        try {
+            whoIS.query("test query");
+            fail("Expected IOException");
+        } catch (UnknownHostException e) {
+            fail("Expected IOException, but got UnknownHostException");
+        } catch (IOException e) {
+            // Expected exception
+        }
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to test the `WhoIS` class. It covers the initialization of the class, the components of the panels, the action listeners for the buttons, and the behavior of the `getQuery` and `reset` methods. Additionally, it tests the `query` method for exceptions related to network issues.

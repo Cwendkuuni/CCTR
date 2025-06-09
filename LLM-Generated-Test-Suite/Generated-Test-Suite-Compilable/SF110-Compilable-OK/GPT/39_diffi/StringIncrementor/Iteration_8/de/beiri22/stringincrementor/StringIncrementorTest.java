@@ -1,0 +1,94 @@
+package de.beiri22.stringincrementor;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+import de.beiri22.stringincrementor.StringIncrementor;
+import de.beiri22.stringincrementor.relativestring.RelativeString;
+import de.beiri22.stringincrementor.relativestring.StringLink;
+
+public class StringIncrementorTest {
+
+    @Test
+    public void testDiffBasic() {
+        String a = "Hello, World!";
+        String b = "Hello, Java!";
+        RelativeString result = StringIncrementor.diff(a, b);
+        
+        assertNotNull(result);
+        assertEquals("Java!", result.getAbsolute());
+        assertEquals(1, result.linksCount());
+        StringLink link = result.getLink(0);
+        assertEquals(0, link.getPosOrig());
+        assertEquals(0, link.getPosNew());
+        assertEquals(7, link.getLen());
+    }
+
+    @Test
+    public void testDiffWithVerbose() {
+        String a = "Hello, World!";
+        String b = "Hello, Java!";
+        RelativeString result = StringIncrementor.diff(a, b, true);
+        
+        assertNotNull(result);
+        assertEquals("Java!", result.getAbsolute());
+        assertEquals(1, result.linksCount());
+        StringLink link = result.getLink(0);
+        assertEquals(0, link.getPosOrig());
+        assertEquals(0, link.getPosNew());
+        assertEquals(7, link.getLen());
+    }
+
+    @Test
+    public void testDiffNoDifference() {
+        String a = "Hello, World!";
+        String b = "Hello, World!";
+        RelativeString result = StringIncrementor.diff(a, b);
+        
+        assertNotNull(result);
+        assertEquals("", result.getAbsolute());
+        assertEquals(1, result.linksCount());
+        StringLink link = result.getLink(0);
+        assertEquals(0, link.getPosOrig());
+        assertEquals(0, link.getPosNew());
+        assertEquals(a.length(), link.getLen());
+    }
+
+    @Test
+    public void testPatchBasic() {
+        String a = "Hello, World!";
+        String b = "Hello, Java!";
+        RelativeString diff = StringIncrementor.diff(a, b);
+        String result = StringIncrementor.patch(a, diff);
+        
+        assertEquals(b, result);
+    }
+
+    @Test
+    public void testPatchWithVerbose() {
+        String a = "Hello, World!";
+        String b = "Hello, Java!";
+        RelativeString diff = StringIncrementor.diff(a, b);
+        String result = StringIncrementor.patch(a, diff, true);
+        
+        assertEquals(b, result);
+    }
+
+    @Test
+    public void testPatchNoDifference() {
+        String a = "Hello, World!";
+        RelativeString diff = StringIncrementor.diff(a, a);
+        String result = StringIncrementor.patch(a, diff);
+        
+        assertEquals(a, result);
+    }
+
+    @Test
+    public void testDiffAndPatchComplex() {
+        String a = "The quick brown fox jumps over the lazy dog.";
+        String b = "The quick brown cat jumps over the lazy dog.";
+        RelativeString diff = StringIncrementor.diff(a, b);
+        String result = StringIncrementor.patch(a, diff);
+        
+        assertEquals(b, result);
+    }
+}

@@ -1,0 +1,133 @@
+To create a comprehensive JUnit 4 test suite for the `SimpleSector` class, we need to test all public methods and ensure that the class behaves as expected. Below is a JUnit 4 test suite that covers the functionality of the `SimpleSector` class. Note that this test suite assumes the existence of the `Sector`, `CombatantSide`, `CharacterClass`, `SectorBonus`, `Area`, `Combatant`, `Weapon`, and `SectorObserver` classes/interfaces, which are referenced in the `SimpleSector` class.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import java.util.HashSet;
+import java.util.Set;
+
+public class SimpleSectorTest {
+    private SimpleSector sector;
+    private CharacterClass mockClass;
+    private CombatantSide mockSide;
+    private Area mockArea;
+    private SectorObserver mockObserver;
+
+    @Before
+    public void setUp() {
+        mockClass = mock(CharacterClass.class);
+        mockSide = mock(CombatantSide.class);
+        mockArea = mock(Area.class);
+        mockObserver = mock(SectorObserver.class);
+        sector = new SimpleSector(10, true, false, 5, 3, true, 2, mockClass);
+    }
+
+    @Test
+    public void testFree() {
+        sector.gainControl(mockSide);
+        sector.free();
+        assertFalse(sector.isOccupied());
+    }
+
+    @Test
+    public void testGainControl() {
+        sector.gainControl(mockSide);
+        assertTrue(sector.isOccupied());
+        assertEquals(mockSide, sector.getOccupier());
+    }
+
+    @Test
+    public void testGetOccupier() {
+        assertNull(sector.getOccupier());
+        sector.gainControl(mockSide);
+        assertEquals(mockSide, sector.getOccupier());
+    }
+
+    @Test
+    public void testIsOccupied() {
+        assertFalse(sector.isOccupied());
+        sector.gainControl(mockSide);
+        assertTrue(sector.isOccupied());
+    }
+
+    @Test
+    public void testGetHeight() {
+        assertEquals(10, sector.getHeight());
+    }
+
+    @Test
+    public void testIsDefenderSpawn() {
+        assertTrue(sector.isDefenderSpawn());
+    }
+
+    @Test
+    public void testIsAttackerSpawn() {
+        assertFalse(sector.isAttackerSpawn());
+    }
+
+    @Test
+    public void testIsFlag() {
+        assertTrue(sector.isFlag());
+    }
+
+    @Test
+    public void testGetBonus() {
+        SectorBonus bonus = sector.getBonus(mockClass);
+        assertNotNull(bonus);
+    }
+
+    @Test
+    public void testGetAreas() {
+        Set<Area> areas = sector.getAreas();
+        assertNotNull(areas);
+        assertTrue(areas.isEmpty());
+    }
+
+    @Test
+    public void testAddArea() {
+        sector._addArea(mockArea);
+        assertTrue(sector.getAreas().contains(mockArea));
+    }
+
+    @Test
+    public void testHashCode() {
+        SimpleSector anotherSector = new SimpleSector(10, true, false, 5, 3, true, 2, mockClass);
+        assertEquals(sector.hashCode(), anotherSector.hashCode());
+    }
+
+    @Test
+    public void testEquals() {
+        SimpleSector anotherSector = new SimpleSector(10, true, false, 5, 3, true, 2, mockClass);
+        assertTrue(sector.equals(anotherSector));
+        assertFalse(sector.equals(null));
+        assertFalse(sector.equals(new Object()));
+    }
+
+    @Test
+    public void testAddObserver() {
+        sector.addObserver(mockObserver);
+        sector.gainControl(mockSide);
+        verify(mockObserver).occupierChanged();
+    }
+
+    @Test
+    public void testRemoveObserver() {
+        sector.addObserver(mockObserver);
+        sector.removeObserver(mockObserver);
+        sector.gainControl(mockSide);
+        verify(mockObserver, never()).occupierChanged();
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `SimpleSector` instance and mocks necessary dependencies.
+- **Test Methods**: Each test method checks a specific functionality of the `SimpleSector` class.
+- **Mockito**: Used to mock dependencies like `CharacterClass`, `CombatantSide`, `Area`, and `SectorObserver`.
+- **Assertions**: Verify expected outcomes using assertions like `assertEquals`, `assertTrue`, `assertFalse`, and `assertNull`.
+- **Observer Verification**: Ensures that observers are notified correctly when the occupier changes.
+
+This test suite provides a comprehensive check of the `SimpleSector` class's behavior. Adjustments may be needed based on the actual implementations of the mocked classes/interfaces.

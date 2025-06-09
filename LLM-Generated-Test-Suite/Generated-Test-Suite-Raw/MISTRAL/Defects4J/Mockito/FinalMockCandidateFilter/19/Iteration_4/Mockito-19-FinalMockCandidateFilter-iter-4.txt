@@ -1,0 +1,106 @@
+```
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.exceptions.Reporter;
+import org.mockito.internal.configuration.injection.filter.FinalMockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.OngoingInjecter;
+import org.mockito.internal.util.reflection.BeanPropertySetter;
+import org.mockito.internal.util.reflection.FieldSetter;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class FinalMockCandidateFilterTest {
+
+    private FinalMockCandidateFilter filter;
+    private Field mockField;
+    private Object mockFieldInstance;
+    private Object mockMatchingMock;
+
+    @Before
+    public void setUp() throws Exception {
+        filter = new FinalMockCandidateFilter();
+        mockField = mock(Field.class);
+        mockFieldInstance = new Object();
+        mockMatchingMock = new Object();
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMock() throws Exception {
+        Collection<Object> mocks = Collections.singletonList(mockMatchingMock);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, mockField, mockFieldInstance);
+        Object result = injecter.thenInject();
+
+        assertEquals(mockMatchingMock, result);
+    }
+
+    @Test
+    public void testFilterCandidateWithMultipleMocks() throws Exception {
+        Collection<Object> mocks = Arrays.asList(new Object(), new Object());
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, mockField, mockFieldInstance);
+        Object result = injecter.thenInject();
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMockAndBeanPropertySetterSuccess() throws Exception {
+        Collection<Object> mocks = Collections.singletonList(mockMatchingMock);
+        BeanPropertySetter mockSetter = mock(BeanPropertySetter.class);
+        when(mockSetter.set(mockMatchingMock)).thenReturn(true);
+
+        BeanPropertySetter.setInstance(mockSetter);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, mockField, mockFieldInstance);
+        Object result = injecter.thenInject();
+
+        assertEquals(mockMatchingMock, result);
+        verify(mockSetter).set(mockMatchingMock);
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMockAndBeanPropertySetterFailure() throws Exception {
+        Collection<Object> mocks = Collections.singletonList(mockMatchingMock);
+        BeanPropertySetter mockSetter = mock(BeanPropertySetter.class);
+        when(mockSetter.set(mockMatchingMock)).thenReturn(false);
+
+        FieldSetter mockFieldSetter = mock(FieldSetter.class);
+        FieldSetter.setInstance(mockFieldSetter);
+
+        BeanPropertySetter.setInstance(mockSetter);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, mockField, mockFieldInstance);
+        Object result = injecter.thenInject();
+
+        assertEquals(mockMatchingMock, result);
+        verify(mockSetter).set(mockMatchingMock);
+        verify(mockFieldSetter).set(mockMatchingMock);
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMockAndException() throws Exception {
+        Collection<Object> mocks = Collections.singletonList(mockMatchingMock);
+        BeanPropertySetter mockSetter = mock(BeanPropertySetter.class);
+        when(mockSetter.set(mockMatchingMock)).thenThrow(new RuntimeException("Test Exception"));
+
+        BeanPropertySetter.setInstance(mockSetter);
+
+        Reporter mockReporter = mock(Reporter.class);
+        Reporter.setInstance(mockReporter);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, mockField, mockFieldInstance);
+        Object result = injecter.thenInject();
+
+        assertEquals(mockMatchingMock, result);
+        verify(mockReporter).cannotInjectDependency(mockField, mockMatchingMock, any(RuntimeException.class));
+    }
+}
+```

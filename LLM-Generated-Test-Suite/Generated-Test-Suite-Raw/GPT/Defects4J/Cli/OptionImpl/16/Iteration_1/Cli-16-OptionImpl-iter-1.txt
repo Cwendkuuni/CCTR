@@ -1,0 +1,172 @@
+```java
+import org.apache.commons.cli2.DisplaySetting;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.apache.commons.cli2.option.OptionImpl;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class OptionImplTest {
+
+    private OptionImpl option;
+    private WriteableCommandLine commandLine;
+    private ListIterator<String> arguments;
+    private Set<String> prefixes;
+    private String preferredName;
+    private String description;
+    private Set<String> triggers;
+
+    @Before
+    public void setUp() {
+        preferredName = "option";
+        description = "An option";
+        triggers = new HashSet<>(Arrays.asList("--option", "-o"));
+        prefixes = new HashSet<>(Arrays.asList("--", "-"));
+
+        option = new OptionImpl(1, true) {
+            @Override
+            public String getPreferredName() {
+                return preferredName;
+            }
+
+            @Override
+            public String getDescription() {
+                return description;
+            }
+
+            @Override
+            public Set<String> getPrefixes() {
+                return prefixes;
+            }
+
+            @Override
+            public Set<String> getTriggers() {
+                return triggers;
+            }
+
+            @Override
+            public boolean canProcess(WriteableCommandLine commandLine, String argument) {
+                return triggers.contains(argument);
+            }
+
+            @Override
+            public void appendUsage(StringBuffer buffer, DisplaySetting setting, Object value) {
+                buffer.append(preferredName);
+            }
+        };
+
+        commandLine = mock(WriteableCommandLine.class);
+        arguments = mock(ListIterator.class);
+    }
+
+    @Test
+    public void testCanProcessWithArguments() {
+        when(arguments.hasNext()).thenReturn(true);
+        when(arguments.next()).thenReturn("--option");
+        when(arguments.previous()).thenReturn("--option");
+
+        assertTrue(option.canProcess(commandLine, arguments));
+    }
+
+    @Test
+    public void testCanProcessWithoutArguments() {
+        when(arguments.hasNext()).thenReturn(false);
+
+        assertFalse(option.canProcess(commandLine, arguments));
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals(preferredName, option.toString());
+    }
+
+    @Test
+    public void testGetId() {
+        assertEquals(1, option.getId());
+    }
+
+    @Test
+    public void testEquals() {
+        OptionImpl sameOption = new OptionImpl(1, true) {
+            @Override
+            public String getPreferredName() {
+                return preferredName;
+            }
+
+            @Override
+            public String getDescription() {
+                return description;
+            }
+
+            @Override
+            public Set<String> getPrefixes() {
+                return prefixes;
+            }
+
+            @Override
+            public Set<String> getTriggers() {
+                return triggers;
+            }
+
+            @Override
+            public boolean canProcess(WriteableCommandLine commandLine, String argument) {
+                return triggers.contains(argument);
+            }
+
+            @Override
+            public void appendUsage(StringBuffer buffer, DisplaySetting setting, Object value) {
+                buffer.append(preferredName);
+            }
+        };
+
+        assertTrue(option.equals(sameOption));
+        assertFalse(option.equals(null));
+        assertFalse(option.equals(new Object()));
+    }
+
+    @Test
+    public void testHashCode() {
+        int expectedHashCode = 1;
+        expectedHashCode = (expectedHashCode * 37) + preferredName.hashCode();
+        expectedHashCode = (expectedHashCode * 37) + description.hashCode();
+        expectedHashCode = (expectedHashCode * 37) + prefixes.hashCode();
+        expectedHashCode = (expectedHashCode * 37) + triggers.hashCode();
+
+        assertEquals(expectedHashCode, option.hashCode());
+    }
+
+    @Test
+    public void testFindOption() {
+        assertEquals(option, option.findOption("--option"));
+        assertNull(option.findOption("--nonexistent"));
+    }
+
+    @Test
+    public void testIsRequired() {
+        assertTrue(option.isRequired());
+    }
+
+    @Test
+    public void testDefaults() {
+        option.defaults(commandLine);
+        // No exception should be thrown, and no interaction with commandLine is expected
+        verifyNoInteractions(commandLine);
+    }
+
+    @Test
+    public void testCheckPrefixes() {
+        option.checkPrefixes(prefixes);
+        // No exception should be thrown
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckPrefixesWithInvalidPrefix() {
+        Set<String> invalidPrefixes = new HashSet<>(Collections.singletonList("/"));
+        option.checkPrefixes(invalidPrefixes);
+    }
+}
+```

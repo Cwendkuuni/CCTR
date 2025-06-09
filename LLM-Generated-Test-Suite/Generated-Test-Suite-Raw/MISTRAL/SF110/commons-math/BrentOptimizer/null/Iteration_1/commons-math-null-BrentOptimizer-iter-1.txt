@@ -1,0 +1,107 @@
+```java
+package org.apache.commons.math3.optim.univariate;
+
+import org.apache.commons.math3.optim.*;
+import org.apache.commons.math3.exception.*;
+import org.apache.commons.math3.optim.nonlinear.scalar.*;
+import org.apache.commons.math3.util.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+
+public class BrentOptimizerTest {
+
+    @Test
+    public void testConstructorWithValidParameters() {
+        double rel = 1e-6;
+        double abs = 1e-8;
+        ConvergenceChecker<UnivariatePointValuePair> checker = new SimpleValueChecker(1e-10, 1e-10);
+
+        BrentOptimizer optimizer = new BrentOptimizer(rel, abs, checker);
+
+        assertEquals(rel, optimizer.relativeThreshold, 0);
+        assertEquals(abs, optimizer.absoluteThreshold, 0);
+        assertNotNull(optimizer.getConvergenceChecker());
+    }
+
+    @Test(expected = NumberIsTooSmallException.class)
+    public void testConstructorWithTooSmallRelativeTolerance() {
+        double rel = 1e-16;
+        double abs = 1e-8;
+        new BrentOptimizer(rel, abs);
+    }
+
+    @Test(expected = NotStrictlyPositiveException.class)
+    public void testConstructorWithNonPositiveAbsoluteTolerance() {
+        double rel = 1e-6;
+        double abs = 0.0;
+        new BrentOptimizer(rel, abs);
+    }
+
+    @Test
+    public void testDoOptimize() {
+        double rel = 1e-6;
+        double abs = 1e-8;
+        ConvergenceChecker<UnivariatePointValuePair> checker = new SimpleValueChecker(1e-10, 1e-10);
+
+        BrentOptimizer optimizer = new BrentOptimizer(rel, abs, checker) {
+            @Override
+            protected double computeObjectiveValue(double point) {
+                return point * point; // Simple quadratic function
+            }
+
+            @Override
+            protected double getMin() {
+                return -1.0;
+            }
+
+            @Override
+            protected double getMax() {
+                return 1.0;
+            }
+
+            @Override
+            protected double getStartValue() {
+                return 0.5;
+            }
+
+            @Override
+            protected GoalType getGoalType() {
+                return GoalType.MINIMIZE;
+            }
+        };
+
+        UnivariatePointValuePair result = optimizer.doOptimize();
+
+        assertEquals(0.0, result.getPoint(), 1e-5);
+        assertEquals(0.0, result.getValue(), 1e-5);
+    }
+
+    @Test
+    public void testBest() {
+        BrentOptimizer optimizer = new BrentOptimizer(1e-6, 1e-8);
+
+        UnivariatePointValuePair a = new UnivariatePointValuePair(1.0, 1.0);
+        UnivariatePointValuePair b = new UnivariatePointValuePair(2.0, 2.0);
+
+        UnivariatePointValuePair best = optimizer.best(a, b, true);
+        assertEquals(a, best);
+
+        best = optimizer.best(a, b, false);
+        assertEquals(b, best);
+    }
+
+    @Test
+    public void testBestWithNullValues() {
+        BrentOptimizer optimizer = new BrentOptimizer(1e-6, 1e-8);
+
+        UnivariatePointValuePair a = new UnivariatePointValuePair(1.0, 1.0);
+        UnivariatePointValuePair b = null;
+
+        UnivariatePointValuePair best = optimizer.best(a, b, true);
+        assertEquals(a, best);
+
+        best = optimizer.best(b, a, true);
+        assertEquals(a, best);
+    }
+}
+```

@@ -1,0 +1,53 @@
+package com.pmdesigns.jvc.tools;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class TokenMgrErrorTest {
+
+    private TokenMgrError tokenMgrError;
+
+    @Before
+    public void setUp() {
+        tokenMgrError = new TokenMgrError();
+    }
+
+    @Test
+    public void testAddEscapes() {
+        assertEquals("\\t\\n\\f\\r\\\"\\'\\\\", TokenMgrError.addEscapes("\t\n\f\r\"\'\\"));
+        assertEquals("\\u0000", TokenMgrError.addEscapes("\0"));
+        assertEquals("abc", TokenMgrError.addEscapes("abc"));
+        assertEquals("\\u00e9", TokenMgrError.addEscapes("\u00e9"));
+    }
+
+    @Test
+    public void testLexicalError() {
+        String expected = "Lexical error at line 1, column 2.  Encountered: \"\\t\" (9), after : \"abc\"";
+        assertEquals(expected, TokenMgrError.LexicalError(false, 0, 1, 2, "abc", '\t'));
+
+        expected = "Lexical error at line 1, column 2.  Encountered: <EOF> , after : \"abc\"";
+        assertEquals(expected, TokenMgrError.LexicalError(true, 0, 1, 2, "abc", '\0'));
+    }
+
+    @Test
+    public void testGetMessage() {
+        tokenMgrError = new TokenMgrError("Test Message", TokenMgrError.LEXICAL_ERROR);
+        assertEquals("Test Message", tokenMgrError.getMessage());
+    }
+
+    @Test
+    public void testConstructorWithMessageAndReason() {
+        tokenMgrError = new TokenMgrError("Test Message", TokenMgrError.LEXICAL_ERROR);
+        assertEquals("Test Message", tokenMgrError.getMessage());
+        assertEquals(TokenMgrError.LEXICAL_ERROR, tokenMgrError.errorCode);
+    }
+
+    @Test
+    public void testConstructorWithLexicalError() {
+        tokenMgrError = new TokenMgrError(false, 0, 1, 2, "abc", '\t', TokenMgrError.LEXICAL_ERROR);
+        String expected = "Lexical error at line 1, column 2.  Encountered: \"\\t\" (9), after : \"abc\"";
+        assertEquals(expected, tokenMgrError.getMessage());
+        assertEquals(TokenMgrError.LEXICAL_ERROR, tokenMgrError.errorCode);
+    }
+}

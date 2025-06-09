@@ -1,0 +1,113 @@
+To create a comprehensive JUnit 4 test suite for the `IntervalsSet` class, we need to test all its public methods, including constructors and utility methods. Below is a test suite that covers these methods. Note that some methods rely on the internal state of the `IntervalsSet` class, which may require mocking or additional setup to test thoroughly.
+
+```java
+import org.apache.commons.math3.geometry.euclidean.oned.*;
+import org.apache.commons.math3.geometry.partitioning.BSPTree;
+import org.apache.commons.math3.geometry.partitioning.SubHyperplane;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class IntervalsSetTest {
+
+    private IntervalsSet emptySet;
+    private IntervalsSet finiteSet;
+    private IntervalsSet infiniteSet;
+
+    @Before
+    public void setUp() {
+        emptySet = new IntervalsSet();
+        finiteSet = new IntervalsSet(1.0, 5.0);
+        infiniteSet = new IntervalsSet(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+    }
+
+    @Test
+    public void testEmptyConstructor() {
+        assertNotNull(emptySet);
+    }
+
+    @Test
+    public void testFiniteConstructor() {
+        assertNotNull(finiteSet);
+        assertEquals(1.0, finiteSet.getInf(), 1e-10);
+        assertEquals(5.0, finiteSet.getSup(), 1e-10);
+    }
+
+    @Test
+    public void testInfiniteConstructor() {
+        assertNotNull(infiniteSet);
+        assertEquals(Double.NEGATIVE_INFINITY, infiniteSet.getInf(), 1e-10);
+        assertEquals(Double.POSITIVE_INFINITY, infiniteSet.getSup(), 1e-10);
+    }
+
+    @Test
+    public void testTreeConstructor() {
+        BSPTree<Euclidean1D> tree = new BSPTree<>(Boolean.TRUE);
+        IntervalsSet set = new IntervalsSet(tree);
+        assertNotNull(set);
+    }
+
+    @Test
+    public void testBoundaryConstructor() {
+        Collection<SubHyperplane<Euclidean1D>> boundary = new ArrayList<>();
+        IntervalsSet set = new IntervalsSet(boundary);
+        assertNotNull(set);
+    }
+
+    @Test
+    public void testBuildNew() {
+        BSPTree<Euclidean1D> tree = new BSPTree<>(Boolean.TRUE);
+        IntervalsSet newSet = finiteSet.buildNew(tree);
+        assertNotNull(newSet);
+    }
+
+    @Test
+    public void testComputeGeometricalProperties() {
+        finiteSet.computeGeometricalProperties();
+        // Assuming computeGeometricalProperties sets some internal state, we would need to verify it.
+        // This is a placeholder as the actual verification depends on the internal state changes.
+    }
+
+    @Test
+    public void testGetInf() {
+        assertEquals(1.0, finiteSet.getInf(), 1e-10);
+        assertEquals(Double.NEGATIVE_INFINITY, infiniteSet.getInf(), 1e-10);
+    }
+
+    @Test
+    public void testGetSup() {
+        assertEquals(5.0, finiteSet.getSup(), 1e-10);
+        assertEquals(Double.POSITIVE_INFINITY, infiniteSet.getSup(), 1e-10);
+    }
+
+    @Test
+    public void testAsList() {
+        List<Interval> intervals = finiteSet.asList();
+        assertEquals(1, intervals.size());
+        assertEquals(1.0, intervals.get(0).getInf(), 1e-10);
+        assertEquals(5.0, intervals.get(0).getSup(), 1e-10);
+    }
+
+    @Test
+    public void testRecurseList() {
+        List<Interval> intervals = new ArrayList<>();
+        finiteSet.recurseList(finiteSet.getTree(false), intervals, Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+        assertEquals(1, intervals.size());
+        assertEquals(1.0, intervals.get(0).getInf(), 1e-10);
+        assertEquals(5.0, intervals.get(0).getSup(), 1e-10);
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes different instances of `IntervalsSet` to be used in the tests.
+- **Constructors**: Tests for each constructor ensure that objects are created correctly.
+- **Methods**: Each method is tested for expected behavior. For example, `getInf` and `getSup` are tested to ensure they return the correct bounds.
+- **Utility Methods**: Methods like `asList` and `recurseList` are tested to ensure they return the correct intervals.
+
+This test suite assumes that the `IntervalsSet` class and its dependencies are correctly implemented and available in the classpath. Adjustments may be necessary based on the actual behavior and dependencies of the class.

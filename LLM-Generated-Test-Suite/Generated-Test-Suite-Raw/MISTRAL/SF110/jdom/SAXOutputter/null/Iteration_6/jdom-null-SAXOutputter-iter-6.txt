@@ -1,0 +1,242 @@
+```java
+package org.jdom2.output;
+
+import org.jdom2.*;
+import org.jdom2.output.support.AbstractSAXOutputProcessor;
+import org.jdom2.output.support.SAXTarget;
+import org.xml.sax.*;
+import org.xml.sax.ext.*;
+import org.xml.sax.helpers.DefaultHandler;
+import org.junit.*;
+import static org.junit.Assert.*;
+
+public class SAXOutputterTest {
+
+    private SAXOutputter saxOutputter;
+    private ContentHandler contentHandler;
+    private ErrorHandler errorHandler;
+    private DTDHandler dtdHandler;
+    private EntityResolver entityResolver;
+    private LexicalHandler lexicalHandler;
+    private DeclHandler declHandler;
+    private SAXOutputProcessor processor;
+    private Format format;
+
+    @Before
+    public void setUp() {
+        contentHandler = new DefaultHandler();
+        errorHandler = new DefaultHandler();
+        dtdHandler = new DefaultHandler();
+        entityResolver = new DefaultHandler();
+        lexicalHandler = new DefaultHandler();
+        declHandler = new DefaultHandler();
+        processor = new AbstractSAXOutputProcessor() {};
+        format = Format.getRawFormat();
+        saxOutputter = new SAXOutputter(contentHandler, errorHandler, dtdHandler, entityResolver, lexicalHandler);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        SAXOutputter defaultOutputter = new SAXOutputter();
+        assertNotNull(defaultOutputter);
+        assertFalse(defaultOutputter.getReportNamespaceDeclarations());
+        assertTrue(defaultOutputter.getReportDTDEvents());
+        assertEquals(SAXOutputter.DEFAULT_PROCESSOR, defaultOutputter.getSAXOutputProcessor());
+        assertEquals(Format.getRawFormat(), defaultOutputter.getFormat());
+    }
+
+    @Test
+    public void testContentHandlerConstructor() {
+        SAXOutputter outputter = new SAXOutputter(contentHandler);
+        assertEquals(contentHandler, outputter.getContentHandler());
+    }
+
+    @Test
+    public void testFullConstructor() {
+        SAXOutputter outputter = new SAXOutputter(contentHandler, errorHandler, dtdHandler, entityResolver, lexicalHandler);
+        assertEquals(contentHandler, outputter.getContentHandler());
+        assertEquals(errorHandler, outputter.getErrorHandler());
+        assertEquals(dtdHandler, outputter.getDTDHandler());
+        assertEquals(entityResolver, outputter.getEntityResolver());
+        assertEquals(lexicalHandler, outputter.getLexicalHandler());
+    }
+
+    @Test
+    public void testProcessorFormatConstructor() {
+        SAXOutputter outputter = new SAXOutputter(processor, format, contentHandler, errorHandler, dtdHandler, entityResolver, lexicalHandler);
+        assertEquals(processor, outputter.getSAXOutputProcessor());
+        assertEquals(format, outputter.getFormat());
+        assertEquals(contentHandler, outputter.getContentHandler());
+        assertEquals(errorHandler, outputter.getErrorHandler());
+        assertEquals(dtdHandler, outputter.getDTDHandler());
+        assertEquals(entityResolver, outputter.getEntityResolver());
+        assertEquals(lexicalHandler, outputter.getLexicalHandler());
+    }
+
+    @Test
+    public void testSetContentHandler() {
+        ContentHandler newHandler = new DefaultHandler();
+        saxOutputter.setContentHandler(newHandler);
+        assertEquals(newHandler, saxOutputter.getContentHandler());
+    }
+
+    @Test
+    public void testSetErrorHandler() {
+        ErrorHandler newHandler = new DefaultHandler();
+        saxOutputter.setErrorHandler(newHandler);
+        assertEquals(newHandler, saxOutputter.getErrorHandler());
+    }
+
+    @Test
+    public void testSetDTDHandler() {
+        DTDHandler newHandler = new DefaultHandler();
+        saxOutputter.setDTDHandler(newHandler);
+        assertEquals(newHandler, saxOutputter.getDTDHandler());
+    }
+
+    @Test
+    public void testSetEntityResolver() {
+        EntityResolver newResolver = new DefaultHandler();
+        saxOutputter.setEntityResolver(newResolver);
+        assertEquals(newResolver, saxOutputter.getEntityResolver());
+    }
+
+    @Test
+    public void testSetLexicalHandler() {
+        LexicalHandler newHandler = new DefaultHandler();
+        saxOutputter.setLexicalHandler(newHandler);
+        assertEquals(newHandler, saxOutputter.getLexicalHandler());
+    }
+
+    @Test
+    public void testSetDeclHandler() {
+        DeclHandler newHandler = new DefaultHandler();
+        saxOutputter.setDeclHandler(newHandler);
+        assertEquals(newHandler, saxOutputter.getDeclHandler());
+    }
+
+    @Test
+    public void testSetReportNamespaceDeclarations() {
+        saxOutputter.setReportNamespaceDeclarations(true);
+        assertTrue(saxOutputter.getReportNamespaceDeclarations());
+    }
+
+    @Test
+    public void testSetReportDTDEvents() {
+        saxOutputter.setReportDTDEvents(false);
+        assertFalse(saxOutputter.getReportDTDEvents());
+    }
+
+    @Test
+    public void testSetFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.setFeature("http://xml.org/sax/features/namespace-prefixes", true);
+        assertTrue(saxOutputter.getReportNamespaceDeclarations());
+
+        saxOutputter.setFeature("http://xml.org/sax/features/validation", false);
+        assertFalse(saxOutputter.getReportDTDEvents());
+    }
+
+    @Test(expected = SAXNotSupportedException.class)
+    public void testSetFeatureNotSupported() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.setFeature("http://xml.org/sax/features/namespaces", false);
+    }
+
+    @Test(expected = SAXNotRecognizedException.class)
+    public void testSetFeatureNotRecognized() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.setFeature("unknown-feature", true);
+    }
+
+    @Test
+    public void testGetFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
+        assertTrue(saxOutputter.getFeature("http://xml.org/sax/features/namespaces"));
+        assertFalse(saxOutputter.getFeature("http://xml.org/sax/features/namespace-prefixes"));
+        assertTrue(saxOutputter.getFeature("http://xml.org/sax/features/validation"));
+    }
+
+    @Test(expected = SAXNotRecognizedException.class)
+    public void testGetFeatureNotRecognized() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.getFeature("unknown-feature");
+    }
+
+    @Test
+    public void testSetProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
+        LexicalHandler newHandler = new DefaultHandler();
+        saxOutputter.setProperty("http://xml.org/sax/properties/lexical-handler", newHandler);
+        assertEquals(newHandler, saxOutputter.getLexicalHandler());
+
+        DeclHandler declHandler = new DefaultHandler();
+        saxOutputter.setProperty("http://xml.org/sax/properties/declaration-handler", declHandler);
+        assertEquals(declHandler, saxOutputter.getDeclHandler());
+    }
+
+    @Test(expected = SAXNotRecognizedException.class)
+    public void testSetPropertyNotRecognized() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.setProperty("unknown-property", new DefaultHandler());
+    }
+
+    @Test
+    public void testGetProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
+        assertEquals(lexicalHandler, saxOutputter.getProperty("http://xml.org/sax/properties/lexical-handler"));
+        assertEquals(declHandler, saxOutputter.getProperty("http://xml.org/sax/properties/declaration-handler"));
+    }
+
+    @Test(expected = SAXNotRecognizedException.class)
+    public void testGetPropertyNotRecognized() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.getProperty("unknown-property");
+    }
+
+    @Test
+    public void testSetSAXOutputProcessor() {
+        SAXOutputProcessor newProcessor = new AbstractSAXOutputProcessor() {};
+        saxOutputter.setSAXOutputProcessor(newProcessor);
+        assertEquals(newProcessor, saxOutputter.getSAXOutputProcessor());
+    }
+
+    @Test
+    public void testSetFormat() {
+        Format newFormat = Format.getPrettyFormat();
+        saxOutputter.setFormat(newFormat);
+        assertEquals(newFormat, saxOutputter.getFormat());
+    }
+
+    @Test
+    public void testOutputDocument() throws JDOMException {
+        Document doc = new Document();
+        saxOutputter.output(doc);
+        // Add assertions based on the expected behavior of the output method
+    }
+
+    @Test
+    public void testOutputList() throws JDOMException {
+        List<Content> nodes = new ArrayList<>();
+        saxOutputter.output(nodes);
+        // Add assertions based on the expected behavior of the output method
+    }
+
+    @Test
+    public void testOutputElement() throws JDOMException {
+        Element element = new Element("root");
+        saxOutputter.output(element);
+        // Add assertions based on the expected behavior of the output method
+    }
+
+    @Test
+    public void testOutputFragmentList() throws JDOMException {
+        List<Content> nodes = new ArrayList<>();
+        saxOutputter.outputFragment(nodes);
+        // Add assertions based on the expected behavior of the output method
+    }
+
+    @Test
+    public void testOutputFragmentContent() throws JDOMException {
+        Content node = new Text("test");
+        saxOutputter.outputFragment(node);
+        // Add assertions based on the expected behavior of the output method
+    }
+
+    @Test
+    public void testGetLocator() {
+        assertNull(saxOutputter.getLocator());
+    }
+}
+```

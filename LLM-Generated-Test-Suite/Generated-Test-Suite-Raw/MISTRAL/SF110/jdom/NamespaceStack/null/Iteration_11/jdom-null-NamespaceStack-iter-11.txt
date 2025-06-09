@@ -1,0 +1,166 @@
+```java
+package org.jdom2.util;
+
+import org.jdom2.Element;
+import org.jdom2.Attribute;
+import org.jdom2.Namespace;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.Assert;
+
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.List;
+
+public class NamespaceStackTest {
+
+    private NamespaceStack namespaceStack;
+    private Namespace ns1;
+    private Namespace ns2;
+    private Namespace ns3;
+    private Element element;
+    private Attribute attribute;
+
+    @Before
+    public void setUp() {
+        namespaceStack = new NamespaceStack();
+        ns1 = Namespace.getNamespace("prefix1", "uri1");
+        ns2 = Namespace.getNamespace("prefix2", "uri2");
+        ns3 = Namespace.getNamespace("prefix3", "uri3");
+        element = new Element("element", ns1);
+        attribute = new Attribute("attribute", "value", ns2);
+    }
+
+    @Test
+    public void testConstructor() {
+        Namespace[] seed = {ns1, ns2};
+        NamespaceStack stack = new NamespaceStack(seed);
+        Assert.assertArrayEquals(seed, stack.getScope());
+    }
+
+    @Test
+    public void testPushElement() {
+        namespaceStack.push(element);
+        Namespace[] scope = namespaceStack.getScope();
+        Assert.assertTrue(scope.length > 0);
+        Assert.assertEquals(ns1, scope[0]);
+    }
+
+    @Test
+    public void testPushAttribute() {
+        namespaceStack.push(attribute);
+        Namespace[] scope = namespaceStack.getScope();
+        Assert.assertTrue(scope.length > 0);
+        Assert.assertEquals(ns2, scope[0]);
+    }
+
+    @Test
+    public void testPop() {
+        namespaceStack.push(element);
+        namespaceStack.pop();
+        Namespace[] scope = namespaceStack.getScope();
+        Assert.assertArrayEquals(NamespaceStack.DEFAULTSEED, scope);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testPopException() {
+        namespaceStack.pop();
+    }
+
+    @Test
+    public void testAddedForward() {
+        namespaceStack.push(element);
+        Iterable<Namespace> added = namespaceStack.addedForward();
+        List<Namespace> addedList = new ArrayList<>();
+        for (Namespace ns : added) {
+            addedList.add(ns);
+        }
+        Assert.assertTrue(addedList.contains(ns1));
+    }
+
+    @Test
+    public void testAddedReverse() {
+        namespaceStack.push(element);
+        Iterable<Namespace> added = namespaceStack.addedReverse();
+        List<Namespace> addedList = new ArrayList<>();
+        for (Namespace ns : added) {
+            addedList.add(ns);
+        }
+        Assert.assertTrue(addedList.contains(ns1));
+    }
+
+    @Test
+    public void testIterator() {
+        namespaceStack.push(element);
+        Iterator<Namespace> iterator = namespaceStack.iterator();
+        List<Namespace> namespaceList = new ArrayList<>();
+        while (iterator.hasNext()) {
+            namespaceList.add(iterator.next());
+        }
+        Assert.assertTrue(namespaceList.contains(ns1));
+    }
+
+    @Test
+    public void testGetScope() {
+        namespaceStack.push(element);
+        Namespace[] scope = namespaceStack.getScope();
+        Assert.assertTrue(scope.length > 0);
+        Assert.assertEquals(ns1, scope[0]);
+    }
+
+    @Test
+    public void testIsInScope() {
+        namespaceStack.push(element);
+        Assert.assertTrue(namespaceStack.isInScope(ns1));
+        Assert.assertFalse(namespaceStack.isInScope(ns2));
+    }
+
+    @Test
+    public void testEmptyIterable() {
+        Iterable<Namespace> emptyIterable = NamespaceStack.EMPTYITER;
+        Assert.assertFalse(emptyIterable.iterator().hasNext());
+    }
+
+    @Test
+    public void testNamespaceIterable() {
+        Namespace[] data = {ns1, ns2, ns3};
+        NamespaceIterable iterable = new NamespaceIterable(data, true);
+        List<Namespace> namespaceList = new ArrayList<>();
+        for (Namespace ns : iterable) {
+            namespaceList.add(ns);
+        }
+        Assert.assertEquals(3, namespaceList.size());
+        Assert.assertTrue(namespaceList.contains(ns1));
+        Assert.assertTrue(namespaceList.contains(ns2));
+        Assert.assertTrue(namespaceList.contains(ns3));
+    }
+
+    @Test
+    public void testForwardWalker() {
+        Namespace[] data = {ns1, ns2, ns3};
+        ForwardWalker walker = new ForwardWalker(data);
+        List<Namespace> namespaceList = new ArrayList<>();
+        while (walker.hasNext()) {
+            namespaceList.add(walker.next());
+        }
+        Assert.assertEquals(3, namespaceList.size());
+        Assert.assertTrue(namespaceList.contains(ns1));
+        Assert.assertTrue(namespaceList.contains(ns2));
+        Assert.assertTrue(namespaceList.contains(ns3));
+    }
+
+    @Test
+    public void testBackwardWalker() {
+        Namespace[] data = {ns1, ns2, ns3};
+        BackwardWalker walker = new BackwardWalker(data);
+        List<Namespace> namespaceList = new ArrayList<>();
+        while (walker.hasNext()) {
+            namespaceList.add(walker.next());
+        }
+        Assert.assertEquals(3, namespaceList.size());
+        Assert.assertTrue(namespaceList.contains(ns1));
+        Assert.assertTrue(namespaceList.contains(ns2));
+        Assert.assertTrue(namespaceList.contains(ns3));
+    }
+}
+```

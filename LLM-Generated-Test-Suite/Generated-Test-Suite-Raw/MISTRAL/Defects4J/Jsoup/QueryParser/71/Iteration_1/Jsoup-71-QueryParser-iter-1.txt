@@ -1,0 +1,320 @@
+```java
+package org.jsoup.select;
+
+import org.jsoup.helper.StringUtil;
+import org.jsoup.helper.Validate;
+import org.jsoup.parser.TokenQueue;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import static org.junit.Assert.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.jsoup.internal.Normalizer.normalize;
+
+public class QueryParserTest {
+
+    private QueryParser queryParser;
+
+    @Before
+    public void setUp() {
+        queryParser = new QueryParser("div");
+    }
+
+    @After
+    public void tearDown() {
+        queryParser = null;
+    }
+
+    @Test
+    public void testParse() {
+        Evaluator evaluator = QueryParser.parse("div");
+        assertNotNull(evaluator);
+    }
+
+    @Test
+    public void testParseWithCombinator() {
+        Evaluator evaluator = QueryParser.parse("div > span");
+        assertNotNull(evaluator);
+    }
+
+    @Test
+    public void testParseWithMultipleCombinators() {
+        Evaluator evaluator = QueryParser.parse("div > span + p ~ ul");
+        assertNotNull(evaluator);
+    }
+
+    @Test
+    public void testParseWithAttribute() {
+        Evaluator evaluator = QueryParser.parse("div[class=test]");
+        assertNotNull(evaluator);
+    }
+
+    @Test
+    public void testParseWithPseudoClass() {
+        Evaluator evaluator = QueryParser.parse("div:first-child");
+        assertNotNull(evaluator);
+    }
+
+    @Test
+    public void testParseWithComplexQuery() {
+        Evaluator evaluator = QueryParser.parse("div.test > span[id=test] + p:nth-child(2)");
+        assertNotNull(evaluator);
+    }
+
+    @Test
+    public void testParseWithInvalidQuery() {
+        try {
+            QueryParser.parse("div#");
+            fail("Expected SelectorParseException");
+        } catch (Selector.SelectorParseException e) {
+            assertEquals("Could not parse query 'div#': unexpected token at '#'", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testConsumeSubQuery() {
+        queryParser.tq = new TokenQueue("div > span");
+        String subQuery = queryParser.consumeSubQuery();
+        assertEquals("div", subQuery);
+    }
+
+    @Test
+    public void testFindElementsById() {
+        queryParser.tq = new TokenQueue("#test");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.Id);
+    }
+
+    @Test
+    public void testFindElementsByClass() {
+        queryParser.tq = new TokenQueue(".test");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.Class);
+    }
+
+    @Test
+    public void testFindElementsByTag() {
+        queryParser.tq = new TokenQueue("div");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.Tag);
+    }
+
+    @Test
+    public void testFindElementsByAttribute() {
+        queryParser.tq = new TokenQueue("[class=test]");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.AttributeWithValue);
+    }
+
+    @Test
+    public void testFindElementsAllElements() {
+        queryParser.tq = new TokenQueue("*");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.AllElements);
+    }
+
+    @Test
+    public void testFindElementsIndexLessThan() {
+        queryParser.tq = new TokenQueue(":lt(2)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IndexLessThan);
+    }
+
+    @Test
+    public void testFindElementsIndexGreaterThan() {
+        queryParser.tq = new TokenQueue(":gt(2)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IndexGreaterThan);
+    }
+
+    @Test
+    public void testFindElementsIndexEquals() {
+        queryParser.tq = new TokenQueue(":eq(2)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IndexEquals);
+    }
+
+    @Test
+    public void testFindElementsHas() {
+        queryParser.tq = new TokenQueue(":has(div)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof StructuralEvaluator.Has);
+    }
+
+    @Test
+    public void testFindElementsContains() {
+        queryParser.tq = new TokenQueue(":contains(test)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.ContainsText);
+    }
+
+    @Test
+    public void testFindElementsContainsOwn() {
+        queryParser.tq = new TokenQueue(":containsOwn(test)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.ContainsOwnText);
+    }
+
+    @Test
+    public void testFindElementsContainsData() {
+        queryParser.tq = new TokenQueue(":containsData(test)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.ContainsData);
+    }
+
+    @Test
+    public void testFindElementsMatches() {
+        queryParser.tq = new TokenQueue(":matches(test)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.Matches);
+    }
+
+    @Test
+    public void testFindElementsMatchesOwn() {
+        queryParser.tq = new TokenQueue(":matchesOwn(test)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.MatchesOwn);
+    }
+
+    @Test
+    public void testFindElementsNot() {
+        queryParser.tq = new TokenQueue(":not(div)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof StructuralEvaluator.Not);
+    }
+
+    @Test
+    public void testFindElementsNthChild() {
+        queryParser.tq = new TokenQueue(":nth-child(2)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsNthChild);
+    }
+
+    @Test
+    public void testFindElementsNthLastChild() {
+        queryParser.tq = new TokenQueue(":nth-last-child(2)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsNthLastChild);
+    }
+
+    @Test
+    public void testFindElementsNthOfType() {
+        queryParser.tq = new TokenQueue(":nth-of-type(2)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsNthOfType);
+    }
+
+    @Test
+    public void testFindElementsNthLastOfType() {
+        queryParser.tq = new TokenQueue(":nth-last-of-type(2)");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsNthLastOfType);
+    }
+
+    @Test
+    public void testFindElementsFirstChild() {
+        queryParser.tq = new TokenQueue(":first-child");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsFirstChild);
+    }
+
+    @Test
+    public void testFindElementsLastChild() {
+        queryParser.tq = new TokenQueue(":last-child");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsLastChild);
+    }
+
+    @Test
+    public void testFindElementsFirstOfType() {
+        queryParser.tq = new TokenQueue(":first-of-type");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsFirstOfType);
+    }
+
+    @Test
+    public void testFindElementsLastOfType() {
+        queryParser.tq = new TokenQueue(":last-of-type");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsLastOfType);
+    }
+
+    @Test
+    public void testFindElementsOnlyChild() {
+        queryParser.tq = new TokenQueue(":only-child");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsOnlyChild);
+    }
+
+    @Test
+    public void testFindElementsOnlyOfType() {
+        queryParser.tq = new TokenQueue(":only-of-type");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsOnlyOfType);
+    }
+
+    @Test
+    public void testFindElementsEmpty() {
+        queryParser.tq = new TokenQueue(":empty");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsEmpty);
+    }
+
+    @Test
+    public void testFindElementsRoot() {
+        queryParser.tq = new TokenQueue(":root");
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsRoot);
+    }
+
+    @Test
+    public void testConsumeIndex() {
+        queryParser.tq = new TokenQueue(":lt(2)");
+        int index = queryParser.consumeIndex();
+        assertEquals(2, index);
+    }
+
+    @Test
+    public void testConsumeIndexInvalid() {
+        queryParser.tq = new TokenQueue(":lt(two)");
+        try {
+            queryParser.consumeIndex();
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Index must be numeric", e.getMessage());
+        }
+    }
+}
+```

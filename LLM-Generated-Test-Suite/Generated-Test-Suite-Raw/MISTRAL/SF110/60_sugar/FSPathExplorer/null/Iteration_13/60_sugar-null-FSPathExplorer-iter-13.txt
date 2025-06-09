@@ -1,0 +1,120 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `FSPathExplorer` class. This test suite includes tests for all the methods in the class.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Map;
+import net.sf.sugar.fspath.FSPath;
+import net.sf.sugar.fspath.FSPathFactory;
+import net.sf.sugar.fspath.FSPathResultList;
+
+public class FSPathExplorerTest {
+
+    private FSPathExplorer explorer;
+    private ByteArrayOutputStream outContent;
+    private ByteArrayOutputStream errContent;
+
+    @Before
+    public void setUp() {
+        explorer = new FSPathExplorer();
+        outContent = new ByteArrayOutputStream();
+        errContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(explorer.out);
+        assertNotNull(explorer.err);
+        assertNotNull(explorer.prompt);
+        assertEquals("fspath>", explorer.prompt.getPromptText());
+    }
+
+    @Test
+    public void testShowWelcome() {
+        FSPathExplorer.showWelcome();
+        assertTrue(outContent.toString().contains("FSPathExplorer"));
+    }
+
+    @Test
+    public void testShowHelp() {
+        FSPathExplorer.showHelp();
+        assertTrue(outContent.toString().contains("FSPathExplorer help"));
+    }
+
+    @Test
+    public void testConfigureExplorer() {
+        String[] args = {"-path", "/test/path", "-find", "//dir[@name='test']"};
+        explorer.configureExplorer(args);
+        assertEquals(new File("/test/path"), explorer.rootPath);
+        assertEquals("//dir[@name='test']", explorer.fsPathQuery);
+    }
+
+    @Test
+    public void testCreateFSPathWithRootPath() {
+        explorer.rootPath = new File("/test/path");
+        explorer.createFSPath();
+        assertNotNull(explorer.fsPath);
+        assertEquals("/test/path", explorer.fsPath.getRootDirectory().getPath());
+    }
+
+    @Test
+    public void testCreateFSPathWithoutRootPath() {
+        explorer.createFSPath();
+        assertNotNull(explorer.fsPath);
+        assertNotNull(explorer.fsPath.getRootDirectory());
+    }
+
+    @Test
+    public void testStart() {
+        // Mocking the prompt to simulate user input
+        explorer.prompt = new MockPrompt();
+        explorer.createFSPath();
+        explorer.start();
+        assertTrue(outContent.toString().contains("exiting....."));
+    }
+
+    @Test
+    public void testStartWithFSPathQuery() {
+        // Mocking the prompt to simulate user input
+        explorer.prompt = new MockPrompt();
+        explorer.createFSPath();
+        explorer.fsPathQuery = "//dir[@name='test']";
+        explorer.start();
+        assertTrue(outContent.toString().contains("exiting....."));
+    }
+
+    private class MockPrompt extends Prompt {
+        private int callCount = 0;
+
+        public MockPrompt() {
+            super(System.in, System.out, System.err);
+        }
+
+        @Override
+        public String readLine() throws IOException {
+            callCount++;
+            if (callCount == 1) {
+                return "exit";
+            }
+            return "";
+        }
+    }
+}
+```
+
+This test suite covers the following aspects:
+1. **Constructor Test**: Ensures that the `FSPathExplorer` object is initialized correctly.
+2. **Welcome Message Test**: Verifies that the welcome message is printed correctly.
+3. **Help Message Test**: Verifies that the help message is printed correctly.
+4. **Configuration Test**: Tests the `configureExplorer` method to ensure it correctly parses command-line arguments.
+5. **FSPath Creation Tests**: Tests the `createFSPath` method with and without a root path.
+6. **Start Method Test**: Tests the `start` method to ensure it handles user input correctly and exits when the "exit" command is given.
+
+The `MockPrompt` class is used to simulate user input for testing the `start` method.

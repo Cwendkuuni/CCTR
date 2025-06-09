@@ -1,0 +1,106 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import java.io.*;
+import java.nio.charset.Charset;
+import java.util.*;
+
+@RunWith(JUnit4.class)
+public class FileTextTest {
+
+    private File tempFile;
+    private FileText fileText;
+
+    @Before
+    public void setUp() throws IOException {
+        tempFile = File.createTempFile("testFile", ".txt");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(tempFile))) {
+            writer.write("Line 1\nLine 2\nLine 3");
+        }
+        fileText = new FileText(tempFile, "UTF-8");
+    }
+
+    @Test
+    public void testConstructorWithFileAndCharset() throws IOException {
+        assertNotNull(fileText);
+        assertEquals(tempFile, fileText.getFile());
+        assertEquals(Charset.forName("UTF-8"), fileText.getCharset());
+        assertEquals("Line 1\nLine 2\nLine 3", fileText.getFullText().toString());
+    }
+
+    @Test
+    public void testConstructorWithFileText() {
+        FileText copy = new FileText(fileText);
+        assertNotNull(copy);
+        assertEquals(fileText.getFile(), copy.getFile());
+        assertEquals(fileText.getCharset(), copy.getCharset());
+        assertEquals(fileText.getFullText().toString(), copy.getFullText().toString());
+        assertArrayEquals(fileText.toLinesArray(), copy.toLinesArray());
+    }
+
+    @Test
+    public void testFromLines() {
+        List<String> lines = Arrays.asList("Line A", "Line B", "Line C");
+        FileText fromLines = FileText.fromLines(tempFile, lines);
+        assertNotNull(fromLines);
+        assertEquals("Line A\nLine B\nLine C\n", fromLines.getFullText().toString());
+        assertArrayEquals(lines.toArray(new String[0]), fromLines.toLinesArray());
+    }
+
+    @Test
+    public void testGetFile() {
+        assertEquals(tempFile, fileText.getFile());
+    }
+
+    @Test
+    public void testGetCharset() {
+        assertEquals(Charset.forName("UTF-8"), fileText.getCharset());
+    }
+
+    @Test
+    public void testGetFullText() {
+        assertEquals("Line 1\nLine 2\nLine 3", fileText.getFullText().toString());
+    }
+
+    @Test
+    public void testToLinesArray() {
+        String[] expectedLines = {"Line 1", "Line 2", "Line 3"};
+        assertArrayEquals(expectedLines, fileText.toLinesArray());
+    }
+
+    @Test
+    public void testLineColumn() {
+        LineColumn lineColumn = fileText.lineColumn(8); // Position of 'L' in "Line 2"
+        assertEquals(2, lineColumn.getLine());
+        assertEquals(0, lineColumn.getColumn());
+    }
+
+    @Test
+    public void testGet() {
+        assertEquals("Line 1", fileText.get(0));
+        assertEquals("Line 2", fileText.get(1));
+        assertEquals("Line 3", fileText.get(2));
+    }
+
+    @Test
+    public void testSize() {
+        assertEquals(3, fileText.size());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testUnsupportedCharsetException() throws IOException {
+        new FileText(tempFile, "UNSUPPORTED_CHARSET");
+    }
+
+    @Test(expected = FileNotFoundException.class)
+    public void testFileNotFoundException() throws IOException {
+        File nonExistentFile = new File("non_existent_file.txt");
+        new FileText(nonExistentFile, "UTF-8");
+    }
+}
+```
+
+This JUnit 4 test suite covers the main functionalities of the `FileText` class, including constructors, methods, and exception handling. It uses temporary files to test file-related operations and ensures that the class behaves as expected under various conditions.

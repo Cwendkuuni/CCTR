@@ -1,0 +1,123 @@
+Certainly! Below is a JUnit 4 test suite for the `CSVParser` class. This test suite aims to cover the various methods and functionalities provided by the `CSVParser` class. Note that this test suite assumes the existence of certain classes and methods like `CSVFormat`, `CSVRecord`, and `Assertions` which are referenced in the `CSVParser` class.
+
+```java
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class CSVParserTest {
+
+    private CSVParser parser;
+    private String csvData;
+
+    @Before
+    public void setUp() throws Exception {
+        csvData = "name,age,city\nJohn,30,New York\nJane,25,Los Angeles";
+        parser = new CSVParser(new StringReader(csvData), CSVFormat.DEFAULT.withHeader());
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (parser != null) {
+            parser.close();
+        }
+    }
+
+    @Test
+    public void testParseFile() throws IOException {
+        File tempFile = File.createTempFile("test", ".csv");
+        tempFile.deleteOnExit();
+        CSVParser fileParser = CSVParser.parse(tempFile, CSVFormat.DEFAULT);
+        assertNotNull(fileParser);
+        fileParser.close();
+    }
+
+    @Test
+    public void testParseString() throws IOException {
+        CSVParser stringParser = CSVParser.parse(csvData, CSVFormat.DEFAULT.withHeader());
+        assertNotNull(stringParser);
+        stringParser.close();
+    }
+
+    @Test
+    public void testParseURL() throws IOException {
+        URL url = new URL("http://example.com/test.csv");
+        CSVParser urlParser = CSVParser.parse(url, StandardCharsets.UTF_8, CSVFormat.DEFAULT);
+        assertNotNull(urlParser);
+        urlParser.close();
+    }
+
+    @Test
+    public void testGetRecords() throws IOException {
+        List<CSVRecord> records = parser.getRecords();
+        assertEquals(2, records.size());
+        assertEquals("John", records.get(0).get("name"));
+        assertEquals("Jane", records.get(1).get("name"));
+    }
+
+    @Test
+    public void testGetHeaderMap() {
+        Map<String, Integer> headerMap = parser.getHeaderMap();
+        assertEquals(3, headerMap.size());
+        assertTrue(headerMap.containsKey("name"));
+        assertTrue(headerMap.containsKey("age"));
+        assertTrue(headerMap.containsKey("city"));
+    }
+
+    @Test
+    public void testGetCurrentLineNumber() {
+        assertEquals(0, parser.getCurrentLineNumber());
+    }
+
+    @Test
+    public void testGetRecordNumber() throws IOException {
+        parser.getRecords();
+        assertEquals(2, parser.getRecordNumber());
+    }
+
+    @Test
+    public void testIsClosed() throws IOException {
+        assertFalse(parser.isClosed());
+        parser.close();
+        assertTrue(parser.isClosed());
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testIterator() {
+        for (CSVRecord record : parser) {
+            assertNotNull(record);
+        }
+        parser.iterator().next(); // Should throw NoSuchElementException
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testIteratorRemove() {
+        parser.iterator().remove(); // Should throw UnsupportedOperationException
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: The `setUp` method initializes a `CSVParser` instance with some sample CSV data. The `tearDown` method ensures that the parser is closed after each test.
+- **Test Methods**: Each test method is designed to test a specific functionality of the `CSVParser` class:
+  - `testParseFile`, `testParseString`, `testParseURL`: Test the static `parse` methods for different input types.
+  - `testGetRecords`: Tests the `getRecords` method to ensure it correctly parses records.
+  - `testGetHeaderMap`: Verifies that the header map is correctly initialized.
+  - `testGetCurrentLineNumber` and `testGetRecordNumber`: Check the line and record number tracking.
+  - `testIsClosed`: Ensures the parser's closed state is correctly reported.
+  - `testIterator` and `testIteratorRemove`: Test the iterator functionality and exception handling.
+
+This test suite provides a comprehensive set of tests for the `CSVParser` class, ensuring its methods behave as expected.

@@ -1,0 +1,92 @@
+To create a comprehensive JUnit 4 test suite for the `BrentOptimizer` class, we need to test the constructors, the `doOptimize` method, and any edge cases or exceptions that might be thrown. Below is a test suite that covers these aspects:
+
+```java
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
+import org.apache.commons.math3.exception.NumberIsTooSmallException;
+import org.apache.commons.math3.optim.GoalType;
+import org.apache.commons.math3.optim.univariate.BrentOptimizer;
+import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
+import org.apache.commons.math3.optim.ConvergenceChecker;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class BrentOptimizerTest {
+
+    private static final double RELATIVE_THRESHOLD = 1e-8;
+    private static final double ABSOLUTE_THRESHOLD = 1e-8;
+
+    private BrentOptimizer optimizer;
+
+    @Before
+    public void setUp() {
+        optimizer = new BrentOptimizer(RELATIVE_THRESHOLD, ABSOLUTE_THRESHOLD);
+    }
+
+    @Test(expected = NumberIsTooSmallException.class)
+    public void testConstructorThrowsNumberIsTooSmallException() {
+        new BrentOptimizer(1e-16, ABSOLUTE_THRESHOLD);
+    }
+
+    @Test(expected = NotStrictlyPositiveException.class)
+    public void testConstructorThrowsNotStrictlyPositiveException() {
+        new BrentOptimizer(RELATIVE_THRESHOLD, 0.0);
+    }
+
+    @Test
+    public void testConstructorWithValidParameters() {
+        BrentOptimizer optimizer = new BrentOptimizer(RELATIVE_THRESHOLD, ABSOLUTE_THRESHOLD);
+        assertNotNull(optimizer);
+    }
+
+    @Test
+    public void testDoOptimizeMinimization() {
+        optimizer = new BrentOptimizer(RELATIVE_THRESHOLD, ABSOLUTE_THRESHOLD, new SimpleConvergenceChecker());
+        optimizer.setGoalType(GoalType.MINIMIZE);
+        optimizer.setMin(0);
+        optimizer.setMax(10);
+        optimizer.setStartValue(5);
+
+        UnivariatePointValuePair result = optimizer.optimize();
+        assertNotNull(result);
+        assertEquals(0, result.getPoint(), ABSOLUTE_THRESHOLD);
+    }
+
+    @Test
+    public void testDoOptimizeMaximization() {
+        optimizer = new BrentOptimizer(RELATIVE_THRESHOLD, ABSOLUTE_THRESHOLD, new SimpleConvergenceChecker());
+        optimizer.setGoalType(GoalType.MAXIMIZE);
+        optimizer.setMin(0);
+        optimizer.setMax(10);
+        optimizer.setStartValue(5);
+
+        UnivariatePointValuePair result = optimizer.optimize();
+        assertNotNull(result);
+        assertEquals(10, result.getPoint(), ABSOLUTE_THRESHOLD);
+    }
+
+    // A simple convergence checker for testing purposes
+    private static class SimpleConvergenceChecker implements ConvergenceChecker<UnivariatePointValuePair> {
+        @Override
+        public boolean converged(int iteration, UnivariatePointValuePair previous, UnivariatePointValuePair current) {
+            return Math.abs(previous.getValue() - current.getValue()) < ABSOLUTE_THRESHOLD;
+        }
+    }
+}
+```
+
+### Explanation:
+
+1. **Constructor Tests**:
+   - We test the constructor to ensure it throws `NumberIsTooSmallException` when the relative threshold is too small.
+   - We test the constructor to ensure it throws `NotStrictlyPositiveException` when the absolute threshold is not strictly positive.
+   - We test the constructor with valid parameters to ensure it initializes correctly.
+
+2. **Optimization Tests**:
+   - We test the `doOptimize` method for both minimization and maximization goals. These tests assume a simple convergence checker and a hypothetical objective function that reaches its minimum at 0 and maximum at 10. Adjust the test logic according to the actual behavior of the objective function used in your context.
+
+3. **Convergence Checker**:
+   - A simple convergence checker is implemented to simulate the convergence condition for testing purposes.
+
+These tests provide a basic framework for testing the `BrentOptimizer` class. You may need to adjust the tests based on the actual behavior of the objective function and the specific requirements of your application.

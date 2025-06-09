@@ -1,0 +1,183 @@
+```java
+package org.joda.time.chrono;
+
+import org.joda.time.DateTimeFieldType;
+import org.joda.time.ReadablePartial;
+import org.joda.time.field.FieldUtils;
+import org.joda.time.field.ImpreciseDateTimeField;
+import org.joda.time.field.UnsupportedDurationField;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class BasicMonthOfYearDateTimeFieldTest {
+
+    private BasicChronology mockChronology;
+    private BasicMonthOfYearDateTimeField field;
+
+    @Before
+    public void setUp() {
+        mockChronology = mock(BasicChronology.class);
+        when(mockChronology.getAverageMillisPerMonth()).thenReturn(2629746000L);
+        when(mockChronology.getMaxMonth()).thenReturn(12);
+        when(mockChronology.getMinYear()).thenReturn(1900);
+        when(mockChronology.getMaxYear()).thenReturn(2100);
+        field = new BasicMonthOfYearDateTimeField(mockChronology, 2);
+    }
+
+    @Test
+    public void testIsLenient() {
+        assertFalse(field.isLenient());
+    }
+
+    @Test
+    public void testGet() {
+        long instant = 1234567890000L;
+        when(mockChronology.getMonthOfYear(instant)).thenReturn(5);
+        assertEquals(5, field.get(instant));
+    }
+
+    @Test
+    public void testAddInt() {
+        long instant = 1234567890000L;
+        when(mockChronology.getMillisOfDay(instant)).thenReturn(123456789L);
+        when(mockChronology.getYear(instant)).thenReturn(2009);
+        when(mockChronology.getMonthOfYear(instant, 2009)).thenReturn(5);
+        when(mockChronology.getDayOfMonth(instant, 2009, 5)).thenReturn(15);
+        when(mockChronology.getDaysInYearMonth(2009, 6)).thenReturn(30);
+        when(mockChronology.getYearMonthDayMillis(2009, 6, 15)).thenReturn(1243723200000L);
+
+        assertEquals(1243723200000L + 123456789L, field.add(instant, 1));
+    }
+
+    @Test
+    public void testAddLong() {
+        long instant = 1234567890000L;
+        when(mockChronology.getMillisOfDay(instant)).thenReturn(123456789L);
+        when(mockChronology.getYear(instant)).thenReturn(2009);
+        when(mockChronology.getMonthOfYear(instant, 2009)).thenReturn(5);
+        when(mockChronology.getDayOfMonth(instant, 2009, 5)).thenReturn(15);
+        when(mockChronology.getDaysInYearMonth(2009, 6)).thenReturn(30);
+        when(mockChronology.getYearMonthDayMillis(2009, 6, 15)).thenReturn(1243723200000L);
+
+        assertEquals(1243723200000L + 123456789L, field.add(instant, 1L));
+    }
+
+    @Test
+    public void testAddReadablePartial() {
+        ReadablePartial partial = mock(ReadablePartial.class);
+        int[] values = {2009, 5, 15};
+        when(partial.size()).thenReturn(3);
+        when(partial.getFieldType(0)).thenReturn(DateTimeFieldType.monthOfYear());
+        when(partial.getValue(0)).thenReturn(5);
+
+        int[] result = field.add(partial, 0, values, 1);
+        assertEquals(2009, result[0]);
+        assertEquals(6, result[1]);
+        assertEquals(15, result[2]);
+    }
+
+    @Test
+    public void testAddWrapField() {
+        long instant = 1234567890000L;
+        when(mockChronology.getMillisOfDay(instant)).thenReturn(123456789L);
+        when(mockChronology.getYear(instant)).thenReturn(2009);
+        when(mockChronology.getMonthOfYear(instant, 2009)).thenReturn(5);
+        when(mockChronology.getDayOfMonth(instant, 2009, 5)).thenReturn(15);
+        when(mockChronology.getDaysInYearMonth(2009, 6)).thenReturn(30);
+        when(mockChronology.getYearMonthDayMillis(2009, 6, 15)).thenReturn(1243723200000L);
+
+        assertEquals(1243723200000L + 123456789L, field.addWrapField(instant, 1));
+    }
+
+    @Test
+    public void testGetDifferenceAsLong() {
+        long startInstant = 1234567890000L;
+        long endInstant = 1243723200000L;
+        when(mockChronology.getYear(startInstant)).thenReturn(2009);
+        when(mockChronology.getMonthOfYear(startInstant, 2009)).thenReturn(5);
+        when(mockChronology.getYear(endInstant)).thenReturn(2009);
+        when(mockChronology.getMonthOfYear(endInstant, 2009)).thenReturn(6);
+        when(mockChronology.getDayOfMonth(startInstant, 2009, 5)).thenReturn(15);
+        when(mockChronology.getDaysInYearMonth(2009, 5)).thenReturn(31);
+        when(mockChronology.getDayOfMonth(endInstant, 2009, 6)).thenReturn(15);
+        when(mockChronology.getYearMonthMillis(2009, 5)).thenReturn(1234567890000L);
+        when(mockChronology.getYearMonthMillis(2009, 6)).thenReturn(1243723200000L);
+
+        assertEquals(1L, field.getDifferenceAsLong(startInstant, endInstant));
+    }
+
+    @Test
+    public void testSet() {
+        long instant = 1234567890000L;
+        when(mockChronology.getMillisOfDay(instant)).thenReturn(123456789L);
+        when(mockChronology.getYear(instant)).thenReturn(2009);
+        when(mockChronology.getDayOfMonth(instant, 2009)).thenReturn(15);
+        when(mockChronology.getDaysInYearMonth(2009, 6)).thenReturn(30);
+        when(mockChronology.getYearMonthDayMillis(2009, 6, 15)).thenReturn(1243723200000L);
+
+        assertEquals(1243723200000L + 123456789L, field.set(instant, 6));
+    }
+
+    @Test
+    public void testGetRangeDurationField() {
+        assertEquals(mockChronology.years(), field.getRangeDurationField());
+    }
+
+    @Test
+    public void testIsLeap() {
+        long instant = 1234567890000L;
+        when(mockChronology.getYear(instant)).thenReturn(2009);
+        when(mockChronology.isLeapYear(2009)).thenReturn(false);
+        when(mockChronology.getMonthOfYear(instant, 2009)).thenReturn(2);
+
+        assertFalse(field.isLeap(instant));
+    }
+
+    @Test
+    public void testGetLeapAmount() {
+        long instant = 1234567890000L;
+        when(mockChronology.getYear(instant)).thenReturn(2009);
+        when(mockChronology.isLeapYear(2009)).thenReturn(false);
+        when(mockChronology.getMonthOfYear(instant, 2009)).thenReturn(2);
+
+        assertEquals(0, field.getLeapAmount(instant));
+    }
+
+    @Test
+    public void testGetLeapDurationField() {
+        assertEquals(mockChronology.days(), field.getLeapDurationField());
+    }
+
+    @Test
+    public void testGetMinimumValue() {
+        assertEquals(1, field.getMinimumValue());
+    }
+
+    @Test
+    public void testGetMaximumValue() {
+        assertEquals(12, field.getMaximumValue());
+    }
+
+    @Test
+    public void testRoundFloor() {
+        long instant = 1234567890000L;
+        when(mockChronology.getYear(instant)).thenReturn(2009);
+        when(mockChronology.getMonthOfYear(instant, 2009)).thenReturn(5);
+        when(mockChronology.getYearMonthMillis(2009, 5)).thenReturn(1234567890000L);
+
+        assertEquals(1234567890000L, field.roundFloor(instant));
+    }
+
+    @Test
+    public void testRemainder() {
+        long instant = 1234567890000L;
+        when(mockChronology.getYear(instant)).thenReturn(2009);
+        when(mockChronology.getMonthOfYear(instant, 2009)).thenReturn(5);
+        when(mockChronology.getYearMonthMillis(2009, 5)).thenReturn(1234567890000L);
+
+        assertEquals(0L, field.remainder(instant));
+    }
+}
+```

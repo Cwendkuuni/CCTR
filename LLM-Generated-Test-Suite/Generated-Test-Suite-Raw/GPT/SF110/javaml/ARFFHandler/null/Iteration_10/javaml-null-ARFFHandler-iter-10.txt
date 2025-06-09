@@ -1,0 +1,122 @@
+Certainly! Below is a JUnit 4 test suite for the `ARFFHandler` class. This test suite aims to cover various scenarios for the `loadARFF` methods, including handling of files, class index, and parsing of data.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import org.junit.Before;
+import java.io.*;
+import net.sf.javaml.tools.data.ARFFHandler;
+import net.sf.javaml.core.Dataset;
+import net.sf.javaml.core.Instance;
+import java.util.Iterator;
+
+public class ARFFHandlerTest {
+
+    private File validArffFile;
+    private File invalidArffFile;
+    private File nonExistentFile;
+
+    @Before
+    public void setUp() throws IOException {
+        // Create a valid ARFF file
+        validArffFile = File.createTempFile("valid", ".arff");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(validArffFile))) {
+            writer.write("@relation test\n");
+            writer.write("@attribute attr1 numeric\n");
+            writer.write("@attribute attr2 numeric\n");
+            writer.write("@attribute class {A, B}\n");
+            writer.write("@data\n");
+            writer.write("1.0, 2.0, A\n");
+            writer.write("3.0, 4.0, B\n");
+        }
+
+        // Create an invalid ARFF file
+        invalidArffFile = File.createTempFile("invalid", ".arff");
+        try (BufferedWriter writer = new BufferedWriter(new FileWriter(invalidArffFile))) {
+            writer.write("@relation test\n");
+            writer.write("@attribute attr1 numeric\n");
+            writer.write("@attribute attr2 numeric\n");
+            writer.write("@data\n");
+            writer.write("1.0, 2.0, A\n");
+            writer.write("3.0, B\n"); // Invalid line
+        }
+
+        // Non-existent file
+        nonExistentFile = new File("nonexistent.arff");
+    }
+
+    @Test
+    public void testLoadARFFWithValidFile() throws FileNotFoundException {
+        Dataset dataset = ARFFHandler.loadARFF(validArffFile);
+        assertNotNull(dataset);
+        assertEquals(2, dataset.size());
+
+        Iterator<Instance> iterator = dataset.iterator();
+        Instance instance1 = iterator.next();
+        assertArrayEquals(new double[]{1.0, 2.0}, instance1.toArray(), 0.001);
+        assertEquals("A", instance1.classValue());
+
+        Instance instance2 = iterator.next();
+        assertArrayEquals(new double[]{3.0, 4.0}, instance2.toArray(), 0.001);
+        assertEquals("B", instance2.classValue());
+    }
+
+    @Test
+    public void testLoadARFFWithValidFileAndClassIndex() throws FileNotFoundException {
+        Dataset dataset = ARFFHandler.loadARFF(validArffFile, 2);
+        assertNotNull(dataset);
+        assertEquals(2, dataset.size());
+
+        Iterator<Instance> iterator = dataset.iterator();
+        Instance instance1 = iterator.next();
+        assertArrayEquals(new double[]{1.0, 2.0}, instance1.toArray(), 0.001);
+        assertEquals("A", instance1.classValue());
+
+        Instance instance2 = iterator.next();
+        assertArrayEquals(new double[]{3.0, 4.0}, instance2.toArray(), 0.001);
+        assertEquals("B", instance2.classValue());
+    }
+
+    @Test(expected = FileNotFoundException.class)
+    public void testLoadARFFWithNonExistentFile() throws FileNotFoundException {
+        ARFFHandler.loadARFF(nonExistentFile);
+    }
+
+    @Test
+    public void testLoadARFFWithInvalidFile() {
+        try {
+            ARFFHandler.loadARFF(invalidArffFile);
+            fail("Expected an exception to be thrown");
+        } catch (Exception e) {
+            assertTrue(e instanceof NumberFormatException || e instanceof IllegalArgumentException);
+        }
+    }
+
+    @Test
+    public void testLoadARFFWithNoClassIndex() throws FileNotFoundException {
+        Dataset dataset = ARFFHandler.loadARFF(validArffFile, -1);
+        assertNotNull(dataset);
+        assertEquals(2, dataset.size());
+
+        Iterator<Instance> iterator = dataset.iterator();
+        Instance instance1 = iterator.next();
+        assertArrayEquals(new double[]{1.0, 2.0, Double.NaN}, instance1.toArray(), 0.001);
+        assertNull(instance1.classValue());
+
+        Instance instance2 = iterator.next();
+        assertArrayEquals(new double[]{3.0, 4.0, Double.NaN}, instance2.toArray(), 0.001);
+        assertNull(instance2.classValue());
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method creates temporary ARFF files for testing, including a valid ARFF file, an invalid ARFF file, and a reference to a non-existent file.
+- **Tests**:
+  - `testLoadARFFWithValidFile`: Tests loading a valid ARFF file without specifying a class index.
+  - `testLoadARFFWithValidFileAndClassIndex`: Tests loading a valid ARFF file with a specified class index.
+  - `testLoadARFFWithNonExistentFile`: Tests loading a non-existent file, expecting a `FileNotFoundException`.
+  - `testLoadARFFWithInvalidFile`: Tests loading an invalid ARFF file, expecting an exception.
+  - `testLoadARFFWithNoClassIndex`: Tests loading a valid ARFF file with no class index, expecting `Double.NaN` for class values.
+
+This test suite should provide comprehensive coverage for the `ARFFHandler` class methods.

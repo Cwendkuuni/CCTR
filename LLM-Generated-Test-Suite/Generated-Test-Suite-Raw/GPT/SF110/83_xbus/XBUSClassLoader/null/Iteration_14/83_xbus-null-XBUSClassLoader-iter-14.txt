@@ -1,0 +1,100 @@
+To create a comprehensive JUnit 4 test suite for the `XBUSClassLoader` class, we need to test the public methods and any static methods that influence the behavior of the class. The main focus will be on the `getInstance` and `createClassLoader` methods, as well as the `addUrls` method indirectly through the class loader creation process. 
+
+Here's a JUnit 4 test suite for the `XBUSClassLoader` class:
+
+```java
+import net.sf.xbus.base.core.reflection.XBUSClassLoader;
+import org.junit.*;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.io.File;
+import java.lang.reflect.Field;
+import java.util.Vector;
+
+import static org.junit.Assert.*;
+
+public class XBUSClassLoaderTest {
+
+    private static final String XBUS_HOME = "test/resources/xbus_home";
+
+    @BeforeClass
+    public static void setUpBeforeClass() throws Exception {
+        // Set the XBUS_HOME environment variable for testing
+        System.setProperty("XBUS_HOME", XBUS_HOME);
+    }
+
+    @AfterClass
+    public static void tearDownAfterClass() throws Exception {
+        // Clean up the XBUS_HOME environment variable
+        System.clearProperty("XBUS_HOME");
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        // Reset the singleton instance before each test
+        Field field = XBUSClassLoader.class.getDeclaredField("mClassLoader");
+        field.setAccessible(true);
+        field.set(null, null);
+    }
+
+    @Test
+    public void testGetInstance() {
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parent);
+        assertNotNull("ClassLoader instance should not be null", classLoader);
+        assertTrue("ClassLoader should be an instance of URLClassLoader", classLoader instanceof URLClassLoader);
+    }
+
+    @Test
+    public void testSingletonBehavior() {
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader firstInstance = XBUSClassLoader.getInstance(parent);
+        XBUSClassLoader secondInstance = XBUSClassLoader.getInstance(parent);
+        assertSame("Both instances should be the same", firstInstance, secondInstance);
+    }
+
+    @Test
+    public void testAddUrls() throws Exception {
+        Vector<URL> urls = new Vector<>();
+        File libDir = new File(XBUS_HOME + "/lib");
+        libDir.mkdirs();
+        File testJar = new File(libDir, "test.jar");
+        testJar.createNewFile();
+
+        // Invoke the private addUrls method
+        Method addUrlsMethod = XBUSClassLoader.class.getDeclaredMethod("addUrls", Vector.class, String.class);
+        addUrlsMethod.setAccessible(true);
+        addUrlsMethod.invoke(null, urls, libDir.getAbsolutePath());
+
+        assertEquals("URLs vector should contain one URL", 1, urls.size());
+        assertTrue("URL should point to the test.jar file", urls.get(0).toString().endsWith("test.jar"));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testCreateClassLoaderWithoutXBUSHome() throws Exception {
+        System.clearProperty("XBUS_HOME");
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader.getInstance(parent);
+    }
+
+    @Test
+    public void testCreateClassLoaderWithInvalidURL() throws Exception {
+        // Create a file that is not a jar or zip to test invalid URL handling
+        File invalidFile = new File(XBUS_HOME + "/lib", "invalid.txt");
+        invalidFile.createNewFile();
+
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parent);
+
+        assertNotNull("ClassLoader instance should not be null", classLoader);
+    }
+}
+```
+
+### Explanation:
+- **Environment Setup**: The `XBUS_HOME` property is set up before the tests and cleared afterward to simulate the environment the class expects.
+- **Singleton Behavior**: Tests ensure that `getInstance` returns the same instance on multiple calls.
+- **URL Addition**: The `addUrls` method is indirectly tested by checking if the class loader is correctly initialized with URLs from the specified directories.
+- **Error Handling**: Tests check the behavior when `XBUS_HOME` is not set and when invalid files are present in the directories.
+
+This test suite assumes that the `Constants.XBUS_HOME` is set via a system property for testing purposes. Adjust the setup as necessary to fit the actual environment and dependencies.

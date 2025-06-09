@@ -1,0 +1,148 @@
+To create a comprehensive JUnit 4 test suite for the `NamespaceStack` class, we need to test all public methods and ensure that edge cases are covered. Below is a test suite that covers the functionality of the `NamespaceStack` class:
+
+```java
+import org.jdom2.Attribute;
+import org.jdom2.Element;
+import org.jdom2.Namespace;
+import org.jdom2.util.NamespaceStack;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Iterator;
+import java.util.NoSuchElementException;
+
+import static org.junit.Assert.*;
+
+public class NamespaceStackTest {
+
+    private NamespaceStack namespaceStack;
+    private Namespace ns1;
+    private Namespace ns2;
+    private Namespace ns3;
+
+    @Before
+    public void setUp() {
+        namespaceStack = new NamespaceStack();
+        ns1 = Namespace.getNamespace("prefix1", "uri1");
+        ns2 = Namespace.getNamespace("prefix2", "uri2");
+        ns3 = Namespace.getNamespace("prefix3", "uri3");
+    }
+
+    @Test
+    public void testPushElement() {
+        Element element = new Element("element", ns1);
+        element.addNamespaceDeclaration(ns2);
+        namespaceStack.push(element);
+
+        assertTrue(namespaceStack.isInScope(ns1));
+        assertTrue(namespaceStack.isInScope(ns2));
+        assertFalse(namespaceStack.isInScope(ns3));
+    }
+
+    @Test
+    public void testPushAttribute() {
+        Attribute attribute = new Attribute("attr", "value", ns1);
+        namespaceStack.push(attribute);
+
+        assertTrue(namespaceStack.isInScope(ns1));
+        assertFalse(namespaceStack.isInScope(ns2));
+    }
+
+    @Test
+    public void testPop() {
+        Element element = new Element("element", ns1);
+        namespaceStack.push(element);
+        namespaceStack.pop();
+
+        assertFalse(namespaceStack.isInScope(ns1));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testPopEmptyStack() {
+        namespaceStack.pop();
+    }
+
+    @Test
+    public void testAddedForward() {
+        Element element = new Element("element", ns1);
+        element.addNamespaceDeclaration(ns2);
+        namespaceStack.push(element);
+
+        Iterator<Namespace> iterator = namespaceStack.addedForward().iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals(ns1, iterator.next());
+        assertEquals(ns2, iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testAddedReverse() {
+        Element element = new Element("element", ns1);
+        element.addNamespaceDeclaration(ns2);
+        namespaceStack.push(element);
+
+        Iterator<Namespace> iterator = namespaceStack.addedReverse().iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals(ns2, iterator.next());
+        assertEquals(ns1, iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testIterator() {
+        Element element = new Element("element", ns1);
+        namespaceStack.push(element);
+
+        Iterator<Namespace> iterator = namespaceStack.iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals(ns1, iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testGetScope() {
+        Element element = new Element("element", ns1);
+        namespaceStack.push(element);
+
+        Namespace[] scope = namespaceStack.getScope();
+        assertEquals(1, scope.length);
+        assertEquals(ns1, scope[0]);
+    }
+
+    @Test
+    public void testIsInScope() {
+        Element element = new Element("element", ns1);
+        namespaceStack.push(element);
+
+        assertTrue(namespaceStack.isInScope(ns1));
+        assertFalse(namespaceStack.isInScope(ns2));
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testIteratorNoSuchElementException() {
+        Iterator<Namespace> iterator = namespaceStack.iterator();
+        iterator.next();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testIteratorRemoveUnsupportedOperationException() {
+        Iterator<Namespace> iterator = namespaceStack.iterator();
+        iterator.remove();
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `NamespaceStack` and some `Namespace` instances for use in the tests.
+- **Test Methods**:
+  - `testPushElement`: Tests pushing an `Element` with namespaces.
+  - `testPushAttribute`: Tests pushing an `Attribute` with a namespace.
+  - `testPop`: Tests popping the stack and checks if namespaces are correctly removed.
+  - `testPopEmptyStack`: Tests popping an empty stack, expecting an `IllegalStateException`.
+  - `testAddedForward` and `testAddedReverse`: Test the `addedForward` and `addedReverse` methods.
+  - `testIterator`: Tests the iterator functionality.
+  - `testGetScope`: Tests the `getScope` method.
+  - `testIsInScope`: Tests the `isInScope` method.
+  - **Exception Tests**: Ensure exceptions are thrown for invalid operations like over-iterating or removing from the iterator.
+
+This test suite should cover the main functionalities and edge cases of the `NamespaceStack` class.

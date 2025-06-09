@@ -1,0 +1,96 @@
+package org.jsoup.nodes;
+
+import org.jsoup.nodes.Entities;
+import org.jsoup.nodes.Entities.EscapeMode;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class EntitiesTest {
+
+    private static CharsetEncoder encoder;
+
+    @BeforeClass
+    public static void setUp() {
+        encoder = StandardCharsets.UTF_8.newEncoder();
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertTrue(Entities.isNamedEntity("amp"));
+        assertFalse(Entities.isNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertEquals(Character.valueOf('&'), Entities.getCharacterByName("amp"));
+        assertNull(Entities.getCharacterByName("nonexistent"));
+    }
+
+    @Test
+    public void testEscape() {
+        // Mock Document.OutputSettings
+        Document.OutputSettings mockOutputSettings = mock(Document.OutputSettings.class);
+        when(mockOutputSettings.encoder()).thenReturn(encoder);
+        when(mockOutputSettings.escapeMode()).thenReturn(EscapeMode.base);
+
+        String input = "<html>&</html>";
+        String expected = "&lt;html&gt;&amp;&lt;/html&gt;";
+        assertEquals(expected, Entities.escape(input, mockOutputSettings));
+    }
+
+    @Test
+    public void testEscapeWithEncoderAndEscapeMode() {
+        String input = "<html>&</html>";
+        String expected = "&lt;html&gt;&amp;&lt;/html&gt;";
+        assertEquals(expected, Entities.escape(input, encoder, EscapeMode.base));
+    }
+
+    @Test
+    public void testUnescape() {
+        String input = "&lt;html&gt;&amp;&lt;/html&gt;";
+        String expected = "<html>&</html>";
+        assertEquals(expected, Entities.unescape(input));
+    }
+
+    @Test
+    public void testUnescapeStrict() {
+        String input = "&lt;html&gt;&amp;&lt;/html&gt;";
+        String expected = "<html>&</html>";
+        assertEquals(expected, Entities.unescape(input, true));
+    }
+
+    @Test
+    public void testUnescapeNonStrict() {
+        String input = "&lt;html&gt;&amp&lt;/html&gt";
+        String expected = "<html>&<html>";
+        assertEquals(expected, Entities.unescape(input, false));
+    }
+
+    @Test
+    public void testEscapeModeGetMap() {
+        Map<Character, String> xhtmlMap = EscapeMode.xhtml.getMap();
+        assertNotNull(xhtmlMap);
+        assertTrue(xhtmlMap.containsKey('<'));
+        assertEquals("lt", xhtmlMap.get('<'));
+
+        Map<Character, String> baseMap = EscapeMode.base.getMap();
+        assertNotNull(baseMap);
+        assertTrue(baseMap.containsKey('<'));
+        assertEquals("lt", baseMap.get('<'));
+
+        Map<Character, String> extendedMap = EscapeMode.extended.getMap();
+        assertNotNull(extendedMap);
+        assertTrue(extendedMap.containsKey('<'));
+        assertEquals("lt", extendedMap.get('<'));
+    }
+}

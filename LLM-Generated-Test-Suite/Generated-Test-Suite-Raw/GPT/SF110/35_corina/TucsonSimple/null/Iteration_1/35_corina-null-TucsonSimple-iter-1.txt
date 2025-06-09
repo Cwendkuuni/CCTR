@@ -1,0 +1,110 @@
+Certainly! Below is a JUnit 4 test suite for the `TucsonSimple` class. This test suite aims to cover the public methods and some of the private methods through reflection. Note that testing private methods directly is generally not recommended, but it can be done for completeness in this context.
+
+```java
+import corina.formats.TucsonSimple;
+import corina.Sample;
+import corina.Year;
+import corina.Range;
+import corina.WrongFiletypeException;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+    private Sample sample;
+
+    @Before
+    public void setUp() {
+        tucsonSimple = new TucsonSimple();
+        sample = new Sample();
+        sample.meta = new HashMap<>();
+        sample.data = new HashMap<>();
+        sample.count = new HashMap<>();
+        sample.range = new Range(new Year(2000), new Year(2005));
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("format.tucsonsimple", tucsonSimple.toString());
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        assertEquals(".RWL", tucsonSimple.getDefaultExtension());
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        BufferedReader reader = new BufferedReader(new StringReader(""));
+        tucsonSimple.load(reader);
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        StringWriter writer = new StringWriter();
+        BufferedWriter bufferedWriter = new BufferedWriter(writer);
+        tucsonSimple.save(sample, bufferedWriter);
+        bufferedWriter.flush();
+        String output = writer.toString();
+        assertNotNull(output);
+        assertFalse(output.isEmpty());
+    }
+
+    @Test
+    public void testMake6digitCode() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("make6digitCode", Sample.class);
+        method.setAccessible(true);
+
+        sample.meta.put("id", "123");
+        String code = (String) method.invoke(tucsonSimple, sample);
+        assertEquals("123   ", code);
+
+        sample.meta.put("id", "1234567");
+        code = (String) method.invoke(tucsonSimple, sample);
+        assertEquals("123456", code);
+
+        sample.meta.remove("id");
+        code = (String) method.invoke(tucsonSimple, sample);
+        assertEquals("000000", code);
+    }
+
+    @Test
+    public void testComputeRange() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("computeRange", Sample.class);
+        method.setAccessible(true);
+
+        Range range = (Range) method.invoke(tucsonSimple, sample);
+        assertEquals(sample.range, range);
+
+        sample.range = new Range(new Year(-5000), new Year(2000));
+        range = (Range) method.invoke(tucsonSimple, sample);
+        assertEquals(new Range(new Year(3000), new Year(10000)), range);
+
+        sample.range = new Range(new Year(-9000), new Year(-8000));
+        range = (Range) method.invoke(tucsonSimple, sample);
+        assertEquals(new Range(new Year(1001), new Year(2001)), range);
+    }
+}
+```
+
+### Explanation:
+- **`setUp` Method**: Initializes the `TucsonSimple` and `Sample` objects before each test.
+- **`testToString` Method**: Verifies the `toString` method returns the expected string.
+- **`testGetDefaultExtension` Method**: Checks that the default file extension is ".RWL".
+- **`testLoad` Method**: Ensures that calling `load` throws a `WrongFiletypeException`.
+- **`testSave` Method**: Tests the `save` method by writing to a `StringWriter` and checking the output.
+- **`testMake6digitCode` Method**: Uses reflection to test the private `make6digitCode` method with different scenarios.
+- **`testComputeRange` Method**: Uses reflection to test the private `computeRange` method with different date ranges.
+
+This test suite provides comprehensive coverage for the `TucsonSimple` class, including both public and private methods.

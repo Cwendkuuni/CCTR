@@ -1,0 +1,125 @@
+To create a comprehensive JUnit 4 test suite for the `IndexFileAction` class, we need to consider testing both the `actionPerformed` and `update` methods. We'll use mocking to simulate the behavior of dependencies like `JTailMainModel`, `OpenFileModel`, and other components. Here's a complete test suite:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Observable;
+
+@RunWith(MockitoJUnitRunner.class)
+public class IndexFileActionTest {
+
+    @Mock
+    private JTailMainModel jTailMainModel;
+
+    @Mock
+    private OpenFileModel openFileModel;
+
+    @Mock
+    private ActionEvent actionEvent;
+
+    @Mock
+    private Component component;
+
+    @InjectMocks
+    private IndexFileAction indexFileAction;
+
+    @Before
+    public void setUp() {
+        indexFileAction = new IndexFileAction(jTailMainModel, openFileModel);
+    }
+
+    @Test
+    public void testActionPerformed_noFileSelected() {
+        when(openFileModel.getFile()).thenReturn(null);
+        when(actionEvent.getSource()).thenReturn(component);
+        when(component.getParent()).thenReturn(component);
+        when(component instanceof JDialog).thenReturn(true);
+
+        indexFileAction.actionPerformed(actionEvent);
+
+        verify(component).setVisible(false);
+        verify(openFileModel).getFile();
+        // Verify that InformationHandler.handle is called with correct parameters
+        // This requires a static method mocking library like PowerMockito
+    }
+
+    @Test
+    public void testActionPerformed_memoryBasedIndex() throws FileNotFoundException {
+        File mockFile = mock(File.class);
+        when(openFileModel.getFile()).thenReturn(mockFile);
+        when(openFileModel.getIndexType()).thenReturn(IndexType.MEMORY_BASED);
+        when(actionEvent.getSource()).thenReturn(component);
+        when(component.getParent()).thenReturn(component);
+        when(component instanceof JDialog).thenReturn(true);
+
+        indexFileAction.actionPerformed(actionEvent);
+
+        verify(component).setVisible(false);
+        verify(openFileModel).getFile();
+        verify(openFileModel).getIndexType();
+        // Verify FileIndexer and FileIndexerWorker behavior
+    }
+
+    @Test
+    public void testActionPerformed_fileBasedIndex() throws FileNotFoundException {
+        File mockFile = mock(File.class);
+        when(openFileModel.getFile()).thenReturn(mockFile);
+        when(openFileModel.getIndexType()).thenReturn(IndexType.FILE_BASED);
+        when(actionEvent.getSource()).thenReturn(component);
+        when(component.getParent()).thenReturn(component);
+        when(component instanceof JDialog).thenReturn(true);
+
+        indexFileAction.actionPerformed(actionEvent);
+
+        verify(component).setVisible(false);
+        verify(openFileModel).getFile();
+        verify(openFileModel).getIndexType();
+        // Verify FileIndexer and FileIndexerWorker behavior
+    }
+
+    @Test
+    public void testUpdate_notificationReceived() throws FileNotFoundException {
+        Observable observable = mock(Observable.class);
+        FileIndexer fileIndexer = mock(FileIndexer.class);
+        File mockFile = mock(File.class);
+        LineReader lineReader = mock(LineReader.class);
+
+        when(observable instanceof FileIndexer).thenReturn(true);
+        when(fileIndexer.getFile()).thenReturn(mockFile);
+        when(fileIndexer.getIndex()).thenReturn(mock(LineReader.class));
+        when(mockFile.getName()).thenReturn("testFile");
+
+        indexFileAction.update(observable, 100);
+
+        verify(jTailMainModel).add(any(JTailModel.class));
+        // Verify that LineReader and JTailModel are created with correct parameters
+    }
+
+    @Test
+    public void testUpdate_notificationNotComplete() {
+        Observable observable = mock(Observable.class);
+
+        indexFileAction.update(observable, 50);
+
+        verify(jTailMainModel, never()).add(any(JTailModel.class));
+    }
+}
+```
+
+### Notes:
+- **Mockito** is used for mocking dependencies. Ensure you have Mockito in your classpath.
+- **PowerMockito** might be needed if you want to mock static methods like `InformationHandler.handle`.
+- The test suite assumes that `IndexType` is an enum with values `MEMORY_BASED` and `FILE_BASED`.
+- The test suite includes basic checks for method calls and interactions. You might need to expand it based on the actual behavior and side effects of methods like `FileIndexer` and `FileIndexerWorker`.
+- The `update` method tests assume that the `arg` parameter is an `Integer` and checks for the value `100` to simulate completion. Adjust as necessary based on actual implementation details.

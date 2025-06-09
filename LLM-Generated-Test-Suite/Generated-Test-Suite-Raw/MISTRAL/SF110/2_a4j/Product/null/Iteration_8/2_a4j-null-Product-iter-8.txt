@@ -1,0 +1,137 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import net.kencochrane.a4j.DAO.Product;
+import net.kencochrane.a4j.file.FileUtil;
+import net.kencochrane.a4j.beans.*;
+import com.wutka.jox.JOXBeanInputStream;
+
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class ProductTest {
+
+    @InjectMocks
+    private Product product;
+
+    @Mock
+    private FileUtil fileUtil;
+
+    @Mock
+    private JOXBeanInputStream joxIn;
+
+    @Mock
+    private FileInputStream fileIn;
+
+    @Mock
+    private ProductInfo productInfoBean;
+
+    @Mock
+    private ProductDetails productDetails;
+
+    @Mock
+    private Accessories accessories;
+
+    @Mock
+    private Search search;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void testGetProduct_FileNotFound() {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        when(fileUtil.fetchASINFile(asin, "heavy", offer, page)).thenReturn(null);
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetProduct_Success() throws Exception {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        when(fileUtil.fetchASINFile(asin, "heavy", offer, page)).thenReturn(fileIn);
+        when(joxIn.readObject(ProductInfo.class)).thenReturn(productInfoBean);
+        when(productInfoBean.getDetails()).thenReturn(new ProductDetails[]{productDetails});
+        when(productDetails.getAccessories()).thenReturn(accessories);
+        when(accessories.getAccessoryArray()).thenReturn(new ArrayList<>());
+        when(search.SimilaritesSearch(asin, "1")).thenReturn(productInfoBean);
+        when(productInfoBean.getProductsArrayList()).thenReturn(new ArrayList<>());
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNotNull(result);
+        verify(fileIn, times(1)).close();
+        verify(joxIn, times(1)).close();
+    }
+
+    @Test
+    public void testGetProduct_AccessoriesFound() throws Exception {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        ArrayList<ProductDetails> accessoryArray = new ArrayList<>();
+        accessoryArray.add(productDetails);
+
+        when(fileUtil.fetchASINFile(asin, "heavy", offer, page)).thenReturn(fileIn);
+        when(joxIn.readObject(ProductInfo.class)).thenReturn(productInfoBean);
+        when(productInfoBean.getDetails()).thenReturn(new ProductDetails[]{productDetails});
+        when(productDetails.getAccessories()).thenReturn(accessories);
+        when(accessories.getAccessoryArray()).thenReturn(accessoryArray);
+        when(fileUtil.fetchAccessories(asin, accessoryArray)).thenReturn(fileIn);
+        when(productInfoBean.getProductsArrayList()).thenReturn(new ArrayList<>());
+        when(search.SimilaritesSearch(asin, "1")).thenReturn(productInfoBean);
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNotNull(result);
+        verify(fileIn, times(2)).close();
+        verify(joxIn, times(2)).close();
+    }
+
+    @Test
+    public void testGetProduct_SimilarItemsFound() throws Exception {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        ArrayList<ProductDetails> detailsArray = new ArrayList<>();
+        detailsArray.add(productDetails);
+
+        when(fileUtil.fetchASINFile(asin, "heavy", offer, page)).thenReturn(fileIn);
+        when(joxIn.readObject(ProductInfo.class)).thenReturn(productInfoBean);
+        when(productInfoBean.getDetails()).thenReturn(new ProductDetails[]{productDetails});
+        when(productDetails.getAccessories()).thenReturn(accessories);
+        when(accessories.getAccessoryArray()).thenReturn(new ArrayList<>());
+        when(search.SimilaritesSearch(asin, "1")).thenReturn(productInfoBean);
+        when(productInfoBean.getProductsArrayList()).thenReturn(detailsArray);
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNotNull(result);
+        verify(fileIn, times(1)).close();
+        verify(joxIn, times(1)).close();
+    }
+}
+```

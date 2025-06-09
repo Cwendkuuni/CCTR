@@ -1,0 +1,117 @@
+To create a comprehensive JUnit 4 test suite for the `FontChooserDialog` class, we need to test the constructor, the `setVisible` method, and the `reset` method. We will also test the behavior of the `Closer` and `DisposeOnClose` inner classes. Since `FontChooserDialog` is a GUI component, we will use `SwingUtilities.invokeAndWait` to ensure that GUI updates are performed on the Event Dispatch Thread (EDT).
+
+Here's a complete JUnit 4 test suite for the `FontChooserDialog` class:
+
+```java
+import org.junit.*;
+import static org.junit.Assert.*;
+import org.mockito.*;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class FontChooserDialogTest {
+
+    private FontChooserDialog dialog;
+    private JFontChooser mockChooserPane;
+    private ActionListener mockOkListener;
+    private ActionListener mockCancelListener;
+
+    @Before
+    public void setUp() throws Exception {
+        mockChooserPane = Mockito.mock(JFontChooser.class);
+        mockOkListener = Mockito.mock(ActionListener.class);
+        mockCancelListener = Mockito.mock(ActionListener.class);
+
+        SwingUtilities.invokeAndWait(() -> {
+            dialog = new FontChooserDialog(
+                null, 
+                "Test Dialog", 
+                true, 
+                mockChooserPane, 
+                mockOkListener, 
+                mockCancelListener
+            );
+        });
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(dialog);
+        assertEquals("Test Dialog", dialog.getTitle());
+        assertTrue(dialog.isModal());
+    }
+
+    @Test
+    public void testSetVisibleTrue() throws Exception {
+        Font mockFont = new Font("Arial", Font.PLAIN, 12);
+        Mockito.when(mockChooserPane.getFont()).thenReturn(mockFont);
+
+        SwingUtilities.invokeAndWait(() -> {
+            dialog.setVisible(true);
+        });
+
+        assertEquals(mockFont, dialog.initialFont);
+    }
+
+    @Test
+    public void testSetVisibleFalse() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            dialog.setVisible(false);
+        });
+
+        assertFalse(dialog.isVisible());
+    }
+
+    @Test
+    public void testReset() throws Exception {
+        Font initialFont = new Font("Arial", Font.PLAIN, 12);
+        Mockito.when(mockChooserPane.getFont()).thenReturn(initialFont);
+
+        SwingUtilities.invokeAndWait(() -> {
+            dialog.setVisible(true);
+            dialog.reset();
+        });
+
+        Mockito.verify(mockChooserPane).setFont(initialFont);
+    }
+
+    @Test
+    public void testCloserWindowClosing() throws Exception {
+        Window mockWindow = Mockito.mock(Window.class);
+        WindowEvent mockEvent = new WindowEvent(mockWindow, WindowEvent.WINDOW_CLOSING);
+
+        FontChooserDialog.Closer closer = new FontChooserDialog.Closer();
+        closer.windowClosing(mockEvent);
+
+        Mockito.verify(mockWindow).setVisible(false);
+    }
+
+    @Test
+    public void testDisposeOnCloseComponentHidden() throws Exception {
+        Window mockWindow = Mockito.mock(Window.class);
+        ComponentEvent mockEvent = new ComponentEvent(mockWindow, ComponentEvent.COMPONENT_HIDDEN);
+
+        FontChooserDialog.DisposeOnClose disposeOnClose = new FontChooserDialog.DisposeOnClose();
+        disposeOnClose.componentHidden(mockEvent);
+
+        Mockito.verify(mockWindow).dispose();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        SwingUtilities.invokeAndWait(() -> {
+            dialog.dispose();
+        });
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: We use Mockito to create mock objects for `JFontChooser`, `ActionListener`, and `Window`.
+- **GUI Testing**: We use `SwingUtilities.invokeAndWait` to ensure that GUI operations are performed on the EDT.
+- **Constructor Test**: Verifies that the dialog is created with the correct title and modality.
+- **Visibility Tests**: Check the behavior of the `setVisible` method for both `true` and `false` values.
+- **Reset Test**: Ensures that the `reset` method sets the font back to the initial font.
+- **Inner Classes Tests**: Verify the behavior of the `Closer` and `DisposeOnClose` inner classes.
+- **Tear Down**: Disposes of the dialog after each test to clean up resources.

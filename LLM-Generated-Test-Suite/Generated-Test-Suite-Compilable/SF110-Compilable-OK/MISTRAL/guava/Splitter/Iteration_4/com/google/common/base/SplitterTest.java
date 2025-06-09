@@ -1,0 +1,154 @@
+package com.google.common.base;
+
+import com.google.common.base.CharMatcher;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Splitter;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+public class SplitterTest {
+
+    private Splitter splitter;
+
+    @Before
+    public void setUp() {
+        splitter = Splitter.on(',');
+    }
+
+    @Test
+    public void testOnChar() {
+        Splitter splitter = Splitter.on(';');
+        Iterable<String> result = splitter.split("a;b;c");
+        Iterator<String> iterator = result.iterator();
+        assertEquals("a", iterator.next());
+        assertEquals("b", iterator.next());
+        assertEquals("c", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testOnCharMatcher() {
+        Splitter splitter = Splitter.on(CharMatcher.is(';'));
+        Iterable<String> result = splitter.split("a;b;c");
+        Iterator<String> iterator = result.iterator();
+        assertEquals("a", iterator.next());
+        assertEquals("b", iterator.next());
+        assertEquals("c", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testOnString() {
+        Splitter splitter = Splitter.on(";");
+        Iterable<String> result = splitter.split("a;b;c");
+        Iterator<String> iterator = result.iterator();
+        assertEquals("a", iterator.next());
+        assertEquals("b", iterator.next());
+        assertEquals("c", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testOnPattern() {
+        Splitter splitter = Splitter.onPattern(";");
+        Iterable<String> result = splitter.split("a;b;c");
+        Iterator<String> iterator = result.iterator();
+        assertEquals("a", iterator.next());
+        assertEquals("b", iterator.next());
+        assertEquals("c", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testFixedLength() {
+        Splitter splitter = Splitter.fixedLength(2);
+        Iterable<String> result = splitter.split("abcdef");
+        Iterator<String> iterator = result.iterator();
+        assertEquals("ab", iterator.next());
+        assertEquals("cd", iterator.next());
+        assertEquals("ef", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testOmitEmptyStrings() {
+        Splitter splitter = Splitter.on(',').omitEmptyStrings();
+        Iterable<String> result = splitter.split(",a,,b,");
+        Iterator<String> iterator = result.iterator();
+        assertEquals("a", iterator.next());
+        assertEquals("b", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testLimit() {
+        Splitter splitter = Splitter.on(',').limit(2);
+        Iterable<String> result = splitter.split("a,b,c,d");
+        Iterator<String> iterator = result.iterator();
+        assertEquals("a", iterator.next());
+        assertEquals("b", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testTrimResults() {
+        Splitter splitter = Splitter.on(',').trimResults();
+        Iterable<String> result = splitter.split(" a , b , c ");
+        Iterator<String> iterator = result.iterator();
+        assertEquals("a", iterator.next());
+        assertEquals("b", iterator.next());
+        assertEquals("c", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testTrimResultsWithCharMatcher() {
+        Splitter splitter = Splitter.on(',').trimResults(CharMatcher.is(' '));
+        Iterable<String> result = splitter.split(" a , b , c ");
+        Iterator<String> iterator = result.iterator();
+        assertEquals("a", iterator.next());
+        assertEquals("b", iterator.next());
+        assertEquals("c", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testSplitToList() {
+        List<String> result = splitter.splitToList("a,b,c");
+        assertEquals(Arrays.asList("a", "b", "c"), result);
+    }
+
+    @Test
+    public void testWithKeyValueSeparatorString() {
+        Splitter.MapSplitter mapSplitter = splitter.withKeyValueSeparator("=");
+        Map<String, String> result = mapSplitter.split("a=1,b=2,c=3");
+        assertEquals("1", result.get("a"));
+        assertEquals("2", result.get("b"));
+        assertEquals("3", result.get("c"));
+    }
+
+    @Test
+    public void testWithKeyValueSeparatorChar() {
+        Splitter.MapSplitter mapSplitter = splitter.withKeyValueSeparator('=');
+        Map<String, String> result = mapSplitter.split("a=1,b=2,c=3");
+        assertEquals("1", result.get("a"));
+        assertEquals("2", result.get("b"));
+        assertEquals("3", result.get("c"));
+    }
+
+    @Test
+    public void testWithKeyValueSeparatorSplitter() {
+        Splitter keyValueSplitter = Splitter.on('=');
+        Splitter.MapSplitter mapSplitter = splitter.withKeyValueSeparator(keyValueSplitter);
+        Map<String, String> result = mapSplitter.split("a=1,b=2,c=3");
+        assertEquals("1", result.get("a"));
+        assertEquals("2", result.get("b"));
+        assertEquals("3", result.get("c"));
+    }
+}

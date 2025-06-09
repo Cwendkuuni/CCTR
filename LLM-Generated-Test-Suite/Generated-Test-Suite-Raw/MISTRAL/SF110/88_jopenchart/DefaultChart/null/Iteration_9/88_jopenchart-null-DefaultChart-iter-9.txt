@@ -1,0 +1,108 @@
+```java
+package de.progra.charting;
+
+import de.progra.charting.model.*;
+import de.progra.charting.render.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.awt.*;
+import java.util.Collection;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class DefaultChartTest {
+
+    @Mock
+    private ChartDataModel mockModel;
+
+    @Mock
+    private Title mockTitle;
+
+    @Mock
+    private Legend mockLegend;
+
+    @Mock
+    private CoordSystem mockCoordSystem;
+
+    @Mock
+    private AbstractChartRenderer mockRenderer;
+
+    @Mock
+    private Collection<AbstractChartRenderer> mockRenderers;
+
+    private DefaultChart defaultChart;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        defaultChart = new DefaultChart(mockModel, "Test Chart");
+    }
+
+    @Test
+    public void testDefaultChartConstructor() {
+        assertNotNull(defaultChart);
+        assertEquals("Test Chart", defaultChart.getTitle().getText());
+        assertNotNull(defaultChart.getRowColorModel());
+        assertNotNull(defaultChart.getLegend());
+    }
+
+    @Test
+    public void testDefaultChartConstructorWithCoord() {
+        DefaultChart chartWithCoord = new DefaultChart(mockModel, "Test Chart", DefaultChart.LINEAR_X_LINEAR_Y);
+        assertNotNull(chartWithCoord);
+        assertNotNull(chartWithCoord.getCoordSystem());
+    }
+
+    @Test
+    public void testDefaultChartConstructorWithCoordAndAxes() {
+        DefaultChart chartWithCoordAndAxes = new DefaultChart(mockModel, "Test Chart", DefaultChart.LINEAR_X_LINEAR_Y, "X-Axis", "Y-Axis");
+        assertNotNull(chartWithCoordAndAxes);
+        assertEquals("X-Axis", chartWithCoordAndAxes.getCoordSystem().getXAxisUnit());
+        assertEquals("Y-Axis", chartWithCoordAndAxes.getCoordSystem().getYAxisUnit());
+    }
+
+    @Test
+    public void testGetPreferredSize() {
+        assertNull(defaultChart.getPreferredSize());
+    }
+
+    @Test
+    public void testRender() {
+        Graphics2D mockGraphics = mock(Graphics2D.class);
+        Rectangle bounds = new Rectangle(0, 0, 800, 600);
+        defaultChart.setBounds(bounds);
+
+        when(mockTitle.getPreferredSize()).thenReturn(new Dimension(100, 50));
+        when(mockLegend.getPreferredSize()).thenReturn(new Dimension(200, 100));
+        when(mockCoordSystem.getPreferredSize()).thenReturn(new Dimension(600, 500));
+        when(defaultChart.getChartRenderer().values()).thenReturn(mockRenderers);
+        when(mockRenderers.isEmpty()).thenReturn(false);
+        when(mockRenderers.iterator()).thenReturn(Collections.singleton(mockRenderer).iterator());
+
+        defaultChart.setTitle(mockTitle);
+        defaultChart.setLegend(mockLegend);
+        defaultChart.setCoordSystem(mockCoordSystem);
+
+        defaultChart.render(mockGraphics);
+
+        verify(mockGraphics).setColor(Color.white);
+        verify(mockGraphics).fillRect(0, 0, 800, 600);
+        verify(mockGraphics).setColor(Color.black);
+        verify(mockTitle).setBounds(any(Rectangle.class));
+        verify(mockTitle).render(mockGraphics);
+        verify(mockLegend).setBounds(any(Rectangle.class));
+        verify(mockLegend).render(mockGraphics);
+        verify(mockCoordSystem).setBounds(any(Rectangle.class));
+        verify(mockCoordSystem).render(mockGraphics);
+        verify(mockRenderer).setBounds(any(Rectangle.class));
+        verify(mockRenderer).render(mockGraphics);
+    }
+}
+```

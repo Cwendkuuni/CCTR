@@ -1,0 +1,127 @@
+```java
+package net.sf.xbus.base.core.reflection;
+
+import net.sf.xbus.base.core.Constants;
+import net.sf.xbus.base.core.trace.Trace;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Vector;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Constants.class, Trace.class, System.class})
+public class XBUSClassLoaderTest {
+
+    private ClassLoader parentClassLoader;
+
+    @Before
+    public void setUp() {
+        parentClassLoader = mock(ClassLoader.class);
+        PowerMockito.mockStatic(Constants.class);
+        PowerMockito.mockStatic(Trace.class);
+        PowerMockito.mockStatic(System.class);
+    }
+
+    @After
+    public void tearDown() {
+        XBUSClassLoader.mClassLoader = null;
+    }
+
+    @Test
+    public void testGetInstance() {
+        when(Constants.XBUS_HOME).thenReturn("test/path");
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parentClassLoader);
+        assertNotNull(classLoader);
+        assertEquals(parentClassLoader, classLoader.getParent());
+    }
+
+    @Test
+    public void testCreateClassLoader() {
+        when(Constants.XBUS_HOME).thenReturn("test/path");
+        XBUSClassLoader classLoader = XBUSClassLoader.createClassLoader(parentClassLoader);
+        assertNotNull(classLoader);
+        assertEquals(parentClassLoader, classLoader.getParent());
+    }
+
+    @Test
+    public void testCreateClassLoaderWithNullXBUS_HOME() {
+        when(Constants.XBUS_HOME).thenReturn(null);
+        doNothing().when(Trace.class);
+        Trace.error("XBUS_HOME has not been set!");
+        PowerMockito.doNothing().when(System.class);
+        System.exit(1);
+
+        try {
+            XBUSClassLoader.createClassLoader(parentClassLoader);
+            fail("Expected System.exit(1) to be called");
+        } catch (Exception e) {
+            // Expected exception due to System.exit(1)
+        }
+    }
+
+    @Test
+    public void testAddUrls() {
+        Vector<URL> urls = new Vector<>();
+        File mockFile = mock(File.class);
+        File[] mockFiles = {mockFile};
+
+        when(mockFile.isFile()).thenReturn(true);
+        when(mockFile.getName()).thenReturn("test.jar");
+        try {
+            when(mockFile.toURL()).thenReturn(new URL("file://test.jar"));
+        } catch (MalformedURLException e) {
+            fail("Unexpected MalformedURLException");
+        }
+
+        File mockDir = mock(File.class);
+        when(mockDir.listFiles()).thenReturn(mockFiles);
+
+        XBUSClassLoader.addUrls(urls, "test/path");
+
+        assertEquals(1, urls.size());
+        assertEquals(new URL("file://test.jar"), urls.get(0));
+    }
+
+    @Test
+    public void testAddUrlsWithMalformedURLException() {
+        Vector<URL> urls = new Vector<>();
+        File mockFile = mock(File.class);
+        File[] mockFiles = {mockFile};
+
+        when(mockFile.isFile()).thenReturn(true);
+        when(mockFile.getName()).thenReturn("test.jar");
+        try {
+            when(mockFile.toURL()).thenThrow(new MalformedURLException());
+        } catch (MalformedURLException e) {
+            fail("Unexpected MalformedURLException");
+        }
+
+        File mockDir = mock(File.class);
+        when(mockDir.listFiles()).thenReturn(mockFiles);
+
+        doNothing().when(Trace.class);
+        Trace.error(any(MalformedURLException.class));
+        PowerMockito.doNothing().when(System.class);
+        System.exit(1);
+
+        try {
+            XBUSClassLoader.addUrls(urls, "test/path");
+            fail("Expected System.exit(1) to be called");
+        } catch (Exception e) {
+            // Expected exception due to System.exit(1)
+        }
+    }
+}
+```

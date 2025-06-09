@@ -1,0 +1,103 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.*;
+import net.sf.xbus.base.core.MessageHandler;
+
+public class MessageHandlerTest {
+
+    private MessageHandler messageHandler;
+
+    @Before
+    public void setUp() {
+        messageHandler = MessageHandler.getInstance("test");
+    }
+
+    @Test
+    public void testGetMessage_KeyFound() {
+        // Assuming there is a key "test.key" in the message file with value "Test Message"
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        String result = messageHandler.getMessage("test.key", params);
+        assertEquals("Test Message", result);
+    }
+
+    @Test
+    public void testGetMessage_KeyNotFound() {
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        String result = messageHandler.getMessage("non.existent.key", params);
+        assertEquals("Key: non.existent.key not found in message file", result);
+    }
+
+    @Test
+    public void testGetMessageOptional_KeyFound() {
+        // Assuming there is a key "test.key" in the message file with value "Test Message"
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        String result = messageHandler.getMessageOptional("test.key", params);
+        assertEquals("Test Message", result);
+    }
+
+    @Test
+    public void testGetMessageOptional_KeyNotFound() {
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        String result = messageHandler.getMessageOptional("non.existent.key", params);
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetMessageOptional_WithParams() {
+        // Assuming there is a key "test.key" in the message file with value "Hello $1$"
+        List<String> params = new ArrayList<>();
+        params.add("World");
+        String result = messageHandler.getMessageOptional("test.key", params);
+        assertEquals("Hello World", result);
+    }
+
+    @Test
+    public void testGetInstance_SameInstance() {
+        MessageHandler instance1 = MessageHandler.getInstance("test");
+        MessageHandler instance2 = MessageHandler.getInstance("test");
+        assertSame(instance1, instance2);
+    }
+
+    @Test
+    public void testGetInstance_DifferentInstance() {
+        MessageHandler instance1 = MessageHandler.getInstance("test1");
+        MessageHandler instance2 = MessageHandler.getInstance("test2");
+        assertNotSame(instance1, instance2);
+    }
+
+    @Test
+    public void testAddMessages_FileNotFound() {
+        // This test assumes that the directory and file do not exist
+        MessageHandler handler = new MessageHandler("non.existent.basename") {
+            @Override
+            void addMessages(String basename, String dir) {
+                super.addMessages(basename, dir);
+            }
+        };
+        try {
+            handler.addMessages("non.existent.basename", "non/existent/dir");
+            fail("Expected System.exit to be called");
+        } catch (SecurityException e) {
+            // Expected exception due to System.exit call
+        }
+    }
+
+    @Test
+    public void testMessagesFilter_Accept() {
+        MessageHandler.MessagesFilter filter = new MessageHandler.MessagesFilter("test", "_en_US.properties");
+        assertTrue(filter.accept(null, "test_en_US.properties"));
+    }
+
+    @Test
+    public void testMessagesFilter_Reject() {
+        MessageHandler.MessagesFilter filter = new MessageHandler.MessagesFilter("test", "_en_US.properties");
+        assertFalse(filter.accept(null, "wrong_en_US.properties"));
+    }
+}
+```

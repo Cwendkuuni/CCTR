@@ -1,0 +1,170 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.awt.event.ActionEvent;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class LagoonGUITest {
+
+    private LagoonGUI lagoonGUI;
+    private InputComponent mockSitemapFile;
+    private InputComponent mockSourceDir;
+    private InputComponent mockTargetURL;
+    private LagoonProcessor mockProcessor;
+
+    @Before
+    public void setUp() {
+        lagoonGUI = spy(new LagoonGUI());
+        mockSitemapFile = mock(InputComponent.class);
+        mockSourceDir = mock(InputComponent.class);
+        mockTargetURL = mock(InputComponent.class);
+        mockProcessor = mock(LagoonProcessor.class);
+
+        lagoonGUI.sitemapFile = mockSitemapFile;
+        lagoonGUI.sourceDir = mockSourceDir;
+        lagoonGUI.targetURL = mockTargetURL;
+        lagoonGUI.processor = mockProcessor;
+    }
+
+    @Test
+    public void testMain() throws Exception {
+        String[] args = {"test.properties"};
+        LagoonGUI.main(args);
+        verify(lagoonGUI).loadProperties(any(File.class));
+    }
+
+    @Test
+    public void testWindowClosing() {
+        WindowEvent event = mock(WindowEvent.class);
+        lagoonGUI.windowClosing(event);
+        verify(lagoonGUI).exit();
+    }
+
+    @Test
+    public void testBuild() throws IOException {
+        when(mockSitemapFile.getValue()).thenReturn("sitemap.xml");
+        when(mockSitemapFile.hasChanged()).thenReturn(false);
+        when(mockSourceDir.hasChanged()).thenReturn(false);
+        when(mockTargetURL.hasChanged()).thenReturn(false);
+        when(mockProcessor.build(anyBoolean())).thenReturn(true);
+
+        lagoonGUI.build(false);
+
+        verify(mockProcessor).build(false);
+        verify(lagoonGUI.progressArea).setText("--- Start build ---\n");
+        verify(lagoonGUI.progressArea).append("--- Build finished successfully in 0 s ---");
+    }
+
+    @Test
+    public void testBuildWithError() throws IOException {
+        when(mockSitemapFile.getValue()).thenReturn("sitemap.xml");
+        when(mockSitemapFile.hasChanged()).thenReturn(false);
+        when(mockSourceDir.hasChanged()).thenReturn(false);
+        when(mockTargetURL.hasChanged()).thenReturn(false);
+        when(mockProcessor.build(anyBoolean())).thenReturn(false);
+
+        lagoonGUI.build(false);
+
+        verify(mockProcessor).build(false);
+        verify(lagoonGUI.progressArea).setText("--- Start build ---\n");
+        verify(lagoonGUI.progressArea).append("--- Build finished with error(s) in 0 s ---");
+    }
+
+    @Test
+    public void testExit() throws IOException {
+        lagoonGUI.exit();
+        verify(mockProcessor).destroy();
+    }
+
+    @Test
+    public void testInit() throws IOException, LagoonException {
+        when(mockSitemapFile.getValue()).thenReturn("sitemap.xml");
+        when(mockSourceDir.getValue()).thenReturn("source");
+        when(mockTargetURL.getValue()).thenReturn("target");
+
+        lagoonGUI.init();
+
+        verify(lagoonGUI).init();
+    }
+
+    @Test
+    public void testLoadPropertyFile() {
+        FileDialog mockFileDialog = mock(FileDialog.class);
+        when(mockFileDialog.getFile()).thenReturn("test.properties");
+        when(mockFileDialog.getDirectory()).thenReturn(".");
+
+        lagoonGUI.loadPropertyFile();
+
+        verify(lagoonGUI).loadProperties(any(File.class));
+    }
+
+    @Test
+    public void testLoadProperties() throws IOException, LagoonException {
+        File mockFile = mock(File.class);
+        Properties mockProperties = mock(Properties.class);
+        FileInputStream mockFis = mock(FileInputStream.class);
+
+        when(mockFile.getName()).thenReturn("test.properties");
+        when(mockProperties.getProperty("sitemapFile")).thenReturn("sitemap.xml");
+        when(mockProperties.getProperty("sourceDir")).thenReturn("source");
+        when(mockProperties.getProperty("targetURL")).thenReturn("target");
+        when(mockProperties.getProperty("password")).thenReturn("password");
+
+        lagoonGUI.loadProperties(mockFile);
+
+        verify(mockSitemapFile).setValue("sitemap.xml");
+        verify(mockSourceDir).setValue("source");
+        verify(mockTargetURL).setValue("target");
+        assertEquals("password", lagoonGUI.password);
+    }
+
+    @Test
+    public void testSavePropertyFile() throws IOException {
+        FileDialog mockFileDialog = mock(FileDialog.class);
+        when(mockFileDialog.getFile()).thenReturn("test.properties");
+        when(mockFileDialog.getDirectory()).thenReturn(".");
+
+        lagoonGUI.savePropertyFile();
+
+        verify(lagoonGUI.statusLabel).setText("Properties saved");
+    }
+
+    @Test
+    public void testGetProperty() throws LagoonException {
+        Properties mockProperties = mock(Properties.class);
+        when(mockProperties.getProperty("test")).thenReturn("value");
+
+        String result = LagoonGUI.getProperty(mockProperties, "test");
+
+        assertEquals("value", result);
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyException() throws LagoonException {
+        Properties mockProperties = mock(Properties.class);
+        when(mockProperties.getProperty("test")).thenReturn(null);
+
+        LagoonGUI.getProperty(mockProperties, "test");
+    }
+
+    @Test
+    public void testShowTime() {
+        assertEquals("in 5000 ms", LagoonGUI.showTime(5000));
+        assertEquals("in 10 s", LagoonGUI.showTime(10000));
+    }
+}
+```

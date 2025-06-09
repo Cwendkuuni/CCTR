@@ -1,0 +1,141 @@
+package org.apache.commons.lang3;
+
+import org.apache.commons.lang3.RandomStringUtils;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.Random;
+
+public class RandomStringUtilsTest {
+
+    @Test
+    public void testRandom() {
+        String result = RandomStringUtils.random(10);
+        assertNotNull(result);
+        assertEquals(10, result.length());
+    }
+
+    @Test
+    public void testRandomAscii() {
+        String result = RandomStringUtils.randomAscii(10);
+        assertNotNull(result);
+        assertEquals(10, result.length());
+        for (char c : result.toCharArray()) {
+            assertTrue(c >= 32 && c <= 126);
+        }
+    }
+
+    @Test
+    public void testRandomAlphabetic() {
+        String result = RandomStringUtils.randomAlphabetic(10);
+        assertNotNull(result);
+        assertEquals(10, result.length());
+        for (char c : result.toCharArray()) {
+            assertTrue(Character.isLetter(c));
+        }
+    }
+
+    @Test
+    public void testRandomAlphanumeric() {
+        String result = RandomStringUtils.randomAlphanumeric(10);
+        assertNotNull(result);
+        assertEquals(10, result.length());
+        for (char c : result.toCharArray()) {
+            assertTrue(Character.isLetterOrDigit(c));
+        }
+    }
+
+    @Test
+    public void testRandomNumeric() {
+        String result = RandomStringUtils.randomNumeric(10);
+        assertNotNull(result);
+        assertEquals(10, result.length());
+        for (char c : result.toCharArray()) {
+            assertTrue(Character.isDigit(c));
+        }
+    }
+
+    @Test
+    public void testRandomWithLettersAndNumbers() {
+        String result = RandomStringUtils.random(10, true, true);
+        assertNotNull(result);
+        assertEquals(10, result.length());
+        for (char c : result.toCharArray()) {
+            assertTrue(Character.isLetterOrDigit(c));
+        }
+    }
+
+    @Test
+    public void testRandomWithOnlyLetters() {
+        String result = RandomStringUtils.random(10, true, false);
+        assertNotNull(result);
+        assertEquals(10, result.length());
+        for (char c : result.toCharArray()) {
+            assertTrue(Character.isLetter(c));
+        }
+    }
+
+    @Test
+    public void testRandomWithOnlyNumbers() {
+        String result = RandomStringUtils.random(10, false, true);
+        assertNotNull(result);
+        assertEquals(10, result.length());
+        for (char c : result.toCharArray()) {
+            assertTrue(Character.isDigit(c));
+        }
+    }
+
+    @Test
+    public void testRandomWithCustomCharArray() {
+        char[] chars = {'a', 'b', 'c'};
+        String result = RandomStringUtils.random(10, chars);
+        assertNotNull(result);
+        assertEquals(10, result.length());
+        for (char c : result.toCharArray()) {
+            assertTrue(c == 'a' || c == 'b' || c == 'c');
+        }
+    }
+
+    @Test
+    public void testRandomWithCustomString() {
+        String chars = "abc";
+        String result = RandomStringUtils.random(10, chars);
+        assertNotNull(result);
+        assertEquals(10, result.length());
+        for (char c : result.toCharArray()) {
+            assertTrue(c == 'a' || c == 'b' || c == 'c');
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRandomNegativeCount() {
+        RandomStringUtils.random(-1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRandomNegativeCountWithChars() {
+        RandomStringUtils.random(-1, "abc");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRandomNegativeCountWithCharArray() {
+        RandomStringUtils.random(-1, new char[]{'a', 'b', 'c'});
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRandomWithEmptyCharArray() {
+        RandomStringUtils.random(10, new char[]{});
+    }
+
+    @Test
+    public void testRandomWithCustomRandom() {
+        Random random = new Random(12345);
+        String result1 = RandomStringUtils.random(10, 0, 0, true, true, null, random);
+        String result2 = RandomStringUtils.random(10, 0, 0, true, true, null, random);
+        assertNotNull(result1);
+        assertNotNull(result2);
+        assertEquals(10, result1.length());
+        assertEquals(10, result2.length());
+        assertNotEquals(result1, result2); // Different results due to different random states
+    }
+}

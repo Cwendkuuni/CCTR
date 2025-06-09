@@ -1,0 +1,104 @@
+```java
+import com.google.gson.DefaultDateTypeAdapter;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+import static org.junit.Assert.*;
+
+public class DefaultDateTypeAdapterTest {
+
+    private DefaultDateTypeAdapter dateAdapter;
+    private DefaultDateTypeAdapter timestampAdapter;
+    private DefaultDateTypeAdapter sqlDateAdapter;
+
+    @Before
+    public void setUp() {
+        dateAdapter = new DefaultDateTypeAdapter(Date.class);
+        timestampAdapter = new DefaultDateTypeAdapter(Timestamp.class);
+        sqlDateAdapter = new DefaultDateTypeAdapter(java.sql.Date.class);
+    }
+
+    @Test
+    public void testWriteNullDate() throws IOException {
+        StringWriter writer = new StringWriter();
+        JsonWriter jsonWriter = new JsonWriter(writer);
+        dateAdapter.write(jsonWriter, null);
+        assertEquals("null", writer.toString());
+    }
+
+    @Test
+    public void testWriteDate() throws IOException {
+        Date date = new Date();
+        StringWriter writer = new StringWriter();
+        JsonWriter jsonWriter = new JsonWriter(writer);
+        dateAdapter.write(jsonWriter, date);
+        DateFormat enUsFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US);
+        assertEquals("\"" + enUsFormat.format(date) + "\"", writer.toString());
+    }
+
+    @Test
+    public void testReadDate() throws IOException {
+        DateFormat enUsFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US);
+        Date date = new Date();
+        String dateString = enUsFormat.format(date);
+        JsonReader jsonReader = new JsonReader(new StringReader("\"" + dateString + "\""));
+        Date parsedDate = dateAdapter.read(jsonReader);
+        assertEquals(dateString, enUsFormat.format(parsedDate));
+    }
+
+    @Test
+    public void testReadTimestamp() throws IOException {
+        DateFormat enUsFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US);
+        Date date = new Date();
+        String dateString = enUsFormat.format(date);
+        JsonReader jsonReader = new JsonReader(new StringReader("\"" + dateString + "\""));
+        Timestamp parsedTimestamp = (Timestamp) timestampAdapter.read(jsonReader);
+        assertEquals(dateString, enUsFormat.format(parsedTimestamp));
+    }
+
+    @Test
+    public void testReadSqlDate() throws IOException {
+        DateFormat enUsFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US);
+        Date date = new Date();
+        String dateString = enUsFormat.format(date);
+        JsonReader jsonReader = new JsonReader(new StringReader("\"" + dateString + "\""));
+        java.sql.Date parsedSqlDate = (java.sql.Date) sqlDateAdapter.read(jsonReader);
+        assertEquals(dateString, enUsFormat.format(parsedSqlDate));
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testReadInvalidDate() throws IOException {
+        JsonReader jsonReader = new JsonReader(new StringReader("12345"));
+        dateAdapter.read(jsonReader);
+    }
+
+    @Test(expected = JsonSyntaxException.class)
+    public void testDeserializeToDateInvalidFormat() {
+        dateAdapter.deserializeToDate("invalid-date");
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "DefaultDateTypeAdapter(SimpleDateFormat)";
+        assertEquals(expected, dateAdapter.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidDateType() {
+        new DefaultDateTypeAdapter(String.class);
+    }
+}
+```

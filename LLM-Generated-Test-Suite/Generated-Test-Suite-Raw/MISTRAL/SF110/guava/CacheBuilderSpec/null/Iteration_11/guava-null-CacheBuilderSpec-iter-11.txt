@@ -1,0 +1,159 @@
+```java
+package com.google.common.cache;
+
+import com.google.common.annotations.Beta;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.base.Preconditions;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.concurrent.TimeUnit;
+
+@Beta
+public class CacheBuilderSpecTest {
+
+    private CacheBuilderSpec spec;
+
+    @Before
+    public void setUp() {
+        spec = CacheBuilderSpec.parse("initialCapacity=10,maximumSize=100,maximumWeight=200,concurrencyLevel=4,weakKeys,softValues,recordStats,expireAfterAccess=10s,expireAfterWrite=20m,refreshAfterWrite=30d");
+    }
+
+    @Test
+    public void testParse() {
+        CacheBuilderSpec spec = CacheBuilderSpec.parse("initialCapacity=10,maximumSize=100");
+        assertEquals(Integer.valueOf(10), spec.initialCapacity);
+        assertEquals(Long.valueOf(100), spec.maximumSize);
+    }
+
+    @Test
+    public void testDisableCaching() {
+        CacheBuilderSpec spec = CacheBuilderSpec.disableCaching();
+        assertEquals(Long.valueOf(0), spec.maximumSize);
+    }
+
+    @Test
+    public void testToCacheBuilder() {
+        CacheBuilder<Object, Object> builder = spec.toCacheBuilder();
+        assertEquals(Integer.valueOf(10), builder.initialCapacity);
+        assertEquals(Long.valueOf(100), builder.maximumSize);
+        assertEquals(Long.valueOf(200), builder.maximumWeight);
+        assertEquals(Integer.valueOf(4), builder.concurrencyLevel);
+        assertTrue(builder.weakKeys());
+        assertTrue(builder.softValues());
+        assertTrue(builder.recordStats());
+        assertEquals(10, builder.expireAfterAccessNanos);
+        assertEquals(TimeUnit.SECONDS, builder.expireAfterAccessTimeUnit);
+        assertEquals(20, builder.expireAfterWriteNanos);
+        assertEquals(TimeUnit.MINUTES, builder.expireAfterWriteTimeUnit);
+        assertEquals(30, builder.refreshAfterWriteNanos);
+        assertEquals(TimeUnit.DAYS, builder.refreshAfterWriteTimeUnit);
+    }
+
+    @Test
+    public void testToParsableString() {
+        assertEquals("initialCapacity=10,maximumSize=100,maximumWeight=200,concurrencyLevel=4,weakKeys,softValues,recordStats,expireAfterAccess=10s,expireAfterWrite=20m,refreshAfterWrite=30d", spec.toParsableString());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("CacheBuilderSpec{initialCapacity=10,maximumSize=100,maximumWeight=200,concurrencyLevel=4,weakKeys,softValues,recordStats,expireAfterAccess=10s,expireAfterWrite=20m,refreshAfterWrite=30d}", spec.toString());
+    }
+
+    @Test
+    public void testHashCode() {
+        CacheBuilderSpec spec1 = CacheBuilderSpec.parse("initialCapacity=10,maximumSize=100");
+        CacheBuilderSpec spec2 = CacheBuilderSpec.parse("initialCapacity=10,maximumSize=100");
+        assertEquals(spec1.hashCode(), spec2.hashCode());
+    }
+
+    @Test
+    public void testEquals() {
+        CacheBuilderSpec spec1 = CacheBuilderSpec.parse("initialCapacity=10,maximumSize=100");
+        CacheBuilderSpec spec2 = CacheBuilderSpec.parse("initialCapacity=10,maximumSize=100");
+        assertTrue(spec1.equals(spec2));
+    }
+
+    @Test
+    public void testDurationInNanos() {
+        assertEquals(Long.valueOf(1000000000L), CacheBuilderSpec.durationInNanos(1, TimeUnit.SECONDS));
+        assertNull(CacheBuilderSpec.durationInNanos(1, null));
+    }
+
+    @Test
+    public void testInitialCapacityParser() {
+        CacheBuilderSpec spec = new CacheBuilderSpec("");
+        new InitialCapacityParser().parse(spec, "initialCapacity", "10");
+        assertEquals(Integer.valueOf(10), spec.initialCapacity);
+    }
+
+    @Test
+    public void testMaximumSizeParser() {
+        CacheBuilderSpec spec = new CacheBuilderSpec("");
+        new MaximumSizeParser().parse(spec, "maximumSize", "100");
+        assertEquals(Long.valueOf(100), spec.maximumSize);
+    }
+
+    @Test
+    public void testMaximumWeightParser() {
+        CacheBuilderSpec spec = new CacheBuilderSpec("");
+        new MaximumWeightParser().parse(spec, "maximumWeight", "200");
+        assertEquals(Long.valueOf(200), spec.maximumWeight);
+    }
+
+    @Test
+    public void testConcurrencyLevelParser() {
+        CacheBuilderSpec spec = new CacheBuilderSpec("");
+        new ConcurrencyLevelParser().parse(spec, "concurrencyLevel", "4");
+        assertEquals(Integer.valueOf(4), spec.concurrencyLevel);
+    }
+
+    @Test
+    public void testKeyStrengthParser() {
+        CacheBuilderSpec spec = new CacheBuilderSpec("");
+        new KeyStrengthParser(LocalCache.Strength.WEAK).parse(spec, "weakKeys", null);
+        assertEquals(LocalCache.Strength.WEAK, spec.keyStrength);
+    }
+
+    @Test
+    public void testValueStrengthParser() {
+        CacheBuilderSpec spec = new CacheBuilderSpec("");
+        new ValueStrengthParser(LocalCache.Strength.SOFT).parse(spec, "softValues", null);
+        assertEquals(LocalCache.Strength.SOFT, spec.valueStrength);
+    }
+
+    @Test
+    public void testRecordStatsParser() {
+        CacheBuilderSpec spec = new CacheBuilderSpec("");
+        new RecordStatsParser().parse(spec, "recordStats", null);
+        assertTrue(spec.recordStats);
+    }
+
+    @Test
+    public void testAccessDurationParser() {
+        CacheBuilderSpec spec = new CacheBuilderSpec("");
+        new AccessDurationParser().parse(spec, "expireAfterAccess", "10s");
+        assertEquals(10, spec.accessExpirationDuration);
+        assertEquals(TimeUnit.SECONDS, spec.accessExpirationTimeUnit);
+    }
+
+    @Test
+    public void testWriteDurationParser() {
+        CacheBuilderSpec spec = new CacheBuilderSpec("");
+        new WriteDurationParser().parse(spec, "expireAfterWrite", "20m");
+        assertEquals(20, spec.writeExpirationDuration);
+        assertEquals(TimeUnit.MINUTES, spec.writeExpirationTimeUnit);
+    }
+
+    @Test
+    public void testRefreshDurationParser() {
+        CacheBuilderSpec spec = new CacheBuilderSpec("");
+        new RefreshDurationParser().parse(spec, "refreshAfterWrite", "30d");
+        assertEquals(30, spec.refreshDuration);
+        assertEquals(TimeUnit.DAYS, spec.refreshTimeUnit);
+    }
+}
+```

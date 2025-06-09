@@ -1,0 +1,130 @@
+```java
+package org.apache.commons.csv;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.io.Closeable;
+import java.io.Flushable;
+import java.io.IOException;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+public class CSVPrinterTest {
+
+    @Mock
+    private Appendable mockAppendable;
+
+    @Mock
+    private CSVFormat mockCSVFormat;
+
+    @Mock
+    private ResultSet mockResultSet;
+
+    private CSVPrinter csvPrinter;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        when(mockCSVFormat.getDelimiter()).thenReturn(",");
+        when(mockCSVFormat.getQuoteChar()).thenReturn('"');
+        when(mockCSVFormat.getEscape()).thenReturn('\\');
+        when(mockCSVFormat.getRecordSeparator()).thenReturn("\n");
+        when(mockCSVFormat.getCommentStart()).thenReturn('#');
+        when(mockCSVFormat.isQuoting()).thenReturn(true);
+        when(mockCSVFormat.isEscaping()).thenReturn(true);
+        when(mockCSVFormat.isCommentingEnabled()).thenReturn(true);
+        when(mockCSVFormat.getQuotePolicy()).thenReturn(Quote.MINIMAL);
+
+        csvPrinter = new CSVPrinter(mockAppendable, mockCSVFormat);
+    }
+
+    @Test
+    public void testClose() throws IOException {
+        csvPrinter.close();
+        verify(mockAppendable, times(1)).append("\n");
+    }
+
+    @Test
+    public void testFlush() throws IOException {
+        csvPrinter.flush();
+        verify(mockAppendable, times(1)).append("\n");
+    }
+
+    @Test
+    public void testPrint() throws IOException {
+        csvPrinter.print("test");
+        verify(mockAppendable, times(1)).append("test");
+    }
+
+    @Test
+    public void testPrintNull() throws IOException {
+        csvPrinter.print(null);
+        verify(mockAppendable, times(1)).append("");
+    }
+
+    @Test
+    public void testPrintComment() throws IOException {
+        csvPrinter.printComment("This is a comment");
+        verify(mockAppendable, times(1)).append("# This is a comment\n");
+    }
+
+    @Test
+    public void testPrintln() throws IOException {
+        csvPrinter.println();
+        verify(mockAppendable, times(1)).append("\n");
+    }
+
+    @Test
+    public void testPrintRecordIterable() throws IOException {
+        List<String> values = Arrays.asList("value1", "value2", "value3");
+        csvPrinter.printRecord(values);
+        verify(mockAppendable, times(1)).append("value1,value2,value3\n");
+    }
+
+    @Test
+    public void testPrintRecordVarargs() throws IOException {
+        csvPrinter.printRecord("value1", "value2", "value3");
+        verify(mockAppendable, times(1)).append("value1,value2,value3\n");
+    }
+
+    @Test
+    public void testPrintRecordsIterable() throws IOException {
+        List<String> values = Arrays.asList("value1", "value2", "value3");
+        csvPrinter.printRecords(values);
+        verify(mockAppendable, times(1)).append("value1,value2,value3\n");
+    }
+
+    @Test
+    public void testPrintRecordsArray() throws IOException {
+        String[] values = {"value1", "value2", "value3"};
+        csvPrinter.printRecords(values);
+        verify(mockAppendable, times(1)).append("value1,value2,value3\n");
+    }
+
+    @Test
+    public void testPrintRecordsResultSet() throws SQLException, IOException {
+        when(mockResultSet.getMetaData()).thenReturn(mock(java.sql.ResultSetMetaData.class));
+        when(mockResultSet.getMetaData().getColumnCount()).thenReturn(3);
+        when(mockResultSet.next()).thenReturn(true).thenReturn(false);
+        when(mockResultSet.getString(1)).thenReturn("value1");
+        when(mockResultSet.getString(2)).thenReturn("value2");
+        when(mockResultSet.getString(3)).thenReturn("value3");
+
+        csvPrinter.printRecords(mockResultSet);
+        verify(mockAppendable, times(1)).append("value1,value2,value3\n");
+    }
+
+    @Test
+    public void testGetOut() {
+        assertEquals(mockAppendable, csvPrinter.getOut());
+    }
+}
+```

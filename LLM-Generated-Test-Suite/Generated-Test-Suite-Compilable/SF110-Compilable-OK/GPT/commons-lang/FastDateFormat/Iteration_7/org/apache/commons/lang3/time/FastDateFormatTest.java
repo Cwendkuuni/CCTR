@@ -1,0 +1,264 @@
+package org.apache.commons.lang3.time;
+
+import org.apache.commons.lang3.time.FastDateFormat;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.text.ParseException;
+import java.text.ParsePosition;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import static org.junit.Assert.*;
+
+public class FastDateFormatTest {
+
+    private FastDateFormat fastDateFormat;
+    private final String pattern = "yyyy-MM-dd";
+    private final TimeZone timeZone = TimeZone.getTimeZone("GMT");
+    private final Locale locale = Locale.US;
+
+    @Before
+    public void setUp() {
+        fastDateFormat = FastDateFormat.getInstance(pattern, timeZone, locale);
+    }
+
+    @Test
+    public void testGetInstanceDefault() {
+        assertNotNull(FastDateFormat.getInstance());
+    }
+
+    @Test
+    public void testGetInstanceWithPattern() {
+        FastDateFormat format = FastDateFormat.getInstance(pattern);
+        assertNotNull(format);
+        assertEquals(pattern, format.getPattern());
+    }
+
+    @Test
+    public void testGetInstanceWithPatternAndTimeZone() {
+        FastDateFormat format = FastDateFormat.getInstance(pattern, timeZone);
+        assertNotNull(format);
+        assertEquals(timeZone, format.getTimeZone());
+    }
+
+    @Test
+    public void testGetInstanceWithPatternAndLocale() {
+        FastDateFormat format = FastDateFormat.getInstance(pattern, locale);
+        assertNotNull(format);
+        assertEquals(locale, format.getLocale());
+    }
+
+    @Test
+    public void testGetInstanceWithPatternTimeZoneAndLocale() {
+        FastDateFormat format = FastDateFormat.getInstance(pattern, timeZone, locale);
+        assertNotNull(format);
+        assertEquals(pattern, format.getPattern());
+        assertEquals(timeZone, format.getTimeZone());
+        assertEquals(locale, format.getLocale());
+    }
+
+    @Test
+    public void testGetDateInstance() {
+        FastDateFormat format = FastDateFormat.getDateInstance(FastDateFormat.FULL);
+        assertNotNull(format);
+    }
+
+    @Test
+    public void testGetDateInstanceWithLocale() {
+        FastDateFormat format = FastDateFormat.getDateInstance(FastDateFormat.FULL, locale);
+        assertNotNull(format);
+        assertEquals(locale, format.getLocale());
+    }
+
+    @Test
+    public void testGetDateInstanceWithTimeZone() {
+        FastDateFormat format = FastDateFormat.getDateInstance(FastDateFormat.FULL, timeZone);
+        assertNotNull(format);
+        assertEquals(timeZone, format.getTimeZone());
+    }
+
+    @Test
+    public void testGetDateInstanceWithTimeZoneAndLocale() {
+        FastDateFormat format = FastDateFormat.getDateInstance(FastDateFormat.FULL, timeZone, locale);
+        assertNotNull(format);
+        assertEquals(timeZone, format.getTimeZone());
+        assertEquals(locale, format.getLocale());
+    }
+
+    @Test
+    public void testGetTimeInstance() {
+        FastDateFormat format = FastDateFormat.getTimeInstance(FastDateFormat.FULL);
+        assertNotNull(format);
+    }
+
+    @Test
+    public void testGetTimeInstanceWithLocale() {
+        FastDateFormat format = FastDateFormat.getTimeInstance(FastDateFormat.FULL, locale);
+        assertNotNull(format);
+        assertEquals(locale, format.getLocale());
+    }
+
+    @Test
+    public void testGetTimeInstanceWithTimeZone() {
+        FastDateFormat format = FastDateFormat.getTimeInstance(FastDateFormat.FULL, timeZone);
+        assertNotNull(format);
+        assertEquals(timeZone, format.getTimeZone());
+    }
+
+    @Test
+    public void testGetTimeInstanceWithTimeZoneAndLocale() {
+        FastDateFormat format = FastDateFormat.getTimeInstance(FastDateFormat.FULL, timeZone, locale);
+        assertNotNull(format);
+        assertEquals(timeZone, format.getTimeZone());
+        assertEquals(locale, format.getLocale());
+    }
+
+    @Test
+    public void testGetDateTimeInstance() {
+        FastDateFormat format = FastDateFormat.getDateTimeInstance(FastDateFormat.FULL, FastDateFormat.FULL);
+        assertNotNull(format);
+    }
+
+    @Test
+    public void testGetDateTimeInstanceWithLocale() {
+        FastDateFormat format = FastDateFormat.getDateTimeInstance(FastDateFormat.FULL, FastDateFormat.FULL, locale);
+        assertNotNull(format);
+        assertEquals(locale, format.getLocale());
+    }
+
+    @Test
+    public void testGetDateTimeInstanceWithTimeZone() {
+        FastDateFormat format = FastDateFormat.getDateTimeInstance(FastDateFormat.FULL, FastDateFormat.FULL, timeZone);
+        assertNotNull(format);
+        assertEquals(timeZone, format.getTimeZone());
+    }
+
+    @Test
+    public void testGetDateTimeInstanceWithTimeZoneAndLocale() {
+        FastDateFormat format = FastDateFormat.getDateTimeInstance(FastDateFormat.FULL, FastDateFormat.FULL, timeZone, locale);
+        assertNotNull(format);
+        assertEquals(timeZone, format.getTimeZone());
+        assertEquals(locale, format.getLocale());
+    }
+
+    @Test
+    public void testFormatObject() {
+        Date date = new Date();
+        StringBuffer buffer = new StringBuffer();
+        fastDateFormat.format(date, buffer, new java.text.FieldPosition(0));
+        assertTrue(buffer.length() > 0);
+    }
+
+    @Test
+    public void testFormatLong() {
+        long millis = System.currentTimeMillis();
+        String result = fastDateFormat.format(millis);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testFormatDate() {
+        Date date = new Date();
+        String result = fastDateFormat.format(date);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testFormatCalendar() {
+        Calendar calendar = Calendar.getInstance();
+        String result = fastDateFormat.format(calendar);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testFormatLongWithBuffer() {
+        long millis = System.currentTimeMillis();
+        StringBuffer buffer = new StringBuffer();
+        fastDateFormat.format(millis, buffer);
+        assertTrue(buffer.length() > 0);
+    }
+
+    @Test
+    public void testFormatDateWithBuffer() {
+        Date date = new Date();
+        StringBuffer buffer = new StringBuffer();
+        fastDateFormat.format(date, buffer);
+        assertTrue(buffer.length() > 0);
+    }
+
+    @Test
+    public void testFormatCalendarWithBuffer() {
+        Calendar calendar = Calendar.getInstance();
+        StringBuffer buffer = new StringBuffer();
+        fastDateFormat.format(calendar, buffer);
+        assertTrue(buffer.length() > 0);
+    }
+
+    @Test
+    public void testParse() throws ParseException {
+        String dateStr = "2023-10-10";
+        Date date = fastDateFormat.parse(dateStr);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testParseWithPosition() {
+        String dateStr = "2023-10-10";
+        ParsePosition pos = new ParsePosition(0);
+        Date date = fastDateFormat.parse(dateStr, pos);
+        assertNotNull(date);
+        assertEquals(dateStr.length(), pos.getIndex());
+    }
+
+    @Test
+    public void testParseObject() {
+        String dateStr = "2023-10-10";
+        ParsePosition pos = new ParsePosition(0);
+        Object date = fastDateFormat.parseObject(dateStr, pos);
+        assertNotNull(date);
+        assertTrue(date instanceof Date);
+    }
+
+    @Test
+    public void testGetPattern() {
+        assertEquals(pattern, fastDateFormat.getPattern());
+    }
+
+    @Test
+    public void testGetTimeZone() {
+        assertEquals(timeZone, fastDateFormat.getTimeZone());
+    }
+
+    @Test
+    public void testGetLocale() {
+        assertEquals(locale, fastDateFormat.getLocale());
+    }
+
+    @Test
+    public void testGetMaxLengthEstimate() {
+        int estimate = fastDateFormat.getMaxLengthEstimate();
+        assertTrue(estimate > 0);
+    }
+
+    @Test
+    public void testEquals() {
+        FastDateFormat other = FastDateFormat.getInstance(pattern, timeZone, locale);
+        assertTrue(fastDateFormat.equals(other));
+    }
+
+    @Test
+    public void testHashCode() {
+        FastDateFormat other = FastDateFormat.getInstance(pattern, timeZone, locale);
+        assertEquals(fastDateFormat.hashCode(), other.hashCode());
+    }
+
+    @Test
+    public void testToString() {
+        String str = fastDateFormat.toString();
+        assertNotNull(str);
+        assertTrue(str.contains(pattern));
+    }
+}

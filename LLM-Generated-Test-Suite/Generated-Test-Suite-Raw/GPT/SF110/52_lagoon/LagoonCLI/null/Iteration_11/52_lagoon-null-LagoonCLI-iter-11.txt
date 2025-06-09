@@ -1,0 +1,107 @@
+To create a comprehensive JUnit 4 test suite for the `LagoonCLI` class, we need to focus on testing the `main`, `getProperty`, and `showTime` methods. Since `main` is a static method that interacts with the system environment (e.g., reading files, printing to the console), testing it will require some setup to capture output and simulate file interactions. The `getProperty` and `showTime` methods are simpler and can be tested directly.
+
+Here's a JUnit 4 test suite for the `LagoonCLI` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.*;
+import java.io.*;
+import java.util.Properties;
+import nu.staldal.lagoon.LagoonCLI;
+import nu.staldal.lagoon.core.LagoonException;
+
+public class LagoonCLITest {
+
+    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+    private final PrintStream originalOut = System.out;
+    private final PrintStream originalErr = System.err;
+
+    @Before
+    public void setUpStreams() {
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+    }
+
+    @After
+    public void restoreStreams() {
+        System.setOut(originalOut);
+        System.setErr(originalErr);
+    }
+
+    @Test
+    public void testMainNoArgs() {
+        LagoonCLI.main(new String[]{});
+        assertTrue(outContent.toString().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainInvalidInterval() {
+        LagoonCLI.main(new String[]{"test.properties", "invalid"});
+        assertTrue(outContent.toString().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainValidInterval() {
+        // Assuming test.properties is a valid properties file in the working directory
+        LagoonCLI.main(new String[]{"test.properties", "10"});
+        assertTrue(outContent.toString().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testMainBuild() {
+        LagoonCLI.main(new String[]{"test.properties", "build"});
+        assertTrue(outContent.toString().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testMainForce() {
+        LagoonCLI.main(new String[]{"test.properties", "force"});
+        assertTrue(outContent.toString().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testGetProperty() throws LagoonException {
+        Properties props = new Properties();
+        props.setProperty("testKey", "testValue");
+        LagoonCLI.properties = props;
+        assertEquals("testValue", LagoonCLI.getProperty("testKey"));
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyException() throws LagoonException {
+        Properties props = new Properties();
+        LagoonCLI.properties = props;
+        LagoonCLI.getProperty("missingKey");
+    }
+
+    @Test
+    public void testShowTimeMilliseconds() {
+        LagoonCLI.showTime(5000);
+        assertTrue(outContent.toString().contains("in 5000 ms"));
+    }
+
+    @Test
+    public void testShowTimeSeconds() {
+        LagoonCLI.showTime(15000);
+        assertTrue(outContent.toString().contains("in 15 s"));
+    }
+}
+```
+
+### Explanation:
+- **Stream Redirection**: We redirect `System.out` and `System.err` to capture console output for assertions.
+- **Test Cases**:
+  - **`testMainNoArgs`**: Tests the behavior when no arguments are provided.
+  - **`testMainInvalidInterval`**: Tests the behavior when an invalid interval is provided.
+  - **`testMainValidInterval`**: Tests the behavior with a valid interval (requires a valid properties file).
+  - **`testMainBuild`**: Tests the behavior when "build" is passed as an argument.
+  - **`testMainForce`**: Tests the behavior when "force" is passed as an argument.
+  - **`testGetProperty`**: Tests retrieving a property from the properties object.
+  - **`testGetPropertyException`**: Tests the exception thrown when a property is missing.
+  - **`testShowTimeMilliseconds`**: Tests the output format for milliseconds.
+  - **`testShowTimeSeconds`**: Tests the output format for seconds.
+
+### Note:
+- The test suite assumes the existence of a valid `test.properties` file for some tests. You may need to adjust the file path or content based on your environment.
+- The `main` method tests are limited due to the complexity of simulating file interactions and system properties. More comprehensive testing might require additional setup or mocking frameworks.

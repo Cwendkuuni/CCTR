@@ -1,0 +1,88 @@
+package org.apache.commons.lang.enums;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.apache.commons.lang.enums.ValuedEnum;
+import java.util.List;
+import java.util.Iterator;
+
+public class ValuedEnumTest {
+
+    private static final int TEST_VALUE_1 = 1;
+    private static final int TEST_VALUE_2 = 2;
+    private static final int TEST_VALUE_3 = 3;
+
+    private TestValuedEnum enum1;
+    private TestValuedEnum enum2;
+    private TestValuedEnum enum3;
+
+    @Before
+    public void setUp() {
+        enum1 = new TestValuedEnum("Enum1", TEST_VALUE_1);
+        enum2 = new TestValuedEnum("Enum2", TEST_VALUE_2);
+        enum3 = new TestValuedEnum("Enum3", TEST_VALUE_3);
+    }
+
+    @Test
+    public void testGetValue() {
+        assertEquals(TEST_VALUE_1, enum1.getValue());
+        assertEquals(TEST_VALUE_2, enum2.getValue());
+        assertEquals(TEST_VALUE_3, enum3.getValue());
+    }
+
+    @Test
+    public void testCompareTo() {
+        assertTrue(enum1.compareTo(enum2) < 0);
+        assertTrue(enum2.compareTo(enum1) > 0);
+        assertTrue(enum1.compareTo(enum1) == 0);
+    }
+
+    @Test(expected = ClassCastException.class)
+    public void testCompareToInvalidType() {
+        enum1.compareTo("InvalidType");
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("TestValuedEnum[Enum1=1]", enum1.toString());
+        assertEquals("TestValuedEnum[Enum2=2]", enum2.toString());
+        assertEquals("TestValuedEnum[Enum3=3]", enum3.toString());
+    }
+
+    @Test
+    public void testGetEnumByValue() {
+        assertEquals(enum1, ValuedEnum.getEnum(TestValuedEnum.class, TEST_VALUE_1));
+        assertEquals(enum2, ValuedEnum.getEnum(TestValuedEnum.class, TEST_VALUE_2));
+        assertEquals(enum3, ValuedEnum.getEnum(TestValuedEnum.class, TEST_VALUE_3));
+        assertNull(ValuedEnum.getEnum(TestValuedEnum.class, 999));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetEnumByValueWithNullClass() {
+        ValuedEnum.getEnum(null, TEST_VALUE_1);
+    }
+
+    // A simple subclass of ValuedEnum for testing purposes
+    private static class TestValuedEnum extends ValuedEnum {
+        protected TestValuedEnum(String name, int value) {
+            super(name, value);
+        }
+
+        public static TestValuedEnum getEnum(String name) {
+            return (TestValuedEnum) ValuedEnum.getEnum(TestValuedEnum.class, name);
+        }
+
+        public static TestValuedEnum getEnum(int value) {
+            return (TestValuedEnum) ValuedEnum.getEnum(TestValuedEnum.class, value);
+        }
+
+        public static List getEnumList() {
+            return ValuedEnum.getEnumList(TestValuedEnum.class);
+        }
+
+        public static Iterator iterator() {
+            return ValuedEnum.iterator(TestValuedEnum.class);
+        }
+    }
+}

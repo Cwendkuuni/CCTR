@@ -1,0 +1,187 @@
+```java
+package de.outstare.fortbattleplayer.model.impl;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.util.HashSet;
+import java.util.Set;
+import de.outstare.fortbattleplayer.model.*;
+
+public class SimpleSectorTest {
+
+    private SimpleSector simpleSector;
+    private CombatantSide side;
+    private Area area;
+    private SectorObserver observer;
+    private CharacterClass charClass;
+
+    @Before
+    public void setUp() {
+        side = new CombatantSide() {
+            @Override
+            public String toString() {
+                return "TestSide";
+            }
+        };
+        area = new Area() {
+            @Override
+            public boolean isOccupied() {
+                return false;
+            }
+
+            @Override
+            public Combatant getOccupier() {
+                return new Combatant() {
+                    @Override
+                    public Weapon getWeapon() {
+                        return new Weapon() {
+                            @Override
+                            public int getSectorBonus(SectorBonus.BonusType type) {
+                                return 0;
+                            }
+                        };
+                    }
+                };
+            }
+        };
+        observer = new SectorObserver() {
+            @Override
+            public void occupierChanged() {
+                // Do nothing
+            }
+        };
+        charClass = new CharacterClass() {
+            @Override
+            public String toString() {
+                return "TestClass";
+            }
+        };
+        simpleSector = new SimpleSector(10, true, false, 5, 3, true, 2, charClass);
+    }
+
+    @Test
+    public void testFree() {
+        simpleSector.gainControl(side);
+        simpleSector.free();
+        assertEquals(0, simpleSector.occupierCount);
+        assertNull(simpleSector.getOccupier());
+    }
+
+    @Test
+    public void testGainControl() {
+        simpleSector.gainControl(side);
+        assertEquals(1, simpleSector.occupierCount);
+        assertEquals(side, simpleSector.getOccupier());
+    }
+
+    @Test
+    public void testGetOccupier() {
+        assertNull(simpleSector.getOccupier());
+        simpleSector.gainControl(side);
+        assertEquals(side, simpleSector.getOccupier());
+    }
+
+    @Test
+    public void testIsOccupied() {
+        assertFalse(simpleSector.isOccupied());
+        simpleSector.gainControl(side);
+        assertTrue(simpleSector.isOccupied());
+    }
+
+    @Test
+    public void testGetHeight() {
+        assertEquals(10, simpleSector.getHeight());
+    }
+
+    @Test
+    public void testIsDefenderSpawn() {
+        assertTrue(simpleSector.isDefenderSpawn());
+    }
+
+    @Test
+    public void testIsAttackerSpawn() {
+        assertFalse(simpleSector.isAttackerSpawn());
+    }
+
+    @Test
+    public void testIsFlag() {
+        assertTrue(simpleSector.isFlag());
+    }
+
+    @Test
+    public void testGetBonus() {
+        SectorBonus bonus = simpleSector.getBonus(charClass);
+        assertEquals(5, bonus.getAttackBonus());
+        assertEquals(5, bonus.getDefenseBonus());
+        assertEquals(0, bonus.getDamageBonus());
+    }
+
+    @Test
+    public void testGetDamageBonus() {
+        assertEquals(0, simpleSector.getDamageBonus());
+    }
+
+    @Test
+    public void testGetAttackBonus() {
+        assertEquals(7, simpleSector.getAttackBonus(charClass));
+    }
+
+    @Test
+    public void testGetDefenseBonus() {
+        assertEquals(5, simpleSector.getDefenseBonus(charClass));
+    }
+
+    @Test
+    public void testClassBonus() {
+        assertEquals(2, simpleSector.classBonus(charClass));
+        assertEquals(0, simpleSector.classBonus(new CharacterClass() {
+            @Override
+            public String toString() {
+                return "DifferentClass";
+            }
+        }));
+    }
+
+    @Test
+    public void testGetAreas() {
+        Set<Area> areas = new HashSet<>();
+        areas.add(area);
+        simpleSector._addArea(area);
+        assertEquals(areas, simpleSector.getAreas());
+    }
+
+    @Test
+    public void testAddArea() {
+        simpleSector._addArea(area);
+        assertTrue(simpleSector.getAreas().contains(area));
+    }
+
+    @Test
+    public void testHashCode() {
+        SimpleSector anotherSector = new SimpleSector(10, true, false, 5, 3, true, 2, charClass);
+        assertEquals(simpleSector.hashCode(), anotherSector.hashCode());
+    }
+
+    @Test
+    public void testEquals() {
+        SimpleSector anotherSector = new SimpleSector(10, true, false, 5, 3, true, 2, charClass);
+        assertTrue(simpleSector.equals(anotherSector));
+        assertFalse(simpleSector.equals(null));
+        assertFalse(simpleSector.equals(new Object()));
+    }
+
+    @Test
+    public void testAddObserver() {
+        simpleSector.addObserver(observer);
+        assertTrue(simpleSector.observers.contains(observer));
+    }
+
+    @Test
+    public void testRemoveObserver() {
+        simpleSector.addObserver(observer);
+        simpleSector.removeObserver(observer);
+        assertFalse(simpleSector.observers.contains(observer));
+    }
+}
+```

@@ -1,0 +1,136 @@
+Certainly! Below is a JUnit 4 test suite for the `ArgsParser` class. This suite aims to comprehensively test the methods provided in the class.
+
+```java
+import de.devcity.parseargs.ArgsParser;
+import de.devcity.parseargs.arguments.SwitchArgument;
+import de.devcity.parseargs.arguments.ParameterArgument;
+import de.devcity.parseargs.arguments.StringArgument;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class ArgsParserTest {
+
+    private ArgsParser argsParser;
+
+    @Before
+    public void setUp() {
+        argsParser = new ArgsParser();
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSetArgsNull() {
+        argsParser.setArgs(null);
+    }
+
+    @Test
+    public void testSetArgs() {
+        String[] args = {"-a", "--long", "value"};
+        argsParser.setArgs(args);
+        assertArrayEquals(args, argsParser.getArgs());
+    }
+
+    @Test
+    public void testGetArgsCount() {
+        String[] args = {"-a", "--long", "value"};
+        argsParser.setArgs(args);
+        assertEquals(3, argsParser.getArgsCount());
+    }
+
+    @Test
+    public void testGetArgsLeftCount() {
+        String[] args = {"-a", "--long", "value"};
+        argsParser.setArgs(args);
+        assertEquals(3, argsParser.getArgsLeftCount());
+    }
+
+    @Test
+    public void testParseSwitchArgumentShort() {
+        String[] args = {"-abc"};
+        argsParser.setArgs(args);
+        SwitchArgument switchArg = argsParser.parseSwitchArgument("b");
+        assertTrue(switchArg.isPresent());
+        assertEquals(0, switchArg.getIndex());
+        assertEquals("b", switchArg.getKey());
+    }
+
+    @Test
+    public void testParseSwitchArgumentLong() {
+        String[] args = {"--verbose"};
+        argsParser.setArgs(args);
+        SwitchArgument switchArg = argsParser.parseSwitchArgument("verbose");
+        assertTrue(switchArg.isPresent());
+        assertEquals(0, switchArg.getIndex());
+        assertEquals("verbose", switchArg.getKey());
+    }
+
+    @Test
+    public void testParseSwitchArgumentNotFound() {
+        String[] args = {"--verbose"};
+        argsParser.setArgs(args);
+        SwitchArgument switchArg = argsParser.parseSwitchArgument("quiet");
+        assertFalse(switchArg.isPresent());
+        assertEquals(-1, switchArg.getIndex());
+    }
+
+    @Test
+    public void testParseParameterArgumentShort() {
+        String[] args = {"-pvalue"};
+        argsParser.setArgs(args);
+        ParameterArgument paramArg = argsParser.parseParameterArgument("p");
+        assertNotNull(paramArg);
+        assertEquals(0, paramArg.getIndex());
+        assertEquals("p", paramArg.getKey());
+        assertEquals("value", paramArg.getValue());
+    }
+
+    @Test
+    public void testParseParameterArgumentLong() {
+        String[] args = {"--param", "value"};
+        argsParser.setArgs(args);
+        ParameterArgument paramArg = argsParser.parseParameterArgument("param");
+        assertNotNull(paramArg);
+        assertEquals(0, paramArg.getIndex());
+        assertEquals("param", paramArg.getKey());
+        assertEquals("value", paramArg.getValue());
+    }
+
+    @Test
+    public void testParseParameterArgumentNotFound() {
+        String[] args = {"--param", "value"};
+        argsParser.setArgs(args);
+        ParameterArgument paramArg = argsParser.parseParameterArgument("other");
+        assertNull(paramArg);
+    }
+
+    @Test
+    public void testParseStringArgument() {
+        String[] args = {"arg1", "arg2"};
+        argsParser.setArgs(args);
+        List<StringArgument> stringArgs = argsParser.parseStringArgument();
+        assertEquals(2, stringArgs.size());
+        assertEquals("arg1", stringArgs.get(0).getValue());
+        assertEquals("arg2", stringArgs.get(1).getValue());
+    }
+
+    @Test
+    public void testParseStringArgumentEmpty() {
+        String[] args = {};
+        argsParser.setArgs(args);
+        List<StringArgument> stringArgs = argsParser.parseStringArgument();
+        assertTrue(stringArgs.isEmpty());
+    }
+}
+```
+
+This test suite covers the following methods:
+- `setArgs` and its behavior with null input.
+- `getArgsCount` and `getArgsLeftCount`.
+- `parseSwitchArgument` for both short and long arguments, including cases where the argument is not found.
+- `parseParameterArgument` for both short and long arguments, including cases where the argument is not found.
+- `parseStringArgument` for both non-empty and empty argument lists.
+
+Make sure to have the necessary classes (`SwitchArgument`, `ParameterArgument`, `StringArgument`) and their methods available in your project for these tests to compile and run successfully.

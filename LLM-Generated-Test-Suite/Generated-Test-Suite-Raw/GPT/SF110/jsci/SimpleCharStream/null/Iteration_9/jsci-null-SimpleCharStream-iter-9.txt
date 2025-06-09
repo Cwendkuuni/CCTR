@@ -1,0 +1,144 @@
+To create a comprehensive JUnit 4 test suite for the `SimpleCharStream` class, we need to test all public and protected methods. Given the static nature of the class, we will need to handle the static fields carefully to ensure tests do not interfere with each other. Here's a complete test suite:
+
+```java
+import JSci.maths.symbolic.SimpleCharStream;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+
+import static org.junit.Assert.*;
+
+public class SimpleCharStreamTest {
+
+    private SimpleCharStream simpleCharStream;
+    private Reader reader;
+
+    @Before
+    public void setUp() {
+        reader = new StringReader("Hello\nWorld\r\nTest");
+        simpleCharStream = new SimpleCharStream(reader);
+    }
+
+    @After
+    public void tearDown() {
+        SimpleCharStream.Done();
+    }
+
+    @Test
+    public void testBeginToken() throws IOException {
+        char c = SimpleCharStream.BeginToken();
+        assertEquals('H', c);
+    }
+
+    @Test
+    public void testReadChar() throws IOException {
+        char c = SimpleCharStream.readChar();
+        assertEquals('H', c);
+        c = SimpleCharStream.readChar();
+        assertEquals('e', c);
+    }
+
+    @Test
+    public void testGetColumn() throws IOException {
+        SimpleCharStream.readChar();
+        SimpleCharStream.readChar();
+        assertEquals(3, SimpleCharStream.getColumn());
+    }
+
+    @Test
+    public void testGetLine() throws IOException {
+        SimpleCharStream.readChar();
+        SimpleCharStream.readChar();
+        assertEquals(1, SimpleCharStream.getLine());
+    }
+
+    @Test
+    public void testGetEndColumn() throws IOException {
+        SimpleCharStream.readChar();
+        SimpleCharStream.readChar();
+        assertEquals(3, SimpleCharStream.getEndColumn());
+    }
+
+    @Test
+    public void testGetEndLine() throws IOException {
+        SimpleCharStream.readChar();
+        SimpleCharStream.readChar();
+        assertEquals(1, SimpleCharStream.getEndLine());
+    }
+
+    @Test
+    public void testGetBeginColumn() throws IOException {
+        SimpleCharStream.BeginToken();
+        SimpleCharStream.readChar();
+        assertEquals(1, SimpleCharStream.getBeginColumn());
+    }
+
+    @Test
+    public void testGetBeginLine() throws IOException {
+        SimpleCharStream.BeginToken();
+        SimpleCharStream.readChar();
+        assertEquals(1, SimpleCharStream.getBeginLine());
+    }
+
+    @Test
+    public void testBackup() throws IOException {
+        SimpleCharStream.readChar();
+        SimpleCharStream.readChar();
+        SimpleCharStream.backup(1);
+        assertEquals('e', SimpleCharStream.readChar());
+    }
+
+    @Test
+    public void testGetImage() throws IOException {
+        SimpleCharStream.BeginToken();
+        SimpleCharStream.readChar();
+        SimpleCharStream.readChar();
+        assertEquals("He", SimpleCharStream.GetImage());
+    }
+
+    @Test
+    public void testGetSuffix() throws IOException {
+        SimpleCharStream.readChar();
+        SimpleCharStream.readChar();
+        char[] suffix = SimpleCharStream.GetSuffix(2);
+        assertArrayEquals(new char[]{'H', 'e'}, suffix);
+    }
+
+    @Test
+    public void testAdjustBeginLineColumn() throws IOException {
+        SimpleCharStream.BeginToken();
+        SimpleCharStream.readChar();
+        SimpleCharStream.readChar();
+        SimpleCharStream.adjustBeginLineColumn(2, 5);
+        assertEquals(2, SimpleCharStream.getBeginLine());
+        assertEquals(5, SimpleCharStream.getBeginColumn());
+    }
+
+    @Test
+    public void testReInitReader() throws IOException {
+        SimpleCharStream.readChar();
+        SimpleCharStream.ReInit(new StringReader("NewContent"));
+        char c = SimpleCharStream.readChar();
+        assertEquals('N', c);
+    }
+
+    @Test
+    public void testReInitInputStream() throws IOException {
+        SimpleCharStream.readChar();
+        SimpleCharStream.ReInit(new StringReader("NewContent"));
+        char c = SimpleCharStream.readChar();
+        assertEquals('N', c);
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: We initialize a `SimpleCharStream` with a `StringReader` in the `setUp` method and clean up using `SimpleCharStream.Done()` in the `tearDown` method to reset static fields.
+- **Test Methods**: Each method tests a specific functionality of the `SimpleCharStream` class. We ensure that the methods are tested in isolation to avoid interference due to static fields.
+- **Static Nature**: Since the class uses static fields, we need to be cautious about the state between tests. The `tearDown` method helps reset the state.
+
+This test suite covers the primary functionalities of the `SimpleCharStream` class, ensuring that each method behaves as expected.

@@ -1,0 +1,112 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `NumericEntityUnescaper` class. This suite covers various scenarios, including valid and invalid numeric entities, both decimal and hexadecimal.
+
+```java
+import org.apache.commons.lang3.text.translate.NumericEntityUnescaper;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+
+import static org.junit.Assert.assertEquals;
+
+public class NumericEntityUnescaperTest {
+
+    private NumericEntityUnescaper unescaper;
+
+    @Before
+    public void setUp() {
+        unescaper = new NumericEntityUnescaper();
+    }
+
+    @Test
+    public void testTranslateDecimalEntity() throws IOException {
+        String input = "&#65;";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(5, result);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateHexEntityLowerCase() throws IOException {
+        String input = "&#x41;";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(6, result);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateHexEntityUpperCase() throws IOException {
+        String input = "&#X41;";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(6, result);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateInvalidEntityNoSemicolon() throws IOException {
+        String input = "&#65";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(0, result);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateInvalidEntityNonNumeric() throws IOException {
+        String input = "&#abc;";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(0, result);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateNonEntity() throws IOException {
+        String input = "Hello World";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(0, result);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateEntityAtEnd() throws IOException {
+        String input = "Hello &#65;";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 6, out);
+        assertEquals(5, result);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateMultipleEntities() throws IOException {
+        String input = "&#65;&#66;&#67;";
+        Writer out = new StringWriter();
+        int index = 0;
+        while (index < input.length()) {
+            int result = unescaper.translate(input, index, out);
+            if (result == 0) {
+                index++;
+            } else {
+                index += result;
+            }
+        }
+        assertEquals("ABC", out.toString());
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes the `NumericEntityUnescaper` instance before each test.
+- **Test Cases**:
+  - **Decimal and Hexadecimal Entities**: Tests for both decimal (`&#65;`) and hexadecimal (`&#x41;`, `&#X41;`) numeric entities.
+  - **Invalid Entities**: Tests for invalid entities, such as those missing a semicolon or containing non-numeric characters.
+  - **Non-Entity Strings**: Ensures that non-entity strings are not altered.
+  - **Entities at Different Positions**: Tests entities at the end of a string and multiple entities in sequence.
+
+This suite should provide comprehensive coverage for the `translate` method in the `NumericEntityUnescaper` class.

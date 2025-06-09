@@ -1,0 +1,140 @@
+```java
+package corina.formats;
+
+import corina.ui.*;
+import corina.*;
+import corina.util.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
+
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+    private Sample sample;
+    private BufferedWriter writer;
+    private BufferedReader reader;
+
+    @Before
+    public void setUp() throws Exception {
+        tucsonSimple = new TucsonSimple();
+        sample = new Sample();
+        writer = new BufferedWriter(new StringWriter());
+        reader = new BufferedReader(new StringReader(""));
+    }
+
+    @Test
+    public void testToString() {
+        String expected = I18n.getText("format.tucsonsimple");
+        String actual = tucsonSimple.toString();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        String expected = ".RWL";
+        String actual = tucsonSimple.getDefaultExtension();
+        assertEquals(expected, actual);
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        tucsonSimple.load(reader);
+    }
+
+    @Test
+    public void testMake6digitCode() {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "123456789");
+        sample.meta = meta;
+        String expected = "123456";
+        String actual = tucsonSimple.make6digitCode(sample);
+        assertEquals(expected, actual);
+
+        meta.put("id", "1234");
+        sample.meta = meta;
+        expected = "1234  ";
+        actual = tucsonSimple.make6digitCode(sample);
+        assertEquals(expected, actual);
+
+        meta.remove("id");
+        sample.meta = meta;
+        expected = "000000";
+        actual = tucsonSimple.make6digitCode(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testSaveRowHeader() throws IOException {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "123456");
+        sample.meta = meta;
+        sample.range = new Range(new Year(1900), new Year(1950));
+        String code = tucsonSimple.make6digitCode(sample);
+        tucsonSimple.saveRowHeader(writer, sample, code, 6, new Year(1900));
+        writer.flush();
+        String expected = "123456 1900";
+        String actual = ((StringWriter) writer.getWriter()).toString().trim();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testSaveData() throws IOException {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "123456");
+        sample.meta = meta;
+        sample.range = new Range(new Year(1900), new Year(1950));
+        sample.data = new HashMap<>();
+        sample.data.put(0, 100);
+        sample.data.put(1, 200);
+        sample.count = new HashMap<>();
+        sample.count.put(0, 1);
+        sample.count.put(1, 2);
+        tucsonSimple.saveData(sample, writer);
+        writer.flush();
+        String expected = "123456 1900   100   1\n123456 1901   200   2\n123456 1902   999";
+        String actual = ((StringWriter) writer.getWriter()).toString().trim();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testComputeRange() {
+        sample.range = new Range(new Year(-1000), new Year(1000));
+        Range expected = new Range(new Year(1001), new Year(1000));
+        Range actual = tucsonSimple.computeRange(sample);
+        assertEquals(expected, actual);
+
+        sample.range = new Range(new Year(1), new Year(1000));
+        expected = new Range(new Year(1), new Year(1000));
+        actual = tucsonSimple.computeRange(sample);
+        assertEquals(expected, actual);
+
+        sample.range = new Range(new Year(-8000), new Year(1000));
+        expected = new Range(new Year(1), new Year(1000));
+        actual = tucsonSimple.computeRange(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "123456");
+        sample.meta = meta;
+        sample.range = new Range(new Year(1900), new Year(1950));
+        sample.data = new HashMap<>();
+        sample.data.put(0, 100);
+        sample.data.put(1, 200);
+        sample.count = new HashMap<>();
+        sample.count.put(0, 1);
+        sample.count.put(1, 2);
+        tucsonSimple.save(sample, writer);
+        writer.flush();
+        String expected = "123456 1900   100   1\n123456 1901   200   2\n123456 1902   999";
+        String actual = ((StringWriter) writer.getWriter()).toString().trim();
+        assertEquals(expected, actual);
+    }
+}
+```

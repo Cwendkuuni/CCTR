@@ -1,0 +1,111 @@
+package org.apache.commons.collections.primitives;
+
+import org.apache.commons.collections.primitives.ArrayByteList;
+import org.apache.commons.collections.primitives.ByteCollection;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.*;
+
+import static org.junit.Assert.*;
+
+public class ArrayByteListTest {
+
+    private ArrayByteList list;
+
+    @Before
+    public void setUp() {
+        list = new ArrayByteList();
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacity() {
+        ArrayByteList listWithCapacity = new ArrayByteList(10);
+        assertEquals(0, listWithCapacity.size());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithNegativeCapacity() {
+        new ArrayByteList(-1);
+    }
+
+    @Test
+    public void testConstructorWithByteCollection() {
+        ByteCollection collection = new ArrayByteList();
+        collection.add((byte) 1);
+        collection.add((byte) 2);
+        ArrayByteList listFromCollection = new ArrayByteList(collection);
+        assertEquals(2, listFromCollection.size());
+        assertEquals(1, listFromCollection.get(0));
+        assertEquals(2, listFromCollection.get(1));
+    }
+
+    @Test
+    public void testAddAndGet() {
+        list.add(0, (byte) 5);
+        assertEquals(1, list.size());
+        assertEquals(5, list.get(0));
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testGetWithInvalidIndex() {
+        list.get(0);
+    }
+
+    @Test
+    public void testRemoveElementAt() {
+        list.add(0, (byte) 5);
+        list.add(1, (byte) 10);
+        byte removed = list.removeElementAt(0);
+        assertEquals(5, removed);
+        assertEquals(1, list.size());
+        assertEquals(10, list.get(0));
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testRemoveElementAtWithInvalidIndex() {
+        list.removeElementAt(0);
+    }
+
+    @Test
+    public void testSet() {
+        list.add(0, (byte) 5);
+        byte oldVal = list.set(0, (byte) 10);
+        assertEquals(5, oldVal);
+        assertEquals(10, list.get(0));
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testSetWithInvalidIndex() {
+        list.set(0, (byte) 10);
+    }
+
+    @Test
+    public void testEnsureCapacity() {
+        list.ensureCapacity(20);
+        assertTrue(list.size() <= 20);
+    }
+
+    @Test
+    public void testTrimToSize() {
+        list.add(0, (byte) 5);
+        list.trimToSize();
+        assertEquals(1, list.size());
+        assertEquals(5, list.get(0));
+    }
+
+    @Test
+    public void testSerialization() throws IOException, ClassNotFoundException {
+        list.add(0, (byte) 5);
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(byteOut);
+        out.writeObject(list);
+
+        ByteArrayInputStream byteIn = new ByteArrayInputStream(byteOut.toByteArray());
+        ObjectInputStream in = new ObjectInputStream(byteIn);
+        ArrayByteList deserializedList = (ArrayByteList) in.readObject();
+
+        assertEquals(1, deserializedList.size());
+        assertEquals(5, deserializedList.get(0));
+    }
+}

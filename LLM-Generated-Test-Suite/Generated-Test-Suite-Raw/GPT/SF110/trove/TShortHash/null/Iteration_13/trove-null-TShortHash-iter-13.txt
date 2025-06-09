@@ -1,0 +1,130 @@
+To create a comprehensive JUnit 4 test suite for the `TShortHash` class, we need to test all the public and protected methods. Since `TShortHash` is an abstract class, we will need to create a concrete subclass for testing purposes. Below is a complete JUnit 4 test suite for the `TShortHash` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import gnu.trove.impl.hash.TShortHash;
+import gnu.trove.procedure.TShortProcedure;
+
+public class TShortHashTest {
+
+    private TShortHashImpl tShortHash;
+
+    // A concrete subclass of TShortHash for testing purposes
+    private static class TShortHashImpl extends TShortHash {
+        public TShortHashImpl() {
+            super();
+        }
+
+        public TShortHashImpl(int initialCapacity) {
+            super(initialCapacity);
+        }
+
+        public TShortHashImpl(int initialCapacity, float loadFactor) {
+            super(initialCapacity, loadFactor);
+        }
+
+        public TShortHashImpl(int initialCapacity, float loadFactor, short no_entry_value) {
+            super(initialCapacity, loadFactor, no_entry_value);
+        }
+    }
+
+    @Before
+    public void setUp() {
+        tShortHash = new TShortHashImpl(10, 0.5f, (short) -1);
+        tShortHash.setUp(10);
+    }
+
+    @Test
+    public void testGetNoEntryValue() {
+        assertEquals(-1, tShortHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testContains() {
+        tShortHash.insertKey((short) 5);
+        assertTrue(tShortHash.contains((short) 5));
+        assertFalse(tShortHash.contains((short) 10));
+    }
+
+    @Test
+    public void testForEach() {
+        tShortHash.insertKey((short) 5);
+        tShortHash.insertKey((short) 10);
+        TShortProcedure procedure = new TShortProcedure() {
+            @Override
+            public boolean execute(short value) {
+                return value > 0;
+            }
+        };
+        assertTrue(tShortHash.forEach(procedure));
+
+        procedure = new TShortProcedure() {
+            @Override
+            public boolean execute(short value) {
+                return value < 5;
+            }
+        };
+        assertFalse(tShortHash.forEach(procedure));
+    }
+
+    @Test
+    public void testRemoveAt() {
+        int index = tShortHash.insertKey((short) 5);
+        assertTrue(tShortHash.contains((short) 5));
+        tShortHash.removeAt(index);
+        assertFalse(tShortHash.contains((short) 5));
+    }
+
+    @Test
+    public void testIndex() {
+        tShortHash.insertKey((short) 5);
+        assertTrue(tShortHash.index((short) 5) >= 0);
+        assertEquals(-1, tShortHash.index((short) 10));
+    }
+
+    @Test
+    public void testInsertKey() {
+        int index = tShortHash.insertKey((short) 5);
+        assertTrue(index >= 0);
+        assertTrue(tShortHash.contains((short) 5));
+    }
+
+    @Test
+    public void testInsertKeyRehash() {
+        // Fill the hash to force rehash
+        for (int i = 0; i < 10; i++) {
+            tShortHash.insertKey((short) i);
+        }
+        int index = tShortHash.insertKey((short) 15);
+        assertTrue(index >= 0);
+        assertTrue(tShortHash.contains((short) 15));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testInsertKeyRehashFull() {
+        // Fill the hash completely
+        for (int i = 0; i < 10; i++) {
+            tShortHash.insertKey((short) i);
+        }
+        // Attempt to insert another key should throw an exception
+        tShortHash.insertKey((short) 20);
+    }
+}
+```
+
+### Explanation:
+- **Concrete Subclass**: `TShortHashImpl` is a concrete subclass of `TShortHash` created for testing purposes.
+- **Setup Method**: `setUp()` initializes a `TShortHashImpl` instance with a specified initial capacity, load factor, and no-entry value.
+- **Test Methods**: Each method in `TShortHash` is tested:
+  - `testGetNoEntryValue()`: Verifies the no-entry value.
+  - `testContains()`: Checks if a value is contained in the hash.
+  - `testForEach()`: Tests the `forEach` method with different procedures.
+  - `testRemoveAt()`: Ensures that removing an element works correctly.
+  - `testIndex()`: Verifies the index retrieval for existing and non-existing values.
+  - `testInsertKey()`: Tests inserting a key into the hash.
+  - `testInsertKeyRehash()`: Tests inserting keys to force rehashing.
+  - `testInsertKeyRehashFull()`: Tests behavior when the hash is full, expecting an exception.
+
+This test suite covers the main functionalities of the `TShortHash` class.

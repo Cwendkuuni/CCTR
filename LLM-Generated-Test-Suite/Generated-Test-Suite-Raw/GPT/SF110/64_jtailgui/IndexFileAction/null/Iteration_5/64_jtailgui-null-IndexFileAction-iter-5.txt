@@ -1,0 +1,157 @@
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Observable;
+
+@RunWith(MockitoJUnitRunner.class)
+public class IndexFileActionTest {
+
+    @Mock
+    private JTailMainModel mockJTailMainModel;
+
+    @Mock
+    private OpenFileModel mockOpenFileModel;
+
+    @Mock
+    private ActionEvent mockActionEvent;
+
+    @Mock
+    private Component mockComponent;
+
+    @Mock
+    private JDialog mockDialog;
+
+    @InjectMocks
+    private IndexFileAction indexFileAction;
+
+    @Before
+    public void setUp() {
+        when(mockActionEvent.getSource()).thenReturn(mockDialog);
+        when(mockDialog.getParent()).thenReturn(mockComponent);
+    }
+
+    @Test
+    public void testActionPerformed_noFileSelected() {
+        when(mockOpenFileModel.getFile()).thenReturn(null);
+
+        indexFileAction.actionPerformed(mockActionEvent);
+
+        verify(mockDialog).setVisible(false);
+        verify(mockOpenFileModel).getFile();
+        // Verify that InformationHandler.handle is called with correct parameters
+        // This requires a static mock or a spy on InformationHandler
+    }
+
+    @Test
+    public void testActionPerformed_memoryBasedIndex() throws FileNotFoundException {
+        File mockFile = mock(File.class);
+        when(mockOpenFileModel.getFile()).thenReturn(mockFile);
+        when(mockOpenFileModel.getIndexType()).thenReturn(IndexType.MEMORY_BASED);
+
+        indexFileAction.actionPerformed(mockActionEvent);
+
+        verify(mockDialog).setVisible(false);
+        verify(mockOpenFileModel).getFile();
+        verify(mockOpenFileModel).getIndexType();
+        // Verify FileIndexer and FileIndexerWorker interactions
+    }
+
+    @Test
+    public void testActionPerformed_fileBasedIndex() throws FileNotFoundException {
+        File mockFile = mock(File.class);
+        when(mockOpenFileModel.getFile()).thenReturn(mockFile);
+        when(mockOpenFileModel.getIndexType()).thenReturn(IndexType.FILE_BASED);
+
+        indexFileAction.actionPerformed(mockActionEvent);
+
+        verify(mockDialog).setVisible(false);
+        verify(mockOpenFileModel).getFile();
+        verify(mockOpenFileModel).getIndexType();
+        // Verify FileIndexer and FileIndexerWorker interactions
+    }
+
+    @Test
+    public void testActionPerformed_fileNotFoundException() throws FileNotFoundException {
+        File mockFile = mock(File.class);
+        when(mockOpenFileModel.getFile()).thenReturn(mockFile);
+        when(mockOpenFileModel.getIndexType()).thenReturn(IndexType.FILE_BASED);
+
+        // Simulate FileNotFoundException
+        // This requires a spy on FileIndexer or a mock that throws the exception
+
+        indexFileAction.actionPerformed(mockActionEvent);
+
+        verify(mockDialog).setVisible(false);
+        verify(mockOpenFileModel).getFile();
+        verify(mockOpenFileModel).getIndexType();
+        // Verify ExceptionHandler.handle is called with correct parameters
+    }
+
+    @Test
+    public void testUpdate_notificationReceived() {
+        Observable mockObservable = mock(Observable.class);
+        FileIndexer mockFileIndexer = mock(FileIndexer.class);
+        File mockFile = mock(File.class);
+        LineReader mockLineReader = mock(LineReader.class);
+
+        when(mockFileIndexer.getFile()).thenReturn(mockFile);
+        when(mockFileIndexer.getIndex()).thenReturn(mockLineReader);
+        when(mockObservable instanceof FileIndexer).thenReturn(true);
+
+        indexFileAction.update(mockObservable, 100);
+
+        verify(mockFileIndexer).getFile();
+        verify(mockFileIndexer).getIndex();
+        // Verify JTailMainModel.add is called with correct parameters
+    }
+
+    @Test
+    public void testUpdate_fileNotFoundException() {
+        Observable mockObservable = mock(Observable.class);
+        FileIndexer mockFileIndexer = mock(FileIndexer.class);
+        File mockFile = mock(File.class);
+
+        when(mockFileIndexer.getFile()).thenReturn(mockFile);
+        when(mockObservable instanceof FileIndexer).thenReturn(true);
+
+        // Simulate FileNotFoundException
+        // This requires a spy on LineReader or a mock that throws the exception
+
+        indexFileAction.update(mockObservable, 100);
+
+        verify(mockFileIndexer).getFile();
+        // Verify ExceptionHandler.handle is called with correct parameters
+    }
+
+    @Test
+    public void testUpdate_genericException() {
+        Observable mockObservable = mock(Observable.class);
+        FileIndexer mockFileIndexer = mock(FileIndexer.class);
+        File mockFile = mock(File.class);
+
+        when(mockFileIndexer.getFile()).thenReturn(mockFile);
+        when(mockObservable instanceof FileIndexer).thenReturn(true);
+
+        // Simulate generic Exception
+        // This requires a spy on LineReader or a mock that throws the exception
+
+        indexFileAction.update(mockObservable, 100);
+
+        verify(mockFileIndexer).getFile();
+        // Verify ExceptionHandler.handle is called with correct parameters
+    }
+}
+```
+
+This test suite uses Mockito to mock dependencies and verify interactions. Note that some parts of the code, such as handling exceptions and verifying static method calls, may require additional setup or changes depending on the actual implementation of those methods.

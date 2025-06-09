@@ -1,0 +1,119 @@
+To create a comprehensive JUnit 4 test suite for the `SAXDirParser` class, we need to test each method, including the handling of XML elements and attributes. The test suite will include tests for the constructor, the `startElement`, `characters`, and `endElement` methods, as well as the static getter methods. Since the class relies on XML parsing, we'll simulate XML input using a `StringReader` and a `SAXParser`.
+
+Here's the complete JUnit 4 test suite:
+
+```java
+package com.jstevh.viewer;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.XMLReader;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.StringReader;
+import java.util.HashMap;
+
+import static org.junit.Assert.*;
+
+public class SAXDirParserTest {
+
+    private SAXDirParser saxDirParser;
+
+    @Before
+    public void setUp() throws Exception {
+        saxDirParser = new SAXDirParser();
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(saxDirParser);
+        assertEquals("", saxDirParser.getWebData());
+    }
+
+    @Test
+    public void testStartElementAndCharacters() throws Exception {
+        String xmlInput = "<root>" +
+                "<BrowserLoc>http://example.com</BrowserLoc>" +
+                "<Editor>vim</Editor>" +
+                "<acceptsLineNumber>Yes</acceptsLineNumber>" +
+                "<parameter>lineNum</parameter>" +
+                "<Web>http://web.com</Web>" +
+                "<Local>Yes</Local>" +
+                "<pkg>com.example.</pkg>" +
+                "</root>";
+
+        parseXML(xmlInput);
+
+        assertEquals("http://example.com", SAXDirParser.getLocalBrowser());
+        assertEquals("vim", SAXDirParser.getEditor());
+        assertTrue(SAXDirParser.acceptsLineNumber());
+        assertEquals("lineNum", SAXDirParser.lineNumberParameter());
+        assertEquals("http://web.com", saxDirParser.location);
+        assertTrue(saxDirParser.local);
+        assertTrue(SAXDirParser.getDirectory().containsKey("com.example"));
+        assertTrue(SAXDirParser.getLocalPackages().contains("com.example"));
+    }
+
+    @Test
+    public void testEndElement() throws Exception {
+        String xmlInput = "<root><Group></Group></root>";
+
+        parseXML(xmlInput);
+
+        // Since endElement only sets check to false, we ensure no exceptions occur
+        assertFalse(saxDirParser.check);
+    }
+
+    @Test
+    public void testGetDirectory() {
+        HashMap<String, String> directory = SAXDirParser.getDirectory();
+        assertNotNull(directory);
+    }
+
+    @Test
+    public void testGetLocalPackages() {
+        assertNull(SAXDirParser.getLocalPackages());
+    }
+
+    @Test
+    public void testGetLocalBrowser() {
+        assertEquals("", SAXDirParser.getLocalBrowser());
+    }
+
+    @Test
+    public void testGetEditor() {
+        assertEquals("", SAXDirParser.getEditor());
+    }
+
+    @Test
+    public void testAcceptsLineNumber() {
+        assertFalse(SAXDirParser.acceptsLineNumber());
+    }
+
+    @Test
+    public void testLineNumberParameter() {
+        assertEquals("", SAXDirParser.lineNumberParameter());
+    }
+
+    private void parseXML(String xmlInput) throws Exception {
+        SAXParserFactory saxFactory = SAXParserFactory.newInstance();
+        SAXParser myParser = saxFactory.newSAXParser();
+        XMLReader myReader = myParser.getXMLReader();
+        myReader.setContentHandler(saxDirParser);
+        myReader.parse(new InputSource(new StringReader(xmlInput)));
+    }
+}
+```
+
+### Explanation:
+
+- **setUp Method**: Initializes a new instance of `SAXDirParser` before each test.
+- **testConstructor**: Verifies that the constructor initializes the `webData` field correctly.
+- **testStartElementAndCharacters**: Tests the parsing of XML elements and characters, ensuring that the correct values are set in the class.
+- **testEndElement**: Ensures that the `endElement` method executes without errors.
+- **Static Getter Tests**: Verifies the behavior of static getter methods, ensuring they return the expected default values or states.
+- **parseXML Helper Method**: A utility method to parse XML strings using the `SAXParser`.
+
+This test suite covers the main functionalities of the `SAXDirParser` class, ensuring that it behaves as expected when parsing XML data.

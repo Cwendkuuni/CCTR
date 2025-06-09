@@ -1,0 +1,201 @@
+```java
+import org.apache.commons.cli2.option.GroupImpl;
+import org.apache.commons.cli2.Argument;
+import org.apache.commons.cli2.DisplaySetting;
+import org.apache.commons.cli2.Option;
+import org.apache.commons.cli2.OptionException;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class GroupImplTest {
+
+    private GroupImpl group;
+    private List<Option> options;
+    private WriteableCommandLine commandLine;
+
+    @Before
+    public void setUp() {
+        options = new ArrayList<>();
+        commandLine = mock(WriteableCommandLine.class);
+        group = new GroupImpl(options, "testGroup", "Test Group", 1, 3);
+    }
+
+    @Test
+    public void testCanProcess() {
+        Option option = mock(Option.class);
+        when(option.getTriggers()).thenReturn(Collections.singleton("--test"));
+        options.add(option);
+
+        assertTrue(group.canProcess(commandLine, "--test"));
+        assertFalse(group.canProcess(commandLine, "--invalid"));
+    }
+
+    @Test
+    public void testGetPrefixes() {
+        Option option = mock(Option.class);
+        when(option.getPrefixes()).thenReturn(Collections.singleton("--"));
+        options.add(option);
+
+        Set<String> prefixes = group.getPrefixes();
+        assertEquals(1, prefixes.size());
+        assertTrue(prefixes.contains("--"));
+    }
+
+    @Test
+    public void testGetTriggers() {
+        Option option = mock(Option.class);
+        when(option.getTriggers()).thenReturn(Collections.singleton("--test"));
+        options.add(option);
+
+        Set<String> triggers = group.getTriggers();
+        assertEquals(1, triggers.size());
+        assertTrue(triggers.contains("--test"));
+    }
+
+    @Test
+    public void testProcess() throws OptionException {
+        Option option = mock(Option.class);
+        when(option.getTriggers()).thenReturn(Collections.singleton("--test"));
+        options.add(option);
+
+        List<String> arguments = new ArrayList<>();
+        arguments.add("--test");
+        ListIterator<String> iterator = arguments.listIterator();
+
+        group.process(commandLine, iterator);
+
+        verify(option).process(commandLine, iterator);
+    }
+
+    @Test
+    public void testValidate() throws OptionException {
+        Option option = mock(Option.class);
+        when(option.isRequired()).thenReturn(true);
+        options.add(option);
+
+        when(commandLine.hasOption(option)).thenReturn(true);
+
+        group.validate(commandLine);
+
+        verify(option).validate(commandLine);
+    }
+
+    @Test(expected = OptionException.class)
+    public void testValidateTooManyOptions() throws OptionException {
+        Option option = mock(Option.class);
+        when(option.isRequired()).thenReturn(true);
+        options.add(option);
+        options.add(option);
+        options.add(option);
+        options.add(option);
+
+        when(commandLine.hasOption(option)).thenReturn(true);
+
+        group.validate(commandLine);
+    }
+
+    @Test(expected = OptionException.class)
+    public void testValidateTooFewOptions() throws OptionException {
+        Option option = mock(Option.class);
+        when(option.isRequired()).thenReturn(true);
+        options.add(option);
+
+        when(commandLine.hasOption(option)).thenReturn(false);
+
+        group.validate(commandLine);
+    }
+
+    @Test
+    public void testGetPreferredName() {
+        assertEquals("testGroup", group.getPreferredName());
+    }
+
+    @Test
+    public void testGetDescription() {
+        assertEquals("Test Group", group.getDescription());
+    }
+
+    @Test
+    public void testAppendUsage() {
+        StringBuffer buffer = new StringBuffer();
+        Set<DisplaySetting> helpSettings = new HashSet<>();
+        helpSettings.add(DisplaySetting.DISPLAY_GROUP_NAME);
+
+        group.appendUsage(buffer, helpSettings, null);
+
+        assertTrue(buffer.toString().contains("testGroup"));
+    }
+
+    @Test
+    public void testHelpLines() {
+        Set<DisplaySetting> helpSettings = new HashSet<>();
+        helpSettings.add(DisplaySetting.DISPLAY_GROUP_NAME);
+
+        List<HelpLine> helpLines = group.helpLines(0, helpSettings, null);
+
+        assertEquals(1, helpLines.size());
+    }
+
+    @Test
+    public void testGetOptions() {
+        Option option = mock(Option.class);
+        options.add(option);
+
+        List<Option> groupOptions = group.getOptions();
+        assertEquals(1, groupOptions.size());
+        assertTrue(groupOptions.contains(option));
+    }
+
+    @Test
+    public void testGetAnonymous() {
+        Argument argument = mock(Argument.class);
+        options.add(argument);
+
+        List<Option> anonymous = group.getAnonymous();
+        assertEquals(1, anonymous.size());
+        assertTrue(anonymous.contains(argument));
+    }
+
+    @Test
+    public void testFindOption() {
+        Option option = mock(Option.class);
+        when(option.findOption("--test")).thenReturn(option);
+        options.add(option);
+
+        Option foundOption = group.findOption("--test");
+        assertEquals(option, foundOption);
+    }
+
+    @Test
+    public void testGetMinimum() {
+        assertEquals(1, group.getMinimum());
+    }
+
+    @Test
+    public void testGetMaximum() {
+        assertEquals(3, group.getMaximum());
+    }
+
+    @Test
+    public void testIsRequired() {
+        assertTrue(group.isRequired());
+    }
+
+    @Test
+    public void testDefaults() {
+        Option option = mock(Option.class);
+        options.add(option);
+
+        group.defaults(commandLine);
+
+        verify(option).defaults(commandLine);
+    }
+}
+```

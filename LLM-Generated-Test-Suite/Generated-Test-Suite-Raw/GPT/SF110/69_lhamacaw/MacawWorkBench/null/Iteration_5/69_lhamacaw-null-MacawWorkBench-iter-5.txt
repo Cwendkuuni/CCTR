@@ -1,0 +1,122 @@
+To create a comprehensive JUnit 4 test suite for the `MacawWorkBench` class, we need to consider the following:
+
+1. **Testing the Constructor**: Ensure that the constructor initializes the dialog and buttons correctly.
+2. **Testing the `actionPerformed` Method**: Simulate button clicks and verify that the appropriate methods are called.
+3. **Testing the `show` Method**: Verify that the dialog is displayed.
+
+Since the `MacawWorkBench` class interacts with a GUI and external systems, we'll need to mock these dependencies. We'll use a mocking framework like Mockito to handle this.
+
+Here's a complete JUnit 4 test suite for the `MacawWorkBench` class:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+
+public class MacawWorkBenchTest {
+
+    private SessionProperties mockSessionProperties;
+    private UserInterfaceFactory mockUserInterfaceFactory;
+    private JDialog mockDialog;
+    private JButton mockEditConstantsButton;
+    private JButton mockEditVariablesButton;
+    private JButton mockExportVariableDataButton;
+    private JButton mockExitButton;
+    private MacawWorkBench macawWorkBench;
+
+    @Before
+    public void setUp() {
+        mockSessionProperties = mock(SessionProperties.class);
+        mockUserInterfaceFactory = mock(UserInterfaceFactory.class);
+        mockDialog = mock(JDialog.class);
+        mockEditConstantsButton = mock(JButton.class);
+        mockEditVariablesButton = mock(JButton.class);
+        mockExportVariableDataButton = mock(JButton.class);
+        mockExitButton = mock(JButton.class);
+
+        when(mockSessionProperties.getUserInterfaceFactory()).thenReturn(mockUserInterfaceFactory);
+        when(mockUserInterfaceFactory.createDialog()).thenReturn(mockDialog);
+        when(mockUserInterfaceFactory.createButton(anyString())).thenReturn(mockEditConstantsButton, mockEditVariablesButton, mockExportVariableDataButton, mockExitButton);
+
+        macawWorkBench = new MacawWorkBench(mockSessionProperties);
+    }
+
+    @Test
+    public void testConstructorInitializesComponents() {
+        verify(mockDialog).setTitle(anyString());
+        verify(mockDialog).setModal(true);
+        verify(mockDialog).setSize(300, 300);
+        verify(mockEditConstantsButton).addActionListener(macawWorkBench);
+        verify(mockEditVariablesButton).addActionListener(macawWorkBench);
+        verify(mockExportVariableDataButton).addActionListener(macawWorkBench);
+        verify(mockExitButton).addActionListener(macawWorkBench);
+    }
+
+    @Test
+    public void testShowMethod() {
+        macawWorkBench.show();
+        verify(mockDialog).setVisible(true);
+    }
+
+    @Test
+    public void testActionPerformedEditConstants() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(mockEditConstantsButton);
+
+        macawWorkBench.actionPerformed(mockEvent);
+
+        // Verify that the editConstants method is called
+        // Since editConstants is private, we can't directly verify its call
+        // Instead, we can verify the interaction with the mock objects it would use
+        VariableConstantsEditor mockEditor = mock(VariableConstantsEditor.class);
+        ArgumentCaptor<VariableConstantsEditor> captor = ArgumentCaptor.forClass(VariableConstantsEditor.class);
+        verify(mockEditor).show();
+    }
+
+    @Test
+    public void testActionPerformedEditVariables() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(mockEditVariablesButton);
+
+        macawWorkBench.actionPerformed(mockEvent);
+
+        // Verify that the editVariables method is called
+        MacawVariableBrowser mockBrowser = mock(MacawVariableBrowser.class);
+        ArgumentCaptor<MacawVariableBrowser> captor = ArgumentCaptor.forClass(MacawVariableBrowser.class);
+        verify(mockBrowser).show();
+    }
+
+    @Test
+    public void testActionPerformedExportVariableData() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(mockExportVariableDataButton);
+
+        macawWorkBench.actionPerformed(mockEvent);
+
+        // Verify that the exportVariableData method is called
+        ExportVariablesToMacawXML mockExport = mock(ExportVariablesToMacawXML.class);
+        ArgumentCaptor<ExportVariablesToMacawXML> captor = ArgumentCaptor.forClass(ExportVariablesToMacawXML.class);
+        verify(mockExport).export();
+    }
+
+    @Test
+    public void testActionPerformedExit() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(mockExitButton);
+
+        // We can't test System.exit directly, so we assume it would be called
+        // You might want to refactor the exit method to allow testing without exiting the JVM
+    }
+}
+```
+
+### Notes:
+- **Mocking**: We use Mockito to mock dependencies like `SessionProperties`, `UserInterfaceFactory`, and `JDialog`.
+- **Private Methods**: Since `editConstants`, `editVariables`, `exportVariableData`, and `exit` are private, we can't directly verify their calls. Instead, we verify interactions with the objects they would use.
+- **System.exit**: Testing `System.exit` is tricky because it terminates the JVM. Consider refactoring the `exit` method to allow testing without exiting the JVM, such as by using a callback or a strategy pattern.

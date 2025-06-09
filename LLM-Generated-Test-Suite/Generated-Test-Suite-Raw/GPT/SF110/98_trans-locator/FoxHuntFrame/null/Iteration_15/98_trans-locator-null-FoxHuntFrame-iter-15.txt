@@ -1,0 +1,148 @@
+To create a comprehensive JUnit 4 test suite for the `FoxHuntFrame` class, we need to focus on testing the public methods and any significant private methods that can be accessed indirectly. The main methods to test are `addPoint()` and `actionPerformed()`, as well as the behavior of the `FoxTableModel` class. We will use mocking where necessary to isolate the class from its dependencies.
+
+Here's a JUnit 4 test suite for the `FoxHuntFrame` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import javax.swing.JButton;
+import javax.swing.JTextField;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame foxHuntFrame;
+
+    @Before
+    public void setUp() {
+        foxHuntFrame = new FoxHuntFrame();
+    }
+
+    @After
+    public void tearDown() {
+        foxHuntFrame.dispose();
+    }
+
+    @Test
+    public void testAddPoint() {
+        // Set up the text fields with valid data
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+
+        // Call the method under test
+        foxHuntFrame.addPoint();
+
+        // Verify that a point was added to the points vector
+        assertEquals(1, foxHuntFrame.points.size());
+
+        // Verify that the display was updated
+        assertEquals(1, foxHuntFrame.display.getPoints().size());
+    }
+
+    @Test
+    public void testActionPerformed() {
+        // Mock an ActionEvent
+        ActionEvent mockEvent = mock(ActionEvent.class);
+
+        // Call the method under test
+        foxHuntFrame.actionPerformed(mockEvent);
+
+        // Verify that addPoint was called
+        assertEquals(1, foxHuntFrame.points.size());
+    }
+
+    @Test
+    public void testFoxTableModel() {
+        FoxHuntFrame.FoxTableModel model = foxHuntFrame.new FoxTableModel();
+
+        // Verify column count
+        assertEquals(2, model.getColumnCount());
+
+        // Verify column names
+        assertEquals("Lattitude", model.getColumnName(0));
+        assertEquals("Longitude", model.getColumnName(1));
+
+        // Verify row count
+        assertEquals(0, model.getRowCount());
+
+        // Add a point and verify row count
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+        foxHuntFrame.addPoint();
+        assertEquals(1, model.getRowCount());
+    }
+
+    @Test
+    public void testLoadLandmarksFileNotFound() {
+        // Rename the landmarks.cfg file if it exists
+        File file = new File("./landmarks.cfg");
+        if (file.exists()) {
+            file.renameTo(new File("./landmarks.cfg.bak"));
+        }
+
+        // Capture the error message
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        doNothing().when(foxHuntFrame).error(captor.capture());
+
+        // Call the method under test
+        foxHuntFrame.loadLandmarks();
+
+        // Verify the error message
+        assertEquals("Can't Find the file", captor.getValue());
+
+        // Restore the landmarks.cfg file
+        if (new File("./landmarks.cfg.bak").exists()) {
+            new File("./landmarks.cfg.bak").renameTo(new File("./landmarks.cfg"));
+        }
+    }
+
+    @Test
+    public void testLoadLandmarksIOException() throws IOException {
+        // Create a malformed landmarks.cfg file
+        File file = new File("./landmarks.cfg");
+        FileWriter writer = new FileWriter(file);
+        writer.write("NUM 1\n");
+        writer.write("LAT 34.0522\n");
+        writer.close();
+
+        // Capture the error message
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        doNothing().when(foxHuntFrame).error(captor.capture());
+
+        // Call the method under test
+        foxHuntFrame.loadLandmarks();
+
+        // Verify the error message
+        assertEquals("Error communicating with the file", captor.getValue());
+
+        // Clean up
+        file.delete();
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: We initialize and dispose of the `FoxHuntFrame` in the `setUp` and `tearDown` methods, respectively.
+- **Test Methods**:
+  - `testAddPoint()`: Tests the `addPoint()` method by setting text fields and verifying the addition of points.
+  - `testActionPerformed()`: Tests the `actionPerformed()` method to ensure it triggers `addPoint()`.
+  - `testFoxTableModel()`: Tests the `FoxTableModel` for correct column names, counts, and data retrieval.
+  - `testLoadLandmarksFileNotFound()`: Tests the `loadLandmarks()` method for handling a missing file.
+  - `testLoadLandmarksIOException()`: Tests the `loadLandmarks()` method for handling IO exceptions with a malformed file.
+
+### Note:
+- **Mocking**: We use Mockito to mock `ActionEvent` and capture error messages.
+- **File Handling**: We handle file operations carefully to avoid side effects, renaming files if necessary.
+- **Error Handling**: We capture error messages to verify correct error handling behavior.

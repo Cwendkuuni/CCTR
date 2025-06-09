@@ -1,0 +1,136 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `FoxHuntFrame` class. This test suite covers the main functionalities of the class, including the constructor, action handling, point addition, and error handling.
+
+```java
+package Joshua.FoxHunt;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame foxHuntFrame;
+
+    @Before
+    public void setUp() {
+        foxHuntFrame = new FoxHuntFrame();
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(foxHuntFrame);
+        assertEquals("Triangulation", foxHuntFrame.getTitle());
+        assertTrue(foxHuntFrame.isVisible());
+    }
+
+    @Test
+    public void testActionPerformed() {
+        foxHuntFrame.theta.setText("90");
+        foxHuntFrame.lat.setText("45.00000");
+        foxHuntFrame.lon.setText("90.00000");
+
+        ActionEvent event = new ActionEvent(foxHuntFrame.add, ActionEvent.ACTION_PERFORMED, null);
+        foxHuntFrame.actionPerformed(event);
+
+        assertEquals(1, foxHuntFrame.points.size());
+    }
+
+    @Test
+    public void testAddPoint() {
+        foxHuntFrame.theta.setText("90");
+        foxHuntFrame.lat.setText("45.00000");
+        foxHuntFrame.lon.setText("90.00000");
+
+        foxHuntFrame.addPoint();
+
+        assertEquals(1, foxHuntFrame.points.size());
+        assertEquals(0, foxHuntFrame.fox.size());
+
+        foxHuntFrame.addPoint();
+
+        assertEquals(2, foxHuntFrame.points.size());
+        assertEquals(1, foxHuntFrame.fox.size());
+    }
+
+    @Test
+    public void testLoadLandmarks() throws IOException {
+        File tempFile = File.createTempFile("landmarks", ".cfg");
+        tempFile.deleteOnExit();
+
+        try (FileWriter writer = new FileWriter(tempFile)) {
+            writer.write("NUM 1\n");
+            writer.write("FILE icon.gif\n");
+            writer.write("LAT 45.00000\n");
+            writer.write("LON 90.00000\n");
+        }
+
+        FoxHuntFrame frameWithLandmarks = new FoxHuntFrame() {
+            @Override
+            protected void loadLandmarks() {
+                try {
+                    File file = new File(tempFile.getPath());
+                    FileInputStream inFile = new FileInputStream(file);
+                    BufferedReader in = new BufferedReader(new InputStreamReader(inFile));
+                    String input = "";
+                    int NUM = 0;
+                    if ((input = in.readLine()) != null) {
+                        String num = input.substring(4);
+                        NUM = Integer.parseInt(num);
+                    }
+                    int numAtFile = 0;
+                    int numAtLat = 0;
+                    int numAtLon = 0;
+                    String[] iconFile = new String[NUM];
+                    double[] lat = new double[NUM];
+                    double[] lon = new double[NUM];
+                    while ((input = in.readLine()) != null) {
+                        if (input.startsWith("FILE")) {
+                            iconFile[numAtFile] = input.substring(4);
+                            ++numAtFile;
+                        } else if (input.startsWith("LAT")) {
+                            lat[numAtLat] = Double.parseDouble(input.substring(4));
+                            ++numAtLat;
+                        } else {
+                            if (!input.startsWith("LON")) {
+                                continue;
+                            }
+                            lon[numAtLon] = Double.parseDouble(input.substring(4));
+                            ++numAtLon;
+                        }
+                    }
+                    for (int a = 0; a < NUM; ++a) {
+                        display.addLandMark(new Landmark(lat[a], lon[a], new ImageIcon(iconFile[a])));
+                    }
+                    in.close();
+                    inFile.close();
+                } catch (Exception e) {
+                    error("Error communicating with the file");
+                }
+            }
+        };
+
+        frameWithLandmarks.loadLandmarks();
+        assertEquals(1, frameWithLandmarks.display.getLandmarks().size());
+    }
+
+    @Test
+    public void testErrorHandling() {
+        FoxHuntFrame frameWithError = new FoxHuntFrame() {
+            @Override
+            protected void loadLandmarks() {
+                error("Test Error");
+            }
+        };
+
+        frameWithError.loadLandmarks();
+        // This test will not pass as it will exit the system, but it demonstrates the error handling.
+    }
+}
+```
+
+This test suite includes tests for the constructor, action handling, point addition, and error handling. The `testLoadLandmarks` method creates a temporary file to simulate the landmarks configuration file and tests the loading of landmarks. The `testErrorHandling` method demonstrates the error handling mechanism, although it will cause the system to exit and thus cannot be fully tested in a typical unit test environment.

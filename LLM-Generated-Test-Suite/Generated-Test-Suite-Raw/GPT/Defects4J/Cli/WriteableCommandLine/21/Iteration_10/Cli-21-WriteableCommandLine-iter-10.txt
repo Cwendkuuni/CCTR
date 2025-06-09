@@ -1,0 +1,112 @@
+Certainly! Below is a JUnit 4 test suite for the `WriteableCommandLine` interface. Since `WriteableCommandLine` is an interface, the test suite assumes the existence of a concrete implementation named `WriteableCommandLineImpl`. You will need to replace `WriteableCommandLineImpl` with the actual class name of your implementation.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.apache.commons.cli2.Option;
+import org.apache.commons.cli2.WriteableCommandLine;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class WriteableCommandLineTest {
+
+    private WriteableCommandLine commandLine;
+    private Option option1;
+    private Option option2;
+
+    @Before
+    public void setUp() {
+        // Replace WriteableCommandLineImpl with the actual implementation class
+        commandLine = new WriteableCommandLineImpl();
+        option1 = new Option("option1", "Option 1");
+        option2 = new Option("option2", "Option 2");
+    }
+
+    @Test
+    public void testAddOption() {
+        commandLine.addOption(option1);
+        assertTrue(commandLine.hasOption(option1));
+    }
+
+    @Test
+    public void testAddValue() {
+        commandLine.addOption(option1);
+        commandLine.addValue(option1, "value1");
+        List values = commandLine.getUndefaultedValues(option1);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test
+    public void testGetUndefaultedValues() {
+        commandLine.addOption(option1);
+        List values = commandLine.getUndefaultedValues(option1);
+        assertTrue(values.isEmpty());
+
+        commandLine.addValue(option1, "value1");
+        values = commandLine.getUndefaultedValues(option1);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test
+    public void testSetDefaultValues() {
+        List<String> defaultValues = new ArrayList<>();
+        defaultValues.add("default1");
+        defaultValues.add("default2");
+
+        commandLine.setDefaultValues(option1, defaultValues);
+        List values = commandLine.getUndefaultedValues(option1);
+        assertTrue(values.isEmpty()); // Undefaulted values should still be empty
+
+        commandLine.addValue(option1, "value1");
+        values = commandLine.getUndefaultedValues(option1);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAddSwitch() {
+        commandLine.addOption(option1);
+        commandLine.addSwitch(option1, true);
+        assertTrue(commandLine.hasOption(option1));
+
+        // Adding the switch again should throw an exception
+        commandLine.addSwitch(option1, false);
+    }
+
+    @Test
+    public void testSetDefaultSwitch() {
+        commandLine.setDefaultSwitch(option1, true);
+        assertTrue(commandLine.hasOption(option1));
+    }
+
+    @Test
+    public void testAddPropertyWithOption() {
+        commandLine.addOption(option1);
+        commandLine.addProperty(option1, "property1", "value1");
+        assertEquals("value1", commandLine.getProperty(option1, "property1"));
+    }
+
+    @Test
+    public void testAddPropertyWithoutOption() {
+        commandLine.addProperty("property1", "value1");
+        assertEquals("value1", commandLine.getProperty("property1"));
+    }
+
+    @Test
+    public void testLooksLikeOption() {
+        assertTrue(commandLine.looksLikeOption("-option"));
+        assertFalse(commandLine.looksLikeOption("value"));
+    }
+}
+```
+
+### Notes:
+- This test suite assumes the existence of a concrete class `WriteableCommandLineImpl` that implements the `WriteableCommandLine` interface.
+- The `Option` class is assumed to have a constructor that takes a string identifier and a description.
+- The `commandLine.hasOption(option)` and `commandLine.getProperty(option, property)` methods are assumed to exist in the concrete implementation. If they do not, you will need to adjust the test methods accordingly.
+- The test suite uses JUnit 4 annotations and assertions. Make sure your project is set up to use JUnit 4.

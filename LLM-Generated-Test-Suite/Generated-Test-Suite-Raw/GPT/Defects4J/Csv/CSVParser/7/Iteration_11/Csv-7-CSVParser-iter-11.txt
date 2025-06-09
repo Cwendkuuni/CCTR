@@ -1,0 +1,133 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `CSVParser` class. This suite covers the various static factory methods, the constructor, and other public methods of the `CSVParser` class.
+
+```java
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class CSVParserTest {
+
+    private CSVParser parser;
+
+    @Before
+    public void setUp() throws Exception {
+        // Setup a basic CSVParser instance for testing
+        String csvData = "name,age\nJohn,30\nJane,25";
+        parser = new CSVParser(new StringReader(csvData), CSVFormat.DEFAULT.withHeader());
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (parser != null) {
+            parser.close();
+        }
+    }
+
+    @Test
+    public void testParseFile() throws IOException {
+        File file = new File("test.csv");
+        CSVParser fileParser = CSVParser.parse(file, CSVFormat.DEFAULT);
+        assertNotNull(fileParser);
+        fileParser.close();
+    }
+
+    @Test
+    public void testParseString() throws IOException {
+        String csvData = "name,age\nJohn,30\nJane,25";
+        CSVParser stringParser = CSVParser.parse(csvData, CSVFormat.DEFAULT);
+        assertNotNull(stringParser);
+        stringParser.close();
+    }
+
+    @Test
+    public void testParseURL() throws IOException {
+        URL url = new URL("http://example.com/test.csv");
+        CSVParser urlParser = CSVParser.parse(url, StandardCharsets.UTF_8, CSVFormat.DEFAULT);
+        assertNotNull(urlParser);
+        urlParser.close();
+    }
+
+    @Test
+    public void testGetCurrentLineNumber() throws IOException {
+        assertEquals(0, parser.getCurrentLineNumber());
+        parser.getRecords();
+        assertEquals(3, parser.getCurrentLineNumber());
+    }
+
+    @Test
+    public void testGetHeaderMap() {
+        Map<String, Integer> headerMap = parser.getHeaderMap();
+        assertNotNull(headerMap);
+        assertEquals(2, headerMap.size());
+        assertTrue(headerMap.containsKey("name"));
+        assertTrue(headerMap.containsKey("age"));
+    }
+
+    @Test
+    public void testGetRecordNumber() throws IOException {
+        assertEquals(0, parser.getRecordNumber());
+        parser.getRecords();
+        assertEquals(2, parser.getRecordNumber());
+    }
+
+    @Test
+    public void testGetRecords() throws IOException {
+        List<CSVRecord> records = parser.getRecords();
+        assertEquals(2, records.size());
+        assertEquals("John", records.get(0).get("name"));
+        assertEquals("30", records.get(0).get("age"));
+        assertEquals("Jane", records.get(1).get("name"));
+        assertEquals("25", records.get(1).get("age"));
+    }
+
+    @Test
+    public void testIsClosed() throws IOException {
+        assertFalse(parser.isClosed());
+        parser.close();
+        assertTrue(parser.isClosed());
+    }
+
+    @Test
+    public void testIterator() {
+        int count = 0;
+        for (CSVRecord record : parser) {
+            assertNotNull(record);
+            count++;
+        }
+        assertEquals(2, count);
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testIteratorNoSuchElementException() {
+        parser.close();
+        parser.iterator().next();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testIteratorRemove() {
+        parser.iterator().remove();
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: The `setUp` and `tearDown` methods are used to initialize and clean up resources before and after each test.
+- **Test Methods**: Each method tests a specific functionality of the `CSVParser` class.
+  - **Static Factory Methods**: Tests for `parse(File, CSVFormat)`, `parse(String, CSVFormat)`, and `parse(URL, Charset, CSVFormat)`.
+  - **Instance Methods**: Tests for `getCurrentLineNumber`, `getHeaderMap`, `getRecordNumber`, `getRecords`, `isClosed`, and the iterator functionality.
+- **Exception Handling**: Tests for expected exceptions, such as `NoSuchElementException` and `UnsupportedOperationException`, to ensure the class behaves correctly in edge cases.
+
+This test suite should provide comprehensive coverage for the `CSVParser` class based on the provided source code.

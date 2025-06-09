@@ -1,0 +1,95 @@
+package org.apache.commons.lang3.text.translate;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+
+public class NumericEntityUnescaperTest {
+
+    private NumericEntityUnescaper unescaper;
+    private Writer out;
+
+    @Before
+    public void setUp() {
+        unescaper = new NumericEntityUnescaper();
+        out = new StringWriter();
+    }
+
+    @Test
+    public void testConstructorWithOptions() {
+        NumericEntityUnescaper unescaperWithOptions = new NumericEntityUnescaper(NumericEntityUnescaper.OPTION.semiColonOptional);
+        assertTrue(unescaperWithOptions.isSet(NumericEntityUnescaper.OPTION.semiColonOptional));
+    }
+
+    @Test
+    public void testConstructorWithoutOptions() {
+        NumericEntityUnescaper unescaperWithoutOptions = new NumericEntityUnescaper();
+        assertTrue(unescaperWithoutOptions.isSet(NumericEntityUnescaper.OPTION.semiColonRequired));
+    }
+
+    @Test
+    public void testIsSet() {
+        assertTrue(unescaper.isSet(NumericEntityUnescaper.OPTION.semiColonRequired));
+        assertFalse(unescaper.isSet(NumericEntityUnescaper.OPTION.semiColonOptional));
+    }
+
+    @Test
+    public void testTranslateDecimalEntity() throws IOException {
+        String input = "&#65;";
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(5, result);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateHexEntity() throws IOException {
+        String input = "&#x41;";
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(6, result);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateEntityWithoutSemiColon() throws IOException {
+        unescaper = new NumericEntityUnescaper(NumericEntityUnescaper.OPTION.semiColonOptional);
+        String input = "&#65";
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(4, result);
+        assertEquals("A", out.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTranslateEntityWithoutSemiColonError() throws IOException {
+        unescaper = new NumericEntityUnescaper(NumericEntityUnescaper.OPTION.errorIfNoSemiColon);
+        String input = "&#65";
+        unescaper.translate(input, 0, out);
+    }
+
+    @Test
+    public void testTranslateEntityWithInvalidNumber() throws IOException {
+        String input = "&#xyz;";
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(0, result);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateEntityWithLargeValue() throws IOException {
+        String input = "&#119558;";
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(9, result);
+        assertEquals("\uD83D\uDCA2", out.toString()); // Unicode for 💢
+    }
+
+    @Test
+    public void testTranslateNonEntity() throws IOException {
+        String input = "not an entity";
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(0, result);
+        assertEquals("", out.toString());
+    }
+}

@@ -1,0 +1,127 @@
+```java
+package net.sourceforge.schemaspy.model.xml;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.w3c.dom.*;
+import org.mockito.Mockito;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TableMetaTest {
+
+    private Node mockTableNode;
+    private NamedNodeMap mockAttributes;
+    private Node mockNameNode;
+    private Node mockCommentsNode;
+    private Node mockRemoteSchemaNode;
+    private Node mockRemoteCatalogNode;
+    private NodeList mockColumnNodes;
+    private Node mockColumnNode;
+
+    @Before
+    public void setUp() {
+        mockTableNode = mock(Node.class);
+        mockAttributes = mock(NamedNodeMap.class);
+        mockNameNode = mock(Node.class);
+        mockCommentsNode = mock(Node.class);
+        mockRemoteSchemaNode = mock(Node.class);
+        mockRemoteCatalogNode = mock(Node.class);
+        mockColumnNodes = mock(NodeList.class);
+        mockColumnNode = mock(Node.class);
+
+        when(mockTableNode.getAttributes()).thenReturn(mockAttributes);
+        when(mockAttributes.getNamedItem("name")).thenReturn(mockNameNode);
+        when(mockNameNode.getNodeValue()).thenReturn("TestTable");
+
+        when(mockTableNode.getChildNodes()).thenReturn(mockColumnNodes);
+        when(mockColumnNodes.getLength()).thenReturn(1);
+        when(mockColumnNodes.item(0)).thenReturn(mockColumnNode);
+    }
+
+    @Test
+    public void testGetName() {
+        TableMeta tableMeta = new TableMeta(mockTableNode);
+        assertEquals("TestTable", tableMeta.getName());
+    }
+
+    @Test
+    public void testGetComments() {
+        when(mockAttributes.getNamedItem("comments")).thenReturn(mockCommentsNode);
+        when(mockCommentsNode.getNodeValue()).thenReturn("Test Comments");
+
+        TableMeta tableMeta = new TableMeta(mockTableNode);
+        assertEquals("Test Comments", tableMeta.getComments());
+    }
+
+    @Test
+    public void testGetCommentsWithRemarks() {
+        when(mockAttributes.getNamedItem("comments")).thenReturn(null);
+        when(mockAttributes.getNamedItem("remarks")).thenReturn(mockCommentsNode);
+        when(mockCommentsNode.getNodeValue()).thenReturn("Test Remarks");
+
+        TableMeta tableMeta = new TableMeta(mockTableNode);
+        assertEquals("Test Remarks", tableMeta.getComments());
+    }
+
+    @Test
+    public void testGetCommentsWhenNull() {
+        when(mockAttributes.getNamedItem("comments")).thenReturn(null);
+        when(mockAttributes.getNamedItem("remarks")).thenReturn(null);
+
+        TableMeta tableMeta = new TableMeta(mockTableNode);
+        assertNull(tableMeta.getComments());
+    }
+
+    @Test
+    public void testGetRemoteSchema() {
+        when(mockAttributes.getNamedItem("remoteSchema")).thenReturn(mockRemoteSchemaNode);
+        when(mockRemoteSchemaNode.getNodeValue()).thenReturn("TestSchema");
+
+        TableMeta tableMeta = new TableMeta(mockTableNode);
+        assertEquals("TestSchema", tableMeta.getRemoteSchema());
+    }
+
+    @Test
+    public void testGetRemoteSchemaWhenNull() {
+        when(mockAttributes.getNamedItem("remoteSchema")).thenReturn(null);
+
+        TableMeta tableMeta = new TableMeta(mockTableNode);
+        assertNull(tableMeta.getRemoteSchema());
+    }
+
+    @Test
+    public void testGetRemoteCatalog() {
+        when(mockAttributes.getNamedItem("remoteCatalog")).thenReturn(mockRemoteCatalogNode);
+        when(mockRemoteCatalogNode.getNodeValue()).thenReturn("TestCatalog");
+
+        TableMeta tableMeta = new TableMeta(mockTableNode);
+        assertEquals("TestCatalog", tableMeta.getRemoteCatalog());
+    }
+
+    @Test
+    public void testGetRemoteCatalogWhenNull() {
+        when(mockAttributes.getNamedItem("remoteCatalog")).thenReturn(null);
+
+        TableMeta tableMeta = new TableMeta(mockTableNode);
+        assertNull(tableMeta.getRemoteCatalog());
+    }
+
+    @Test
+    public void testGetColumns() {
+        TableColumnMeta mockTableColumnMeta = mock(TableColumnMeta.class);
+        when(mockColumnNode.getNodeName()).thenReturn("column");
+        when(mockColumnNodes.getLength()).thenReturn(1);
+        when(mockColumnNodes.item(0)).thenReturn(mockColumnNode);
+        when(mockColumnNode.getNodeType()).thenReturn(Node.ELEMENT_NODE);
+
+        TableMeta tableMeta = new TableMeta(mockTableNode);
+        List<TableColumnMeta> columns = tableMeta.getColumns();
+        assertNotNull(columns);
+        assertEquals(1, columns.size());
+    }
+}
+```

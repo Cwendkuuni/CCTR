@@ -1,0 +1,107 @@
+package weka.core;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class MemoryTest {
+
+    private Memory memory;
+
+    @Before
+    public void setUp() {
+        memory = new Memory();
+    }
+
+    @Test
+    public void testConstructor() {
+        Memory memoryWithGUI = new Memory(true);
+        assertTrue(memoryWithGUI.getUseGUI());
+
+        Memory memoryWithoutGUI = new Memory(false);
+        assertFalse(memoryWithoutGUI.getUseGUI());
+    }
+
+    @Test
+    public void testIsEnabled() {
+        assertTrue(memory.isEnabled());
+        memory.setEnabled(false);
+        assertFalse(memory.isEnabled());
+    }
+
+    @Test
+    public void testSetEnabled() {
+        memory.setEnabled(false);
+        assertFalse(memory.isEnabled());
+        memory.setEnabled(true);
+        assertTrue(memory.isEnabled());
+    }
+
+    @Test
+    public void testGetUseGUI() {
+        assertFalse(memory.getUseGUI());
+        Memory memoryWithGUI = new Memory(true);
+        assertTrue(memoryWithGUI.getUseGUI());
+    }
+
+    @Test
+    public void testGetInitial() {
+        long initialMemory = memory.getInitial();
+        assertTrue(initialMemory > 0);
+    }
+
+    @Test
+    public void testGetCurrent() {
+        long currentMemory = memory.getCurrent();
+        assertTrue(currentMemory > 0);
+    }
+
+    @Test
+    public void testGetMax() {
+        long maxMemory = memory.getMax();
+        assertTrue(maxMemory > 0);
+    }
+
+    @Test
+    public void testIsOutOfMemory() {
+        memory.setEnabled(true);
+        boolean isOutOfMemory = memory.isOutOfMemory();
+        assertFalse(isOutOfMemory); // Assuming the system is not out of memory
+    }
+
+    @Test
+    public void testToMegaByte() {
+        long bytes = 10485760; // 10 MB
+        double megaBytes = Memory.toMegaByte(bytes);
+        assertEquals(10.0, megaBytes, 0.001);
+    }
+
+    @Test
+    public void testShowOutOfMemory() {
+        memory.setEnabled(true);
+        memory.showOutOfMemory();
+        // This method prints to System.err and shows a GUI message if enabled
+        // We can't easily test the GUI part, but we can check that it doesn't throw an exception
+    }
+
+    @Test
+    public void testStopThreads() {
+        memory.stopThreads();
+        // This method stops threads and calls System.gc()
+        // We can't easily test the thread stopping part, but we can check that it doesn't throw an exception
+    }
+
+    @Test
+    public void testGetRevision() {
+        String revision = memory.getRevision();
+        assertNotNull(revision);
+        assertFalse(revision.isEmpty());
+    }
+
+    @Test
+    public void testMain() {
+        // This method is not easily testable as it prints to System.out
+        // We can check that it doesn't throw an exception
+        Memory.main(new String[]{});
+    }
+}

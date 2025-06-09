@@ -1,0 +1,426 @@
+```java
+package org.joda.time;
+
+import org.joda.time.base.AbstractPartial;
+import org.joda.time.base.BasePartial;
+import org.joda.time.chrono.ISOChronology;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.Serializable;
+import java.util.Arrays;
+import java.util.Locale;
+
+import static org.junit.Assert.*;
+
+public class PartialTest {
+
+    private Partial partial;
+    private Chronology chronology;
+    private DateTimeFieldType[] types;
+    private int[] values;
+
+    @Before
+    public void setUp() {
+        chronology = ISOChronology.getInstanceUTC();
+        types = new DateTimeFieldType[]{DateTimeFieldType.year(), DateTimeFieldType.monthOfYear()};
+        values = new int[]{2023, 10};
+        partial = new Partial(types, values, chronology);
+    }
+
+    @Test
+    public void testConstructorDefault() {
+        Partial defaultPartial = new Partial();
+        assertNotNull(defaultPartial);
+        assertEquals(0, defaultPartial.size());
+    }
+
+    @Test
+    public void testConstructorChronology() {
+        Partial chronoPartial = new Partial(chronology);
+        assertNotNull(chronoPartial);
+        assertEquals(0, chronoPartial.size());
+        assertEquals(chronology, chronoPartial.getChronology());
+    }
+
+    @Test
+    public void testConstructorDateTimeFieldTypeInt() {
+        Partial fieldPartial = new Partial(DateTimeFieldType.year(), 2023);
+        assertNotNull(fieldPartial);
+        assertEquals(1, fieldPartial.size());
+        assertEquals(DateTimeFieldType.year(), fieldPartial.getFieldType(0));
+        assertEquals(2023, fieldPartial.getValue(0));
+    }
+
+    @Test
+    public void testConstructorDateTimeFieldTypeIntChronology() {
+        Partial fieldChronoPartial = new Partial(DateTimeFieldType.year(), 2023, chronology);
+        assertNotNull(fieldChronoPartial);
+        assertEquals(1, fieldChronoPartial.size());
+        assertEquals(DateTimeFieldType.year(), fieldChronoPartial.getFieldType(0));
+        assertEquals(2023, fieldChronoPartial.getValue(0));
+        assertEquals(chronology, fieldChronoPartial.getChronology());
+    }
+
+    @Test
+    public void testConstructorDateTimeFieldTypeArrayIntArray() {
+        Partial arrayPartial = new Partial(types, values);
+        assertNotNull(arrayPartial);
+        assertEquals(2, arrayPartial.size());
+        assertEquals(DateTimeFieldType.year(), arrayPartial.getFieldType(0));
+        assertEquals(2023, arrayPartial.getValue(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), arrayPartial.getFieldType(1));
+        assertEquals(10, arrayPartial.getValue(1));
+    }
+
+    @Test
+    public void testConstructorDateTimeFieldTypeArrayIntArrayChronology() {
+        Partial arrayChronoPartial = new Partial(types, values, chronology);
+        assertNotNull(arrayChronoPartial);
+        assertEquals(2, arrayChronoPartial.size());
+        assertEquals(DateTimeFieldType.year(), arrayChronoPartial.getFieldType(0));
+        assertEquals(2023, arrayChronoPartial.getValue(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), arrayChronoPartial.getFieldType(1));
+        assertEquals(10, arrayChronoPartial.getValue(1));
+        assertEquals(chronology, arrayChronoPartial.getChronology());
+    }
+
+    @Test
+    public void testConstructorReadablePartial() {
+        Partial readablePartial = new Partial(partial);
+        assertNotNull(readablePartial);
+        assertEquals(2, readablePartial.size());
+        assertEquals(DateTimeFieldType.year(), readablePartial.getFieldType(0));
+        assertEquals(2023, readablePartial.getValue(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), readablePartial.getFieldType(1));
+        assertEquals(10, readablePartial.getValue(1));
+    }
+
+    @Test
+    public void testSize() {
+        assertEquals(2, partial.size());
+    }
+
+    @Test
+    public void testGetChronology() {
+        assertEquals(chronology, partial.getChronology());
+    }
+
+    @Test
+    public void testGetFieldType() {
+        assertEquals(DateTimeFieldType.year(), partial.getFieldType(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), partial.getFieldType(1));
+    }
+
+    @Test
+    public void testGetFieldTypes() {
+        DateTimeFieldType[] fieldTypes = partial.getFieldTypes();
+        assertArrayEquals(types, fieldTypes);
+    }
+
+    @Test
+    public void testGetValue() {
+        assertEquals(2023, partial.getValue(0));
+        assertEquals(10, partial.getValue(1));
+    }
+
+    @Test
+    public void testGetValues() {
+        int[] partialValues = partial.getValues();
+        assertArrayEquals(values, partialValues);
+    }
+
+    @Test
+    public void testWithChronologyRetainFields() {
+        Chronology newChronology = ISOChronology.getInstance();
+        Partial newPartial = partial.withChronologyRetainFields(newChronology);
+        assertEquals(newChronology, newPartial.getChronology());
+        assertEquals(2, newPartial.size());
+        assertEquals(DateTimeFieldType.year(), newPartial.getFieldType(0));
+        assertEquals(2023, newPartial.getValue(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), newPartial.getFieldType(1));
+        assertEquals(10, newPartial.getValue(1));
+    }
+
+    @Test
+    public void testWith() {
+        Partial newPartial = partial.with(DateTimeFieldType.dayOfMonth(), 15);
+        assertEquals(3, newPartial.size());
+        assertEquals(DateTimeFieldType.year(), newPartial.getFieldType(0));
+        assertEquals(2023, newPartial.getValue(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), newPartial.getFieldType(1));
+        assertEquals(10, newPartial.getValue(1));
+        assertEquals(DateTimeFieldType.dayOfMonth(), newPartial.getFieldType(2));
+        assertEquals(15, newPartial.getValue(2));
+    }
+
+    @Test
+    public void testWithout() {
+        Partial newPartial = partial.without(DateTimeFieldType.monthOfYear());
+        assertEquals(1, newPartial.size());
+        assertEquals(DateTimeFieldType.year(), newPartial.getFieldType(0));
+        assertEquals(2023, newPartial.getValue(0));
+    }
+
+    @Test
+    public void testWithField() {
+        Partial newPartial = partial.withField(DateTimeFieldType.year(), 2024);
+        assertEquals(2, newPartial.size());
+        assertEquals(DateTimeFieldType.year(), newPartial.getFieldType(0));
+        assertEquals(2024, newPartial.getValue(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), newPartial.getFieldType(1));
+        assertEquals(10, newPartial.getValue(1));
+    }
+
+    @Test
+    public void testWithFieldAdded() {
+        Partial newPartial = partial.withFieldAdded(DateTimeFieldType.year().getDurationType(), 1);
+        assertEquals(2, newPartial.size());
+        assertEquals(DateTimeFieldType.year(), newPartial.getFieldType(0));
+        assertEquals(2024, newPartial.getValue(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), newPartial.getFieldType(1));
+        assertEquals(10, newPartial.getValue(1));
+    }
+
+    @Test
+    public void testWithFieldAddWrapped() {
+        Partial newPartial = partial.withFieldAddWrapped(DateTimeFieldType.year().getDurationType(), 1);
+        assertEquals(2, newPartial.size());
+        assertEquals(DateTimeFieldType.year(), newPartial.getFieldType(0));
+        assertEquals(2024, newPartial.getValue(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), newPartial.getFieldType(1));
+        assertEquals(10, newPartial.getValue(1));
+    }
+
+    @Test
+    public void testWithPeriodAdded() {
+        Partial newPartial = partial.withPeriodAdded(new BasePartial.MockPeriod(DateTimeFieldType.year(), 1), 1);
+        assertEquals(2, newPartial.size());
+        assertEquals(DateTimeFieldType.year(), newPartial.getFieldType(0));
+        assertEquals(2024, newPartial.getValue(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), newPartial.getFieldType(1));
+        assertEquals(10, newPartial.getValue(1));
+    }
+
+    @Test
+    public void testPlus() {
+        Partial newPartial = partial.plus(new BasePartial.MockPeriod(DateTimeFieldType.year(), 1));
+        assertEquals(2, newPartial.size());
+        assertEquals(DateTimeFieldType.year(), newPartial.getFieldType(0));
+        assertEquals(2024, newPartial.getValue(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), newPartial.getFieldType(1));
+        assertEquals(10, newPartial.getValue(1));
+    }
+
+    @Test
+    public void testMinus() {
+        Partial newPartial = partial.minus(new BasePartial.MockPeriod(DateTimeFieldType.year(), 1));
+        assertEquals(2, newPartial.size());
+        assertEquals(DateTimeFieldType.year(), newPartial.getFieldType(0));
+        assertEquals(2022, newPartial.getValue(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), newPartial.getFieldType(1));
+        assertEquals(10, newPartial.getValue(1));
+    }
+
+    @Test
+    public void testProperty() {
+        Partial.Property property = partial.property(DateTimeFieldType.year());
+        assertEquals(2023, property.get());
+    }
+
+    @Test
+    public void testIsMatchReadableInstant() {
+        assertTrue(partial.isMatch(new BasePartial.MockInstant(2023, 10)));
+        assertFalse(partial.isMatch(new BasePartial.MockInstant(2022, 10)));
+    }
+
+    @Test
+    public void testIsMatchReadablePartial() {
+        assertTrue(partial.isMatch(new BasePartial.MockPartial(2023, 10)));
+        assertFalse(partial.isMatch(new BasePartial.MockPartial(2022, 10)));
+    }
+
+    @Test
+    public void testGetFormatter() {
+        DateTimeFormatter formatter = partial.getFormatter();
+        assertNotNull(formatter);
+    }
+
+    @Test
+    public void testToString() {
+        String str = partial.toString();
+        assertNotNull(str);
+        assertTrue(str.contains("2023"));
+        assertTrue(str.contains("10"));
+    }
+
+    @Test
+    public void testToStringList() {
+        String str = partial.toStringList();
+        assertNotNull(str);
+        assertTrue(str.contains("2023"));
+        assertTrue(str.contains("10"));
+    }
+
+    @Test
+    public void testToStringString() {
+        String str = partial.toString("yyyy-MM");
+        assertNotNull(str);
+        assertEquals("2023-10", str);
+    }
+
+    @Test
+    public void testToStringStringLocale() {
+        String str = partial.toString("yyyy-MM", Locale.ENGLISH);
+        assertNotNull(str);
+        assertEquals("2023-10", str);
+    }
+
+    // Mock classes for testing
+    public static class MockPeriod extends BasePartial implements ReadablePeriod {
+        private final DateTimeFieldType fieldType;
+        private final int value;
+
+        public MockPeriod(DateTimeFieldType fieldType, int value) {
+            super();
+            this.fieldType = fieldType;
+            this.value = value;
+        }
+
+        @Override
+        public int size() {
+            return 1;
+        }
+
+        @Override
+        public DateTimeFieldType getFieldType(int index) {
+            return fieldType;
+        }
+
+        @Override
+        public int getValue(int index) {
+            return value;
+        }
+
+        @Override
+        public boolean isSupported(DurationFieldType type) {
+            return false;
+        }
+
+        @Override
+        public int get(DurationFieldType type) {
+            return 0;
+        }
+
+        @Override
+        public PeriodType getPeriodType() {
+            return null;
+        }
+    }
+
+    public static class MockInstant extends BasePartial implements ReadableInstant {
+        private final int year;
+        private final int month;
+
+        public MockInstant(int year, int month) {
+            super();
+            this.year = year;
+            this.month = month;
+        }
+
+        @Override
+        public long getMillis() {
+            return 0;
+        }
+
+        @Override
+        public Chronology getChronology() {
+            return ISOChronology.getInstanceUTC();
+        }
+
+        @Override
+        public DateTimeZone getZone() {
+            return null;
+        }
+
+        @Override
+        public int get(DateTimeFieldType type) {
+            if (type == DateTimeFieldType.year()) {
+                return year;
+            } else if (type == DateTimeFieldType.monthOfYear()) {
+                return month;
+            }
+            return 0;
+        }
+
+        @Override
+        public boolean isSupported(DateTimeFieldType type) {
+            return type == DateTimeFieldType.year() || type == DateTimeFieldType.monthOfYear();
+        }
+    }
+
+    public static class MockPartial extends BasePartial implements ReadablePartial {
+        private final int year;
+        private final int month;
+
+        public MockPartial(int year, int month) {
+            super();
+            this.year = year;
+            this.month = month;
+        }
+
+        @Override
+        public int size() {
+            return 2;
+        }
+
+        @Override
+        public DateTimeFieldType getFieldType(int index) {
+            if (index == 0) {
+                return DateTimeFieldType.year();
+            } else if (index == 1) {
+                return DateTimeFieldType.monthOfYear();
+            }
+            return null;
+        }
+
+        @Override
+        public int getValue(int index) {
+            if (index == 0) {
+                return year;
+            } else if (index == 1) {
+                return month;
+            }
+            return 0;
+        }
+
+        @Override
+        public Chronology getChronology() {
+            return ISOChronology.getInstanceUTC();
+        }
+
+        @Override
+        public DateTimeField getField(int index, Chronology chronology) {
+            return null;
+        }
+
+        @Override
+        public int get(DateTimeFieldType type) {
+            if (type == DateTimeFieldType.year()) {
+                return year;
+            } else if (type == DateTimeFieldType.monthOfYear()) {
+                return month;
+            }
+            return 0;
+        }
+
+        @Override
+        public boolean isSupported(DateTimeFieldType type) {
+            return type == DateTimeFieldType.year() || type == DateTimeFieldType.monthOfYear();
+        }
+    }
+}
+```

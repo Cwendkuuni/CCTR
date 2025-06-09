@@ -1,0 +1,127 @@
+```java
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+public class PosixParserTest {
+
+    private PosixParser parser;
+    private Options options;
+
+    @Before
+    public void setUp() {
+        parser = new PosixParser();
+        options = new Options();
+        options.addOption("a", false, "Option a");
+        options.addOption("b", true, "Option b");
+        options.addOption("c", false, "Option c");
+    }
+
+    @Test
+    public void testInit() {
+        parser.init();
+        assertEquals(0, parser.tokens.size());
+        assertEquals(false, parser.eatTheRest);
+        assertNull(parser.currentOption);
+    }
+
+    @Test
+    public void testFlatten() {
+        String[] args = {"-a", "-b", "value", "--", "nonOption"};
+        String[] expected = {"-a", "-b", "value", "--", "nonOption"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenStopAtNonOption() {
+        String[] args = {"-a", "-b", "value", "nonOption"};
+        String[] expected = {"-a", "-b", "value", "nonOption"};
+        String[] result = parser.flatten(options, args, true);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithBursting() {
+        String[] args = {"-abc"};
+        String[] expected = {"-a", "-b", "-c"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithBurstingAndStopAtNonOption() {
+        String[] args = {"-abc", "nonOption"};
+        String[] expected = {"-a", "-b", "-c", "nonOption"};
+        String[] result = parser.flatten(options, args, true);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testGobble() {
+        List<String> tokens = new ArrayList<>(Arrays.asList("token1", "token2"));
+        parser.tokens = tokens;
+        parser.eatTheRest = true;
+        parser.gobble(Arrays.asList("token3", "token4").iterator());
+        assertEquals(4, parser.tokens.size());
+        assertEquals("token1", parser.tokens.get(0));
+        assertEquals("token2", parser.tokens.get(1));
+        assertEquals("token3", parser.tokens.get(2));
+        assertEquals("token4", parser.tokens.get(3));
+    }
+
+    @Test
+    public void testProcess() {
+        parser.currentOption = options.getOption("b");
+        parser.process("value");
+        assertEquals(2, parser.tokens.size());
+        assertEquals("value", parser.tokens.get(0));
+        assertNull(parser.currentOption);
+    }
+
+    @Test
+    public void testProcessOptionToken() {
+        parser.processOptionToken("-a", false);
+        assertEquals(1, parser.tokens.size());
+        assertEquals("-a", parser.tokens.get(0));
+        assertEquals(options.getOption("a"), parser.currentOption);
+    }
+
+    @Test
+    public void testProcessOptionTokenStopAtNonOption() {
+        parser.processOptionToken("-x", true);
+        assertEquals(1, parser.tokens.size());
+        assertEquals("-x", parser.tokens.get(0));
+        assertEquals(true, parser.eatTheRest);
+    }
+
+    @Test
+    public void testBurstToken() {
+        parser.burstToken("-abc", false);
+        assertEquals(3, parser.tokens.size());
+        assertEquals("-a", parser.tokens.get(0));
+        assertEquals("-b", parser.tokens.get(1));
+        assertEquals("-c", parser.tokens.get(2));
+    }
+
+    @Test
+    public void testBurstTokenStopAtNonOption() {
+        parser.burstToken("-abx", true);
+        assertEquals(3, parser.tokens.size());
+        assertEquals("-a", parser.tokens.get(0));
+        assertEquals("-b", parser.tokens.get(1));
+        assertEquals("--", parser.tokens.get(2));
+        assertEquals("x", parser.tokens.get(3));
+    }
+}
+```

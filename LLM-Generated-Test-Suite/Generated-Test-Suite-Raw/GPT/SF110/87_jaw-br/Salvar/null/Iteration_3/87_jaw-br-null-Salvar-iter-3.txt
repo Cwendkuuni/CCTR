@@ -1,0 +1,121 @@
+To create a comprehensive JUnit 4 test suite for the `Salvar` class, we need to consider testing the constructor and its behavior under different conditions. Since the class heavily relies on external dependencies like `ProcessarEntidades`, `Main`, `Serializacao`, and `SerializacaoXML`, we'll need to mock these dependencies. We'll use a mocking framework like Mockito to achieve this.
+
+Here's a JUnit 4 test suite for the `Salvar` class:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import javax.swing.*;
+import java.io.File;
+import java.util.List;
+import java.util.Vector;
+
+@RunWith(MockitoJUnitRunner.class)
+public class SalvarTest {
+
+    @Mock
+    private ProcessarEntidades mockForm;
+
+    @Mock
+    private Main mockMain;
+
+    @Mock
+    private Serializacao mockSerializacao;
+
+    @Mock
+    private SerializacaoXML mockSerializacaoXML;
+
+    @Mock
+    private JFileChooser mockFileChooser;
+
+    @Mock
+    private File mockFile;
+
+    @Captor
+    private ArgumentCaptor<String> stringCaptor;
+
+    private List<Entidade> mockEntidades;
+
+    @Before
+    public void setUp() {
+        mockEntidades = new Vector<>();
+        when(mockForm.getEntidades()).thenReturn(mockEntidades);
+        when(mockForm.getNomeArquivoSalvo()).thenReturn("Novo Projeto");
+        when(mockForm.getName()).thenReturn("");
+        when(mockFileChooser.getSelectedFile()).thenReturn(mockFile);
+        when(mockFile.getAbsolutePath()).thenReturn("test.jaw");
+    }
+
+    @Test
+    public void testSalvarConstructorWithSalvarXml() {
+        when(mockFileChooser.showSaveDialog(mockForm)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(mockFile.getAbsolutePath()).thenReturn("test.jaw.xml");
+
+        Salvar salvar = new Salvar(mockForm, Salvar.SALVAR_XML);
+
+        assertEquals("test.jaw.xml", salvar.arquivo);
+        assertNotNull(salvar.xml);
+    }
+
+    @Test
+    public void testSalvarConstructorWithSalvar() {
+        when(mockFileChooser.showSaveDialog(mockForm)).thenReturn(JFileChooser.APPROVE_OPTION);
+
+        Salvar salvar = new Salvar(mockForm, Salvar.SALVAR);
+
+        assertEquals("test.jaw", salvar.arquivo);
+    }
+
+    @Test
+    public void testSalvarConstructorWithSalvarComo() {
+        when(mockFileChooser.showSaveDialog(mockForm)).thenReturn(JFileChooser.APPROVE_OPTION);
+
+        Salvar salvar = new Salvar(mockForm, Salvar.SALVAR_COMO);
+
+        assertEquals("test.jaw", salvar.arquivo);
+    }
+
+    @Test
+    public void testSalvarConstructorWithNullFile() {
+        when(mockFileChooser.getSelectedFile()).thenReturn(null);
+
+        Salvar salvar = new Salvar(mockForm, Salvar.SALVAR);
+
+        assertEquals("Novo Projeto", salvar.arquivo);
+    }
+
+    @Test
+    public void testSalvarConstructorWithExceptionInGetEntidades() {
+        when(mockForm.getEntidades()).thenThrow(new RuntimeException("Test Exception"));
+
+        Salvar salvar = new Salvar(mockForm, Salvar.SALVAR);
+
+        verify(mockMain.janelaPrincipal).log("java.lang.RuntimeException: Test Exception");
+    }
+}
+```
+
+### Explanation:
+
+1. **Mocking Dependencies**: We use Mockito to mock dependencies like `ProcessarEntidades`, `Main`, `Serializacao`, and `SerializacaoXML`.
+
+2. **Setup Method**: The `setUp` method initializes the mock objects and sets up common behavior for the tests.
+
+3. **Test Cases**:
+   - **testSalvarConstructorWithSalvarXml**: Tests the constructor with `SALVAR_XML` type, ensuring the file extension is `.jaw.xml`.
+   - **testSalvarConstructorWithSalvar**: Tests the constructor with `SALVAR` type, ensuring the file extension is `.jaw`.
+   - **testSalvarConstructorWithSalvarComo**: Tests the constructor with `SALVAR_COMO` type, ensuring the file extension is `.jaw`.
+   - **testSalvarConstructorWithNullFile**: Tests the behavior when no file is selected.
+   - **testSalvarConstructorWithExceptionInGetEntidades**: Tests the behavior when `getEntidades` throws an exception.
+
+### Note:
+- The `Main` class and its static members are mocked to avoid dependency on the actual application environment.
+- The `JFileChooser` and file operations are mocked to simulate user interactions and file handling without actual file system access.
+- The test suite assumes that the `Main` class and its static members are accessible and mockable, which might require additional setup in a real-world scenario.

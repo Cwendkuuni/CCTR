@@ -1,0 +1,139 @@
+package org.apache.commons.cli;
+
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionBuilder;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class OptionBuilderTest {
+
+    @Before
+    public void setUp() {
+        // Reset OptionBuilder before each test to ensure no state leakage
+        OptionBuilder.withLongOpt(null);
+        OptionBuilder.withDescription(null);
+        OptionBuilder.withArgName("arg");
+        OptionBuilder.isRequired(false);
+        OptionBuilder.hasArgs(Option.UNINITIALIZED);
+        OptionBuilder.withType(null);
+        OptionBuilder.withValueSeparator((char) 0);
+    }
+
+    @Test
+    public void testWithLongOpt() {
+        Option option = OptionBuilder.withLongOpt("longOption").create('o');
+        assertEquals("longOption", option.getLongOpt());
+    }
+
+    @Test
+    public void testHasArg() {
+        Option option = OptionBuilder.hasArg().create('o');
+        assertEquals(1, option.getArgs());
+    }
+
+    @Test
+    public void testHasArgBoolean() {
+        Option option = OptionBuilder.hasArg(true).create('o');
+        assertEquals(1, option.getArgs());
+
+        option = OptionBuilder.hasArg(false).create('o');
+        assertEquals(Option.UNINITIALIZED, option.getArgs());
+    }
+
+    @Test
+    public void testWithArgName() {
+        Option option = OptionBuilder.withArgName("argumentName").create('o');
+        assertEquals("argumentName", option.getArgName());
+    }
+
+    @Test
+    public void testIsRequired() {
+        Option option = OptionBuilder.isRequired().create('o');
+        assertTrue(option.isRequired());
+    }
+
+    @Test
+    public void testWithValueSeparatorChar() {
+        Option option = OptionBuilder.withValueSeparator(':').create('o');
+        assertEquals(':', option.getValueSeparator());
+    }
+
+    @Test
+    public void testWithValueSeparator() {
+        Option option = OptionBuilder.withValueSeparator().create('o');
+        assertEquals('=', option.getValueSeparator());
+    }
+
+    @Test
+    public void testIsRequiredBoolean() {
+        Option option = OptionBuilder.isRequired(true).create('o');
+        assertTrue(option.isRequired());
+
+        option = OptionBuilder.isRequired(false).create('o');
+        assertFalse(option.isRequired());
+    }
+
+    @Test
+    public void testHasArgs() {
+        Option option = OptionBuilder.hasArgs().create('o');
+        assertEquals(Option.UNLIMITED_VALUES, option.getArgs());
+    }
+
+    @Test
+    public void testHasArgsInt() {
+        Option option = OptionBuilder.hasArgs(3).create('o');
+        assertEquals(3, option.getArgs());
+    }
+
+    @Test
+    public void testHasOptionalArg() {
+        Option option = OptionBuilder.hasOptionalArg().create('o');
+        assertEquals(1, option.getArgs());
+        assertTrue(option.hasOptionalArg());
+    }
+
+    @Test
+    public void testHasOptionalArgs() {
+        Option option = OptionBuilder.hasOptionalArgs().create('o');
+        assertEquals(Option.UNLIMITED_VALUES, option.getArgs());
+        assertTrue(option.hasOptionalArg());
+    }
+
+    @Test
+    public void testHasOptionalArgsInt() {
+        Option option = OptionBuilder.hasOptionalArgs(2).create('o');
+        assertEquals(2, option.getArgs());
+        assertTrue(option.hasOptionalArg());
+    }
+
+    @Test
+    public void testWithType() {
+        Option option = OptionBuilder.withType(String.class).create('o');
+        assertEquals(String.class, option.getType());
+    }
+
+    @Test
+    public void testWithDescription() {
+        Option option = OptionBuilder.withDescription("This is a description").create('o');
+        assertEquals("This is a description", option.getDescription());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateWithoutLongOpt() {
+        OptionBuilder.create();
+    }
+
+    @Test
+    public void testCreateWithChar() {
+        Option option = OptionBuilder.withLongOpt("longOption").create('o');
+        assertEquals("o", option.getOpt());
+    }
+
+    @Test
+    public void testCreateWithString() {
+        Option option = OptionBuilder.withLongOpt("longOption").create("opt");
+        assertEquals("opt", option.getOpt());
+    }
+}

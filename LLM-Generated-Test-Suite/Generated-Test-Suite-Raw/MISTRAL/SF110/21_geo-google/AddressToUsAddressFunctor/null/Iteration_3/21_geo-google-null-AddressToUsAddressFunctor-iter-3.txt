@@ -1,0 +1,171 @@
+```java
+package geo.google.mapping;
+
+import geo.google.datamodel.*;
+import geo.google.*;
+import org.apache.commons.collections.*;
+import oasis.names.tc.ciq.xsdschema.xal._2.*;
+import java.util.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+
+public class AddressToUsAddressFunctorTest {
+
+    private AddressToUsAddressFunctor functor;
+
+    @Before
+    public void setUp() {
+        functor = AddressToUsAddressFunctor.getInstance();
+    }
+
+    @Test
+    public void testGetInstance() {
+        assertNotNull(functor);
+    }
+
+    @Test
+    public void testExecuteWithNullAddress() {
+        GeoUsAddress result = functor.execute(null);
+        assertNotNull(result);
+        assertNull(result.getCountry());
+        assertNull(result.getState());
+        assertNull(result.getCounty());
+        assertNull(result.getCity());
+        assertNull(result.getPostalCode());
+        assertNull(result.getAddressLine1());
+        assertNull(result.getAddressLine2());
+        assertNull(result.getCoordinate());
+        assertNull(result.getAccuracy());
+    }
+
+    @Test
+    public void testExecuteWithEmptyAddress() {
+        GeoAddress addr = new GeoAddress();
+        GeoUsAddress result = functor.execute(addr);
+        assertNotNull(result);
+        assertNull(result.getCountry());
+        assertNull(result.getState());
+        assertNull(result.getCounty());
+        assertNull(result.getCity());
+        assertNull(result.getPostalCode());
+        assertNull(result.getAddressLine1());
+        assertNull(result.getAddressLine2());
+        assertNull(result.getCoordinate());
+        assertNull(result.getAccuracy());
+    }
+
+    @Test
+    public void testExecuteWithFullAddress() {
+        GeoAddress addr = new GeoAddress();
+        AddressDetails addressDetails = new AddressDetails();
+        AddressDetails.Country country = new AddressDetails.Country();
+        List<AddressDetails.Country.CountryNameCode> countryNames = new ArrayList<>();
+        AddressDetails.Country.CountryNameCode countryNameCode = new AddressDetails.Country.CountryNameCode();
+        countryNameCode.setContent("USA");
+        countryNames.add(countryNameCode);
+        country.setCountryNameCode(countryNames);
+
+        AdministrativeArea adminArea = new AdministrativeArea();
+        List<AdministrativeArea.AdministrativeAreaName> adminNames = new ArrayList<>();
+        AdministrativeArea.AdministrativeAreaName adminName = new AdministrativeArea.AdministrativeAreaName();
+        adminName.setContent("California");
+        adminNames.add(adminName);
+        adminArea.setAdministrativeAreaName(adminNames);
+
+        AdministrativeArea.SubAdministrativeArea subAdminArea = new AdministrativeArea.SubAdministrativeArea();
+        List<AdministrativeArea.SubAdministrativeArea.SubAdministrativeAreaName> subNames = new ArrayList<>();
+        AdministrativeArea.SubAdministrativeArea.SubAdministrativeAreaName subName = new AdministrativeArea.SubAdministrativeArea.SubAdministrativeAreaName();
+        subName.setContent("Los Angeles County");
+        subNames.add(subName);
+        subAdminArea.setSubAdministrativeAreaName(subNames);
+
+        Locality locality = new Locality();
+        List<Locality.LocalityName> localNames = new ArrayList<>();
+        Locality.LocalityName localName = new Locality.LocalityName();
+        localName.setContent("Los Angeles");
+        localNames.add(localName);
+        locality.setLocalityName(localNames);
+
+        PostalCode postalCode = new PostalCode();
+        List<PostalCode.PostalCodeNumber> numbers = new ArrayList<>();
+        PostalCode.PostalCodeNumber number = new PostalCode.PostalCodeNumber();
+        number.setContent("90001");
+        numbers.add(number);
+        postalCode.setPostalCodeNumber(numbers);
+        locality.setPostalCode(postalCode);
+
+        Thoroughfare thoroughfare = new Thoroughfare();
+        List<ThoroughfareNameType> thoroughfares = new ArrayList<>();
+        ThoroughfareNameType thoroughfareName = new ThoroughfareNameType();
+        thoroughfareName.setContent("123 Main St");
+        thoroughfares.add(thoroughfareName);
+        thoroughfare.setThoroughfareName(thoroughfares);
+        locality.setThoroughfare(thoroughfare);
+
+        subAdminArea.setLocality(locality);
+        adminArea.setSubAdministrativeArea(subAdminArea);
+        country.setAdministrativeArea(adminArea);
+        addressDetails.setCountry(country);
+        addr.setAddressDetails(addressDetails);
+
+        Coordinate coordinate = new Coordinate(34.0522, -118.2437);
+        addr.setCoordinate(coordinate);
+        addr.setAccuracy(100);
+
+        GeoUsAddress result = functor.execute(addr);
+        assertNotNull(result);
+        assertEquals("USA", result.getCountry());
+        assertEquals("California", result.getState());
+        assertEquals("Los Angeles County", result.getCounty());
+        assertEquals("Los Angeles", result.getCity());
+        assertEquals("90001", result.getPostalCode());
+        assertEquals("123 Main St", result.getAddressLine1());
+        assertNull(result.getAddressLine2());
+        assertEquals(coordinate, result.getCoordinate());
+        assertEquals(100, result.getAccuracy());
+    }
+
+    @Test
+    public void testExecuteWithPartialAddress() {
+        GeoAddress addr = new GeoAddress();
+        AddressDetails addressDetails = new AddressDetails();
+        AddressDetails.Country country = new AddressDetails.Country();
+        List<AddressDetails.Country.CountryNameCode> countryNames = new ArrayList<>();
+        AddressDetails.Country.CountryNameCode countryNameCode = new AddressDetails.Country.CountryNameCode();
+        countryNameCode.setContent("USA");
+        countryNames.add(countryNameCode);
+        country.setCountryNameCode(countryNames);
+
+        AdministrativeArea adminArea = new AdministrativeArea();
+        List<AdministrativeArea.AdministrativeAreaName> adminNames = new ArrayList<>();
+        AdministrativeArea.AdministrativeAreaName adminName = new AdministrativeArea.AdministrativeAreaName();
+        adminName.setContent("California");
+        adminNames.add(adminName);
+        adminArea.setAdministrativeAreaName(adminNames);
+
+        Locality locality = new Locality();
+        List<Locality.LocalityName> localNames = new ArrayList<>();
+        Locality.LocalityName localName = new Locality.LocalityName();
+        localName.setContent("Los Angeles");
+        localNames.add(localName);
+        locality.setLocalityName(localNames);
+
+        adminArea.setLocality(locality);
+        country.setAdministrativeArea(adminArea);
+        addressDetails.setCountry(country);
+        addr.setAddressDetails(addressDetails);
+
+        GeoUsAddress result = functor.execute(addr);
+        assertNotNull(result);
+        assertEquals("USA", result.getCountry());
+        assertEquals("California", result.getState());
+        assertNull(result.getCounty());
+        assertEquals("Los Angeles", result.getCity());
+        assertNull(result.getPostalCode());
+        assertNull(result.getAddressLine1());
+        assertNull(result.getAddressLine2());
+        assertNull(result.getCoordinate());
+        assertNull(result.getAccuracy());
+    }
+}
+```

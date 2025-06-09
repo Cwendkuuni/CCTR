@@ -1,0 +1,174 @@
+Certainly! Below is a JUnit 4 test suite for the `ArchiveStreamFactory` class. This suite aims to comprehensively test the methods within the class, including handling of various archive formats, exceptions, and edge cases.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.StreamingNotSupportedException;
+import org.junit.Test;
+
+public class ArchiveStreamFactoryTest {
+
+    @Test
+    public void testCreateArchiveInputStreamWithValidFormats() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+
+        InputStream arInputStream = new ByteArrayInputStream(new byte[0]);
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.AR, arInputStream) instanceof ArArchiveInputStream);
+
+        InputStream arjInputStream = new ByteArrayInputStream(new byte[0]);
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.ARJ, arjInputStream) instanceof ArjArchiveInputStream);
+
+        InputStream zipInputStream = new ByteArrayInputStream(new byte[0]);
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.ZIP, zipInputStream) instanceof ZipArchiveInputStream);
+
+        InputStream tarInputStream = new ByteArrayInputStream(new byte[0]);
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.TAR, tarInputStream) instanceof TarArchiveInputStream);
+
+        InputStream jarInputStream = new ByteArrayInputStream(new byte[0]);
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.JAR, jarInputStream) instanceof JarArchiveInputStream);
+
+        InputStream cpioInputStream = new ByteArrayInputStream(new byte[0]);
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.CPIO, cpioInputStream) instanceof CpioArchiveInputStream);
+
+        InputStream dumpInputStream = new ByteArrayInputStream(new byte[0]);
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.DUMP, dumpInputStream) instanceof DumpArchiveInputStream);
+    }
+
+    @Test(expected = StreamingNotSupportedException.class)
+    public void testCreateArchiveInputStreamWithSevenZFormat() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream sevenZInputStream = new ByteArrayInputStream(new byte[0]);
+        factory.createArchiveInputStream(ArchiveStreamFactory.SEVEN_Z, sevenZInputStream);
+    }
+
+    @Test(expected = ArchiveException.class)
+    public void testCreateArchiveInputStreamWithUnknownFormat() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream unknownInputStream = new ByteArrayInputStream(new byte[0]);
+        factory.createArchiveInputStream("unknown", unknownInputStream);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveInputStreamWithNullArchiverName() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream inputStream = new ByteArrayInputStream(new byte[0]);
+        factory.createArchiveInputStream(null, inputStream);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveInputStreamWithNullInputStream() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        factory.createArchiveInputStream(ArchiveStreamFactory.ZIP, null);
+    }
+
+    @Test
+    public void testCreateArchiveOutputStreamWithValidFormats() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+
+        OutputStream arOutputStream = new ByteArrayOutputStream();
+        assertTrue(factory.createArchiveOutputStream(ArchiveStreamFactory.AR, arOutputStream) instanceof ArArchiveOutputStream);
+
+        OutputStream zipOutputStream = new ByteArrayOutputStream();
+        assertTrue(factory.createArchiveOutputStream(ArchiveStreamFactory.ZIP, zipOutputStream) instanceof ZipArchiveOutputStream);
+
+        OutputStream tarOutputStream = new ByteArrayOutputStream();
+        assertTrue(factory.createArchiveOutputStream(ArchiveStreamFactory.TAR, tarOutputStream) instanceof TarArchiveOutputStream);
+
+        OutputStream jarOutputStream = new ByteArrayOutputStream();
+        assertTrue(factory.createArchiveOutputStream(ArchiveStreamFactory.JAR, jarOutputStream) instanceof JarArchiveOutputStream);
+
+        OutputStream cpioOutputStream = new ByteArrayOutputStream();
+        assertTrue(factory.createArchiveOutputStream(ArchiveStreamFactory.CPIO, cpioOutputStream) instanceof CpioArchiveOutputStream);
+    }
+
+    @Test(expected = StreamingNotSupportedException.class)
+    public void testCreateArchiveOutputStreamWithSevenZFormat() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        OutputStream sevenZOutputStream = new ByteArrayOutputStream();
+        factory.createArchiveOutputStream(ArchiveStreamFactory.SEVEN_Z, sevenZOutputStream);
+    }
+
+    @Test(expected = ArchiveException.class)
+    public void testCreateArchiveOutputStreamWithUnknownFormat() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        OutputStream unknownOutputStream = new ByteArrayOutputStream();
+        factory.createArchiveOutputStream("unknown", unknownOutputStream);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveOutputStreamWithNullArchiverName() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        OutputStream outputStream = new ByteArrayOutputStream();
+        factory.createArchiveOutputStream(null, outputStream);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveOutputStreamWithNullOutputStream() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        factory.createArchiveOutputStream(ArchiveStreamFactory.ZIP, null);
+    }
+
+    @Test
+    public void testGetEntryEncoding() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory("UTF-8");
+        assertEquals("UTF-8", factory.getEntryEncoding());
+
+        ArchiveStreamFactory defaultFactory = new ArchiveStreamFactory();
+        assertNull(defaultFactory.getEntryEncoding());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testSetEntryEncodingThrowsExceptionWhenEncodingSetInConstructor() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory("UTF-8");
+        factory.setEntryEncoding("ISO-8859-1");
+    }
+
+    @Test
+    public void testSetEntryEncoding() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        factory.setEntryEncoding("ISO-8859-1");
+        assertEquals("ISO-8859-1", factory.getEntryEncoding());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveInputStreamWithNullStream() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        factory.createArchiveInputStream((InputStream) null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveInputStreamWithNonMarkSupportedStream() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream nonMarkSupportedStream = mock(InputStream.class);
+        when(nonMarkSupportedStream.markSupported()).thenReturn(false);
+        factory.createArchiveInputStream(nonMarkSupportedStream);
+    }
+
+    @Test
+    public void testCreateArchiveInputStreamWithAutoDetection() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream zipInputStream = new ByteArrayInputStream(new byte[]{0x50, 0x4B, 0x03, 0x04});
+        assertTrue(factory.createArchiveInputStream(zipInputStream) instanceof ZipArchiveInputStream);
+    }
+}
+```
+
+This test suite covers the following scenarios:
+
+1. Creating archive input and output streams for all supported formats.
+2. Handling of unsupported formats like 7z.
+3. Handling of null and invalid inputs.
+4. Testing the encoding functionality.
+5. Auto-detection of archive formats from input streams.
+6. Exception handling for various error conditions.
+
+Make sure to have the necessary dependencies and mock objects in place to run these tests successfully.

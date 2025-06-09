@@ -1,0 +1,112 @@
+```java
+package ghm.follow.gui;
+
+import ghm.follow.config.FollowAppAttributes;
+import ghm.follow.config.FileFollowingPane;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TabbedPaneTest {
+
+    private FollowAppAttributes attributes;
+    private TabbedPane tabbedPane;
+
+    @Before
+    public void setUp() {
+        attributes = mock(FollowAppAttributes.class);
+        tabbedPane = new TabbedPane(attributes);
+    }
+
+    @Test
+    public void testFindComponentAt() {
+        // Mock components
+        JPanel panel1 = new JPanel();
+        JPanel panel2 = new JPanel();
+        tabbedPane.addTab("Tab 1", panel1);
+        tabbedPane.addTab("Tab 2", panel2);
+
+        // Test when the point is not within the tabbed pane
+        assertNull(tabbedPane.findComponentAt(-1, -1));
+
+        // Test when the point is within the tabbed pane but not within any component
+        assertNotNull(tabbedPane.findComponentAt(1, 1));
+
+        // Test when the point is within a component
+        panel1.setBounds(0, 0, 100, 100);
+        panel2.setBounds(100, 0, 100, 100);
+        assertEquals(panel1, tabbedPane.findComponentAt(50, 50));
+        assertEquals(panel2, tabbedPane.findComponentAt(150, 50));
+    }
+
+    @Test
+    public void testSetSelectedIndex() {
+        // Mock components
+        JPanel panel1 = new JPanel();
+        JPanel panel2 = new JPanel();
+        tabbedPane.addTab("Tab 1", panel1);
+        tabbedPane.addTab("Tab 2", panel2);
+
+        // Test setting selected index
+        tabbedPane.setSelectedIndex(1);
+        assertEquals(1, tabbedPane.getSelectedIndex());
+
+        // Verify handleSelectedFile is called
+        verify(attributes, times(1)).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testSetSelectedComponent() {
+        // Mock FileFollowingPane
+        FileFollowingPane pane = mock(FileFollowingPane.class);
+        File file = mock(File.class);
+        when(pane.getFollowedFile()).thenReturn(file);
+        when(file.getParentFile()).thenReturn(new File("parent"));
+
+        // Test setting selected component
+        tabbedPane.setSelectedComponent(pane);
+        assertEquals(pane, tabbedPane.getSelectedComponent());
+
+        // Verify handleSelectedFile is called
+        verify(attributes, times(1)).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testRemoveTabAt() {
+        // Mock components
+        JPanel panel1 = new JPanel();
+        JPanel panel2 = new JPanel();
+        tabbedPane.addTab("Tab 1", panel1);
+        tabbedPane.addTab("Tab 2", panel2);
+
+        // Test removing tab at index
+        tabbedPane.removeTabAt(0);
+        assertEquals(1, tabbedPane.getTabCount());
+
+        // Verify handleSelectedFile is called
+        verify(attributes, times(1)).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testHandleSelectedFile() {
+        // Mock FileFollowingPane
+        FileFollowingPane pane = mock(FileFollowingPane.class);
+        File file = mock(File.class);
+        when(pane.getFollowedFile()).thenReturn(file);
+        when(file.getParentFile()).thenReturn(new File("parent"));
+
+        // Set selected component to trigger handleSelectedFile
+        tabbedPane.setSelectedComponent(pane);
+
+        // Verify setLastFileChooserDirectory is called with the correct parent file
+        verify(attributes, times(1)).setLastFileChooserDirectory(file.getParentFile());
+    }
+}
+```

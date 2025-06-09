@@ -1,0 +1,74 @@
+package org.mockito.internal.configuration.injection.filter;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TypeBasedCandidateFilterTest {
+
+    private MockCandidateFilter mockNextFilter;
+    private TypeBasedCandidateFilter typeBasedCandidateFilter;
+
+    @Before
+    public void setUp() {
+        mockNextFilter = mock(MockCandidateFilter.class);
+        typeBasedCandidateFilter = new TypeBasedCandidateFilter(mockNextFilter);
+    }
+
+    @Test
+    public void testFilterCandidate_NoMatches() throws NoSuchFieldException {
+        Collection<Object> mocks = Arrays.asList("mock1", "mock2");
+        Field field = TestClass.class.getDeclaredField("integerField");
+        Object fieldInstance = new TestClass();
+
+        when(mockNextFilter.filterCandidate(anyCollection(), eq(field), eq(fieldInstance)))
+                .thenReturn(mock(OngoingInjecter.class));
+
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        verify(mockNextFilter).filterCandidate(Collections.emptyList(), field, fieldInstance);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testFilterCandidate_WithMatches() throws NoSuchFieldException {
+        Collection<Object> mocks = Arrays.asList(1, 2, "mock1");
+        Field field = TestClass.class.getDeclaredField("integerField");
+        Object fieldInstance = new TestClass();
+
+        when(mockNextFilter.filterCandidate(anyCollection(), eq(field), eq(fieldInstance)))
+                .thenReturn(mock(OngoingInjecter.class));
+
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        verify(mockNextFilter).filterCandidate(Arrays.asList(1, 2), field, fieldInstance);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testFilterCandidate_EmptyMocks() throws NoSuchFieldException {
+        Collection<Object> mocks = Collections.emptyList();
+        Field field = TestClass.class.getDeclaredField("integerField");
+        Object fieldInstance = new TestClass();
+
+        when(mockNextFilter.filterCandidate(anyCollection(), eq(field), eq(fieldInstance)))
+                .thenReturn(mock(OngoingInjecter.class));
+
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        verify(mockNextFilter).filterCandidate(Collections.emptyList(), field, fieldInstance);
+        assertNotNull(result);
+    }
+
+    private static class TestClass {
+        public Integer integerField;
+    }
+}

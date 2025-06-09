@@ -1,0 +1,107 @@
+To create a comprehensive JUnit 4 test suite for the `SimpleSector` class, we need to test all public methods, including constructors, getters, and any other behavior that the class exposes. Below is a JUnit 4 test suite that covers these aspects:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import java.util.HashSet;
+import java.util.Set;
+
+public class SimpleSectorTest {
+
+    private SimpleSector sector;
+    private final int height = 5;
+    private final boolean defenderSpawn = true;
+    private final boolean attackerSpawn = false;
+    private final int attackBonus = 10;
+    private final int defendBonus = 15;
+    private final boolean flag = true;
+    private final int classBonus = 5;
+    private final CharacterClass classType = CharacterClass.SOLDIER;
+
+    @Before
+    public void setUp() {
+        sector = new SimpleSector(height, defenderSpawn, attackerSpawn, attackBonus, defendBonus, flag, classBonus, classType);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertEquals(height, sector.getHeight());
+        assertEquals(defenderSpawn, sector.isDefenderSpawn());
+        assertEquals(attackerSpawn, sector.isAttackerSpawn());
+        assertEquals(flag, sector.isFlag());
+    }
+
+    @Test
+    public void testGainControl() {
+        CombatantSide side = CombatantSide.ATTACKER;
+        sector.gainControl(side);
+        assertEquals(side, sector.getOccupier());
+        assertTrue(sector.isOccupied());
+    }
+
+    @Test
+    public void testFree() {
+        CombatantSide side = CombatantSide.ATTACKER;
+        sector.gainControl(side);
+        sector.free();
+        assertNull(sector.getOccupier());
+        assertFalse(sector.isOccupied());
+    }
+
+    @Test
+    public void testGetBonus() {
+        SectorBonus bonus = sector.getBonus(classType);
+        assertEquals(attackBonus + classBonus, bonus.getAttackBonus());
+        assertEquals(defendBonus + classBonus, bonus.getDefenseBonus());
+    }
+
+    @Test
+    public void testAddAndRemoveObserver() {
+        SectorObserver observer = Mockito.mock(SectorObserver.class);
+        sector.addObserver(observer);
+        sector.gainControl(CombatantSide.DEFENDER);
+        Mockito.verify(observer).occupierChanged();
+
+        sector.removeObserver(observer);
+        sector.gainControl(CombatantSide.ATTACKER);
+        Mockito.verifyNoMoreInteractions(observer);
+    }
+
+    @Test
+    public void testGetAreas() {
+        Set<Area> areas = sector.getAreas();
+        assertNotNull(areas);
+        assertTrue(areas.isEmpty());
+    }
+
+    @Test
+    public void testAddArea() {
+        Area area = Mockito.mock(Area.class);
+        sector._addArea(area);
+        assertTrue(sector.getAreas().contains(area));
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        SimpleSector sameSector = new SimpleSector(height, defenderSpawn, attackerSpawn, attackBonus, defendBonus, flag, classBonus, classType);
+        assertTrue(sector.equals(sameSector));
+        assertEquals(sector.hashCode(), sameSector.hashCode());
+
+        SimpleSector differentSector = new SimpleSector(height + 1, defenderSpawn, attackerSpawn, attackBonus, defendBonus, flag, classBonus, classType);
+        assertFalse(sector.equals(differentSector));
+    }
+}
+```
+
+### Explanation:
+- **Constructor Test**: Verifies that the constructor initializes the fields correctly.
+- **Gain Control Test**: Checks if the sector correctly updates its occupier and occupation status.
+- **Free Test**: Ensures that freeing the sector updates the occupier and occupation status correctly.
+- **Get Bonus Test**: Validates the calculation of bonuses based on character class.
+- **Observer Tests**: Verifies that observers are notified of changes and can be added/removed.
+- **Area Tests**: Checks the functionality of adding and retrieving areas.
+- **Equals and HashCode Tests**: Ensures that `equals` and `hashCode` methods work as expected.
+
+This test suite uses Mockito to mock dependencies like `SectorObserver` and `Area` to focus on testing the `SimpleSector` class itself.

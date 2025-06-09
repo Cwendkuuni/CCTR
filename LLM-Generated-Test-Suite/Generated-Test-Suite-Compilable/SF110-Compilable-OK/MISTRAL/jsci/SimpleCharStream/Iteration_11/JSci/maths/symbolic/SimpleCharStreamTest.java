@@ -1,0 +1,150 @@
+package JSci.maths.symbolic;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.io.*;
+
+public class SimpleCharStreamTest {
+
+    private SimpleCharStream charStream;
+    private StringReader stringReader;
+
+    @Before
+    public void setUp() {
+        stringReader = new StringReader("Test string for SimpleCharStream");
+        charStream = new SimpleCharStream(stringReader);
+    }
+
+    @Test
+    public void testBeginToken() throws IOException {
+        charStream.BeginToken();
+        assertEquals('T', charStream.readChar());
+    }
+
+    @Test
+    public void testReadChar() throws IOException {
+        assertEquals('T', charStream.readChar());
+        assertEquals('e', charStream.readChar());
+    }
+
+    @Test
+    public void testGetColumn() throws IOException {
+        charStream.readChar();
+        assertEquals(1, charStream.getColumn());
+    }
+
+    @Test
+    public void testGetLine() throws IOException {
+        charStream.readChar();
+        assertEquals(1, charStream.getLine());
+    }
+
+    @Test
+    public void testGetEndColumn() throws IOException {
+        charStream.readChar();
+        assertEquals(1, charStream.getEndColumn());
+    }
+
+    @Test
+    public void testGetEndLine() throws IOException {
+        charStream.readChar();
+        assertEquals(1, charStream.getEndLine());
+    }
+
+    @Test
+    public void testGetBeginColumn() throws IOException {
+        charStream.BeginToken();
+        charStream.readChar();
+        assertEquals(1, charStream.getBeginColumn());
+    }
+
+    @Test
+    public void testGetBeginLine() throws IOException {
+        charStream.BeginToken();
+        charStream.readChar();
+        assertEquals(1, charStream.getBeginLine());
+    }
+
+    @Test
+    public void testBackup() throws IOException {
+        charStream.readChar();
+        charStream.backup(1);
+        assertEquals('T', charStream.readChar());
+    }
+
+    @Test
+    public void testGetImage() throws IOException {
+        charStream.BeginToken();
+        charStream.readChar();
+        assertEquals("T", charStream.GetImage());
+    }
+
+    @Test
+    public void testGetSuffix() throws IOException {
+        charStream.BeginToken();
+        charStream.readChar();
+        charStream.readChar();
+        charStream.readChar();
+        charStream.readChar();
+        charStream.readChar();
+        assertArrayEquals(new char[]{'s', 't', ' ', 's'}, charStream.GetSuffix(4));
+    }
+
+    @Test
+    public void testDone() {
+        charStream.Done();
+        assertNull(charStream.buffer);
+        assertNull(charStream.bufline);
+        assertNull(charStream.bufcolumn);
+    }
+
+    @Test
+    public void testAdjustBeginLineColumn() throws IOException {
+        charStream.BeginToken();
+        charStream.readChar();
+        charStream.adjustBeginLineColumn(2, 5);
+        assertEquals(2, charStream.getBeginLine());
+        assertEquals(5, charStream.getBeginColumn());
+    }
+
+    @Test
+    public void testReInitReader() {
+        charStream.ReInit(new StringReader("New test string"), 1, 1);
+        assertEquals(1, charStream.line);
+        assertEquals(0, charStream.column);
+    }
+
+    @Test
+    public void testReInitInputStream() {
+        charStream.ReInit(new ByteArrayInputStream("New test string".getBytes()), 1, 1);
+        assertEquals(1, charStream.line);
+        assertEquals(0, charStream.column);
+    }
+
+    @Test
+    public void testExpandBuff() {
+        charStream.bufsize = 10;
+        charStream.available = 10;
+        charStream.tokenBegin = 5;
+        charStream.bufpos = 5;
+        charStream.ExpandBuff(false);
+        assertEquals(2058, charStream.bufsize);
+        assertEquals(2058, charStream.available);
+        assertEquals(0, charStream.tokenBegin);
+    }
+
+    @Test
+    public void testFillBuff() throws IOException {
+        charStream.maxNextCharInd = charStream.available;
+        charStream.FillBuff();
+        assertTrue(charStream.maxNextCharInd > charStream.available);
+    }
+
+    @Test
+    public void testUpdateLineColumn() {
+        charStream.UpdateLineColumn('\n');
+        assertEquals(2, charStream.line);
+        assertEquals(1, charStream.column);
+    }
+}

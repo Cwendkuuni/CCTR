@@ -1,0 +1,213 @@
+To create a comprehensive JUnit 4 test suite for the `CoordSystemUtilities` class, we need to mock the dependencies and test each method. Below is a test suite that covers the methods in the class. Note that this suite assumes the existence of appropriate mock objects for `CoordSystem`, `ChartDataModelConstraints`, `ChartDataModel`, and `ChartUtilities`.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.*;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Rectangle2D;
+import java.text.DecimalFormat;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import de.progra.charting.CoordSystemUtilities;
+import de.progra.charting.model.ChartDataModel;
+import de.progra.charting.model.ChartDataModelConstraints;
+import de.progra.charting.model.CoordSystem;
+
+public class CoordSystemUtilitiesTest {
+
+    @Mock
+    private CoordSystem coordSystem;
+    @Mock
+    private ChartDataModelConstraints constraints;
+    @Mock
+    private ChartDataModelConstraints constraints2;
+    @Mock
+    private ChartDataModel model;
+    @Mock
+    private Graphics2D graphics;
+
+    private CoordSystemUtilities utilities;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        utilities = new CoordSystemUtilities(coordSystem, constraints, constraints2, model);
+    }
+
+    @Test
+    public void testComputeLeftMargin() {
+        when(constraints.getMinimumColumnValue()).thenReturn(-10.0);
+        when(constraints.getMaximumColumnValue()).thenReturn(10.0);
+        when(coordSystem.getYAxisUnit()).thenReturn("unit");
+        when(coordSystem.getFont()).thenReturn(new Font("Arial", Font.PLAIN, 12));
+        when(coordSystem.getFontRenderContext()).thenReturn(new FontRenderContext(new AffineTransform(), true, true));
+        when(coordSystem.getBounds()).thenReturn(new Rectangle(0, 0, 100, 100));
+        when(coordSystem.getRightMargin()).thenReturn(10);
+
+        int margin = utilities.computeLeftMargin();
+        assertTrue(margin >= 20);
+    }
+
+    @Test
+    public void testComputeRightMargin() {
+        when(coordSystem.getXAxisUnit()).thenReturn("unit");
+        when(coordSystem.getFont()).thenReturn(new Font("Arial", Font.PLAIN, 12));
+        when(coordSystem.getFontRenderContext()).thenReturn(new FontRenderContext(new AffineTransform(), true, true));
+
+        int margin = utilities.computeRightMargin();
+        assertTrue(margin >= 15);
+    }
+
+    @Test
+    public void testComputeTopMargin() {
+        when(coordSystem.getYAxisUnit()).thenReturn("unit");
+        when(coordSystem.getFont()).thenReturn(new Font("Arial", Font.PLAIN, 12));
+        when(coordSystem.getFontRenderContext()).thenReturn(new FontRenderContext(new AffineTransform(), true, true));
+
+        int margin = utilities.computeTopMargin();
+        assertTrue(margin >= 15);
+    }
+
+    @Test
+    public void testComputeBottomMargin() {
+        when(constraints.getMinimumValue()).thenReturn(-10.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+        when(coordSystem.getXAxisUnit()).thenReturn("unit");
+        when(coordSystem.getFont()).thenReturn(new Font("Arial", Font.PLAIN, 12));
+        when(coordSystem.getFontRenderContext()).thenReturn(new FontRenderContext(new AffineTransform(), true, true));
+        when(coordSystem.getBounds()).thenReturn(new Rectangle(0, 0, 100, 100));
+        when(coordSystem.getTopMargin()).thenReturn(10);
+
+        int margin = utilities.computeBottomMargin();
+        assertTrue(margin >= 20);
+    }
+
+    @Test
+    public void testComputeXAxisLabelHeight() {
+        when(constraints.getMinimumColumnValue()).thenReturn(0.0);
+        when(constraints.getMaximumColumnValue()).thenReturn(10.0);
+        when(constraints.getMinimumValue()).thenReturn(0.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+        when(coordSystem.getXDecimalFormat()).thenReturn(new DecimalFormat("#.##"));
+        when(coordSystem.getFontRenderContext()).thenReturn(new FontRenderContext(new AffineTransform(), true, true));
+        when(coordSystem.getFont()).thenReturn(new Font("Arial", Font.PLAIN, 12));
+
+        int height = utilities.computeXAxisLabelHeight();
+        assertTrue(height >= 0);
+    }
+
+    @Test
+    public void testComputeYAxisLabelWidth() {
+        when(constraints.getMinimumValue()).thenReturn(0.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+        when(coordSystem.getYDecimalFormat()).thenReturn(new DecimalFormat("#.##"));
+        when(coordSystem.getFontRenderContext()).thenReturn(new FontRenderContext(new AffineTransform(), true, true));
+        when(coordSystem.getFont()).thenReturn(new Font("Arial", Font.PLAIN, 12));
+
+        int width = utilities.computeYAxisLabelWidth();
+        assertTrue(width >= 0);
+    }
+
+    @Test
+    public void testDrawNumericalXAxisTicks() {
+        when(constraints.getMinimumColumnValue()).thenReturn(0.0);
+        when(constraints.getMaximumColumnValue()).thenReturn(10.0);
+        when(constraints.getMinimumValue()).thenReturn(0.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+        when(coordSystem.getTransform(0)).thenReturn(new AffineTransform());
+        when(coordSystem.getXDecimalFormat()).thenReturn(new DecimalFormat("#.##"));
+        when(coordSystem.getFontRenderContext()).thenReturn(new FontRenderContext(new AffineTransform(), true, true));
+        when(coordSystem.getFont()).thenReturn(new Font("Arial", Font.PLAIN, 12));
+        when(coordSystem.isPaintLabels()).thenReturn(true);
+
+        utilities.drawNumericalXAxisTicks(graphics);
+        // Verify that draw calls were made
+        verify(graphics, atLeastOnce()).draw(any(Line2D.class));
+    }
+
+    @Test
+    public void testDrawXAxisTicks() {
+        when(constraints.getMinimumColumnValue()).thenReturn(0.0);
+        when(constraints.getMaximumColumnValue()).thenReturn(10.0);
+        when(constraints.getMinimumValue()).thenReturn(0.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+        when(coordSystem.getTransform(0)).thenReturn(new AffineTransform());
+        when(coordSystem.getXDecimalFormat()).thenReturn(new DecimalFormat("#.##"));
+        when(coordSystem.getFontRenderContext()).thenReturn(new FontRenderContext(new AffineTransform(), true, true));
+        when(coordSystem.getFont()).thenReturn(new Font("Arial", Font.PLAIN, 12));
+        when(coordSystem.isPaintLabels()).thenReturn(true);
+        when(model.getColumnValueAt(anyInt())).thenReturn("Label");
+
+        utilities.drawXAxisTicks(graphics);
+        // Verify that draw calls were made
+        verify(graphics, atLeastOnce()).draw(any(Line2D.class));
+    }
+
+    @Test
+    public void testDrawYAxisTicks() {
+        when(constraints.getMinimumValue()).thenReturn(0.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+        when(coordSystem.getTransform(0)).thenReturn(new AffineTransform());
+        when(coordSystem.getYDecimalFormat()).thenReturn(new DecimalFormat("#.##"));
+        when(coordSystem.getFontRenderContext()).thenReturn(new FontRenderContext(new AffineTransform(), true, true));
+        when(coordSystem.getFont()).thenReturn(new Font("Arial", Font.PLAIN, 12));
+        when(coordSystem.isPaintLabels()).thenReturn(true);
+        when(coordSystem.isPaintOnlyTick()).thenReturn(false);
+        when(coordSystem.isPaintAltTick()).thenReturn(false);
+
+        utilities.drawYAxisTicks(graphics);
+        // Verify that draw calls were made
+        verify(graphics, atLeastOnce()).draw(any(Line2D.class));
+    }
+
+    @Test
+    public void testGetXAxisLine2D() {
+        when(constraints.getMinimumColumnValue()).thenReturn(0.0);
+        when(constraints.getMaximumColumnValue()).thenReturn(10.0);
+        when(constraints.getMinimumValue()).thenReturn(0.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+        when(coordSystem.getTransform(0)).thenReturn(new AffineTransform());
+
+        Line2D line = utilities.getXAxisLine2D();
+        assertNotNull(line);
+    }
+
+    @Test
+    public void testGetYAxisLine2D() {
+        when(constraints.getMinimumColumnValue()).thenReturn(0.0);
+        when(constraints.getMaximumColumnValue()).thenReturn(10.0);
+        when(constraints.getMinimumValue()).thenReturn(0.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+        when(coordSystem.getTransform(0)).thenReturn(new AffineTransform());
+
+        Line2D line = utilities.getYAxisLine2D();
+        assertNotNull(line);
+    }
+
+    @Test
+    public void testGetSecondYAxisLine2D() {
+        when(constraints2.getMaximumColumnValue()).thenReturn(10.0);
+        when(constraints2.getMinimumValue()).thenReturn(0.0);
+        when(constraints2.getMaximumValue()).thenReturn(10.0);
+        when(coordSystem.getTransform(1)).thenReturn(new AffineTransform());
+
+        Line2D line = utilities.getSecondYAxisLine2D();
+        assertNotNull(line);
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock dependencies like `CoordSystem`, `ChartDataModelConstraints`, `ChartDataModel`, and `Graphics2D`.
+- **Setup**: The `setUp` method initializes the mocks and the `CoordSystemUtilities` instance.
+- **Tests**: Each method in `CoordSystemUtilities` is tested. We use assertions to verify the expected outcomes and Mockito to verify interactions with the mocked objects.
+- **Graphics Tests**: For methods that involve drawing, we verify that the `draw` method is called on the `Graphics2D` object.
+
+This test suite provides a comprehensive set of tests for the `CoordSystemUtilities` class, ensuring that each method behaves as expected under various conditions.

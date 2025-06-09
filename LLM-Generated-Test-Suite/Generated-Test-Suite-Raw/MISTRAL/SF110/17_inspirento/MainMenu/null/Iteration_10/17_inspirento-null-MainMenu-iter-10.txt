@@ -1,0 +1,106 @@
+```java
+package com.allenstudio.ir.ui;
+
+import com.allenstudio.ir.core.InspirentoMediator;
+import com.allenstudio.ir.util.InspirentoUtilities;
+import com.allenstudio.ir.util.UIResources;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import javax.swing.*;
+import java.net.URL;
+import java.util.MissingResourceException;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({UIResources.class, InspirentoUtilities.class})
+public class MainMenuTest {
+
+    @Mock
+    private InspirentoMediator mediator;
+
+    private MainMenu mainMenu;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        PowerMockito.mockStatic(UIResources.class);
+        PowerMockito.mockStatic(InspirentoUtilities.class);
+
+        mainMenu = new MainMenu(mediator);
+    }
+
+    @Test
+    public void testConstructor() {
+        String[] menus = {"menu1", "menu2"};
+        PowerMockito.when(InspirentoUtilities.tokenize(anyString())).thenReturn(menus);
+        PowerMockito.when(UIResources.getString("menu")).thenReturn("menu1,menu2");
+
+        MainMenu menu = new MainMenu(mediator);
+
+        assertEquals(2, menu.getMenuCount());
+    }
+
+    @Test
+    public void testCreateMenu() {
+        String menu = "file";
+        String label = "File*F";
+        String[] items = {"new", "open", "save"};
+
+        PowerMockito.when(UIResources.getString(menu + "Label")).thenReturn(label);
+        PowerMockito.when(InspirentoUtilities.tokenize(UIResources.getString(menu))).thenReturn(items);
+        PowerMockito.when(UIResources.getString("newLabel")).thenReturn("New");
+        PowerMockito.when(UIResources.getString("openLabel")).thenReturn("Open");
+        PowerMockito.when(UIResources.getString("saveLabel")).thenReturn("Save");
+
+        JMenu jMenu = mainMenu.createMenu(menu);
+
+        assertEquals("File", jMenu.getText());
+        assertEquals('F', jMenu.getMnemonic());
+        assertEquals(3, jMenu.getItemCount());
+    }
+
+    @Test
+    public void testAddShortcutAndIcon() {
+        JMenuItem item = new JMenuItem("Test");
+        String key = "test";
+
+        PowerMockito.when(UIResources.getString(key + "Shortcut")).thenReturn("ctrl T");
+        PowerMockito.when(UIResources.getString(key + "Icon")).thenReturn("/path/to/icon.png");
+        URL url = getClass().getResource("/path/to/icon.png");
+        PowerMockito.when(mainMenu.getClass().getResource("/path/to/icon.png")).thenReturn(url);
+
+        mainMenu.addShortcutAndIcon(item, key);
+
+        assertEquals(KeyStroke.getKeyStroke("ctrl T"), item.getAccelerator());
+        assertNotNull(item.getIcon());
+    }
+
+    @Test
+    public void testChanged() {
+        mainMenu.changed();
+        // No implementation, so just ensure it doesn't throw an exception
+    }
+
+    @Test
+    public void testMissingResourceException() {
+        String menu = "file";
+        PowerMockito.when(UIResources.getString(menu + "Label")).thenThrow(new MissingResourceException("Test", "", ""));
+
+        try {
+            mainMenu.createMenu(menu);
+            fail("Expected System.exit to be called");
+        } catch (SecurityException e) {
+            // Expected behavior
+        }
+    }
+}
+```

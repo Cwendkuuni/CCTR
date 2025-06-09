@@ -1,0 +1,80 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `ConstructorInstantiator` class. This suite includes tests for both scenarios: when an outer class instance is provided and when it is not.
+
+```java
+import org.junit.Test;
+import org.junit.Before;
+import org.mockito.internal.creation.instance.ConstructorInstantiator;
+import org.mockito.internal.creation.instance.InstantationException;
+
+import static org.junit.Assert.*;
+
+public class ConstructorInstantiatorTest {
+
+    private ConstructorInstantiator instantiatorWithOuter;
+    private ConstructorInstantiator instantiatorWithoutOuter;
+
+    @Before
+    public void setUp() {
+        instantiatorWithOuter = new ConstructorInstantiator(new OuterClass());
+        instantiatorWithoutOuter = new ConstructorInstantiator(null);
+    }
+
+    @Test
+    public void testNewInstanceWithOuterClass() {
+        InnerClass instance = instantiatorWithOuter.newInstance(InnerClass.class);
+        assertNotNull(instance);
+        assertEquals("OuterClass", instance.getOuterClassName());
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNewInstanceWithOuterClassThrowsException() {
+        instantiatorWithOuter.newInstance(NoValidConstructorClass.class);
+    }
+
+    @Test
+    public void testNewInstanceWithoutOuterClass() {
+        NoArgConstructorClass instance = instantiatorWithoutOuter.newInstance(NoArgConstructorClass.class);
+        assertNotNull(instance);
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNewInstanceWithoutOuterClassThrowsException() {
+        instantiatorWithoutOuter.newInstance(NoValidConstructorClass.class);
+    }
+
+    // Helper classes for testing
+    public static class OuterClass {
+    }
+
+    public static class InnerClass {
+        private final OuterClass outer;
+
+        public InnerClass(OuterClass outer) {
+            this.outer = outer;
+        }
+
+        public String getOuterClassName() {
+            return outer.getClass().getSimpleName();
+        }
+    }
+
+    public static class NoArgConstructorClass {
+        public NoArgConstructorClass() {
+        }
+    }
+
+    public static class NoValidConstructorClass {
+        private NoValidConstructorClass(String param) {
+        }
+    }
+}
+```
+
+### Explanation:
+- **`setUp()` Method**: Initializes two `ConstructorInstantiator` instances, one with an outer class instance and one without.
+- **`testNewInstanceWithOuterClass()`**: Tests the creation of an `InnerClass` instance using an outer class instance.
+- **`testNewInstanceWithOuterClassThrowsException()`**: Ensures an `InstantationException` is thrown when trying to instantiate a class without a valid constructor using an outer class.
+- **`testNewInstanceWithoutOuterClass()`**: Tests the creation of a `NoArgConstructorClass` instance without an outer class instance.
+- **`testNewInstanceWithoutOuterClassThrowsException()`**: Ensures an `InstantationException` is thrown when trying to instantiate a class without a no-arg constructor.
+
+The helper classes (`OuterClass`, `InnerClass`, `NoArgConstructorClass`, and `NoValidConstructorClass`) are used to simulate different scenarios for testing the `ConstructorInstantiator` class.

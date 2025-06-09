@@ -1,0 +1,116 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the methods in the `Suppliers` class. This test suite covers various scenarios, including null checks, memoization, synchronization, and expiration logic.
+
+```java
+import com.google.common.base.Suppliers;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class SuppliersTest {
+
+    private Supplier<String> mockSupplier;
+    private Function<Object, String> mockFunction;
+
+    @Before
+    public void setUp() {
+        mockSupplier = mock(Supplier.class);
+        mockFunction = mock(Function.class);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testCompose_nullFunction() {
+        Suppliers.compose(null, mockSupplier);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testCompose_nullSupplier() {
+        Suppliers.compose(mockFunction, null);
+    }
+
+    @Test
+    public void testCompose() {
+        when(mockSupplier.get()).thenReturn("input");
+        when(mockFunction.apply("input")).thenReturn("output");
+
+        Supplier<String> composedSupplier = Suppliers.compose(mockFunction, mockSupplier);
+        assertEquals("output", composedSupplier.get());
+    }
+
+    @Test
+    public void testMemoize() {
+        when(mockSupplier.get()).thenReturn("value1", "value2");
+
+        Supplier<String> memoizedSupplier = Suppliers.memoize(mockSupplier);
+        assertEquals("value1", memoizedSupplier.get());
+        assertEquals("value1", memoizedSupplier.get());
+
+        verify(mockSupplier, times(1)).get();
+    }
+
+    @Test
+    public void testMemoizeWithExpiration() throws InterruptedException {
+        when(mockSupplier.get()).thenReturn("value1", "value2");
+
+        Supplier<String> expiringSupplier = Suppliers.memoizeWithExpiration(mockSupplier, 1, TimeUnit.SECONDS);
+        assertEquals("value1", expiringSupplier.get());
+
+        Thread.sleep(1100); // Wait for expiration
+
+        assertEquals("value2", expiringSupplier.get());
+        verify(mockSupplier, times(2)).get();
+    }
+
+    @Test
+    public void testOfInstance() {
+        Supplier<String> instanceSupplier = Suppliers.ofInstance("constant");
+        assertEquals("constant", instanceSupplier.get());
+    }
+
+    @Test
+    public void testSynchronizedSupplier() {
+        when(mockSupplier.get()).thenReturn("thread-safe");
+
+        Supplier<String> synchronizedSupplier = Suppliers.synchronizedSupplier(mockSupplier);
+        assertEquals("thread-safe", synchronizedSupplier.get());
+
+        verify(mockSupplier, times(1)).get();
+    }
+
+    @Test
+    public void testSupplierFunction() {
+        Supplier<String> instanceSupplier = Suppliers.ofInstance("function");
+        Function<Supplier<String>, String> supplierFunction = Suppliers.supplierFunction();
+
+        assertEquals("function", supplierFunction.apply(instanceSupplier));
+    }
+}
+```
+
+### Explanation:
+
+1. **Compose Method Tests**:
+   - Tests for null checks on both the function and supplier.
+   - Tests the composition logic by verifying the output of the composed supplier.
+
+2. **Memoize Method Tests**:
+   - Ensures that the supplier is only called once and the result is cached.
+
+3. **MemoizeWithExpiration Method Tests**:
+   - Verifies that the supplier is called again after the expiration time.
+
+4. **OfInstance Method Test**:
+   - Checks that the supplier always returns the same instance.
+
+5. **SynchronizedSupplier Method Test**:
+   - Ensures that the supplier is called and returns the expected value.
+
+6. **SupplierFunction Method Test**:
+   - Verifies that the function correctly applies the supplier's `get` method.
+
+This test suite uses Mockito to mock the `Supplier` and `Function` interfaces, allowing for precise control over their behavior during tests.

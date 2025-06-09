@@ -1,0 +1,188 @@
+```java
+package org.znerd.xmlenc;
+
+import org.junit.Before;
+import org.junit.Test;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+
+import static org.junit.Assert.*;
+
+public class XMLEncoderTest {
+
+    private XMLEncoder encoder;
+
+    @Before
+    public void setUp() throws UnsupportedEncodingException {
+        encoder = XMLEncoder.getEncoder("UTF-8");
+    }
+
+    @Test
+    public void testGetEncoder() throws UnsupportedEncodingException {
+        XMLEncoder encoder = XMLEncoder.getEncoder("UTF-8");
+        assertNotNull(encoder);
+        assertEquals("UTF-8", encoder.getEncoding());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetEncoderNullEncoding() throws UnsupportedEncodingException {
+        XMLEncoder.getEncoder(null);
+    }
+
+    @Test(expected = UnsupportedEncodingException.class)
+    public void testGetEncoderUnsupportedEncoding() throws UnsupportedEncodingException {
+        XMLEncoder.getEncoder("UNSUPPORTED");
+    }
+
+    @Test
+    public void testGetEncoding() {
+        assertEquals("UTF-8", encoder.getEncoding());
+    }
+
+    @Test
+    public void testDeclaration() throws IOException {
+        StringWriter writer = new StringWriter();
+        encoder.declaration(writer);
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", writer.toString());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testDeclarationNullWriter() throws IOException {
+        encoder.declaration(null);
+    }
+
+    @Test
+    public void testTextString() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.text(writer, "test", true);
+        assertEquals("test", writer.toString());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testTextStringNullWriter() throws IOException, InvalidXMLException {
+        encoder.text(null, "test", true);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testTextStringNullText() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.text(writer, null, true);
+    }
+
+    @Test
+    public void testTextCharArray() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.text(writer, "test".toCharArray(), 0, 4, true);
+        assertEquals("test", writer.toString());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testTextCharArrayNullWriter() throws IOException, InvalidXMLException {
+        encoder.text(null, "test".toCharArray(), 0, 4, true);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testTextCharArrayNullText() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.text(writer, (char[]) null, 0, 4, true);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testTextCharArrayInvalidRange() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.text(writer, "test".toCharArray(), 0, 5, true);
+    }
+
+    @Test
+    public void testTextChar() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.text(writer, 't');
+        assertEquals("t", writer.toString());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testTextCharNullWriter() throws IOException, InvalidXMLException {
+        encoder.text(null, 't');
+    }
+
+    @Test
+    public void testTextCharEscapeAmpersands() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.text(writer, '&', true);
+        assertEquals("&amp;", writer.toString());
+    }
+
+    @Test
+    public void testWhitespaceString() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.whitespace(writer, " \t\n\r");
+        assertEquals(" \t\n\r", writer.toString());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testWhitespaceStringNullWriter() throws IOException, InvalidXMLException {
+        encoder.whitespace(null, " \t\n\r");
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testWhitespaceStringNullText() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.whitespace(writer, null);
+    }
+
+    @Test
+    public void testWhitespaceCharArray() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.whitespace(writer, " \t\n\r".toCharArray(), 0, 4);
+        assertEquals(" \t\n\r", writer.toString());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testWhitespaceCharArrayNullWriter() throws IOException, InvalidXMLException {
+        encoder.whitespace(null, " \t\n\r".toCharArray(), 0, 4);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testWhitespaceCharArrayNullText() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.whitespace(writer, (char[]) null, 0, 4);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testWhitespaceCharArrayInvalidRange() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.whitespace(writer, " \t\n\r".toCharArray(), 0, 5);
+    }
+
+    @Test
+    public void testAttribute() throws IOException {
+        StringWriter writer = new StringWriter();
+        encoder.attribute(writer, "name", "value", '"', true);
+        assertEquals(" name=\"value\"", writer.toString());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testAttributeNullWriter() throws IOException {
+        encoder.attribute(null, "name", "value", '"', true);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testAttributeNullName() throws IOException {
+        StringWriter writer = new StringWriter();
+        encoder.attribute(writer, null, "value", '"', true);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testAttributeNullValue() throws IOException {
+        StringWriter writer = new StringWriter();
+        encoder.attribute(writer, "name", null, '"', true);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAttributeInvalidQuotationMark() throws IOException {
+        StringWriter writer = new StringWriter();
+        encoder.attribute(writer, "name", "value", 'x', true);
+    }
+}
+```

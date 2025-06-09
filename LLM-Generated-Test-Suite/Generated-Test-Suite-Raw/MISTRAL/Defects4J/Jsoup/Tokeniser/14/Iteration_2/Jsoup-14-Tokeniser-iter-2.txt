@@ -1,0 +1,309 @@
+```java
+package org.jsoup.parser;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Entities;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class TokeniserTest {
+
+    private Tokeniser tokeniser;
+    private CharacterReader mockReader;
+
+    @Before
+    public void setUp() {
+        mockReader = new MockCharacterReader();
+        tokeniser = new Tokeniser(mockReader);
+    }
+
+    @Test
+    public void testRead() {
+        // Test when selfClosingFlagAcknowledged is false
+        tokeniser.selfClosingFlagAcknowledged = false;
+        tokeniser.read();
+        assertTrue(tokeniser.selfClosingFlagAcknowledged);
+
+        // Test when emitPending is true
+        tokeniser.emitPending = new Token.Character("test");
+        tokeniser.isEmitPending = true;
+        Token token = tokeniser.read();
+        assertEquals("test", ((Token.Character) token).getData());
+        assertFalse(tokeniser.isEmitPending);
+    }
+
+    @Test
+    public void testEmitToken() {
+        Token token = new Token.Character("test");
+        tokeniser.emit(token);
+        assertTrue(tokeniser.isEmitPending);
+        assertEquals(token, tokeniser.emitPending);
+    }
+
+    @Test
+    public void testEmitString() {
+        tokeniser.emit("test");
+        assertEquals("test", tokeniser.charBuffer.toString());
+    }
+
+    @Test
+    public void testEmitChar() {
+        tokeniser.emit('t');
+        assertEquals("t", tokeniser.charBuffer.toString());
+    }
+
+    @Test
+    public void testGetState() {
+        assertEquals(TokeniserState.Data, tokeniser.getState());
+    }
+
+    @Test
+    public void testTransition() {
+        tokeniser.transition(TokeniserState.TagOpen);
+        assertEquals(TokeniserState.TagOpen, tokeniser.getState());
+    }
+
+    @Test
+    public void testAdvanceTransition() {
+        tokeniser.advanceTransition(TokeniserState.TagOpen);
+        assertEquals(TokeniserState.TagOpen, tokeniser.getState());
+        // Assuming mockReader advances correctly
+    }
+
+    @Test
+    public void testAcknowledgeSelfClosingFlag() {
+        tokeniser.selfClosingFlagAcknowledged = false;
+        tokeniser.acknowledgeSelfClosingFlag();
+        assertTrue(tokeniser.selfClosingFlagAcknowledged);
+    }
+
+    @Test
+    public void testConsumeCharacterReference() {
+        // Test with empty reader
+        assertNull(tokeniser.consumeCharacterReference(null, false));
+
+        // Test with additional allowed character
+        mockReader.data = "&";
+        assertNull(tokeniser.consumeCharacterReference('&', false));
+
+        // Test with numbered reference
+        mockReader.data = "&#x41;";
+        assertEquals('A', (char) tokeniser.consumeCharacterReference(null, false));
+
+        // Test with named reference
+        mockReader.data = "&amp;";
+        assertEquals('&', (char) tokeniser.consumeCharacterReference(null, false));
+    }
+
+    @Test
+    public void testCreateTagPending() {
+        Token.Tag tag = tokeniser.createTagPending(true);
+        assertTrue(tag instanceof Token.StartTag);
+
+        tag = tokeniser.createTagPending(false);
+        assertTrue(tag instanceof Token.EndTag);
+    }
+
+    @Test
+    public void testEmitTagPending() {
+        tokeniser.createTagPending(true);
+        tokeniser.emitTagPending();
+        assertTrue(tokeniser.isEmitPending);
+    }
+
+    @Test
+    public void testCreateCommentPending() {
+        tokeniser.createCommentPending();
+        assertNotNull(tokeniser.commentPending);
+    }
+
+    @Test
+    public void testEmitCommentPending() {
+        tokeniser.createCommentPending();
+        tokeniser.emitCommentPending();
+        assertTrue(tokeniser.isEmitPending);
+    }
+
+    @Test
+    public void testCreateDoctypePending() {
+        tokeniser.createDoctypePending();
+        assertNotNull(tokeniser.doctypePending);
+    }
+
+    @Test
+    public void testEmitDoctypePending() {
+        tokeniser.createDoctypePending();
+        tokeniser.emitDoctypePending();
+        assertTrue(tokeniser.isEmitPending);
+    }
+
+    @Test
+    public void testCreateTempBuffer() {
+        tokeniser.createTempBuffer();
+        assertNotNull(tokeniser.dataBuffer);
+    }
+
+    @Test
+    public void testIsAppropriateEndTagToken() {
+        tokeniser.createTagPending(true);
+        tokeniser.tagPending.tagName = "div";
+        tokeniser.emitTagPending();
+
+        tokeniser.createTagPending(false);
+        tokeniser.tagPending.tagName = "div";
+        assertTrue(tokeniser.isAppropriateEndTagToken());
+
+        tokeniser.tagPending.tagName = "span";
+        assertFalse(tokeniser.isAppropriateEndTagToken());
+    }
+
+    @Test
+    public void testIsTrackErrors() {
+        assertTrue(tokeniser.isTrackErrors());
+    }
+
+    @Test
+    public void testSetTrackErrors() {
+        tokeniser.setTrackErrors(false);
+        assertFalse(tokeniser.isTrackErrors());
+    }
+
+    @Test
+    public void testError() {
+        tokeniser.error(TokeniserState.Data);
+        assertEquals(1, tokeniser.errors.size());
+    }
+
+    @Test
+    public void testEofError() {
+        tokeniser.eofError(TokeniserState.Data);
+        assertEquals(1, tokeniser.errors.size());
+    }
+
+    @Test
+    public void testCurrentNodeInHtmlNS() {
+        assertTrue(tokeniser.currentNodeInHtmlNS());
+    }
+
+    private class MockCharacterReader extends CharacterReader {
+        String data;
+        int pos = 0;
+
+        @Override
+        public boolean isEmpty() {
+            return data == null || data.isEmpty();
+        }
+
+        @Override
+        public char current() {
+            return data.charAt(pos);
+        }
+
+        @Override
+        public void advance() {
+            pos++;
+        }
+
+        @Override
+        public void mark() {
+            // No-op for this mock
+        }
+
+        @Override
+        public void rewindToMark() {
+            pos = 0;
+        }
+
+        @Override
+        public boolean matchConsume(char c) {
+            if (data.charAt(pos) == c) {
+                pos++;
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean matchConsumeIgnoreCase(String seq) {
+            if (data.regionMatches(true, pos, seq, 0, seq.length())) {
+                pos += seq.length();
+                return true;
+            }
+            return false;
+        }
+
+        @Override
+        public boolean matchesAny(char... seq) {
+            for (char c : seq) {
+                if (data.charAt(pos) == c) {
+                    return true;
+                }
+            }
+            return false;
+        }
+
+        @Override
+        public boolean matches(char c) {
+            return data.charAt(pos) == c;
+        }
+
+        @Override
+        public boolean matchesLetter() {
+            return Character.isLetter(data.charAt(pos));
+        }
+
+        @Override
+        public boolean matchesDigit() {
+            return Character.isDigit(data.charAt(pos));
+        }
+
+        @Override
+        public String consumeLetterSequence() {
+            int start = pos;
+            while (pos < data.length() && Character.isLetter(data.charAt(pos))) {
+                pos++;
+            }
+            return data.substring(start, pos);
+        }
+
+        @Override
+        public String consumeDigitSequence() {
+            int start = pos;
+            while (pos < data.length() && Character.isDigit(data.charAt(pos))) {
+                pos++;
+            }
+            return data.substring(start, pos);
+        }
+
+        @Override
+        public String consumeHexSequence() {
+            int start = pos;
+            while (pos < data.length() && isHexDigit(data.charAt(pos))) {
+                pos++;
+            }
+            return data.substring(start, pos);
+        }
+
+        private boolean isHexDigit(char c) {
+            return (c >= '0' && c <= '9') || (c >= 'a' && c <= 'f') || (c >= 'A' && c <= 'F');
+        }
+
+        @Override
+        public void unconsume() {
+            if (pos > 0) {
+                pos--;
+            }
+        }
+
+        @Override
+        public int pos() {
+            return pos;
+        }
+    }
+}
+```

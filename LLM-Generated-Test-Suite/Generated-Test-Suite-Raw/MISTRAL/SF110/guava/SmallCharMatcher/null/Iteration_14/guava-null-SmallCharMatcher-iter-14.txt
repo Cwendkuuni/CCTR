@@ -1,0 +1,84 @@
+```java
+package com.google.common.base;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.util.BitSet;
+
+public class SmallCharMatcherTest {
+
+    private SmallCharMatcher matcher;
+    private BitSet bitSet;
+
+    @Before
+    public void setUp() {
+        bitSet = new BitSet();
+        bitSet.set('a');
+        bitSet.set('b');
+        bitSet.set('c');
+        matcher = (SmallCharMatcher) SmallCharMatcher.from(bitSet, "TestMatcher");
+    }
+
+    @Test
+    public void testSmear() {
+        int hashCode = 12345;
+        int expected = 461845907 * Integer.rotateLeft(hashCode * -862048943, 15);
+        int result = SmallCharMatcher.smear(hashCode);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testChooseTableSize() {
+        assertEquals(2, SmallCharMatcher.chooseTableSize(1));
+        assertEquals(4, SmallCharMatcher.chooseTableSize(3));
+        assertEquals(8, SmallCharMatcher.chooseTableSize(5));
+    }
+
+    @Test
+    public void testFrom() {
+        BitSet chars = new BitSet();
+        chars.set('x');
+        chars.set('y');
+        chars.set('z');
+        CharMatcher matcher = SmallCharMatcher.from(chars, "TestFrom");
+        assertTrue(matcher.matches('x'));
+        assertTrue(matcher.matches('y'));
+        assertTrue(matcher.matches('z'));
+        assertFalse(matcher.matches('a'));
+    }
+
+    @Test
+    public void testMatches() {
+        assertTrue(matcher.matches('a'));
+        assertTrue(matcher.matches('b'));
+        assertTrue(matcher.matches('c'));
+        assertFalse(matcher.matches('d'));
+        assertFalse(matcher.matches('\0'));
+    }
+
+    @Test
+    public void testSetBits() {
+        BitSet table = new BitSet();
+        matcher.setBits(table);
+        assertTrue(table.get('a'));
+        assertTrue(table.get('b'));
+        assertTrue(table.get('c'));
+        assertFalse(table.get('d'));
+        assertFalse(table.get('\0'));
+    }
+
+    @Test
+    public void testCheckFilter() {
+        BitSet chars = new BitSet();
+        chars.set('x');
+        chars.set('y');
+        chars.set('z');
+        SmallCharMatcher matcher = (SmallCharMatcher) SmallCharMatcher.from(chars, "TestFilter");
+        assertTrue(matcher.checkFilter('x'));
+        assertTrue(matcher.checkFilter('y'));
+        assertTrue(matcher.checkFilter('z'));
+        assertFalse(matcher.checkFilter('a'));
+    }
+}
+```

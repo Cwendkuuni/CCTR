@@ -1,0 +1,164 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import net.sf.javaml.core.DefaultDataset;
+import net.sf.javaml.core.Instance;
+import net.sf.javaml.distance.EuclideanDistance;
+
+import java.util.*;
+
+public class DefaultDatasetTest {
+
+    private DefaultDataset dataset;
+    private List<Instance> instances;
+
+    @Before
+    public void setUp() {
+        instances = new ArrayList<>();
+        instances.add(new Instance(new double[]{1.0, 2.0}, "class1"));
+        instances.add(new Instance(new double[]{3.0, 4.0}, "class2"));
+        instances.add(new Instance(new double[]{5.0, 6.0}, "class1"));
+        dataset = new DefaultDataset(instances);
+    }
+
+    @Test
+    public void testConstructorWithCollection() {
+        assertEquals(3, dataset.size());
+        assertEquals(2, dataset.noAttributes());
+        assertTrue(dataset.classes().contains("class1"));
+        assertTrue(dataset.classes().contains("class2"));
+    }
+
+    @Test
+    public void testConstructorWithoutCollection() {
+        DefaultDataset emptyDataset = new DefaultDataset();
+        assertEquals(0, emptyDataset.size());
+        assertEquals(0, emptyDataset.noAttributes());
+        assertTrue(emptyDataset.classes().isEmpty());
+    }
+
+    @Test
+    public void testAddAll() {
+        List<Instance> newInstances = new ArrayList<>();
+        newInstances.add(new Instance(new double[]{7.0, 8.0}, "class3"));
+        dataset.addAll(newInstances);
+        assertEquals(4, dataset.size());
+        assertTrue(dataset.classes().contains("class3"));
+    }
+
+    @Test
+    public void testAddAllWithIndex() {
+        List<Instance> newInstances = new ArrayList<>();
+        newInstances.add(new Instance(new double[]{7.0, 8.0}, "class3"));
+        dataset.addAll(1, newInstances);
+        assertEquals(4, dataset.size());
+        assertEquals("class3", dataset.get(1).classValue());
+    }
+
+    @Test
+    public void testClear() {
+        dataset.clear();
+        assertEquals(0, dataset.size());
+        assertTrue(dataset.classes().isEmpty());
+    }
+
+    @Test
+    public void testAdd() {
+        Instance newInstance = new Instance(new double[]{7.0, 8.0}, "class3");
+        dataset.add(newInstance);
+        assertEquals(4, dataset.size());
+        assertTrue(dataset.classes().contains("class3"));
+    }
+
+    @Test
+    public void testAddWithIndex() {
+        Instance newInstance = new Instance(new double[]{7.0, 8.0}, "class3");
+        dataset.add(1, newInstance);
+        assertEquals(4, dataset.size());
+        assertEquals("class3", dataset.get(1).classValue());
+    }
+
+    @Test
+    public void testAddElement() {
+        Instance newInstance = new Instance(new double[]{7.0, 8.0}, "class3");
+        dataset.addElement(newInstance);
+        assertEquals(4, dataset.size());
+        assertTrue(dataset.classes().contains("class3"));
+    }
+
+    @Test
+    public void testInsertElementAt() {
+        Instance newInstance = new Instance(new double[]{7.0, 8.0}, "class3");
+        dataset.insertElementAt(newInstance, 1);
+        assertEquals(4, dataset.size());
+        assertEquals("class3", dataset.get(1).classValue());
+    }
+
+    @Test
+    public void testSetElementAt() {
+        Instance newInstance = new Instance(new double[]{7.0, 8.0}, "class3");
+        dataset.setElementAt(newInstance, 1);
+        assertEquals(3, dataset.size());
+        assertEquals("class3", dataset.get(1).classValue());
+    }
+
+    @Test
+    public void testInstance() {
+        assertEquals("class2", dataset.instance(1).classValue());
+    }
+
+    @Test
+    public void testClasses() {
+        SortedSet<Object> classes = dataset.classes();
+        assertEquals(2, classes.size());
+        assertTrue(classes.contains("class1"));
+        assertTrue(classes.contains("class2"));
+    }
+
+    @Test
+    public void testKNearest() {
+        Instance queryInstance = new Instance(new double[]{1.0, 2.0}, "class1");
+        Set<Instance> nearest = dataset.kNearest(2, queryInstance, new EuclideanDistance());
+        assertEquals(2, nearest.size());
+        assertTrue(nearest.contains(dataset.instance(0)));
+        assertTrue(nearest.contains(dataset.instance(2)));
+    }
+
+    @Test
+    public void testFolds() {
+        Random rg = new Random(42);
+        Dataset[] folds = dataset.folds(2, rg);
+        assertEquals(2, folds.length);
+        assertEquals(2, folds[0].size());
+        assertEquals(1, folds[1].size());
+    }
+
+    @Test
+    public void testNoAttributes() {
+        assertEquals(2, dataset.noAttributes());
+    }
+
+    @Test
+    public void testClassIndex() {
+        assertEquals(0, dataset.classIndex("class1"));
+        assertEquals(1, dataset.classIndex("class2"));
+        assertEquals(-1, dataset.classIndex("class3"));
+    }
+
+    @Test
+    public void testClassValue() {
+        assertEquals("class1", dataset.classValue(0));
+        assertEquals("class2", dataset.classValue(1));
+        assertNull(dataset.classValue(2));
+    }
+
+    @Test
+    public void testCopy() {
+        DefaultDataset copy = (DefaultDataset) dataset.copy();
+        assertEquals(dataset.size(), copy.size());
+        assertEquals(dataset.noAttributes(), copy.noAttributes());
+        assertEquals(dataset.classes(), copy.classes());
+    }
+}
+```

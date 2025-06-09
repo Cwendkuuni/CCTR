@@ -1,0 +1,58 @@
+package org.mockito.internal.util.reflection;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.List;
+
+public class GenericMasterTest {
+
+    @Test
+    public void testGetGenericType_GenericField() throws NoSuchFieldException {
+        class GenericClass<T> {
+            List<T> genericField;
+        }
+
+        Field field = GenericClass.class.getDeclaredField("genericField");
+        GenericMaster genericMaster = new GenericMaster();
+        Class<?> result = genericMaster.getGenericType(field);
+
+        assertEquals(List.class, result);
+    }
+
+    @Test
+    public void testGetGenericType_NonGenericField() throws NoSuchFieldException {
+        class NonGenericClass {
+            String nonGenericField;
+        }
+
+        Field field = NonGenericClass.class.getDeclaredField("nonGenericField");
+        GenericMaster genericMaster = new GenericMaster();
+        Class<?> result = genericMaster.getGenericType(field);
+
+        assertEquals(Object.class, result);
+    }
+
+    @Test
+    public void testGetGenericType_NestedGenericField() throws NoSuchFieldException {
+        class NestedGenericClass<T> {
+            List<List<T>> nestedGenericField;
+        }
+
+        Field field = NestedGenericClass.class.getDeclaredField("nestedGenericField");
+        GenericMaster genericMaster = new GenericMaster();
+        Class<?> result = genericMaster.getGenericType(field);
+
+        assertEquals(List.class, result);
+    }
+
+    @Test
+    public void testGetGenericType_NullField() {
+        GenericMaster genericMaster = new GenericMaster();
+        Class<?> result = genericMaster.getGenericType(null);
+
+        assertEquals(Object.class, result);
+    }
+}

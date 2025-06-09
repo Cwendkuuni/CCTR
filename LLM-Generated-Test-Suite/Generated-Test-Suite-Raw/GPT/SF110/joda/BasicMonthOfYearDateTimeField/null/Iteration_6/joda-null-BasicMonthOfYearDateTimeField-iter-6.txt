@@ -1,0 +1,187 @@
+```java
+import static org.junit.Assert.*;
+import org.joda.time.chrono.BasicChronology;
+import org.joda.time.chrono.BasicMonthOfYearDateTimeField;
+import org.joda.time.DateTimeFieldType;
+import org.joda.time.ReadablePartial;
+import org.joda.time.DurationField;
+import org.joda.time.DateTimeUtils;
+import org.joda.time.field.FieldUtils;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+public class BasicMonthOfYearDateTimeFieldTest {
+
+    private BasicChronology mockChronology;
+    private BasicMonthOfYearDateTimeField field;
+    private final int leapMonth = 2; // Assuming February as leap month for testing
+
+    @Before
+    public void setUp() {
+        mockChronology = Mockito.mock(BasicChronology.class);
+        Mockito.when(mockChronology.getAverageMillisPerMonth()).thenReturn(2629746000L); // Average milliseconds in a month
+        Mockito.when(mockChronology.getMaxMonth()).thenReturn(12);
+        Mockito.when(mockChronology.getMinYear()).thenReturn(1);
+        Mockito.when(mockChronology.getMaxYear()).thenReturn(9999);
+        field = new BasicMonthOfYearDateTimeField(mockChronology, leapMonth);
+    }
+
+    @Test
+    public void testIsLenient() {
+        assertFalse(field.isLenient());
+    }
+
+    @Test
+    public void testGet() {
+        long testMillis = 1622505600000L; // June 1, 2021
+        Mockito.when(mockChronology.getMonthOfYear(testMillis)).thenReturn(6);
+        assertEquals(6, field.get(testMillis));
+    }
+
+    @Test
+    public void testAddInt() {
+        long testMillis = 1622505600000L; // June 1, 2021
+        Mockito.when(mockChronology.getMillisOfDay(testMillis)).thenReturn(0L);
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2021)).thenReturn(6);
+        Mockito.when(mockChronology.getDayOfMonth(testMillis, 2021, 6)).thenReturn(1);
+        Mockito.when(mockChronology.getDaysInYearMonth(2021, 7)).thenReturn(31);
+        Mockito.when(mockChronology.getYearMonthDayMillis(2021, 7, 1)).thenReturn(1625097600000L); // July 1, 2021
+
+        assertEquals(1625097600000L, field.add(testMillis, 1));
+    }
+
+    @Test
+    public void testAddLong() {
+        long testMillis = 1622505600000L; // June 1, 2021
+        Mockito.when(mockChronology.getMillisOfDay(testMillis)).thenReturn(0L);
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2021)).thenReturn(6);
+        Mockito.when(mockChronology.getDayOfMonth(testMillis, 2021, 6)).thenReturn(1);
+        Mockito.when(mockChronology.getDaysInYearMonth(2021, 7)).thenReturn(31);
+        Mockito.when(mockChronology.getYearMonthDayMillis(2021, 7, 1)).thenReturn(1625097600000L); // July 1, 2021
+
+        assertEquals(1625097600000L, field.add(testMillis, 1L));
+    }
+
+    @Test
+    public void testAddReadablePartial() {
+        ReadablePartial mockPartial = Mockito.mock(ReadablePartial.class);
+        int[] values = {6}; // June
+        Mockito.when(mockPartial.size()).thenReturn(1);
+        Mockito.when(mockPartial.getFieldType(0)).thenReturn(DateTimeFieldType.monthOfYear());
+        Mockito.when(mockPartial.getValue(0)).thenReturn(6);
+
+        int[] result = field.add(mockPartial, 0, values, 1);
+        assertEquals(7, result[0]); // July
+    }
+
+    @Test
+    public void testAddWrapField() {
+        long testMillis = 1622505600000L; // June 1, 2021
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2021)).thenReturn(6);
+        Mockito.when(mockChronology.getDayOfMonth(testMillis, 2021)).thenReturn(1);
+        Mockito.when(mockChronology.getDaysInYearMonth(2021, 7)).thenReturn(31);
+        Mockito.when(mockChronology.getYearMonthDayMillis(2021, 7, 1)).thenReturn(1625097600000L); // July 1, 2021
+
+        assertEquals(1625097600000L, field.addWrapField(testMillis, 1));
+    }
+
+    @Test
+    public void testGetDifferenceAsLong() {
+        long startMillis = 1622505600000L; // June 1, 2021
+        long endMillis = 1630454400000L; // September 1, 2021
+        Mockito.when(mockChronology.getYear(startMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(startMillis, 2021)).thenReturn(6);
+        Mockito.when(mockChronology.getYear(endMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(endMillis, 2021)).thenReturn(9);
+
+        assertEquals(3, field.getDifferenceAsLong(endMillis, startMillis));
+    }
+
+    @Test
+    public void testSet() {
+        long testMillis = 1622505600000L; // June 1, 2021
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getDayOfMonth(testMillis, 2021)).thenReturn(1);
+        Mockito.when(mockChronology.getDaysInYearMonth(2021, 7)).thenReturn(31);
+        Mockito.when(mockChronology.getYearMonthDayMillis(2021, 7, 1)).thenReturn(1625097600000L); // July 1, 2021
+
+        assertEquals(1625097600000L, field.set(testMillis, 7));
+    }
+
+    @Test
+    public void testGetRangeDurationField() {
+        DurationField rangeDurationField = Mockito.mock(DurationField.class);
+        Mockito.when(mockChronology.years()).thenReturn(rangeDurationField);
+        assertEquals(rangeDurationField, field.getRangeDurationField());
+    }
+
+    @Test
+    public void testIsLeap() {
+        long testMillis = 1614556800000L; // March 1, 2021
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.isLeapYear(2021)).thenReturn(true);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2021)).thenReturn(2);
+
+        assertTrue(field.isLeap(testMillis));
+    }
+
+    @Test
+    public void testGetLeapAmount() {
+        long testMillis = 1614556800000L; // March 1, 2021
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.isLeapYear(2021)).thenReturn(true);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2021)).thenReturn(2);
+
+        assertEquals(1, field.getLeapAmount(testMillis));
+    }
+
+    @Test
+    public void testGetLeapDurationField() {
+        DurationField leapDurationField = Mockito.mock(DurationField.class);
+        Mockito.when(mockChronology.days()).thenReturn(leapDurationField);
+        assertEquals(leapDurationField, field.getLeapDurationField());
+    }
+
+    @Test
+    public void testGetMinimumValue() {
+        assertEquals(1, field.getMinimumValue());
+    }
+
+    @Test
+    public void testGetMaximumValue() {
+        assertEquals(12, field.getMaximumValue());
+    }
+
+    @Test
+    public void testRoundFloor() {
+        long testMillis = 1622505600000L; // June 1, 2021
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2021)).thenReturn(6);
+        Mockito.when(mockChronology.getYearMonthMillis(2021, 6)).thenReturn(1622505600000L);
+
+        assertEquals(1622505600000L, field.roundFloor(testMillis));
+    }
+
+    @Test
+    public void testRemainder() {
+        long testMillis = 1622505600000L; // June 1, 2021
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2021)).thenReturn(6);
+        Mockito.when(mockChronology.getYearMonthMillis(2021, 6)).thenReturn(1622505600000L);
+
+        assertEquals(0, field.remainder(testMillis));
+    }
+
+    @Test
+    public void testReadResolve() {
+        Mockito.when(mockChronology.monthOfYear()).thenReturn(field);
+        assertEquals(field, field.readResolve());
+    }
+}
+```
+
+This test suite uses the Mockito framework to mock the `BasicChronology` class, which is a dependency of the `BasicMonthOfYearDateTimeField` class. Each test method is designed to test a specific method of the `BasicMonthOfYearDateTimeField` class, ensuring comprehensive coverage of its functionality.

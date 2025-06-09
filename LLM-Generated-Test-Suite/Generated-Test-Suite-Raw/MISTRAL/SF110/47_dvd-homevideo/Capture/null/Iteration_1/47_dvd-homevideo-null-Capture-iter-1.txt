@@ -1,0 +1,126 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class CaptureTest {
+
+    private Capture capture;
+    private GUI mockGUI;
+
+    @Before
+    public void setUp() {
+        mockGUI = mock(GUI.class);
+        capture = new Capture(1, 30, mockGUI);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        Capture defaultCapture = new Capture();
+        assertNotNull(defaultCapture);
+        assertEquals("Capture Error - ", defaultCapture.m_BaseErr);
+        assertEquals("dvgrab --autosplit --size 0 --format raw --opendml --buffers 200 dv/dv_file-", defaultCapture.m_dvgrab);
+    }
+
+    @Test
+    public void testParameterizedConstructor() {
+        assertEquals(1, capture.m_Minutes);
+        assertEquals(30, capture.m_Seconds);
+        assertEquals(mockGUI, capture.m_GUI);
+        assertEquals("Capture Error - ", capture.m_BaseErr);
+        assertEquals("dvgrab --autosplit --size 0 --format raw --opendml --buffers 200 dv/dv_file-", capture.m_dvgrab);
+    }
+
+    @Test
+    public void testInitWithThreadSelected() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(true);
+        assertFalse(capture.init());
+        verify(mockGUI.menuChkThread).isSelected();
+        assertNotNull(capture.m_Thread);
+        assertTrue(capture.m_Thread.isAlive());
+    }
+
+    @Test
+    public void testInitWithoutThreadSelected() throws Exception {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(false);
+        when(mockGUI.strOutputDir).thenReturn("/test/output/dir");
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+        when(mockGUI.ErrorCheck(anyString())).thenReturn(false);
+
+        boolean result = capture.init();
+
+        assertFalse(result);
+        verify(mockGUI.menuChkThread).isSelected();
+        verify(mockGUI).MessageBox(anyString());
+        verify(mockGUI).ErrorCheck(anyString());
+    }
+
+    @Test
+    public void testRun() throws Exception {
+        when(mockGUI.strOutputDir).thenReturn("/test/output/dir");
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+        when(mockGUI.blnBegin).thenReturn(true);
+
+        capture.run();
+
+        verify(mockGUI).MessageBox(anyString());
+        verify(mockGUI, times(4)).strOutputDir;
+    }
+
+    @Test
+    public void testDV_CaptureDirectoryExists() throws Exception {
+        when(mockGUI.strOutputDir).thenReturn("/test/output/dir");
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+        when(mockGUI.blnBegin).thenReturn(true);
+
+        File mockFile = mock(File.class);
+        when(mockFile.exists()).thenReturn(true);
+        when(mockFile.isDirectory()).thenReturn(true);
+        PowerMockito.mockStatic(File.class);
+        when(File.class, "exists").thenReturn(true);
+        when(File.class, "isDirectory").thenReturn(true);
+
+        capture.DV_Capture();
+
+        verify(mockGUI).MessageBox(anyString());
+        verify(mockGUI, times(4)).strOutputDir;
+    }
+
+    @Test
+    public void testDV_CaptureFileExists() throws Exception {
+        when(mockGUI.strOutputDir).thenReturn("/test/output/dir");
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+        when(mockGUI.blnBegin).thenReturn(true);
+
+        File mockFile = mock(File.class);
+        when(mockFile.exists()).thenReturn(true);
+        when(mockFile.isDirectory()).thenReturn(false);
+        PowerMockito.mockStatic(File.class);
+        when(File.class, "exists").thenReturn(true);
+        when(File.class, "isDirectory").thenReturn(false);
+
+        capture.DV_Capture();
+
+        verify(mockGUI).MessageBox(anyString());
+        verify(mockGUI, times(4)).strOutputDir;
+    }
+
+    @Test
+    public void testDV_CaptureDirectoryDoesNotExist() throws Exception {
+        when(mockGUI.strOutputDir).thenReturn("/test/output/dir");
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+        when(mockGUI.blnBegin).thenReturn(true);
+
+        File mockFile = mock(File.class);
+        when(mockFile.exists()).thenReturn(false);
+        PowerMockito.mockStatic(File.class);
+        when(File.class, "exists").thenReturn(false);
+
+        capture.DV_Capture();
+
+        verify(mockGUI).MessageBox(anyString());
+        verify(mockGUI, times(4)).strOutputDir;
+    }
+}
+```

@@ -1,0 +1,145 @@
+```java
+import static org.junit.Assert.*;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import com.google.gson.stream.JsonToken;
+
+public class DefaultDateTypeAdapterTest {
+
+    private DefaultDateTypeAdapter adapter;
+    private JsonWriter mockWriter;
+    private JsonReader mockReader;
+
+    @Before
+    public void setUp() {
+        adapter = new DefaultDateTypeAdapter(Date.class);
+        mockWriter = new JsonWriter(new StringBuilder());
+        mockReader = new JsonReader(new java.io.StringReader("\"2023-10-01T12:00:00Z\""));
+    }
+
+    @Test
+    public void testWriteNullDate() throws IOException {
+        adapter.write(mockWriter, null);
+        assertEquals("null", mockWriter.getSerializeAdapter().toString());
+    }
+
+    @Test
+    public void testWriteDate() throws IOException {
+        Date date = new Date();
+        adapter.write(mockWriter, date);
+        String expected = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US).format(date);
+        assertEquals(expected, mockWriter.getSerializeAdapter().toString());
+    }
+
+    @Test
+    public void testReadDate() throws IOException {
+        Date date = adapter.read(mockReader);
+        assertNotNull(date);
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testReadNonStringDate() throws IOException {
+        mockReader = new JsonReader(new java.io.StringReader("12345"));
+        adapter.read(mockReader);
+    }
+
+    @Test
+    public void testDeserializeToDate() {
+        String dateString = "2023-10-01T12:00:00Z";
+        Date date = adapter.deserializeToDate(dateString);
+        assertNotNull(date);
+    }
+
+    @Test(expected = JsonSyntaxException.class)
+    public void testDeserializeToDateInvalidFormat() {
+        String dateString = "invalid-date-format";
+        adapter.deserializeToDate(dateString);
+    }
+
+    @Test
+    public void testToString() {
+        String result = adapter.toString();
+        assertTrue(result.startsWith("DefaultDateTypeAdapter"));
+    }
+
+    @Test
+    public void testConstructorWithDateType() {
+        adapter = new DefaultDateTypeAdapter(Date.class);
+        assertNotNull(adapter);
+    }
+
+    @Test
+    public void testConstructorWithDateTypeAndPattern() {
+        adapter = new DefaultDateTypeAdapter(Date.class, "yyyy-MM-dd'T'HH:mm:ssZ");
+        assertNotNull(adapter);
+    }
+
+    @Test
+    public void testConstructorWithDateTypeAndStyle() {
+        adapter = new DefaultDateTypeAdapter(Date.class, DateFormat.SHORT);
+        assertNotNull(adapter);
+    }
+
+    @Test
+    public void testConstructorWithDateStyleAndTimeStyle() {
+        adapter = new DefaultDateTypeAdapter(DateFormat.SHORT, DateFormat.SHORT);
+        assertNotNull(adapter);
+    }
+
+    @Test
+    public void testConstructorWithDateTypeAndDateStyleAndTimeStyle() {
+        adapter = new DefaultDateTypeAdapter(Date.class, DateFormat.SHORT, DateFormat.SHORT);
+        assertNotNull(adapter);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithInvalidDateType() {
+        adapter = new DefaultDateTypeAdapter(String.class);
+    }
+
+    @Test
+    public void testWriteTimestamp() throws IOException {
+        Timestamp timestamp = new Timestamp(System.currentTimeMillis());
+        adapter = new DefaultDateTypeAdapter(Timestamp.class);
+        adapter.write(mockWriter, timestamp);
+        String expected = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US).format(timestamp);
+        assertEquals(expected, mockWriter.getSerializeAdapter().toString());
+    }
+
+    @Test
+    public void testWriteSqlDate() throws IOException {
+        java.sql.Date sqlDate = new java.sql.Date(System.currentTimeMillis());
+        adapter = new DefaultDateTypeAdapter(java.sql.Date.class);
+        adapter.write(mockWriter, sqlDate);
+        String expected = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US).format(sqlDate);
+        assertEquals(expected, mockWriter.getSerializeAdapter().toString());
+    }
+
+    @Test
+    public void testReadTimestamp() throws IOException {
+        adapter = new DefaultDateTypeAdapter(Timestamp.class);
+        Timestamp timestamp = adapter.read(mockReader);
+        assertNotNull(timestamp);
+    }
+
+    @Test
+    public void testReadSqlDate() throws IOException {
+        adapter = new DefaultDateTypeAdapter(java.sql.Date.class);
+        java.sql.Date sqlDate = adapter.read(mockReader);
+        assertNotNull(sqlDate);
+    }
+}
+```

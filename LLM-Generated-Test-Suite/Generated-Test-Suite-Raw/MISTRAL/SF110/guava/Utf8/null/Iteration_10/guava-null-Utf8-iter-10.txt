@@ -1,0 +1,53 @@
+```java
+package com.google.common.base;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class Utf8Test {
+
+    @Test
+    public void testEncodedLength() {
+        assertEquals(4, Utf8.encodedLength("test"));
+        assertEquals(5, Utf8.encodedLength("tést"));
+        assertEquals(6, Utf8.encodedLength("测试"));
+
+        try {
+            Utf8.encodedLength("𝌆"); // Unpaired surrogate
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testIsWellFormed() {
+        byte[] wellFormedBytes = "test".getBytes();
+        assertTrue(Utf8.isWellFormed(wellFormedBytes));
+
+        byte[] malformedBytes = {(byte) 0xC0, (byte) 0x80}; // Overlong encoding
+        assertFalse(Utf8.isWellFormed(malformedBytes));
+
+        byte[] wellFormedBytesWithOffset = "test".getBytes();
+        assertTrue(Utf8.isWellFormed(wellFormedBytesWithOffset, 1, 3));
+
+        byte[] malformedBytesWithOffset = {(byte) 0xC0, (byte) 0x80, 't', 'e', 's', 't'};
+        assertFalse(Utf8.isWellFormed(malformedBytesWithOffset, 0, 2));
+    }
+
+    @Test
+    public void testIsWellFormedSlowPath() {
+        byte[] wellFormedBytes = "test".getBytes();
+        assertTrue(Utf8.isWellFormedSlowPath(wellFormedBytes, 0, wellFormedBytes.length));
+
+        byte[] malformedBytes = {(byte) 0xC0, (byte) 0x80}; // Overlong encoding
+        assertFalse(Utf8.isWellFormedSlowPath(malformedBytes, 0, malformedBytes.length));
+
+        byte[] wellFormedBytesWithOffset = "test".getBytes();
+        assertTrue(Utf8.isWellFormedSlowPath(wellFormedBytesWithOffset, 1, 3));
+
+        byte[] malformedBytesWithOffset = {(byte) 0xC0, (byte) 0x80, 't', 'e', 's', 't'};
+        assertFalse(Utf8.isWellFormedSlowPath(malformedBytesWithOffset, 0, 2));
+    }
+}
+```

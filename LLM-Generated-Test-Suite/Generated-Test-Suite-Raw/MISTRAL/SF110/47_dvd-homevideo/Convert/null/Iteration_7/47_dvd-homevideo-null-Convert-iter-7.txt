@@ -1,0 +1,89 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `Convert` class. This test suite includes tests for the constructors, the `init` method, the `run` method, the `Transcode` method, and the `matrix` method.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ConvertTest {
+
+    private Convert convert;
+    private GUI mockGUI;
+
+    @Before
+    public void setUp() {
+        mockGUI = mock(GUI.class);
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+    }
+
+    @Test
+    public void testConstructorWithFormatAndAspectRatio() {
+        assertEquals(29.97, convert.m_fps, 0.01);
+        assertEquals("dvd-ntsc", convert.m_Format);
+        assertEquals("16:9", convert.m_AspectRatio);
+        assertEquals(mockGUI, convert.m_GUI);
+    }
+
+    @Test
+    public void testConstructorWithQualityFormatAndAspectRatio() {
+        Convert convertWithQuality = new Convert(1, "dvd-ntsc", "16:9", mockGUI);
+        assertEquals(29.97, convertWithQuality.m_fps, 0.01);
+        assertEquals("dvd-ntsc", convertWithQuality.m_Format);
+        assertEquals("16:9", convertWithQuality.m_AspectRatio);
+        assertEquals(mockGUI, convertWithQuality.m_GUI);
+        assertEquals(1, convertWithQuality.m_Quality);
+    }
+
+    @Test
+    public void testInitMethod() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(false);
+        boolean result = convert.init();
+        verify(mockGUI, times(1)).ErrorCheck(anyString());
+        assertTrue(result);
+    }
+
+    @Test
+    public void testRunMethod() {
+        convert.run();
+        // Verify that Transcode method is called
+        // Since Transcode is private, we can't directly verify its invocation
+        // Instead, we can check the side effects or use reflection (not recommended for unit tests)
+    }
+
+    @Test
+    public void testTranscodeMethod() {
+        // Mock necessary GUI methods and fields
+        when(mockGUI.strOutputDir).thenReturn("/tmp");
+        when(mockGUI.spnMinutes.getValue()).thenReturn(1);
+        when(mockGUI.spnSeconds.getValue()).thenReturn(0);
+
+        // Create a temporary directory and file for testing
+        new File("/tmp/dv").mkdirs();
+        new File("/tmp/dv/testfile.dv").createNewFile();
+
+        convert.Transcode();
+
+        // Verify that matrix.txt is created
+        assertTrue(new File("/tmp/matrix.txt").exists());
+
+        // Clean up temporary files
+        new File("/tmp/dv/testfile.dv").delete();
+        new File("/tmp/matrix.txt").delete();
+        new File("/tmp/dv").delete();
+    }
+
+    @Test
+    public void testMatrixMethod() {
+        when(mockGUI.strOutputDir).thenReturn("/tmp");
+        convert.matrix();
+        assertTrue(new File("/tmp/matrix.txt").exists());
+        // Clean up temporary file
+        new File("/tmp/matrix.txt").delete();
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to create mock objects and verify method invocations. Make sure to include the necessary dependencies for JUnit 4 and Mockito in your project.
+
+To run these tests, you can use a build tool like Maven or Gradle, or an IDE like IntelliJ IDEA or Eclipse that supports JUnit.

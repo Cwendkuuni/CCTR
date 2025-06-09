@@ -1,0 +1,106 @@
+package lotus.core;
+
+import lotus.core.stack.*;
+import lotus.core.interfaces.*;
+import lotus.core.phases.*;
+import lotus.core.card.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class GameTest {
+
+    private static UserInterface mockIP1;
+    private static UserInterface mockIP2;
+    private static CardCollection mockDeck1;
+    private static CardCollection mockDeck2;
+    private static Player mockPlayer1;
+    private static Player mockPlayer2;
+
+    @Before
+    public void setUp() {
+        mockIP1 = mock(UserInterface.class);
+        mockIP2 = mock(UserInterface.class);
+        mockDeck1 = mock(CardCollection.class);
+        mockDeck2 = mock(CardCollection.class);
+        mockPlayer1 = mock(Player.class);
+        mockPlayer2 = mock(Player.class);
+
+        Game.player1 = mockPlayer1;
+        Game.player2 = mockPlayer2;
+        Game.playingPlayer = 1;
+        Game.currentPhase = mock(Phase.class);
+        Game.stack = mock(Stack.class);
+    }
+
+    @Test
+    public void testGetPlayingPlayer() {
+        when(Game.playingPlayer).thenReturn(1);
+        assertEquals(Game.player1, Game.getPlayingPlayer());
+
+        when(Game.playingPlayer).thenReturn(2);
+        assertEquals(Game.player2, Game.getPlayingPlayer());
+    }
+
+    @Test
+    public void testGetNonPlayingPlayer() {
+        when(Game.playingPlayer).thenReturn(1);
+        assertEquals(Game.player2, Game.getNonPlayingPlayer());
+
+        when(Game.playingPlayer).thenReturn(2);
+        assertEquals(Game.player1, Game.getNonPlayingPlayer());
+    }
+
+    @Test
+    public void testGetOtherPlayer() {
+        assertEquals(Game.player2, Game.getOtherPlayer(Game.player1));
+        assertEquals(Game.player1, Game.getOtherPlayer(Game.player2));
+    }
+
+    @Test
+    public void testInit() {
+        Game.init(mockIP1, mockIP2, "Player1", "Player2", mockDeck1, mockDeck2);
+
+        verify(mockIP1).init(Game.player1);
+        verify(mockIP2).init(Game.player2);
+        assertEquals(1, Game.playingPlayer);
+        assertTrue(Game.currentPhase instanceof UntapPhase);
+
+        // Verify card ownership and zone assignment
+        for (Card c : mockDeck1) {
+            assertEquals(Game.player1, c.owner);
+            assertEquals(Game.player1.library, c.zone);
+        }
+        for (Card c : mockDeck2) {
+            assertEquals(Game.player2, c.owner);
+            assertEquals(Game.player2.library, c.zone);
+        }
+    }
+
+    @Test
+    public void testGivePriorityToCurrentPlayer() {
+        when(Game.player1.letPlayerSpeak()).thenReturn(false);
+        when(Game.player2.letPlayerSpeak()).thenReturn(false);
+        when(Game.stack.empty()).thenReturn(true);
+
+        Game.givePriorityToCurrentPlayer();
+
+        verify(Game.player1, times(1)).letPlayerSpeak();
+        verify(Game.player2, times(1)).letPlayerSpeak();
+        verify(Game.stack, never()).resolveLast();
+    }
+
+    @Test
+    public void testGivePriorityToCurrentPlayerWithStack() {
+        when(Game.player1.letPlayerSpeak()).thenReturn(false);
+        when(Game.player2.letPlayerSpeak()).thenReturn(false);
+        when(Game.stack.empty()).thenReturn(false);
+
+        Game.givePriorityToCurrentPlayer();
+
+        verify(Game.player1, times(1)).letPlayerSpeak();
+        verify(Game.player2, times(1)).letPlayerSpeak();
+        verify(Game.stack, times(1)).resolveLast();
+    }
+}

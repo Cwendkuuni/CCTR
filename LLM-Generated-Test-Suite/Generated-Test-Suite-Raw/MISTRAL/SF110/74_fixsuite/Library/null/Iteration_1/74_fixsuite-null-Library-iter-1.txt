@@ -1,0 +1,114 @@
+```java
+package org.fixsuite.message;
+
+import org.fixsuite.message.info.DictionaryInfo;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import static org.junit.Assert.*;
+
+public class LibraryTest {
+
+    private Library library;
+    private static final Logger logger = LoggerFactory.getLogger(LibraryTest.class);
+
+    @Before
+    public void setUp() {
+        library = new Library();
+    }
+
+    @Test
+    public void testLoadFromDirectory() {
+        String validPath = "path/to/valid/directory";
+        String invalidPath = "path/to/invalid/directory";
+        String emptyPath = "path/to/empty/directory";
+
+        // Test with valid directory
+        boolean result = library.loadFromDirectory(validPath);
+        assertTrue(result);
+        assertFalse(library.getDictionaries().isEmpty());
+
+        // Test with invalid directory
+        result = library.loadFromDirectory(invalidPath);
+        assertFalse(result);
+
+        // Test with empty directory
+        result = library.loadFromDirectory(emptyPath);
+        assertFalse(result);
+    }
+
+    @Test
+    public void testGetDictionaries() {
+        String validPath = "path/to/valid/directory";
+        library.loadFromDirectory(validPath);
+
+        List<DictionaryInfo> dictionaries = library.getDictionaries();
+        assertNotNull(dictionaries);
+        assertFalse(dictionaries.isEmpty());
+    }
+
+    @Test
+    public void testGetDictionary() {
+        String validPath = "path/to/valid/directory";
+        String version = "FIX.4.2";
+        library.loadFromDirectory(validPath);
+
+        DictionaryInfo dictionary = library.getDictionary(version);
+        assertNotNull(dictionary);
+        assertEquals(version, dictionary.getVersion());
+
+        // Test with non-existent version
+        DictionaryInfo nonExistentDictionary = library.getDictionary("NonExistentVersion");
+        assertNull(nonExistentDictionary);
+    }
+
+    @Test
+    public void testArrangeFiles() {
+        File[] files = {
+                new File("Fields.xml"),
+                new File("Enums.xml"),
+                new File("Components.xml"),
+                new File("MsgType.xml"),
+                new File("MsgContents.xml")
+        };
+
+        List<File> arrangedFiles = library.arrangeFiles(files);
+        assertEquals(5, arrangedFiles.size());
+        assertEquals("Fields.xml", arrangedFiles.get(0).getName());
+        assertEquals("Enums.xml", arrangedFiles.get(1).getName());
+        assertEquals("Components.xml", arrangedFiles.get(2).getName());
+        assertEquals("MsgType.xml", arrangedFiles.get(3).getName());
+        assertEquals("MsgContents.xml", arrangedFiles.get(4).getName());
+    }
+
+    @Test
+    public void testLoadDirectory() {
+        String version = "FIX.4.2";
+        File[] files = {
+                new File("Fields.xml"),
+                new File("Enums.xml"),
+                new File("Components.xml"),
+                new File("MsgType.xml"),
+                new File("MsgContents.xml")
+        };
+
+        List<File> fileList = new ArrayList<>();
+        for (File file : files) {
+            fileList.add(file);
+        }
+
+        library.loadDirectory(fileList, version);
+        DictionaryInfo dictionary = library.getDictionary(version);
+        assertNotNull(dictionary);
+        assertTrue(dictionary.isLoaded());
+    }
+}
+```

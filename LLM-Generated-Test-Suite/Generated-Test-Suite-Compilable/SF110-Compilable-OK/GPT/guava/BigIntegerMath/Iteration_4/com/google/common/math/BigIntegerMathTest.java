@@ -1,0 +1,89 @@
+package com.google.common.math;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+import java.math.BigInteger;
+import java.math.RoundingMode;
+
+public class BigIntegerMathTest {
+
+    @Test
+    public void testIsPowerOfTwo() {
+        assertTrue(BigIntegerMath.isPowerOfTwo(BigInteger.valueOf(2)));
+        assertTrue(BigIntegerMath.isPowerOfTwo(BigInteger.valueOf(4)));
+        assertFalse(BigIntegerMath.isPowerOfTwo(BigInteger.valueOf(3)));
+        assertFalse(BigIntegerMath.isPowerOfTwo(BigInteger.ZERO));
+        assertFalse(BigIntegerMath.isPowerOfTwo(BigInteger.ONE));
+    }
+
+    @Test
+    public void testLog2() {
+        assertEquals(1, BigIntegerMath.log2(BigInteger.valueOf(2), RoundingMode.UNNECESSARY));
+        assertEquals(2, BigIntegerMath.log2(BigInteger.valueOf(4), RoundingMode.FLOOR));
+        assertEquals(3, BigIntegerMath.log2(BigInteger.valueOf(8), RoundingMode.CEILING));
+        assertEquals(3, BigIntegerMath.log2(BigInteger.valueOf(9), RoundingMode.HALF_UP));
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testLog2UnnecessaryException() {
+        BigIntegerMath.log2(BigInteger.valueOf(3), RoundingMode.UNNECESSARY);
+    }
+
+    @Test
+    public void testLog10() {
+        assertEquals(1, BigIntegerMath.log10(BigInteger.TEN, RoundingMode.UNNECESSARY));
+        assertEquals(2, BigIntegerMath.log10(BigInteger.valueOf(100), RoundingMode.FLOOR));
+        assertEquals(3, BigIntegerMath.log10(BigInteger.valueOf(1000), RoundingMode.CEILING));
+        assertEquals(3, BigIntegerMath.log10(BigInteger.valueOf(999), RoundingMode.HALF_UP));
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testLog10UnnecessaryException() {
+        BigIntegerMath.log10(BigInteger.valueOf(99), RoundingMode.UNNECESSARY);
+    }
+
+    @Test
+    public void testSqrt() {
+        assertEquals(BigInteger.valueOf(2), BigIntegerMath.sqrt(BigInteger.valueOf(4), RoundingMode.UNNECESSARY));
+        assertEquals(BigInteger.valueOf(3), BigIntegerMath.sqrt(BigInteger.valueOf(9), RoundingMode.FLOOR));
+        assertEquals(BigInteger.valueOf(4), BigIntegerMath.sqrt(BigInteger.valueOf(15), RoundingMode.CEILING));
+        assertEquals(BigInteger.valueOf(3), BigIntegerMath.sqrt(BigInteger.valueOf(10), RoundingMode.HALF_UP));
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testSqrtUnnecessaryException() {
+        BigIntegerMath.sqrt(BigInteger.valueOf(5), RoundingMode.UNNECESSARY);
+    }
+
+    @Test
+    public void testDivide() {
+        assertEquals(BigInteger.valueOf(2), BigIntegerMath.divide(BigInteger.valueOf(4), BigInteger.valueOf(2), RoundingMode.UNNECESSARY));
+        assertEquals(BigInteger.valueOf(2), BigIntegerMath.divide(BigInteger.valueOf(5), BigInteger.valueOf(2), RoundingMode.FLOOR));
+        assertEquals(BigInteger.valueOf(3), BigIntegerMath.divide(BigInteger.valueOf(5), BigInteger.valueOf(2), RoundingMode.CEILING));
+    }
+
+    @Test(expected = ArithmeticException.class)
+    public void testDivideUnnecessaryException() {
+        BigIntegerMath.divide(BigInteger.valueOf(5), BigInteger.valueOf(2), RoundingMode.UNNECESSARY);
+    }
+
+    @Test
+    public void testFactorial() {
+        assertEquals(BigInteger.ONE, BigIntegerMath.factorial(0));
+        assertEquals(BigInteger.ONE, BigIntegerMath.factorial(1));
+        assertEquals(BigInteger.valueOf(120), BigIntegerMath.factorial(5));
+        assertEquals(new BigInteger("2432902008176640000"), BigIntegerMath.factorial(20));
+    }
+
+    @Test
+    public void testBinomial() {
+        assertEquals(BigInteger.ONE, BigIntegerMath.binomial(5, 0));
+        assertEquals(BigInteger.valueOf(10), BigIntegerMath.binomial(5, 2));
+        assertEquals(BigInteger.valueOf(252), BigIntegerMath.binomial(10, 5));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testBinomialException() {
+        BigIntegerMath.binomial(5, 6);
+    }
+}

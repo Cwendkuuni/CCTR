@@ -1,0 +1,210 @@
+```java
+package osa.ora.server.admin.ui;
+
+import osa.ora.server.admin.*;
+import osa.ora.server.beans.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ItemEvent;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Vector;
+
+public class UpdateUserPanelTest {
+
+    private AdminApp mockAdminApp;
+    private ControlPanel mockControlPanel;
+    private UpdateUserPanel updateUserPanel;
+
+    @Before
+    public void setUp() {
+        mockAdminApp = mock(AdminApp.class);
+        mockControlPanel = mock(ControlPanel.class);
+        updateUserPanel = new UpdateUserPanel(mockAdminApp, mockControlPanel);
+    }
+
+    @Test
+    public void testUpdateModel() {
+        List<Group> groups = new ArrayList<>();
+        Group group = new Group();
+        User user = new User();
+        group.getUsers().add(user);
+        groups.add(group);
+
+        when(mockAdminApp.getGroups()).thenReturn(groups);
+
+        updateUserPanel.updateModel();
+
+        verify(mockAdminApp, times(1)).getGroups();
+        assertEquals(new DefaultComboBoxModel<>(groups), updateUserPanel.jComboBox1.getModel());
+        assertEquals(new DefaultComboBoxModel<>(group.getUsers()), updateUserPanel.jComboBox2.getModel());
+    }
+
+    @Test
+    public void testJButton1ActionPerformed() {
+        updateUserPanel.jButton1ActionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
+
+        verify(mockControlPanel.getParentDialog(), times(1)).setVisible(false);
+        assertTrue(updateUserPanel.jTextField1.getText().isEmpty());
+        assertTrue(updateUserPanel.jTextField2.getText().isEmpty());
+        assertTrue(updateUserPanel.jTextField3.getText().isEmpty());
+        assertTrue(updateUserPanel.jTextField4.getText().isEmpty());
+        assertFalse(updateUserPanel.jCheckBox1.isSelected());
+        assertFalse(updateUserPanel.jCheckBox2.isSelected());
+        assertFalse(updateUserPanel.jCheckBox3.isSelected());
+    }
+
+    @Test
+    public void testJButton2ActionPerformed() {
+        Group group = new Group();
+        User user = new User();
+        group.getUsers().add(user);
+
+        when(mockAdminApp.getGroups()).thenReturn(List.of(group));
+        when(mockAdminApp.delUser(user)).thenReturn(user);
+
+        updateUserPanel.jComboBox1.setModel(new DefaultComboBoxModel<>(new Group[]{group}));
+        updateUserPanel.jComboBox2.setModel(new DefaultComboBoxModel<>(new User[]{user}));
+        updateUserPanel.jComboBox1.setSelectedItem(group);
+        updateUserPanel.jComboBox2.setSelectedItem(user);
+
+        updateUserPanel.jButton2ActionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
+
+        verify(mockAdminApp, times(1)).delUser(user);
+        assertTrue(group.getUsers().isEmpty());
+    }
+
+    @Test
+    public void testJButton3ActionPerformed() {
+        User user = new User();
+        when(mockAdminApp.resetUserPass(user)).thenReturn(user);
+
+        updateUserPanel.jComboBox2.setModel(new DefaultComboBoxModel<>(new User[]{user}));
+        updateUserPanel.jComboBox2.setSelectedItem(user);
+
+        updateUserPanel.jButton3ActionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
+
+        verify(mockAdminApp, times(1)).resetUserPass(user);
+    }
+
+    @Test
+    public void testJButton4ActionPerformed() {
+        Group group = new Group();
+        User user = new User();
+        group.getUsers().add(user);
+
+        when(mockAdminApp.getGroups()).thenReturn(List.of(group));
+        when(mockAdminApp.updateUser(user)).thenReturn(user);
+
+        updateUserPanel.jComboBox1.setModel(new DefaultComboBoxModel<>(new Group[]{group}));
+        updateUserPanel.jComboBox2.setModel(new DefaultComboBoxModel<>(new User[]{user}));
+        updateUserPanel.jComboBox1.setSelectedItem(group);
+        updateUserPanel.jComboBox2.setSelectedItem(user);
+
+        updateUserPanel.jTextField1.setText("Test User");
+        updateUserPanel.jTextField2.setText("test@example.com");
+        updateUserPanel.jTextField3.setText("1234567890");
+        updateUserPanel.jTextField4.setText("Developer");
+        updateUserPanel.jCheckBox1.setSelected(true);
+        updateUserPanel.jCheckBox2.setSelected(true);
+        updateUserPanel.jCheckBox3.setSelected(true);
+
+        updateUserPanel.jButton4ActionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
+
+        verify(mockAdminApp, times(1)).updateUser(user);
+        assertEquals("Test User", user.getName());
+        assertEquals("test@example.com", user.getEmail());
+        assertEquals("1234567890", user.getDirectPhone());
+        assertEquals("Developer", user.getJobTitle());
+        assertTrue(user.isShowMyStatus());
+        assertTrue(user.isOnlyStartChat());
+        assertTrue(user.isCanJoinChatRoom());
+    }
+
+    @Test
+    public void testJComboBox1ItemStateChanged() {
+        Group group = new Group();
+        User user = new User();
+        group.getUsers().add(user);
+
+        updateUserPanel.jComboBox1.setModel(new DefaultComboBoxModel<>(new Group[]{group}));
+        updateUserPanel.jComboBox1.setSelectedItem(group);
+
+        updateUserPanel.jComboBox1ItemStateChanged(new ItemEvent(this, ItemEvent.ITEM_STATE_CHANGED, group, ItemEvent.SELECTED));
+
+        assertEquals(new DefaultComboBoxModel<>(group.getUsers()), updateUserPanel.jComboBox2.getModel());
+        assertEquals(user.getName(), updateUserPanel.jTextField1.getText());
+        assertEquals(user.getEmail(), updateUserPanel.jTextField2.getText());
+        assertEquals(user.getDirectPhone(), updateUserPanel.jTextField3.getText());
+        assertEquals(user.getJobTitle(), updateUserPanel.jTextField4.getText());
+        assertEquals(user.isShowMyStatus(), updateUserPanel.jCheckBox1.isSelected());
+        assertEquals(user.isOnlyStartChat(), updateUserPanel.jCheckBox2.isSelected());
+        assertEquals(user.isCanJoinChatRoom(), updateUserPanel.jCheckBox3.isSelected());
+    }
+
+    @Test
+    public void testReset() {
+        updateUserPanel.reset();
+
+        assertTrue(updateUserPanel.jTextField1.getText().isEmpty());
+        assertTrue(updateUserPanel.jTextField2.getText().isEmpty());
+        assertTrue(updateUserPanel.jTextField3.getText().isEmpty());
+        assertTrue(updateUserPanel.jTextField4.getText().isEmpty());
+        assertFalse(updateUserPanel.jCheckBox1.isSelected());
+        assertFalse(updateUserPanel.jCheckBox2.isSelected());
+        assertFalse(updateUserPanel.jCheckBox3.isSelected());
+    }
+
+    @Test
+    public void testFillUser() {
+        User user = new User();
+        user.setName("Test User");
+        user.setEmail("test@example.com");
+        user.setDirectPhone("1234567890");
+        user.setJobTitle("Developer");
+        user.setShowMyStatus(true);
+        user.setOnlyStartChat(true);
+        user.setCanJoinChatRoom(true);
+
+        updateUserPanel.fillUser(user);
+
+        assertEquals("Test User", updateUserPanel.jTextField1.getText());
+        assertEquals("test@example.com", updateUserPanel.jTextField2.getText());
+        assertEquals("1234567890", updateUserPanel.jTextField3.getText());
+        assertEquals("Developer", updateUserPanel.jTextField4.getText());
+        assertTrue(updateUserPanel.jCheckBox1.isSelected());
+        assertTrue(updateUserPanel.jCheckBox2.isSelected());
+        assertTrue(updateUserPanel.jCheckBox3.isSelected());
+    }
+
+    @Test
+    public void testJComboBox2ItemStateChanged() {
+        User user = new User();
+        user.setName("Test User");
+        user.setEmail("test@example.com");
+        user.setDirectPhone("1234567890");
+        user.setJobTitle("Developer");
+        user.setShowMyStatus(true);
+        user.setOnlyStartChat(true);
+        user.setCanJoinChatRoom(true);
+
+        updateUserPanel.jComboBox2.setModel(new DefaultComboBoxModel<>(new User[]{user}));
+        updateUserPanel.jComboBox2.setSelectedItem(user);
+
+        updateUserPanel.jComboBox2ItemStateChanged(new ItemEvent(this, ItemEvent.ITEM_STATE_CHANGED, user, ItemEvent.SELECTED));
+
+        assertEquals("Test User", updateUserPanel.jTextField1.getText());
+        assertEquals("test@example.com", updateUserPanel.jTextField2.getText());
+        assertEquals("1234567890", updateUserPanel.jTextField3.getText());
+        assertEquals("Developer", updateUserPanel.jTextField4.getText());
+        assertTrue(updateUserPanel.jCheckBox1.isSelected());
+        assertTrue(updateUserPanel.jCheckBox2.isSelected());
+        assertTrue(updateUserPanel.jCheckBox3.isSelected());
+    }
+}
+```

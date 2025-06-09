@@ -1,0 +1,163 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import java.io.*;
+
+public class TFloatCharHashTest {
+
+    private TFloatCharHash tFloatCharHash;
+
+    @Before
+    public void setUp() {
+        tFloatCharHash = Mockito.mock(TFloatCharHash.class, Mockito.CALLS_REAL_METHODS);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertEquals(0.0f, tFloatCharHash.getNoEntryKey(), 0.0);
+        assertEquals('\0', tFloatCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacity() {
+        tFloatCharHash = Mockito.mock(TFloatCharHash.class, Mockito.withSettings().useConstructor(10).defaultAnswer(Mockito.CALLS_REAL_METHODS));
+        assertEquals(0.0f, tFloatCharHash.getNoEntryKey(), 0.0);
+        assertEquals('\0', tFloatCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacityAndLoadFactor() {
+        tFloatCharHash = Mockito.mock(TFloatCharHash.class, Mockito.withSettings().useConstructor(10, 0.5f).defaultAnswer(Mockito.CALLS_REAL_METHODS));
+        assertEquals(0.0f, tFloatCharHash.getNoEntryKey(), 0.0);
+        assertEquals('\0', tFloatCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithAllParameters() {
+        tFloatCharHash = Mockito.mock(TFloatCharHash.class, Mockito.withSettings().useConstructor(10, 0.5f, 1.0f, 'a').defaultAnswer(Mockito.CALLS_REAL_METHODS));
+        assertEquals(1.0f, tFloatCharHash.getNoEntryKey(), 0.0);
+        assertEquals('a', tFloatCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testSetUp() {
+        int capacity = tFloatCharHash.setUp(10);
+        assertEquals(10, capacity);
+        assertNotNull(tFloatCharHash._set);
+    }
+
+    @Test
+    public void testContains() {
+        Mockito.when(tFloatCharHash.index(1.0f)).thenReturn(0);
+        assertTrue(tFloatCharHash.contains(1.0f));
+
+        Mockito.when(tFloatCharHash.index(2.0f)).thenReturn(-1);
+        assertFalse(tFloatCharHash.contains(2.0f));
+    }
+
+    @Test
+    public void testForEach() {
+        TFloatProcedure procedure = Mockito.mock(TFloatProcedure.class);
+        Mockito.when(procedure.execute(Mockito.anyFloat())).thenReturn(true);
+
+        tFloatCharHash._states = new byte[]{1, 1, 0};
+        tFloatCharHash._set = new float[]{1.0f, 2.0f, 0.0f};
+
+        assertTrue(tFloatCharHash.forEach(procedure));
+
+        Mockito.when(procedure.execute(1.0f)).thenReturn(false);
+        assertFalse(tFloatCharHash.forEach(procedure));
+    }
+
+    @Test
+    public void testRemoveAt() {
+        tFloatCharHash._set = new float[]{1.0f, 2.0f, 3.0f};
+        tFloatCharHash.removeAt(1);
+        assertEquals(tFloatCharHash.getNoEntryKey(), tFloatCharHash._set[1], 0.0);
+    }
+
+    @Test
+    public void testIndex() {
+        tFloatCharHash._states = new byte[]{1, 0, 1};
+        tFloatCharHash._set = new float[]{1.0f, 0.0f, 2.0f};
+
+        assertEquals(0, tFloatCharHash.index(1.0f));
+        assertEquals(-1, tFloatCharHash.index(3.0f));
+    }
+
+    @Test
+    public void testIndexRehashed() {
+        tFloatCharHash._states = new byte[]{1, 2, 1};
+        tFloatCharHash._set = new float[]{1.0f, 0.0f, 2.0f};
+
+        assertEquals(2, tFloatCharHash.indexRehashed(2.0f, 0, 0, (byte) 1));
+        assertEquals(-1, tFloatCharHash.indexRehashed(3.0f, 0, 0, (byte) 1));
+    }
+
+    @Test
+    public void testInsertKey() {
+        tFloatCharHash._states = new byte[]{0, 1, 2};
+        tFloatCharHash._set = new float[]{0.0f, 1.0f, 0.0f};
+
+        assertEquals(0, tFloatCharHash.insertKey(2.0f));
+        assertTrue(tFloatCharHash.consumeFreeSlot);
+
+        assertEquals(-1, tFloatCharHash.insertKey(1.0f));
+        assertFalse(tFloatCharHash.consumeFreeSlot);
+    }
+
+    @Test
+    public void testInsertKeyRehash() {
+        tFloatCharHash._states = new byte[]{1, 2, 0};
+        tFloatCharHash._set = new float[]{1.0f, 0.0f, 0.0f};
+
+        assertEquals(1, tFloatCharHash.insertKeyRehash(2.0f, 0, 0, (byte) 1));
+        assertTrue(tFloatCharHash.consumeFreeSlot);
+    }
+
+    @Test
+    public void testXinsertKey() {
+        tFloatCharHash._states = new byte[]{0, 1, 2};
+        tFloatCharHash._set = new float[]{0.0f, 1.0f, 0.0f};
+
+        assertEquals(0, tFloatCharHash.XinsertKey(2.0f));
+        assertTrue(tFloatCharHash.consumeFreeSlot);
+
+        assertEquals(-1, tFloatCharHash.XinsertKey(1.0f));
+        assertFalse(tFloatCharHash.consumeFreeSlot);
+    }
+
+    @Test
+    public void testWriteExternal() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutput out = new ObjectOutputStream(baos);
+
+        tFloatCharHash.writeExternal(out);
+        out.flush();
+
+        byte[] data = baos.toByteArray();
+        assertNotNull(data);
+        assertTrue(data.length > 0);
+    }
+
+    @Test
+    public void testReadExternal() throws IOException, ClassNotFoundException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutput out = new ObjectOutputStream(baos);
+
+        tFloatCharHash.writeExternal(out);
+        out.flush();
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        ObjectInput in = new ObjectInputStream(bais);
+
+        TFloatCharHash newHash = Mockito.mock(TFloatCharHash.class, Mockito.CALLS_REAL_METHODS);
+        newHash.readExternal(in);
+
+        assertEquals(tFloatCharHash.getNoEntryKey(), newHash.getNoEntryKey(), 0.0);
+        assertEquals(tFloatCharHash.getNoEntryValue(), newHash.getNoEntryValue());
+    }
+}
+```

@@ -1,0 +1,249 @@
+To create a comprehensive JUnit 4 test suite for the `Tokeniser` class, we need to consider testing each method in the class. However, since the `Tokeniser` class relies on several other classes and interfaces (like `CharacterReader`, `ParseErrorList`, `Token`, `TokeniserState`, etc.), we will need to mock these dependencies to effectively test the `Tokeniser` class.
+
+Below is a JUnit 4 test suite for the `Tokeniser` class. Note that this test suite uses Mockito for mocking dependencies.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.jsoup.parser.Tokeniser;
+import org.jsoup.parser.TokeniserState;
+import org.jsoup.parser.Token;
+import org.jsoup.parser.CharacterReader;
+import org.jsoup.parser.ParseErrorList;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TokeniserTest {
+
+    @Mock
+    private CharacterReader mockReader;
+    @Mock
+    private ParseErrorList mockErrors;
+    @Mock
+    private TokeniserState mockState;
+    @Mock
+    private Token mockToken;
+
+    private Tokeniser tokeniser;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        tokeniser = new Tokeniser(mockReader, mockErrors);
+    }
+
+    @Test
+    public void testRead() {
+        when(mockReader.isEmpty()).thenReturn(false);
+        when(mockState.read(any(Tokeniser.class), eq(mockReader))).thenAnswer(invocation -> {
+            tokeniser.emit(mockToken);
+            return null;
+        });
+
+        tokeniser.transition(mockState);
+        Token result = tokeniser.read();
+
+        assertEquals(mockToken, result);
+    }
+
+    @Test
+    public void testEmitToken() {
+        tokeniser.emit(mockToken);
+
+        Token result = tokeniser.read();
+
+        assertEquals(mockToken, result);
+    }
+
+    @Test
+    public void testEmitString() {
+        String testString = "test";
+        tokeniser.emit(testString);
+
+        Token result = tokeniser.read();
+
+        assertTrue(result instanceof Token.Character);
+        assertEquals(testString, ((Token.Character) result).getData());
+    }
+
+    @Test
+    public void testEmitChar() {
+        char testChar = 'a';
+        tokeniser.emit(testChar);
+
+        Token result = tokeniser.read();
+
+        assertTrue(result instanceof Token.Character);
+        assertEquals(String.valueOf(testChar), ((Token.Character) result).getData());
+    }
+
+    @Test
+    public void testTransition() {
+        tokeniser.transition(mockState);
+
+        assertEquals(mockState, tokeniser.getState());
+    }
+
+    @Test
+    public void testAdvanceTransition() {
+        tokeniser.advanceTransition(mockState);
+
+        verify(mockReader).advance();
+        assertEquals(mockState, tokeniser.getState());
+    }
+
+    @Test
+    public void testAcknowledgeSelfClosingFlag() {
+        tokeniser.acknowledgeSelfClosingFlag();
+
+        // No exception should be thrown
+    }
+
+    @Test
+    public void testConsumeCharacterReference() {
+        when(mockReader.isEmpty()).thenReturn(false);
+        when(mockReader.current()).thenReturn('a');
+        when(mockReader.matchesAny(anyVararg())).thenReturn(false);
+        when(mockReader.consumeLetterSequence()).thenReturn("amp");
+        when(mockReader.matches(';')).thenReturn(true);
+        when(mockReader.matchConsume(";")).thenReturn(true);
+
+        Character result = tokeniser.consumeCharacterReference(null, false);
+
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testCreateTagPending() {
+        Token.Tag tag = tokeniser.createTagPending(true);
+
+        assertTrue(tag instanceof Token.StartTag);
+    }
+
+    @Test
+    public void testEmitTagPending() {
+        Token.Tag tag = tokeniser.createTagPending(true);
+        tokeniser.emitTagPending();
+
+        Token result = tokeniser.read();
+
+        assertEquals(tag, result);
+    }
+
+    @Test
+    public void testCreateCommentPending() {
+        tokeniser.createCommentPending();
+
+        assertNotNull(tokeniser.commentPending);
+    }
+
+    @Test
+    public void testEmitCommentPending() {
+        tokeniser.createCommentPending();
+        tokeniser.emitCommentPending();
+
+        Token result = tokeniser.read();
+
+        assertEquals(tokeniser.commentPending, result);
+    }
+
+    @Test
+    public void testCreateDoctypePending() {
+        tokeniser.createDoctypePending();
+
+        assertNotNull(tokeniser.doctypePending);
+    }
+
+    @Test
+    public void testEmitDoctypePending() {
+        tokeniser.createDoctypePending();
+        tokeniser.emitDoctypePending();
+
+        Token result = tokeniser.read();
+
+        assertEquals(tokeniser.doctypePending, result);
+    }
+
+    @Test
+    public void testCreateTempBuffer() {
+        tokeniser.createTempBuffer();
+
+        assertNotNull(tokeniser.dataBuffer);
+    }
+
+    @Test
+    public void testIsAppropriateEndTagToken() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.tagName = "test";
+        tokeniser.lastStartTag = startTag;
+
+        Token.Tag endTag = new Token.EndTag();
+        endTag.tagName = "test";
+        tokeniser.tagPending = endTag;
+
+        assertTrue(tokeniser.isAppropriateEndTagToken());
+    }
+
+    @Test
+    public void testAppropriateEndTagName() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.tagName = "test";
+        tokeniser.lastStartTag = startTag;
+
+        assertEquals("test", tokeniser.appropriateEndTagName());
+    }
+
+    @Test
+    public void testError() {
+        when(mockErrors.canAddError()).thenReturn(true);
+
+        tokeniser.error(mockState);
+
+        verify(mockErrors).add(any(ParseError.class));
+    }
+
+    @Test
+    public void testEofError() {
+        when(mockErrors.canAddError()).thenReturn(true);
+
+        tokeniser.eofError(mockState);
+
+        verify(mockErrors).add(any(ParseError.class));
+    }
+
+    @Test
+    public void testCharacterReferenceError() {
+        when(mockErrors.canAddError()).thenReturn(true);
+
+        tokeniser.characterReferenceError("test error");
+
+        verify(mockErrors).add(any(ParseError.class));
+    }
+
+    @Test
+    public void testErrorWithMessage() {
+        when(mockErrors.canAddError()).thenReturn(true);
+
+        tokeniser.error("test error");
+
+        verify(mockErrors).add(any(ParseError.class));
+    }
+
+    @Test
+    public void testCurrentNodeInHtmlNS() {
+        assertTrue(tokeniser.currentNodeInHtmlNS());
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: We use Mockito to mock dependencies like `CharacterReader`, `ParseErrorList`, `TokeniserState`, and `Token`.
+- **Setup**: The `setUp` method initializes the mocks and creates an instance of `Tokeniser`.
+- **Tests**: Each method in the `Tokeniser` class is tested. For methods that change the state or emit tokens, we verify the expected behavior using assertions.
+- **Error Handling**: Tests for error methods ensure that errors are added to the `ParseErrorList` when conditions are met.
+
+This test suite provides a comprehensive set of tests for the `Tokeniser` class, covering its main functionalities and interactions with its dependencies.

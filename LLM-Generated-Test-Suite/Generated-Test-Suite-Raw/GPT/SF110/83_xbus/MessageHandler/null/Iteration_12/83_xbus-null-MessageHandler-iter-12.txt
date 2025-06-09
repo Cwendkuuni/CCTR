@@ -1,0 +1,105 @@
+```java
+import net.sf.xbus.base.core.MessageHandler;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class MessageHandlerTest {
+
+    private MessageHandler messageHandler;
+    private static final String BASENAME = "testBase";
+
+    @Before
+    public void setUp() {
+        messageHandler = MessageHandler.getInstance(BASENAME);
+    }
+
+    @Test
+    public void testGetInstance() {
+        MessageHandler instance1 = MessageHandler.getInstance(BASENAME);
+        MessageHandler instance2 = MessageHandler.getInstance(BASENAME);
+        assertNotNull(instance1);
+        assertSame(instance1, instance2);
+    }
+
+    @Test
+    public void testGetMessageWithExistingKey() {
+        // Assuming the message file contains a key "greeting" with value "Hello, $1$!"
+        String key = "greeting";
+        List<String> params = new ArrayList<>();
+        params.add("World");
+        String expectedMessage = "Hello, World!";
+        String actualMessage = messageHandler.getMessage(key, params);
+        assertEquals(expectedMessage, actualMessage);
+    }
+
+    @Test
+    public void testGetMessageWithNonExistingKey() {
+        String key = "nonExistingKey";
+        List<String> params = new ArrayList<>();
+        String expectedMessage = "Key: nonExistingKey not found in message file";
+        String actualMessage = messageHandler.getMessage(key, params);
+        assertEquals(expectedMessage, actualMessage);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithExistingKey() {
+        // Assuming the message file contains a key "farewell" with value "Goodbye, $1$!"
+        String key = "farewell";
+        List<String> params = new ArrayList<>();
+        params.add("Friend");
+        String expectedMessage = "Goodbye, Friend!";
+        String actualMessage = messageHandler.getMessageOptional(key, params);
+        assertEquals(expectedMessage, actualMessage);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNonExistingKey() {
+        String key = "nonExistingKey";
+        List<String> params = new ArrayList<>();
+        String actualMessage = messageHandler.getMessageOptional(key, params);
+        assertNull(actualMessage);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNullParams() {
+        // Assuming the message file contains a key "welcome" with value "Welcome, $1$!"
+        String key = "welcome";
+        String expectedMessage = "Welcome, $1$!";
+        String actualMessage = messageHandler.getMessageOptional(key, null);
+        assertEquals(expectedMessage, actualMessage);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNullMessageTable() {
+        MessageHandler emptyHandler = new MessageHandler("emptyBase");
+        String key = "anyKey";
+        List<String> params = new ArrayList<>();
+        String actualMessage = emptyHandler.getMessageOptional(key, params);
+        assertNull(actualMessage);
+    }
+}
+```
+
+### Explanation:
+- **Test Setup**: The `setUp` method initializes a `MessageHandler` instance before each test.
+- **Test Methods**:
+  - `testGetInstance`: Verifies that `getInstance` returns the same instance for the same basename.
+  - `testGetMessageWithExistingKey`: Tests `getMessage` with a key that exists in the message file.
+  - `testGetMessageWithNonExistingKey`: Tests `getMessage` with a key that does not exist, expecting a specific error message.
+  - `testGetMessageOptionalWithExistingKey`: Tests `getMessageOptional` with a key that exists.
+  - `testGetMessageOptionalWithNonExistingKey`: Tests `getMessageOptional` with a key that does not exist, expecting `null`.
+  - `testGetMessageOptionalWithNullParams`: Tests `getMessageOptional` with `null` parameters.
+  - `testGetMessageOptionalWithNullMessageTable`: Tests `getMessageOptional` when the message table is `null`.
+
+### Note:
+- The test assumes certain keys and values exist in the message files. You may need to adjust these based on the actual content of your message files.
+- The `MessageHandler` constructor and `addMessages` method are not directly tested since they are private and their effects are indirectly tested through the public methods.

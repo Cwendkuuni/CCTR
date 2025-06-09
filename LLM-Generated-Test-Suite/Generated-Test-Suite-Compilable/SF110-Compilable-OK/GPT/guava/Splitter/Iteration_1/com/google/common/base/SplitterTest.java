@@ -1,0 +1,188 @@
+package com.google.common.base;
+
+import com.google.common.base.Splitter;
+import com.google.common.base.CharMatcher;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
+
+import java.util.List;
+import java.util.Map;
+import java.util.regex.Pattern;
+
+import static org.junit.Assert.*;
+
+public class SplitterTest {
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    private Splitter splitter;
+
+    @Before
+    public void setUp() {
+        splitter = Splitter.on(',');
+    }
+
+    @Test
+    public void testOnChar() {
+        Splitter splitter = Splitter.on(',');
+        List<String> result = splitter.splitToList("a,b,c");
+        assertEquals(3, result.size());
+        assertEquals("a", result.get(0));
+        assertEquals("b", result.get(1));
+        assertEquals("c", result.get(2));
+    }
+
+    @Test
+    public void testOnCharMatcher() {
+        Splitter splitter = Splitter.on(CharMatcher.is(','));
+        List<String> result = splitter.splitToList("a,b,c");
+        assertEquals(3, result.size());
+        assertEquals("a", result.get(0));
+        assertEquals("b", result.get(1));
+        assertEquals("c", result.get(2));
+    }
+
+    @Test
+    public void testOnString() {
+        Splitter splitter = Splitter.on(",");
+        List<String> result = splitter.splitToList("a,b,c");
+        assertEquals(3, result.size());
+        assertEquals("a", result.get(0));
+        assertEquals("b", result.get(1));
+        assertEquals("c", result.get(2));
+    }
+
+    @Test
+    public void testOnEmptyStringThrowsException() {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("The separator may not be the empty string.");
+        Splitter.on("");
+    }
+
+    @Test
+    public void testOnPattern() {
+        Splitter splitter = Splitter.on(Pattern.compile(","));
+        List<String> result = splitter.splitToList("a,b,c");
+        assertEquals(3, result.size());
+        assertEquals("a", result.get(0));
+        assertEquals("b", result.get(1));
+        assertEquals("c", result.get(2));
+    }
+
+    @Test
+    public void testOnPatternEmptyStringThrowsException() {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("The pattern may not match the empty string");
+        Splitter.on(Pattern.compile(""));
+    }
+
+    @Test
+    public void testOnPatternString() {
+        Splitter splitter = Splitter.onPattern(",");
+        List<String> result = splitter.splitToList("a,b,c");
+        assertEquals(3, result.size());
+        assertEquals("a", result.get(0));
+        assertEquals("b", result.get(1));
+        assertEquals("c", result.get(2));
+    }
+
+    @Test
+    public void testFixedLength() {
+        Splitter splitter = Splitter.fixedLength(2);
+        List<String> result = splitter.splitToList("abcdef");
+        assertEquals(3, result.size());
+        assertEquals("ab", result.get(0));
+        assertEquals("cd", result.get(1));
+        assertEquals("ef", result.get(2));
+    }
+
+    @Test
+    public void testFixedLengthThrowsException() {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("The length may not be less than 1");
+        Splitter.fixedLength(0);
+    }
+
+    @Test
+    public void testOmitEmptyStrings() {
+        Splitter splitter = Splitter.on(',').omitEmptyStrings();
+        List<String> result = splitter.splitToList("a,,b,c");
+        assertEquals(3, result.size());
+        assertEquals("a", result.get(0));
+        assertEquals("b", result.get(1));
+        assertEquals("c", result.get(2));
+    }
+
+    @Test
+    public void testLimit() {
+        Splitter splitter = Splitter.on(',').limit(2);
+        List<String> result = splitter.splitToList("a,b,c");
+        assertEquals(2, result.size());
+        assertEquals("a", result.get(0));
+        assertEquals("b,c", result.get(1));
+    }
+
+    @Test
+    public void testLimitThrowsException() {
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("must be greater than zero");
+        Splitter.on(',').limit(0);
+    }
+
+    @Test
+    public void testTrimResults() {
+        Splitter splitter = Splitter.on(',').trimResults();
+        List<String> result = splitter.splitToList(" a , b , c ");
+        assertEquals(3, result.size());
+        assertEquals("a", result.get(0));
+        assertEquals("b", result.get(1));
+        assertEquals("c", result.get(2));
+    }
+
+    @Test
+    public void testTrimResultsWithCharMatcher() {
+        Splitter splitter = Splitter.on(',').trimResults(CharMatcher.is(' '));
+        List<String> result = splitter.splitToList(" a , b , c ");
+        assertEquals(3, result.size());
+        assertEquals("a", result.get(0));
+        assertEquals("b", result.get(1));
+        assertEquals("c", result.get(2));
+    }
+
+    @Test
+    public void testSplitToList() {
+        List<String> result = splitter.splitToList("a,b,c");
+        assertEquals(3, result.size());
+        assertEquals("a", result.get(0));
+        assertEquals("b", result.get(1));
+        assertEquals("c", result.get(2));
+    }
+
+    @Test
+    public void testWithKeyValueSeparator() {
+        Splitter.MapSplitter mapSplitter = splitter.withKeyValueSeparator('=');
+        Map<String, String> result = mapSplitter.split("key1=value1,key2=value2");
+        assertEquals(2, result.size());
+        assertEquals("value1", result.get("key1"));
+        assertEquals("value2", result.get("key2"));
+    }
+
+    @Test
+    public void testWithKeyValueSeparatorThrowsExceptionOnDuplicateKey() {
+        Splitter.MapSplitter mapSplitter = splitter.withKeyValueSeparator('=');
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("Duplicate key [key1] found.");
+        mapSplitter.split("key1=value1,key1=value2");
+    }
+
+    @Test
+    public void testWithKeyValueSeparatorThrowsExceptionOnInvalidEntry() {
+        Splitter.MapSplitter mapSplitter = splitter.withKeyValueSeparator('=');
+        thrown.expect(IllegalArgumentException.class);
+        thrown.expectMessage("Chunk [key1] is not a valid entry");
+        mapSplitter.split("key1,key2=value2");
+    }
+}

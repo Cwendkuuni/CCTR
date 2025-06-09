@@ -1,0 +1,61 @@
+```java
+package org.mockito.internal.util;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class TimerTest {
+
+    private Timer timer;
+    private static final long DURATION_MILLIS = 1000;
+
+    @Before
+    public void setUp() {
+        timer = new Timer(DURATION_MILLIS);
+    }
+
+    @Test
+    public void testIsCountingBeforeStart() {
+        try {
+            timer.isCounting();
+            fail("Expected AssertionError");
+        } catch (AssertionError e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testIsCountingAfterStart() throws InterruptedException {
+        timer.start();
+        assertTrue(timer.isCounting());
+
+        // Sleep for a short duration to ensure the timer is still counting
+        Thread.sleep(DURATION_MILLIS / 2);
+        assertTrue(timer.isCounting());
+
+        // Sleep for the remaining duration to ensure the timer has stopped counting
+        Thread.sleep(DURATION_MILLIS / 2 + 1);
+        assertFalse(timer.isCounting());
+    }
+
+    @Test
+    public void testStart() {
+        timer.start();
+        long startTime = timer.getStartTime();
+        assertTrue(startTime > 0);
+        assertTrue(System.currentTimeMillis() - startTime < 100); // Allow some leeway for test execution time
+    }
+
+    // Helper method to access private field startTime for testing purposes
+    private long getStartTime(Timer timer) {
+        try {
+            java.lang.reflect.Field field = Timer.class.getDeclaredField("startTime");
+            field.setAccessible(true);
+            return field.getLong(timer);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```

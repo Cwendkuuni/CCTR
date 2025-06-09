@@ -1,0 +1,133 @@
+```java
+package net.sf.xbus.base.core.reflection;
+
+import net.sf.xbus.base.core.Constants;
+import net.sf.xbus.base.core.trace.Trace;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Vector;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Constants.class, Trace.class, System.class})
+public class XBUSClassLoaderTest {
+
+    private ClassLoader parentClassLoader;
+
+    @Before
+    public void setUp() {
+        parentClassLoader = Mockito.mock(ClassLoader.class);
+        PowerMockito.mockStatic(Constants.class);
+        PowerMockito.mockStatic(Trace.class);
+        PowerMockito.mockStatic(System.class);
+    }
+
+    @After
+    public void tearDown() {
+        // Clean up any resources if necessary
+    }
+
+    @Test
+    public void testGetInstance() {
+        PowerMockito.when(Constants.XBUS_HOME).thenReturn("test/path");
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parentClassLoader);
+        assertNotNull(classLoader);
+    }
+
+    @Test
+    public void testCreateClassLoader() {
+        PowerMockito.when(Constants.XBUS_HOME).thenReturn("test/path");
+        XBUSClassLoader classLoader = XBUSClassLoader.createClassLoader(parentClassLoader);
+        assertNotNull(classLoader);
+    }
+
+    @Test
+    public void testAddUrls() {
+        Vector<URL> urls = new Vector<>();
+        String dirName = "test/path";
+
+        File mockFile = Mockito.mock(File.class);
+        File[] mockFiles = {mockFile};
+
+        PowerMockito.when(mockFile.isFile()).thenReturn(true);
+        PowerMockito.when(mockFile.getName()).thenReturn("test.jar");
+        try {
+            PowerMockito.when(mockFile.toURL()).thenReturn(new URL("file://test/path/test.jar"));
+        } catch (MalformedURLException e) {
+            fail("Unexpected MalformedURLException");
+        }
+
+        File mockDir = Mockito.mock(File.class);
+        PowerMockito.when(mockDir.listFiles()).thenReturn(mockFiles);
+
+        PowerMockito.when(new File(dirName)).thenReturn(mockDir);
+
+        XBUSClassLoader.addUrls(urls, dirName);
+        assertEquals(1, urls.size());
+    }
+
+    @Test
+    public void testAddUrlsMalformedURLException() {
+        Vector<URL> urls = new Vector<>();
+        String dirName = "test/path";
+
+        File mockFile = Mockito.mock(File.class);
+        File[] mockFiles = {mockFile};
+
+        PowerMockito.when(mockFile.isFile()).thenReturn(true);
+        PowerMockito.when(mockFile.getName()).thenReturn("test.jar");
+        try {
+            PowerMockito.when(mockFile.toURL()).thenThrow(new MalformedURLException());
+        } catch (MalformedURLException e) {
+            fail("Unexpected MalformedURLException");
+        }
+
+        File mockDir = Mockito.mock(File.class);
+        PowerMockito.when(mockDir.listFiles()).thenReturn(mockFiles);
+
+        PowerMockito.when(new File(dirName)).thenReturn(mockDir);
+
+        PowerMockito.doNothing().when(Trace.class);
+        Trace.error(any(MalformedURLException.class));
+
+        PowerMockito.doNothing().when(System.class);
+        System.exit(1);
+
+        XBUSClassLoader.addUrls(urls, dirName);
+        verify(Trace.class).error(any(MalformedURLException.class));
+        verify(System.class).exit(1);
+    }
+
+    @Test
+    public void testAddUrlsNonJarFile() {
+        Vector<URL> urls = new Vector<>();
+        String dirName = "test/path";
+
+        File mockFile = Mockito.mock(File.class);
+        File[] mockFiles = {mockFile};
+
+        PowerMockito.when(mockFile.isFile()).thenReturn(true);
+        PowerMockito.when(mockFile.getName()).thenReturn("test.txt");
+
+        File mockDir = Mockito.mock(File.class);
+        PowerMockito.when(mockDir.listFiles()).thenReturn(mockFiles);
+
+        PowerMockito.when(new File(dirName)).thenReturn(mockDir);
+
+        XBUSClassLoader.addUrls(urls, dirName);
+        assertEquals(0, urls.size());
+    }
+}
+```

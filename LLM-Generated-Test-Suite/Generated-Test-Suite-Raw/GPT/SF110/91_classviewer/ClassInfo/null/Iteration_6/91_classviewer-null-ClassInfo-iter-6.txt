@@ -1,0 +1,121 @@
+To create a comprehensive JUnit 4 test suite for the `ClassInfo` class, we need to test all public methods, constructors, and any static methods. Below is a JUnit 4 test suite that covers the functionality of the `ClassInfo` class. Note that some methods, such as those involving reflection or external dependencies, may require mock objects or additional setup.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import com.jstevh.viewer.ClassInfo;
+import com.jstevh.tools.DirManager;
+import java.lang.reflect.Method;
+
+public class ClassInfoTest {
+
+    private ClassInfo classInfo;
+    private DirManager mockDirManager;
+
+    @Before
+    public void setUp() throws Exception {
+        mockDirManager = Mockito.mock(DirManager.class);
+        Mockito.when(mockDirManager.getPackageList()).thenReturn(new String[]{"java.lang.", "javax.swing."});
+        classInfo = new ClassInfo("javax.swing.JButton", mockDirManager);
+    }
+
+    @Test
+    public void testIsAbstract() {
+        assertFalse(classInfo.isAbstract());
+    }
+
+    @Test
+    public void testIsInterface() {
+        assertFalse(classInfo.isInterface());
+    }
+
+    @Test
+    public void testGetClassName() {
+        assertEquals("javax.swing.JButton", classInfo.getClassName());
+    }
+
+    @Test
+    public void testGetClassPackage() {
+        assertEquals("javax.swing", classInfo.getClassPackage());
+    }
+
+    @Test
+    public void testGetSuperClassName() {
+        assertEquals("javax.swing.AbstractButton", classInfo.getSuperClassName());
+    }
+
+    @Test
+    public void testPrintFields() {
+        String[] fields = classInfo.printFields();
+        assertNotNull(fields);
+    }
+
+    @Test
+    public void testPrintMethods() {
+        String[] methods = classInfo.printMethods();
+        assertNotNull(methods);
+    }
+
+    @Test
+    public void testPrintMethodsWithParam() {
+        String[] methods = classInfo.printMethods(ClassInfo.NO_OBJECT_METHODS);
+        assertNotNull(methods);
+    }
+
+    @Test
+    public void testPrintConstructors() {
+        String[] constructors = classInfo.printConstructors();
+        assertNotNull(constructors);
+    }
+
+    @Test
+    public void testPrintInterfaces() {
+        String[] interfaces = classInfo.printInterfaces();
+        assertNotNull(interfaces);
+    }
+
+    @Test
+    public void testSrchMethods() {
+        String[] foundMethods = classInfo.srchMethods("get");
+        assertNotNull(foundMethods);
+    }
+
+    @Test
+    public void testSrchMethodsWithIndex() {
+        String[] index = {"get"};
+        String[] foundMethods = classInfo.srchMethods("get", index);
+        assertNotNull(foundMethods);
+    }
+
+    @Test
+    public void testGetFoundMethod() {
+        classInfo.srchMethods("get");
+        MethodData methodData = classInfo.getFoundMethod(0);
+        assertNotNull(methodData);
+    }
+
+    @Test
+    public void testGetDataWithMembers() {
+        Method[] methods = JButton.class.getMethods();
+        String[] data = ClassInfo.getData(methods);
+        assertNotNull(data);
+    }
+
+    @Test
+    public void testGetDataWithClasses() {
+        Class[] interfaces = JButton.class.getInterfaces();
+        String[] data = ClassInfo.getData(interfaces);
+        assertNotNull(data);
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `ClassInfo` object using a mock `DirManager`. This is necessary because `ClassInfo` relies on `DirManager` to provide package information.
+- **Test Methods**: Each public method in `ClassInfo` is tested. For methods that return arrays, we check that the result is not null. For methods that return specific values, we assert the expected value.
+- **Mocking**: We use Mockito to mock the `DirManager` class, which allows us to control the behavior of its methods during testing.
+- **Reflection**: The `getData` methods are tested using reflection to obtain methods and interfaces from a known class (`JButton`).
+
+This test suite provides a basic structure for testing the `ClassInfo` class. Depending on the actual behavior and requirements, additional tests or more detailed assertions may be necessary.

@@ -1,0 +1,106 @@
+package org.fixsuite.message;
+
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import org.fixsuite.message.info.DictionaryInfo;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class LibraryTest {
+
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
+    private Library library;
+    private static Logger logger;
+
+    @BeforeClass
+    public static void setUpClass() {
+        logger = LoggerFactory.getLogger(LibraryTest.class);
+    }
+
+    @Before
+    public void setUp() {
+        library = new Library();
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithValidDirectory() throws IOException {
+        File validDir = tempFolder.newFolder("validDir");
+        File subDir = new File(validDir, "subDir");
+        subDir.mkdir();
+        new File(subDir, "Fields.xml").createNewFile();
+        new File(subDir, "Enums.xml").createNewFile();
+        new File(subDir, "Components.xml").createNewFile();
+        new File(subDir, "MsgType.xml").createNewFile();
+        new File(subDir, "MsgContents.xml").createNewFile();
+
+        boolean result = library.loadFromDirectory(validDir.getAbsolutePath());
+        assertTrue(result);
+        assertFalse(library.getDictionaries().isEmpty());
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithEmptyDirectory() throws IOException {
+        File emptyDir = tempFolder.newFolder("emptyDir");
+
+        boolean result = library.loadFromDirectory(emptyDir.getAbsolutePath());
+        assertFalse(result);
+        assertTrue(library.getDictionaries().isEmpty());
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithNonDirectory() {
+        File nonDir = new File(tempFolder.getRoot(), "nonDir.txt");
+
+        boolean result = library.loadFromDirectory(nonDir.getAbsolutePath());
+        assertFalse(result);
+        assertTrue(library.getDictionaries().isEmpty());
+    }
+
+    @Test
+    public void testGetDictionaries() throws IOException {
+        File validDir = tempFolder.newFolder("validDir");
+        File subDir = new File(validDir, "subDir");
+        subDir.mkdir();
+        new File(subDir, "Fields.xml").createNewFile();
+        new File(subDir, "Enums.xml").createNewFile();
+        new File(subDir, "Components.xml").createNewFile();
+        new File(subDir, "MsgType.xml").createNewFile();
+        new File(subDir, "MsgContents.xml").createNewFile();
+
+        library.loadFromDirectory(validDir.getAbsolutePath());
+        List<DictionaryInfo> dictionaries = library.getDictionaries();
+        assertNotNull(dictionaries);
+        assertEquals(1, dictionaries.size());
+    }
+
+    @Test
+    public void testGetDictionary() throws IOException {
+        File validDir = tempFolder.newFolder("validDir");
+        File subDir = new File(validDir, "subDir");
+        subDir.mkdir();
+        new File(subDir, "Fields.xml").createNewFile();
+        new File(subDir, "Enums.xml").createNewFile();
+        new File(subDir, "Components.xml").createNewFile();
+        new File(subDir, "MsgType.xml").createNewFile();
+        new File(subDir, "MsgContents.xml").createNewFile();
+
+        library.loadFromDirectory(validDir.getAbsolutePath());
+        DictionaryInfo dictionary = library.getDictionary("subDir");
+        assertNotNull(dictionary);
+        assertEquals("subDir", dictionary.getVersion());
+    }
+
+    @Test
+    public void testGetDictionaryWithNonExistentVersion() {
+        DictionaryInfo dictionary = library.getDictionary("nonExistentVersion");
+        assertNull(dictionary);
+    }
+}

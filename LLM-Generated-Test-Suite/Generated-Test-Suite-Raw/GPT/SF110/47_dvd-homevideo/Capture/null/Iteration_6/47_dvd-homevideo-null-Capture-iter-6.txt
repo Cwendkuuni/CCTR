@@ -1,0 +1,119 @@
+To create a comprehensive JUnit 4 test suite for the `Capture` class, we need to consider the various methods and scenarios that need to be tested. The `Capture` class interacts heavily with the `GUI` class and the file system, so we'll need to mock these interactions. We'll use a mocking framework like Mockito to handle these dependencies.
+
+Below is a JUnit 4 test suite for the `Capture` class:
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class CaptureTest {
+
+    @Mock
+    private GUI mockGUI;
+
+    private Capture capture;
+
+    @Before
+    public void setUp() {
+        capture = new Capture(1, 30, mockGUI);
+    }
+
+    @Test
+    public void testInitWithThreadSelected() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(true);
+        boolean result = capture.init();
+        assertFalse(result);
+        assertNotNull(capture.m_Thread);
+        assertTrue(capture.m_Thread.isAlive());
+    }
+
+    @Test
+    public void testInitWithoutThreadSelected() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(false);
+        when(mockGUI.ErrorCheck(anyString())).thenReturn(false);
+        boolean result = capture.init();
+        assertFalse(result);
+    }
+
+    @Test
+    public void testDV_CaptureDirectoryExists() throws IOException, InterruptedException {
+        when(mockGUI.strOutputDir).thenReturn("existingDir");
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+        when(mockGUI.blnBegin).thenReturn(true);
+
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(true);
+        when(mockDir.isDirectory()).thenReturn(true);
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(anyString());
+    }
+
+    @Test
+    public void testDV_CaptureFileExists() throws IOException, InterruptedException {
+        when(mockGUI.strOutputDir).thenReturn("existingFile");
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+        when(mockGUI.blnBegin).thenReturn(true);
+
+        File mockFile = mock(File.class);
+        when(mockFile.exists()).thenReturn(true);
+        when(mockFile.isDirectory()).thenReturn(false);
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(anyString());
+    }
+
+    @Test
+    public void testDV_CaptureNoExistingOutput() throws IOException, InterruptedException {
+        when(mockGUI.strOutputDir).thenReturn("newDir");
+        when(mockGUI.blnBegin).thenReturn(true);
+
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(false);
+
+        capture.DV_Capture();
+
+        verify(mockGUI, never()).MessageBox(anyString());
+    }
+
+    @Test
+    public void testDV_CaptureErrorHandling() throws IOException, InterruptedException {
+        when(mockGUI.strOutputDir).thenReturn("errorDir");
+        when(mockGUI.blnBegin).thenReturn(true);
+
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(false);
+
+        doThrow(new IOException("Test IOException")).when(mockDir).mkdir();
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(contains("IO Error"));
+    }
+}
+```
+
+### Explanation:
+- **Mockito** is used to mock the `GUI` class and its interactions.
+- **Test Methods**:
+  - `testInitWithThreadSelected`: Tests the `init` method when the thread option is selected.
+  - `testInitWithoutThreadSelected`: Tests the `init` method when the thread option is not selected.
+  - `testDV_CaptureDirectoryExists`: Tests the `DV_Capture` method when the output directory already exists.
+  - `testDV_CaptureFileExists`: Tests the `DV_Capture` method when a file with the output directory name exists.
+  - `testDV_CaptureNoExistingOutput`: Tests the `DV_Capture` method when no output directory or file exists.
+  - `testDV_CaptureErrorHandling`: Tests the error handling in `DV_Capture` when an `IOException` occurs.
+
+This test suite covers the main functionalities and error scenarios of the `Capture` class. Adjustments may be needed based on the actual implementation details of the `GUI` class and other dependencies.

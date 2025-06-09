@@ -1,0 +1,167 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `SerializationUtils` class. This test suite covers all the methods in the class, including edge cases and potential exceptions.
+
+```java
+package org.apache.commons.lang3;
+
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import org.junit.Assert;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+
+public class SerializationUtilsTest {
+
+    private static class TestSerializable implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private String value;
+
+        public TestSerializable(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            TestSerializable that = (TestSerializable) o;
+
+            return value != null ? value.equals(that.value) : that.value == null;
+        }
+
+        @Override
+        public int hashCode() {
+            return value != null ? value.hashCode() : 0;
+        }
+    }
+
+    @Before
+    public void setUp() {
+        // Setup code if needed
+    }
+
+    @After
+    public void tearDown() {
+        // Tear down code if needed
+    }
+
+    @Test
+    public void testClone() {
+        TestSerializable original = new TestSerializable("test");
+        TestSerializable clone = SerializationUtils.clone(original);
+
+        Assert.assertNotNull(clone);
+        Assert.assertEquals(original, clone);
+        Assert.assertNotSame(original, clone);
+    }
+
+    @Test
+    public void testCloneNull() {
+        TestSerializable clone = SerializationUtils.clone(null);
+        Assert.assertNull(clone);
+    }
+
+    @Test(expected = SerializationException.class)
+    public void testCloneException() {
+        SerializationUtils.clone(new Object()); // Non-serializable object
+    }
+
+    @Test
+    public void testSerialize() throws IOException {
+        TestSerializable obj = new TestSerializable("test");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+
+        SerializationUtils.serialize(obj, baos);
+
+        byte[] serializedData = baos.toByteArray();
+        Assert.assertNotNull(serializedData);
+        Assert.assertTrue(serializedData.length > 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSerializeNullOutputStream() {
+        SerializationUtils.serialize(new TestSerializable("test"), null);
+    }
+
+    @Test
+    public void testSerializeToByteArray() {
+        TestSerializable obj = new TestSerializable("test");
+        byte[] serializedData = SerializationUtils.serialize(obj);
+
+        Assert.assertNotNull(serializedData);
+        Assert.assertTrue(serializedData.length > 0);
+    }
+
+    @Test(expected = SerializationException.class)
+    public void testSerializeToByteArrayException() {
+        SerializationUtils.serialize(new Object()); // Non-serializable object
+    }
+
+    @Test
+    public void testDeserialize() throws IOException {
+        TestSerializable original = new TestSerializable("test");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(original);
+        oos.close();
+
+        InputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        TestSerializable deserialized = (TestSerializable) SerializationUtils.deserialize(bais);
+
+        Assert.assertNotNull(deserialized);
+        Assert.assertEquals(original, deserialized);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeserializeNullInputStream() {
+        SerializationUtils.deserialize((InputStream) null);
+    }
+
+    @Test
+    public void testDeserializeFromByteArray() throws IOException {
+        TestSerializable original = new TestSerializable("test");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(original);
+        oos.close();
+
+        byte[] serializedData = baos.toByteArray();
+        TestSerializable deserialized = (TestSerializable) SerializationUtils.deserialize(serializedData);
+
+        Assert.assertNotNull(deserialized);
+        Assert.assertEquals(original, deserialized);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeserializeFromByteArrayNull() {
+        SerializationUtils.deserialize((byte[]) null);
+    }
+
+    @Test(expected = SerializationException.class)
+    public void testDeserializeException() throws IOException {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(new Object()); // Non-serializable object
+        oos.close();
+
+        InputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        SerializationUtils.deserialize(bais);
+    }
+}
+```
+
+This test suite includes tests for the `clone`, `serialize`, and `deserialize` methods, covering both normal operation and edge cases such as null inputs and non-serializable objects. Each test method is annotated with `@Test` and uses assertions from the `org.junit.Assert` class to verify the expected behavior.

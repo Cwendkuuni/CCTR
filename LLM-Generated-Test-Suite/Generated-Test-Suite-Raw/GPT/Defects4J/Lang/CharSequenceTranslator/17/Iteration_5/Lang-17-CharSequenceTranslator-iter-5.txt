@@ -1,0 +1,108 @@
+```java
+import org.apache.commons.lang3.text.translate.CharSequenceTranslator;
+import org.apache.commons.lang3.text.translate.AggregateTranslator;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+
+import static org.junit.Assert.*;
+
+public class CharSequenceTranslatorTest {
+
+    private CharSequenceTranslator translator;
+
+    @Before
+    public void setUp() {
+        // Create a simple CharSequenceTranslator for testing purposes
+        translator = new CharSequenceTranslator() {
+            @Override
+            public int translate(CharSequence input, int index, Writer out) throws IOException {
+                // Simple translation: replace 'a' with 'b'
+                if (input.charAt(index) == 'a') {
+                    out.write('b');
+                    return 1;
+                }
+                return 0;
+            }
+        };
+    }
+
+    @Test
+    public void testTranslateWithNullInput() {
+        assertNull(translator.translate(null));
+    }
+
+    @Test
+    public void testTranslateWithEmptyInput() {
+        assertEquals("", translator.translate(""));
+    }
+
+    @Test
+    public void testTranslateWithSimpleInput() {
+        assertEquals("bbc", translator.translate("abc"));
+    }
+
+    @Test
+    public void testTranslateWithNoTranslation() {
+        assertEquals("xyz", translator.translate("xyz"));
+    }
+
+    @Test
+    public void testTranslateWithWriter() throws IOException {
+        StringWriter writer = new StringWriter();
+        translator.translate("abc", writer);
+        assertEquals("bbc", writer.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTranslateWithNullWriter() throws IOException {
+        translator.translate("abc", null);
+    }
+
+    @Test
+    public void testWith() {
+        CharSequenceTranslator otherTranslator = new CharSequenceTranslator() {
+            @Override
+            public int translate(CharSequence input, int index, Writer out) throws IOException {
+                // Simple translation: replace 'b' with 'c'
+                if (input.charAt(index) == 'b') {
+                    out.write('c');
+                    return 1;
+                }
+                return 0;
+            }
+        };
+
+        CharSequenceTranslator combined = translator.with(otherTranslator);
+        assertTrue(combined instanceof AggregateTranslator);
+
+        StringWriter writer = new StringWriter();
+        try {
+            combined.translate("abc", writer);
+            assertEquals("ccc", writer.toString());
+        } catch (IOException e) {
+            fail("IOException should not occur");
+        }
+    }
+
+    @Test
+    public void testHex() {
+        assertEquals("41", CharSequenceTranslator.hex(65)); // 'A' in ASCII
+        assertEquals("1F600", CharSequenceTranslator.hex(0x1F600)); // 😀 emoji
+    }
+}
+```
+
+This test suite covers the following aspects of the `CharSequenceTranslator` class:
+
+1. **Basic Translation**: Tests the translation of a simple character sequence using a mock implementation.
+2. **Null and Empty Input**: Ensures that the method handles null and empty inputs correctly.
+3. **Writer Translation**: Verifies that the translation to a `Writer` works as expected.
+4. **Exception Handling**: Checks that an `IllegalArgumentException` is thrown when a null `Writer` is provided.
+5. **Combining Translators**: Tests the `with` method to ensure it correctly combines translators.
+6. **Hexadecimal Conversion**: Validates the `hex` method for converting codepoints to hexadecimal strings.
+
+Note: The `CharSequenceTranslator` class is abstract, so a simple concrete implementation is provided in the `setUp` method for testing purposes.

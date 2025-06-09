@@ -1,0 +1,98 @@
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import com.allenstudio.ir.core.InspirentoMediator;
+import com.allenstudio.ir.util.InspirentoUtilities;
+import com.allenstudio.ir.util.UIResources;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.swing.*;
+import java.util.MissingResourceException;
+
+@RunWith(MockitoJUnitRunner.class)
+public class MainMenuTest {
+
+    @Mock
+    private InspirentoMediator mockMediator;
+
+    @Before
+    public void setUp() {
+        // Mocking UIResources and InspirentoUtilities
+        mockStatic(UIResources.class);
+        mockStatic(InspirentoUtilities.class);
+    }
+
+    @Test
+    public void testMainMenuConstructor() {
+        // Setup mock behavior
+        when(UIResources.getString("menu")).thenReturn("file edit view");
+        when(InspirentoUtilities.tokenize("file edit view")).thenReturn(new String[]{"file", "edit", "view"});
+
+        // Create MainMenu instance
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        // Verify that menus are created
+        assertEquals(3, mainMenu.getMenuCount());
+    }
+
+    @Test
+    public void testCreateMenu() {
+        // Setup mock behavior
+        when(UIResources.getString("fileLabel")).thenReturn("File*F");
+        when(UIResources.getString("file")).thenReturn("new open save");
+        when(InspirentoUtilities.tokenize("new open save")).thenReturn(new String[]{"new", "open", "save"});
+
+        MainMenu mainMenu = new MainMenu(mockMediator);
+        JMenu fileMenu = mainMenu.createMenu("file");
+
+        // Verify menu creation
+        assertNotNull(fileMenu);
+        assertEquals("File", fileMenu.getText());
+        assertEquals(3, fileMenu.getItemCount());
+    }
+
+    @Test
+    public void testAddShortcutAndIcon() {
+        // Setup mock behavior
+        when(UIResources.getString("newShortcut")).thenReturn("ctrl N");
+        when(UIResources.getString("newIcon")).thenReturn("/icons/new.png");
+
+        JMenuItem menuItem = new JMenuItem();
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        mainMenu.addShortcutAndIcon(menuItem, "new");
+
+        // Verify shortcut and icon
+        assertEquals(KeyStroke.getKeyStroke("ctrl N"), menuItem.getAccelerator());
+        assertNotNull(menuItem.getIcon());
+    }
+
+    @Test
+    public void testAddShortcutAndIconWithMissingResources() {
+        // Setup mock behavior for missing resources
+        when(UIResources.getString("missingShortcut")).thenThrow(new MissingResourceException("Missing", "String", "missingShortcut"));
+        when(UIResources.getString("missingIcon")).thenThrow(new MissingResourceException("Missing", "String", "missingIcon"));
+
+        JMenuItem menuItem = new JMenuItem();
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        mainMenu.addShortcutAndIcon(menuItem, "missing");
+
+        // Verify that no shortcut or icon is set
+        assertNull(menuItem.getAccelerator());
+        assertNull(menuItem.getIcon());
+    }
+
+    @Test
+    public void testChanged() {
+        MainMenu mainMenu = new MainMenu(mockMediator);
+        mainMenu.changed();
+        // No exception should be thrown, and no state change to verify
+    }
+}
+```

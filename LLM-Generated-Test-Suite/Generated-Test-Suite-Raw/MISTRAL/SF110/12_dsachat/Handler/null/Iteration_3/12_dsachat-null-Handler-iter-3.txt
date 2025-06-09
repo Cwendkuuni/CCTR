@@ -1,0 +1,207 @@
+```java
+package dsachat.server;
+
+import dsachat.share.*;
+import dsachat.share.hero.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
+import java.util.Vector;
+
+public class HandlerTest {
+
+    private Handler handler;
+    private ConnectionEndpoint mockConnection;
+    private Entry mockEntry;
+
+    @Before
+    public void setUp() {
+        handler = new Handler();
+        mockConnection = mock(ConnectionEndpoint.class);
+        mockEntry = mock(Entry.class);
+    }
+
+    @Test
+    public void testAddConnection() {
+        when(mockConnection.isConnected()).thenReturn(true);
+        handler.addConnection(mockConnection);
+        verify(mockConnection).isConnected();
+        assertEquals(1, handler.clients.size());
+    }
+
+    @Test
+    public void testRemoveConnection() {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        Entry entry = new Entry();
+        entry.ce = mockConnection;
+        entry.name = "TestUser";
+        handler.clients.add(entry);
+
+        handler.removeConnection(mockConnection);
+        assertEquals(0, handler.clients.size());
+    }
+
+    @Test
+    public void testHandleInputString() throws IOException {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        InputEvent inputEvent = mock(InputEvent.class);
+        when(inputEvent.getData()).thenReturn("Hello World");
+        when(inputEvent.getSource()).thenReturn(mockConnection);
+
+        handler.handleInput(inputEvent);
+        verify(mockConnection).send("Hello World");
+    }
+
+    @Test
+    public void testHandleInputChallenge() throws IOException {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        InputEvent inputEvent = mock(InputEvent.class);
+        Challenge challenge = mock(Challenge.class);
+        when(inputEvent.getData()).thenReturn(challenge);
+        when(inputEvent.getSource()).thenReturn(mockConnection);
+        when(challenge.roll()).thenReturn("Challenge Result");
+
+        handler.handleInput(inputEvent);
+        verify(mockConnection).send("Challenge Result");
+    }
+
+    @Test
+    public void testHandleInputHero() throws IOException {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        InputEvent inputEvent = mock(InputEvent.class);
+        Hero hero = mock(Hero.class);
+        when(inputEvent.getData()).thenReturn(hero);
+        when(inputEvent.getSource()).thenReturn(mockConnection);
+        when(hero.getName()).thenReturn("HeroName");
+
+        handler.handleInput(inputEvent);
+        verify(mockConnection).send("Welcome HeroName");
+    }
+
+    @Test
+    public void testSendHeros() throws IOException {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        Entry entry = new Entry();
+        entry.ce = mockConnection;
+        entry.hero = mock(Hero.class);
+        handler.clients.add(entry);
+
+        handler.sendHeros(mockConnection);
+        verify(mockConnection).send(any(Vector.class));
+    }
+
+    @Test
+    public void testIsGmConnected() {
+        Entry entry = new Entry();
+        entry.ce = mockConnection;
+        entry.name = "Gamemaster";
+        handler.clients.add(entry);
+
+        assertTrue(handler.isGmConnected());
+    }
+
+    @Test
+    public void testSendOneSystemMsg() throws IOException {
+        handler.sendOneSystemMsg(mockConnection, "Test Message");
+        verify(mockConnection).send("Test Message");
+    }
+
+    @Test
+    public void testSendAllSystemMsg() throws IOException {
+        Entry entry = new Entry();
+        entry.ce = mockConnection;
+        handler.clients.add(entry);
+
+        handler.sendAllSystemMsg("Test Message");
+        verify(mockConnection).send("Test Message");
+    }
+
+    @Test
+    public void testWhisper() throws IOException {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        Entry entry = new Entry();
+        entry.ce = mockConnection;
+        entry.name = "Receiver";
+        handler.clients.add(entry);
+
+        handler.whisper(mockConnection, "Receiver Test Message");
+        verify(mockConnection).send("You whisper to Receiver: Test Message");
+    }
+
+    @Test
+    public void testRollDice() throws IOException {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        Entry entry = new Entry();
+        entry.ce = mockConnection;
+        entry.name = "DiceRoller";
+        handler.clients.add(entry);
+
+        handler.rollDice(mockConnection, "1d6");
+        verify(mockConnection).send(anyString());
+    }
+
+    @Test
+    public void testSendToOneStr() throws IOException {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        Entry entry = new Entry();
+        entry.ce = mockConnection;
+        entry.name = "Receiver";
+        handler.clients.add(entry);
+
+        handler.sendToOneStr(mockConnection, "Receiver", "Test Message");
+        verify(mockConnection).send("Test Message");
+    }
+
+    @Test
+    public void testUpdateHero() {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        Entry entry = new Entry();
+        entry.ce = mockConnection;
+        entry.name = "";
+        handler.clients.add(entry);
+
+        Hero hero = mock(Hero.class);
+        when(hero.getName()).thenReturn("HeroName");
+
+        String result = handler.updateHero(mockConnection, hero);
+        assertEquals("HeroName", result);
+    }
+
+    @Test
+    public void testSendAllStr() throws IOException {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        Entry entry = new Entry();
+        entry.ce = mockConnection;
+        entry.name = "Sender";
+        handler.clients.add(entry);
+
+        handler.sendAllStr(mockConnection, "Test Message");
+        verify(mockConnection).send("Sender: Test Message");
+    }
+
+    @Test
+    public void testSendAllObj() throws IOException {
+        Entry entry = new Entry();
+        entry.ce = mockConnection;
+        handler.clients.add(entry);
+
+        handler.sendAllObj("Test Object");
+        verify(mockConnection).send("Test Object");
+    }
+
+    @Test
+    public void testGetName() {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        Entry entry = new Entry();
+        entry.ce = mockConnection;
+        entry.name = "TestUser";
+        handler.clients.add(entry);
+
+        String name = handler.getName(mockConnection);
+        assertEquals("TestUser", name);
+    }
+}
+```

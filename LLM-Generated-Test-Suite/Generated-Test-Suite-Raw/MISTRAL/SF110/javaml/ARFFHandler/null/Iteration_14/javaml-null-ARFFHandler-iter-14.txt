@@ -1,0 +1,88 @@
+```java
+package net.sf.javaml.tools.data;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Paths;
+import net.sf.javaml.core.Dataset;
+import net.sf.javaml.core.DenseInstance;
+
+public class ARFFHandlerTest {
+
+    private File testFile;
+    private File testFileWithClassIndex;
+
+    @Before
+    public void setUp() throws IOException {
+        // Create a temporary ARFF file for testing
+        testFile = File.createTempFile("testARFF", ".arff");
+        String content = "@relation test\n" +
+                         "@attribute attr1 numeric\n" +
+                         "@attribute attr2 numeric\n" +
+                         "@data\n" +
+                         "1.0,2.0\n" +
+                         "3.0,4.0\n";
+        Files.write(Paths.get(testFile.getPath()), content.getBytes());
+
+        // Create another temporary ARFF file with class index for testing
+        testFileWithClassIndex = File.createTempFile("testARFFWithClassIndex", ".arff");
+        String contentWithClassIndex = "@relation test\n" +
+                                       "@attribute attr1 numeric\n" +
+                                       "@attribute attr2 numeric\n" +
+                                       "@attribute class {class1,class2}\n" +
+                                       "@data\n" +
+                                       "1.0,2.0,class1\n" +
+                                       "3.0,4.0,class2\n";
+        Files.write(Paths.get(testFileWithClassIndex.getPath()), contentWithClassIndex.getBytes());
+    }
+
+    @Test
+    public void testLoadARFF() throws FileNotFoundException {
+        Dataset dataset = ARFFHandler.loadARFF(testFile);
+        assertNotNull(dataset);
+        assertEquals(2, dataset.size());
+
+        DenseInstance instance1 = (DenseInstance) dataset.get(0);
+        assertEquals(1.0, instance1.value(0), 0.001);
+        assertEquals(2.0, instance1.value(1), 0.001);
+
+        DenseInstance instance2 = (DenseInstance) dataset.get(1);
+        assertEquals(3.0, instance2.value(0), 0.001);
+        assertEquals(4.0, instance2.value(1), 0.001);
+    }
+
+    @Test
+    public void testLoadARFFWithClassIndex() throws FileNotFoundException {
+        Dataset dataset = ARFFHandler.loadARFF(testFileWithClassIndex, 2);
+        assertNotNull(dataset);
+        assertEquals(2, dataset.size());
+
+        DenseInstance instance1 = (DenseInstance) dataset.get(0);
+        assertEquals(1.0, instance1.value(0), 0.001);
+        assertEquals(2.0, instance1.value(1), 0.001);
+        assertEquals("class1", instance1.classValue());
+
+        DenseInstance instance2 = (DenseInstance) dataset.get(1);
+        assertEquals(3.0, instance2.value(0), 0.001);
+        assertEquals(4.0, instance2.value(1), 0.001);
+        assertEquals("class2", instance2.classValue());
+    }
+
+    @Test(expected = FileNotFoundException.class)
+    public void testLoadARFFWithNonExistentFile() throws FileNotFoundException {
+        File nonExistentFile = new File("non_existent_file.arff");
+        ARFFHandler.loadARFF(nonExistentFile);
+    }
+
+    @Test(expected = FileNotFoundException.class)
+    public void testLoadARFFWithClassIndexWithNonExistentFile() throws FileNotFoundException {
+        File nonExistentFile = new File("non_existent_file.arff");
+        ARFFHandler.loadARFF(nonExistentFile, 2);
+    }
+}
+```

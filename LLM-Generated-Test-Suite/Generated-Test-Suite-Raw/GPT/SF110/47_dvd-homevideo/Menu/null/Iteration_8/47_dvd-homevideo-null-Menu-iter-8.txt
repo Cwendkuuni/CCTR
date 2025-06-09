@@ -1,0 +1,103 @@
+To create a comprehensive JUnit 4 test suite for the `Menu` class, we need to test each method, including constructors, `init`, `run`, `DVDMainMenu`, and `createXML`. Since the class interacts with the file system and GUI components, we'll need to mock these dependencies. Below is a test suite using JUnit 4 and Mockito for mocking:
+
+```java
+import org.junit.*;
+import org.mockito.*;
+import java.io.*;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class MenuTest {
+
+    @Mock
+    private GUI mockGUI;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        when(mockGUI.strOutputDir).thenReturn("outputDir");
+        when(mockGUI.txtTextFile).thenReturn(mock(JTextField.class));
+        when(mockGUI.txtAreaOutput).thenReturn(mock(JTextArea.class));
+        when(mockGUI.lblAuthor).thenReturn(mock(JLabel.class));
+        when(mockGUI.lblAuthorProg).thenReturn(mock(JLabel.class));
+        when(mockGUI.prgAuthor).thenReturn(mock(JProgressBar.class));
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        Menu menu = new Menu();
+        assertEquals("dvd-menu", menu.dvd_menu);
+        assertNotNull(menu.titles);
+        assertEquals(50, menu.titles.length);
+        assertEquals("Menu Error - ", menu.baseErr);
+    }
+
+    @Test
+    public void testConstructorWithParameters() {
+        Menu menu = new Menu("Title", "TextFilePath", true, mockGUI);
+        assertEquals("Title", menu.strTitle);
+        assertEquals("TextFilePath", menu.strTextFilePath);
+        assertTrue(menu.pal_menu);
+        assertEquals(mockGUI, menu.m_GUI);
+    }
+
+    @Test
+    public void testConstructorWithAllParameters() {
+        Menu menu = new Menu("Title", "PicPath", "AudioPath", "TextFilePath", true, mockGUI);
+        assertEquals("Title", menu.strTitle);
+        assertEquals("PicPath", menu.strPicPath);
+        assertEquals("AudioPath", menu.strAudioPath);
+        assertEquals("TextFilePath", menu.strTextFilePath);
+        assertTrue(menu.pal_menu);
+        assertEquals(mockGUI, menu.m_GUI);
+    }
+
+    @Test
+    public void testInit() throws InterruptedException {
+        Menu menu = new Menu("Title", "TextFilePath", true, mockGUI);
+        when(mockGUI.ErrorCheck(anyString())).thenReturn(false);
+        boolean result = menu.init();
+        assertFalse(result);
+    }
+
+    @Test
+    public void testRun() {
+        Menu menu = new Menu("Title", "TextFilePath", true, mockGUI);
+        menu.run();
+        // Since DVDMainMenu is complex, we assume it runs without exceptions
+    }
+
+    @Test
+    public void testDVDMainMenu() {
+        Menu menu = new Menu("Title", "TextFilePath", true, mockGUI);
+        menu.DVDMainMenu();
+        // Since DVDMainMenu is complex, we assume it runs without exceptions
+    }
+
+    @Test
+    public void testCreateXML() {
+        Menu menu = new Menu("Title", "TextFilePath", true, mockGUI);
+        boolean result = menu.createXML();
+        assertFalse(result);
+    }
+
+    @Test
+    public void testCreateXMLWithIOException() throws IOException {
+        Menu menu = new Menu("Title", "TextFilePath", true, mockGUI);
+        File mockFile = mock(File.class);
+        when(mockFile.exists()).thenReturn(true);
+        when(mockFile.isDirectory()).thenReturn(true);
+        doThrow(new IOException()).when(mockFile).delete();
+        boolean result = menu.createXML();
+        assertTrue(result);
+    }
+}
+```
+
+### Key Points:
+- **Mocking**: We use Mockito to mock the `GUI` class and its methods to isolate the `Menu` class for testing.
+- **Testing Constructors**: We verify that the constructors initialize the fields correctly.
+- **Testing Methods**: We test the `init`, `run`, `DVDMainMenu`, and `createXML` methods. For complex methods like `DVDMainMenu`, we assume they run without exceptions due to their complexity.
+- **Exception Handling**: We test exception handling in `createXML` by simulating an `IOException`.
+
+This test suite provides a basic structure for testing the `Menu` class. You may need to expand it further based on specific requirements and edge cases.

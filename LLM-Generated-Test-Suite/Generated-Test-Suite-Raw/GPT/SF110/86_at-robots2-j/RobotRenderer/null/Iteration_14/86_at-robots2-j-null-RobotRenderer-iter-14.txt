@@ -1,0 +1,97 @@
+To create a comprehensive JUnit 4 test suite for the `RobotRenderer` class, we need to test each public method, including the getter and setter methods, as well as the `render` method. Since the `render` method involves graphical operations, we will use mocks for `Graphics2D` and `RobotSnapshot`. Here's a complete test suite:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import java.awt.*;
+import java.util.HashSet;
+import java.util.Set;
+
+import net.virtualinfinity.atrobots.gui.renderers.RobotRenderer;
+import net.virtualinfinity.atrobots.snapshots.RobotSnapshot;
+import org.junit.Before;
+import org.junit.Test;
+
+public class RobotRendererTest {
+    private RobotRenderer robotRenderer;
+    private Graphics2D graphics2D;
+    private RobotSnapshot robotSnapshot;
+    private Set<Integer> selectedRobotIds;
+
+    @Before
+    public void setUp() {
+        robotRenderer = new RobotRenderer();
+        graphics2D = mock(Graphics2D.class);
+        robotSnapshot = mock(RobotSnapshot.class);
+        selectedRobotIds = new HashSet<>();
+    }
+
+    @Test
+    public void testRenderDead() {
+        robotRenderer.setRenderDead(false);
+        when(robotSnapshot.isDead()).thenReturn(true);
+
+        robotRenderer.render(graphics2D, robotSnapshot, selectedRobotIds);
+
+        verify(graphics2D, never()).fill(any());
+    }
+
+    @Test
+    public void testRenderAlive() {
+        robotRenderer.setRenderDead(true);
+        when(robotSnapshot.isDead()).thenReturn(false);
+
+        robotRenderer.render(graphics2D, robotSnapshot, selectedRobotIds);
+
+        verify(graphics2D, atLeastOnce()).fill(any());
+    }
+
+    @Test
+    public void testRenderSelected() {
+        when(robotSnapshot.getId()).thenReturn(1);
+        selectedRobotIds.add(1);
+
+        robotRenderer.render(graphics2D, robotSnapshot, selectedRobotIds);
+
+        verify(graphics2D, atLeastOnce()).fill(any());
+    }
+
+    @Test
+    public void testIsRenderDead() {
+        assertTrue(robotRenderer.isRenderDead());
+        robotRenderer.setRenderDead(false);
+        assertFalse(robotRenderer.isRenderDead());
+    }
+
+    @Test
+    public void testIsShowStatusBars() {
+        assertTrue(robotRenderer.isShowStatusBars());
+        robotRenderer.setShowStatusBars(false);
+        assertFalse(robotRenderer.isShowStatusBars());
+    }
+
+    @Test
+    public void testIsShowName() {
+        assertTrue(robotRenderer.isShowName());
+        robotRenderer.setShowName(false);
+        assertFalse(robotRenderer.isShowName());
+    }
+
+    @Test
+    public void testIsFillShield() {
+        assertTrue(robotRenderer.isFillShield());
+        robotRenderer.setFillShield(false);
+        assertFalse(robotRenderer.isFillShield());
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: We use Mockito to create mock objects for `Graphics2D` and `RobotSnapshot` to simulate their behavior without needing actual implementations.
+- **Setup**: The `setUp` method initializes the `RobotRenderer` instance and the mock objects before each test.
+- **Tests**:
+  - **Render Tests**: We test the `render` method under different conditions (e.g., when the robot is dead, alive, or selected).
+  - **Getter and Setter Tests**: We verify that the getter and setter methods work correctly by checking the initial state and the state after setting a new value.
+
+This test suite covers the basic functionality of the `RobotRenderer` class. You may need to expand it further based on additional requirements or edge cases specific to your application.

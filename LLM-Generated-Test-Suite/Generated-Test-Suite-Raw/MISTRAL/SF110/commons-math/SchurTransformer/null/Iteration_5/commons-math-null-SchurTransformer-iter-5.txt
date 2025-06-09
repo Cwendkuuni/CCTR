@@ -1,0 +1,101 @@
+```java
+package org.apache.commons.math3.linear;
+
+import org.apache.commons.math3.exception.NonSquareMatrixException;
+import org.apache.commons.math3.exception.MaxCountExceededException;
+import org.apache.commons.math3.util.Precision;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.HessenbergTransformer;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class SchurTransformerTest {
+
+    private RealMatrix squareMatrix;
+    private RealMatrix nonSquareMatrix;
+
+    @Before
+    public void setUp() {
+        double[][] data = {
+            {1.0, 2.0, 3.0},
+            {4.0, 5.0, 6.0},
+            {7.0, 8.0, 9.0}
+        };
+        squareMatrix = MatrixUtils.createRealMatrix(data);
+
+        double[][] nonSquareData = {
+            {1.0, 2.0, 3.0},
+            {4.0, 5.0, 6.0}
+        };
+        nonSquareMatrix = MatrixUtils.createRealMatrix(nonSquareData);
+    }
+
+    @Test(expected = NonSquareMatrixException.class)
+    public void testNonSquareMatrixException() {
+        new SchurTransformer(nonSquareMatrix);
+    }
+
+    @Test
+    public void testGetP() {
+        SchurTransformer transformer = new SchurTransformer(squareMatrix);
+        RealMatrix p = transformer.getP();
+        assertNotNull(p);
+        assertEquals(squareMatrix.getRowDimension(), p.getRowDimension());
+        assertEquals(squareMatrix.getColumnDimension(), p.getColumnDimension());
+    }
+
+    @Test
+    public void testGetPT() {
+        SchurTransformer transformer = new SchurTransformer(squareMatrix);
+        RealMatrix pt = transformer.getPT();
+        assertNotNull(pt);
+        assertEquals(squareMatrix.getColumnDimension(), pt.getRowDimension());
+        assertEquals(squareMatrix.getRowDimension(), pt.getColumnDimension());
+    }
+
+    @Test
+    public void testGetT() {
+        SchurTransformer transformer = new SchurTransformer(squareMatrix);
+        RealMatrix t = transformer.getT();
+        assertNotNull(t);
+        assertEquals(squareMatrix.getRowDimension(), t.getRowDimension());
+        assertEquals(squareMatrix.getColumnDimension(), t.getColumnDimension());
+    }
+
+    @Test
+    public void testTransform() {
+        SchurTransformer transformer = new SchurTransformer(squareMatrix);
+        RealMatrix p = transformer.getP();
+        RealMatrix t = transformer.getT();
+        RealMatrix pt = transformer.getPT();
+
+        // Verify that P * T * P^T is close to the original matrix
+        RealMatrix result = p.multiply(t).multiply(pt);
+        for (int i = 0; i < squareMatrix.getRowDimension(); i++) {
+            for (int j = 0; j < squareMatrix.getColumnDimension(); j++) {
+                assertEquals(squareMatrix.getEntry(i, j), result.getEntry(i, j), Precision.EPSILON);
+            }
+        }
+    }
+
+    @Test(expected = MaxCountExceededException.class)
+    public void testMaxIterationsExceeded() {
+        double[][] data = {
+            {1.0, 2.0},
+            {3.0, 4.0}
+        };
+        RealMatrix matrix = MatrixUtils.createRealMatrix(data);
+        SchurTransformer transformer = new SchurTransformer(matrix) {
+            @Override
+            protected void transform() {
+                // Simulate max iterations exceeded
+                throw new MaxCountExceededException(100);
+            }
+        };
+        transformer.getP();
+    }
+}
+```

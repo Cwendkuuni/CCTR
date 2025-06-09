@@ -1,0 +1,107 @@
+```java
+import org.apache.commons.lang3.SerializationException;
+import org.apache.commons.lang3.SerializationUtils;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class SerializationUtilsTest {
+
+    @Test
+    public void testClone() {
+        Map<String, String> original = new HashMap<>();
+        original.put("key", "value");
+
+        Map<String, String> cloned = SerializationUtils.clone(original);
+
+        assertNotNull(cloned);
+        assertNotSame(original, cloned);
+        assertEquals(original, cloned);
+    }
+
+    @Test(expected = SerializationException.class)
+    public void testCloneWithNonSerializableObject() {
+        SerializationUtils.clone(new NonSerializableObject());
+    }
+
+    @Test
+    public void testSerializeToOutputStream() {
+        Map<String, String> original = new HashMap<>();
+        original.put("key", "value");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        SerializationUtils.serialize(original, baos);
+
+        byte[] serializedData = baos.toByteArray();
+        assertNotNull(serializedData);
+        assertTrue(serializedData.length > 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSerializeToOutputStreamWithNullOutputStream() {
+        SerializationUtils.serialize(new HashMap<>(), null);
+    }
+
+    @Test
+    public void testSerializeToByteArray() {
+        Map<String, String> original = new HashMap<>();
+        original.put("key", "value");
+
+        byte[] serializedData = SerializationUtils.serialize(original);
+
+        assertNotNull(serializedData);
+        assertTrue(serializedData.length > 0);
+    }
+
+    @Test
+    public void testDeserializeFromInputStream() {
+        Map<String, String> original = new HashMap<>();
+        original.put("key", "value");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        SerializationUtils.serialize(original, baos);
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        Map<String, String> deserialized = (Map<String, String>) SerializationUtils.deserialize(bais);
+
+        assertNotNull(deserialized);
+        assertEquals(original, deserialized);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeserializeFromInputStreamWithNullInputStream() {
+        SerializationUtils.deserialize((InputStream) null);
+    }
+
+    @Test
+    public void testDeserializeFromByteArray() {
+        Map<String, String> original = new HashMap<>();
+        original.put("key", "value");
+
+        byte[] serializedData = SerializationUtils.serialize(original);
+        Map<String, String> deserialized = (Map<String, String>) SerializationUtils.deserialize(serializedData);
+
+        assertNotNull(deserialized);
+        assertEquals(original, deserialized);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeserializeFromByteArrayWithNullByteArray() {
+        SerializationUtils.deserialize((byte[]) null);
+    }
+
+    private static class NonSerializableObject {
+        // This class is not serializable
+    }
+}
+```

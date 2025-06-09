@@ -1,0 +1,93 @@
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.swing.*;
+import java.util.MissingResourceException;
+
+@RunWith(MockitoJUnitRunner.class)
+public class MainMenuTest {
+
+    @Mock
+    private InspirentoMediator mockMediator;
+
+    @Mock
+    private UIResources mockUIResources;
+
+    private MainMenu mainMenu;
+
+    @Before
+    public void setUp() {
+        // Mock the UIResources class to return predefined values
+        mockStatic(UIResources.class);
+        when(UIResources.getString("menu")).thenReturn("file edit view");
+        when(UIResources.getString("fileLabel")).thenReturn("File*F");
+        when(UIResources.getString("editLabel")).thenReturn("Edit*E");
+        when(UIResources.getString("viewLabel")).thenReturn("View*V");
+        when(UIResources.getString("file")).thenReturn("new open- save-");
+        when(UIResources.getString("edit")).thenReturn("cut copy paste");
+        when(UIResources.getString("view")).thenReturn("zoomIn zoomOut");
+
+        // Mock shortcuts and icons
+        when(UIResources.getString("newShortcut")).thenReturn("ctrl N");
+        when(UIResources.getString("cutShortcut")).thenReturn("ctrl X");
+        when(UIResources.getString("zoomInIcon")).thenReturn("/icons/zoomIn.png");
+
+        mainMenu = new MainMenu(mockMediator);
+    }
+
+    @Test
+    public void testMainMenuInitialization() {
+        assertNotNull(mainMenu);
+        assertEquals(3, mainMenu.getMenuCount());
+    }
+
+    @Test
+    public void testCreateMenu() {
+        JMenu fileMenu = mainMenu.getMenu(0);
+        assertEquals("File", fileMenu.getText());
+        assertEquals(3, fileMenu.getItemCount());
+
+        JMenuItem newItem = fileMenu.getItem(0);
+        assertEquals("New", newItem.getText());
+        assertEquals(KeyStroke.getKeyStroke("ctrl N"), newItem.getAccelerator());
+
+        JMenuItem saveItem = fileMenu.getItem(2);
+        assertEquals("Save", saveItem.getText());
+    }
+
+    @Test
+    public void testAddShortcutAndIcon() {
+        JMenu viewMenu = mainMenu.getMenu(2);
+        JMenuItem zoomInItem = viewMenu.getItem(0);
+        assertEquals("ZoomIn", zoomInItem.getText());
+        assertNotNull(zoomInItem.getIcon());
+    }
+
+    @Test
+    public void testMissingResourceExceptionHandling() {
+        when(UIResources.getString("nonExistentLabel")).thenThrow(new MissingResourceException("Missing", "UIResources", "nonExistentLabel"));
+
+        try {
+            mainMenu.createMenu("nonExistent");
+            fail("Expected MissingResourceException to be thrown");
+        } catch (MissingResourceException e) {
+            assertEquals("Missing", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testChangedMethod() {
+        mainMenu.changed();
+        // No exception should be thrown, and no state change is expected
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to test the `MainMenu` class. It covers the initialization of the `MainMenu`, the creation of menus and menu items, the addition of shortcuts and icons, and the handling of `MissingResourceException`. The `changed` method is also tested to ensure it doesn't throw any exceptions.

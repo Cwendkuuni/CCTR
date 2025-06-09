@@ -1,0 +1,189 @@
+```java
+package org.apache.commons.cli2.option;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.apache.commons.cli2.OptionException;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.apache.commons.cli2.validation.Validator;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
+
+public class ArgumentImplTest {
+
+    private ArgumentImpl argument;
+    private WriteableCommandLine commandLine;
+    private List<String> arguments;
+    private ListIterator<String> argumentsIterator;
+    private Validator validator;
+
+    @Before
+    public void setUp() {
+        validator = new Validator() {
+            @Override
+            public void validate(List values) {
+                // No validation logic needed for tests
+            }
+        };
+        argument = new ArgumentImpl("testArg", "Test Argument", 1, 3, '=', ',', validator, "--", new ArrayList<>(), 0);
+        commandLine = new WriteableCommandLine() {
+            @Override
+            public void addValue(Option option, String value) {
+                // Implementation not needed for tests
+            }
+
+            @Override
+            public List getValues(Option option) {
+                return new ArrayList<>();
+            }
+
+            @Override
+            public boolean looksLikeOption(String arg) {
+                return false;
+            }
+
+            @Override
+            public void setDefaultValues(Option option, List defaultValues) {
+                // Implementation not needed for tests
+            }
+        };
+        arguments = new ArrayList<>();
+        argumentsIterator = arguments.listIterator();
+    }
+
+    @Test
+    public void testGetPreferredName() {
+        assertEquals("testArg", argument.getPreferredName());
+    }
+
+    @Test
+    public void testProcessValues() throws OptionException {
+        arguments.add("value1");
+        arguments.add("value2");
+        arguments.add("value3");
+        argumentsIterator = arguments.listIterator();
+
+        argument.processValues(commandLine, argumentsIterator, argument);
+
+        assertEquals(3, arguments.size());
+    }
+
+    @Test
+    public void testCanProcess() {
+        assertTrue(argument.canProcess(commandLine, "testArg"));
+    }
+
+    @Test
+    public void testGetPrefixes() {
+        assertEquals(Collections.EMPTY_SET, argument.getPrefixes());
+    }
+
+    @Test
+    public void testProcess() throws OptionException {
+        arguments.add("value1");
+        arguments.add("value2");
+        arguments.add("value3");
+        argumentsIterator = arguments.listIterator();
+
+        argument.process(commandLine, argumentsIterator);
+
+        assertEquals(3, arguments.size());
+    }
+
+    @Test
+    public void testGetInitialSeparator() {
+        assertEquals('=', argument.getInitialSeparator());
+    }
+
+    @Test
+    public void testGetSubsequentSeparator() {
+        assertEquals(',', argument.getSubsequentSeparator());
+    }
+
+    @Test
+    public void testGetTriggers() {
+        assertEquals(Collections.EMPTY_SET, argument.getTriggers());
+    }
+
+    @Test
+    public void testGetConsumeRemaining() {
+        assertEquals("--", argument.getConsumeRemaining());
+    }
+
+    @Test
+    public void testGetDefaultValues() {
+        assertEquals(new ArrayList<>(), argument.getDefaultValues());
+    }
+
+    @Test
+    public void testGetValidator() {
+        assertEquals(validator, argument.getValidator());
+    }
+
+    @Test
+    public void testValidate() throws OptionException {
+        argument.validate(commandLine);
+        // No exception means test passed
+    }
+
+    @Test
+    public void testValidateWithOption() throws OptionException {
+        argument.validate(commandLine, argument);
+        // No exception means test passed
+    }
+
+    @Test
+    public void testAppendUsage() {
+        StringBuffer buffer = new StringBuffer();
+        argument.appendUsage(buffer, Collections.EMPTY_SET, null);
+        assertTrue(buffer.toString().contains("testArg"));
+    }
+
+    @Test
+    public void testGetDescription() {
+        assertEquals("Test Argument", argument.getDescription());
+    }
+
+    @Test
+    public void testHelpLines() {
+        assertEquals(1, argument.helpLines(0, Collections.EMPTY_SET, null).size());
+    }
+
+    @Test
+    public void testGetMaximum() {
+        assertEquals(3, argument.getMaximum());
+    }
+
+    @Test
+    public void testGetMinimum() {
+        assertEquals(1, argument.getMinimum());
+    }
+
+    @Test
+    public void testStripBoundaryQuotes() {
+        assertEquals("test", argument.stripBoundaryQuotes("\"test\""));
+        assertEquals("test", argument.stripBoundaryQuotes("test"));
+    }
+
+    @Test
+    public void testIsRequired() {
+        assertTrue(argument.isRequired());
+    }
+
+    @Test
+    public void testDefaults() {
+        argument.defaults(commandLine);
+        // No exception means test passed
+    }
+
+    @Test
+    public void testDefaultValues() {
+        argument.defaultValues(commandLine, argument);
+        // No exception means test passed
+    }
+}
+```

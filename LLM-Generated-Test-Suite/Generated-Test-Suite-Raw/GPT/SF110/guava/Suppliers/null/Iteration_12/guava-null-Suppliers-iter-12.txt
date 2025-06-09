@@ -1,0 +1,104 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the methods in the `Suppliers` class. This test suite covers various scenarios for each method, ensuring that the functionality is thoroughly validated.
+
+```java
+import com.google.common.base.Suppliers;
+import com.google.common.base.Function;
+import com.google.common.base.Supplier;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicInteger;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class SuppliersTest {
+
+    private Supplier<String> mockSupplier;
+    private Function<Integer, String> mockFunction;
+
+    @Before
+    public void setUp() {
+        mockSupplier = mock(Supplier.class);
+        mockFunction = mock(Function.class);
+    }
+
+    @After
+    public void tearDown() {
+        mockSupplier = null;
+        mockFunction = null;
+    }
+
+    @Test
+    public void testCompose() {
+        when(mockSupplier.get()).thenReturn(42);
+        when(mockFunction.apply(42)).thenReturn("42");
+
+        Supplier<String> composedSupplier = Suppliers.compose(mockFunction, mockSupplier);
+        assertEquals("42", composedSupplier.get());
+
+        verify(mockSupplier, times(1)).get();
+        verify(mockFunction, times(1)).apply(42);
+    }
+
+    @Test
+    public void testMemoize() {
+        AtomicInteger counter = new AtomicInteger();
+        Supplier<Integer> countingSupplier = () -> counter.incrementAndGet();
+
+        Supplier<Integer> memoizedSupplier = Suppliers.memoize(countingSupplier);
+        assertEquals(Integer.valueOf(1), memoizedSupplier.get());
+        assertEquals(Integer.valueOf(1), memoizedSupplier.get());
+
+        assertEquals(1, counter.get());
+    }
+
+    @Test
+    public void testMemoizeWithExpiration() throws InterruptedException {
+        AtomicInteger counter = new AtomicInteger();
+        Supplier<Integer> countingSupplier = () -> counter.incrementAndGet();
+
+        Supplier<Integer> expiringSupplier = Suppliers.memoizeWithExpiration(countingSupplier, 100, TimeUnit.MILLISECONDS);
+        assertEquals(Integer.valueOf(1), expiringSupplier.get());
+        assertEquals(Integer.valueOf(1), expiringSupplier.get());
+
+        Thread.sleep(150);
+        assertEquals(Integer.valueOf(2), expiringSupplier.get());
+    }
+
+    @Test
+    public void testOfInstance() {
+        Supplier<String> instanceSupplier = Suppliers.ofInstance("test");
+        assertEquals("test", instanceSupplier.get());
+    }
+
+    @Test
+    public void testSynchronizedSupplier() {
+        Supplier<String> synchronizedSupplier = Suppliers.synchronizedSupplier(mockSupplier);
+        when(mockSupplier.get()).thenReturn("synchronized");
+
+        assertEquals("synchronized", synchronizedSupplier.get());
+        verify(mockSupplier, times(1)).get();
+    }
+
+    @Test
+    public void testSupplierFunction() {
+        Supplier<String> instanceSupplier = Suppliers.ofInstance("functionTest");
+        Function<Supplier<String>, String> supplierFunction = Suppliers.supplierFunction();
+
+        assertEquals("functionTest", supplierFunction.apply(instanceSupplier));
+    }
+}
+```
+
+### Explanation:
+- **`testCompose`**: Tests the `compose` method by verifying that the composed supplier correctly applies the function to the supplier's output.
+- **`testMemoize`**: Tests the `memoize` method by ensuring that the supplier is only called once and the result is cached.
+- **`testMemoizeWithExpiration`**: Tests the `memoizeWithExpiration` method by checking that the supplier is called again after the expiration time.
+- **`testOfInstance`**: Tests the `ofInstance` method by verifying that the supplier always returns the same instance.
+- **`testSynchronizedSupplier`**: Tests the `synchronizedSupplier` method by ensuring that the supplier's `get` method is called in a thread-safe manner.
+- **`testSupplierFunction`**: Tests the `supplierFunction` method by verifying that it correctly applies the supplier's `get` method.
+
+This test suite uses Mockito for mocking and verifying interactions with suppliers and functions. It also uses JUnit assertions to validate expected outcomes.

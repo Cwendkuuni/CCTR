@@ -1,0 +1,114 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `JsonPointer` class. This test suite covers the various methods and scenarios that the class might encounter.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import com.fasterxml.jackson.core.JsonPointer;
+
+public class JsonPointerTest {
+
+    @Test
+    public void testEmptyPointer() {
+        JsonPointer emptyPointer = JsonPointer.compile("");
+        assertTrue(emptyPointer.matches());
+        assertEquals("", emptyPointer.getMatchingProperty());
+        assertEquals(-1, emptyPointer.getMatchingIndex());
+        assertNull(emptyPointer.tail());
+    }
+
+    @Test
+    public void testCompileValidPointer() {
+        JsonPointer pointer = JsonPointer.compile("/foo/bar");
+        assertFalse(pointer.matches());
+        assertEquals("foo", pointer.getMatchingProperty());
+        assertNotNull(pointer.tail());
+        assertEquals("bar", pointer.tail().getMatchingProperty());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCompileInvalidPointer() {
+        JsonPointer.compile("foo/bar");
+    }
+
+    @Test
+    public void testValueOf() {
+        JsonPointer pointer = JsonPointer.valueOf("/foo/bar");
+        assertEquals(JsonPointer.compile("/foo/bar"), pointer);
+    }
+
+    @Test
+    public void testMatchProperty() {
+        JsonPointer pointer = JsonPointer.compile("/foo");
+        assertNotNull(pointer.matchProperty("foo"));
+        assertNull(pointer.matchProperty("bar"));
+    }
+
+    @Test
+    public void testMatchElement() {
+        JsonPointer pointer = JsonPointer.compile("/0");
+        assertNotNull(pointer.matchElement(0));
+        assertNull(pointer.matchElement(1));
+    }
+
+    @Test
+    public void testMayMatchProperty() {
+        JsonPointer pointer = JsonPointer.compile("/foo");
+        assertTrue(pointer.mayMatchProperty());
+    }
+
+    @Test
+    public void testMayMatchElement() {
+        JsonPointer pointer = JsonPointer.compile("/0");
+        assertTrue(pointer.mayMatchElement());
+    }
+
+    @Test
+    public void testToString() {
+        JsonPointer pointer = JsonPointer.compile("/foo/bar");
+        assertEquals("/foo/bar", pointer.toString());
+    }
+
+    @Test
+    public void testHashCode() {
+        JsonPointer pointer1 = JsonPointer.compile("/foo/bar");
+        JsonPointer pointer2 = JsonPointer.compile("/foo/bar");
+        assertEquals(pointer1.hashCode(), pointer2.hashCode());
+    }
+
+    @Test
+    public void testEquals() {
+        JsonPointer pointer1 = JsonPointer.compile("/foo/bar");
+        JsonPointer pointer2 = JsonPointer.compile("/foo/bar");
+        JsonPointer pointer3 = JsonPointer.compile("/foo/baz");
+        assertTrue(pointer1.equals(pointer2));
+        assertFalse(pointer1.equals(pointer3));
+        assertFalse(pointer1.equals(null));
+        assertFalse(pointer1.equals(new Object()));
+    }
+
+    @Test
+    public void testParseIndex() {
+        JsonPointer pointer = JsonPointer.compile("/0");
+        assertEquals(0, pointer.getMatchingIndex());
+    }
+
+    @Test
+    public void testParseQuotedTail() {
+        JsonPointer pointer = JsonPointer.compile("/~0/~1");
+        assertEquals("~", pointer.getMatchingProperty());
+        assertEquals("/", pointer.tail().getMatchingProperty());
+    }
+}
+```
+
+### Explanation:
+- **Empty Pointer Test**: Verifies the behavior of an empty JSON Pointer.
+- **Compile Valid/Invalid Pointer Tests**: Tests the `compile` method with valid and invalid inputs.
+- **ValueOf Test**: Ensures `valueOf` is an alias for `compile`.
+- **Match Property/Element Tests**: Checks if the pointer correctly matches properties and elements.
+- **May Match Property/Element Tests**: Verifies if the pointer may match a property or element.
+- **ToString, HashCode, Equals Tests**: Tests standard method overrides.
+- **Parse Index Test**: Ensures correct parsing of index values.
+- **Parse Quoted Tail Test**: Tests parsing of escaped characters in JSON Pointer segments.
+
+This test suite should provide comprehensive coverage for the `JsonPointer` class.

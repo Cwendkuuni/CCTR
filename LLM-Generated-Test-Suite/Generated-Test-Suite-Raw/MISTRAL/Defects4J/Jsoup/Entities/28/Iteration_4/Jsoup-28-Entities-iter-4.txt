@@ -1,0 +1,99 @@
+```java
+package org.jsoup.nodes;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.jsoup.nodes.Document;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class EntitiesTest {
+
+    private static final Map<String, Character> mockFullMap = new HashMap<>();
+    private static final Map<Character, String> mockXhtmlByVal = new HashMap<>();
+    private static final Map<String, Character> mockBaseMap = new HashMap<>();
+    private static final Map<Character, String> mockBaseByVal = new HashMap<>();
+    private static final Map<Character, String> mockFullByVal = new HashMap<>();
+
+    @Before
+    public void setUp() {
+        // Mocking the full map for testing purposes
+        mockFullMap.put("lt", '<');
+        mockFullMap.put("gt", '>');
+        mockFullMap.put("amp", '&');
+
+        // Mocking the xhtmlByVal map for testing purposes
+        mockXhtmlByVal.put('<', "lt");
+        mockXhtmlByVal.put('>', "gt");
+        mockXhtmlByVal.put('&', "amp");
+
+        // Mocking the base map for testing purposes
+        mockBaseMap.put("lt", '<');
+        mockBaseMap.put("gt", '>');
+        mockBaseMap.put("amp", '&');
+
+        // Mocking the baseByVal map for testing purposes
+        mockBaseByVal.put('<', "lt");
+        mockBaseByVal.put('>', "gt");
+        mockBaseByVal.put('&', "amp");
+
+        // Mocking the fullByVal map for testing purposes
+        mockFullByVal.put('<', "lt");
+        mockFullByVal.put('>', "gt");
+        mockFullByVal.put('&', "amp");
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertTrue(Entities.isNamedEntity("gt"));
+        assertTrue(Entities.isNamedEntity("amp"));
+        assertFalse(Entities.isNamedEntity("unknown"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertEquals(Character.valueOf('>'), Entities.getCharacterByName("gt"));
+        assertEquals(Character.valueOf('&'), Entities.getCharacterByName("amp"));
+        assertNull(Entities.getCharacterByName("unknown"));
+    }
+
+    @Test
+    public void testEscape() {
+        Document.OutputSettings out = new Document.OutputSettings();
+        out.escapeMode(Document.OutputSettings.EscapeMode.base);
+        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+
+        assertEquals("&lt;&gt;&amp;", Entities.escape("<>&", encoder, Entities.EscapeMode.base));
+        assertEquals("&lt;&gt;&amp;", Entities.escape("<>&", out));
+    }
+
+    @Test
+    public void testUnescape() {
+        assertEquals("<>&", Entities.unescape("&lt;&gt;&amp;"));
+        assertEquals("<>&", Entities.unescape("&lt;&gt;&amp;", true));
+        assertEquals("&lt;&gt;&amp;", Entities.unescape("&lt;&gt;&amp;", false));
+    }
+
+    @Test
+    public void testLoadEntities() {
+        Map<String, Character> entities = Entities.loadEntities("entities-base.properties");
+        assertNotNull(entities);
+        assertTrue(entities.containsKey("lt"));
+        assertTrue(entities.containsKey("gt"));
+        assertTrue(entities.containsKey("amp"));
+    }
+
+    @Test
+    public void testToCharacterKey() {
+        Map<Character, String> characterKeyMap = Entities.toCharacterKey(mockBaseMap);
+        assertEquals(mockBaseByVal, characterKeyMap);
+    }
+}
+```

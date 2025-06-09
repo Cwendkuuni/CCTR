@@ -1,0 +1,121 @@
+To create a comprehensive JUnit 4 test suite for the `IntervalsSet` class, we need to test all its public methods and constructors. The test suite will cover various scenarios, including edge cases, to ensure the class behaves as expected. Below is the test suite:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import org.apache.commons.math3.geometry.euclidean.oned.*;
+import org.apache.commons.math3.geometry.partitioning.BSPTree;
+import org.apache.commons.math3.geometry.partitioning.SubHyperplane;
+import java.util.*;
+
+public class IntervalsSetTest {
+
+    @Test
+    public void testDefaultConstructor() {
+        IntervalsSet intervalsSet = new IntervalsSet();
+        assertNotNull(intervalsSet);
+        assertTrue(intervalsSet.asList().isEmpty());
+    }
+
+    @Test
+    public void testConstructorWithBounds() {
+        IntervalsSet intervalsSet = new IntervalsSet(1.0, 5.0);
+        List<Interval> intervals = intervalsSet.asList();
+        assertEquals(1, intervals.size());
+        assertEquals(1.0, intervals.get(0).getInf(), 1e-10);
+        assertEquals(5.0, intervals.get(0).getSup(), 1e-10);
+    }
+
+    @Test
+    public void testConstructorWithInfiniteBounds() {
+        IntervalsSet intervalsSet = new IntervalsSet(Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY);
+        List<Interval> intervals = intervalsSet.asList();
+        assertEquals(1, intervals.size());
+        assertEquals(Double.NEGATIVE_INFINITY, intervals.get(0).getInf(), 1e-10);
+        assertEquals(Double.POSITIVE_INFINITY, intervals.get(0).getSup(), 1e-10);
+    }
+
+    @Test
+    public void testConstructorWithTree() {
+        BSPTree<Euclidean1D> tree = new BSPTree<>(Boolean.TRUE);
+        IntervalsSet intervalsSet = new IntervalsSet(tree);
+        assertNotNull(intervalsSet);
+        assertEquals(Double.NEGATIVE_INFINITY, intervalsSet.getInf(), 1e-10);
+        assertEquals(Double.POSITIVE_INFINITY, intervalsSet.getSup(), 1e-10);
+    }
+
+    @Test
+    public void testConstructorWithBoundary() {
+        Collection<SubHyperplane<Euclidean1D>> boundary = new ArrayList<>();
+        IntervalsSet intervalsSet = new IntervalsSet(boundary);
+        assertNotNull(intervalsSet);
+        assertTrue(intervalsSet.asList().isEmpty());
+    }
+
+    @Test
+    public void testBuildNew() {
+        BSPTree<Euclidean1D> tree = new BSPTree<>(Boolean.TRUE);
+        IntervalsSet intervalsSet = new IntervalsSet();
+        IntervalsSet newIntervalsSet = intervalsSet.buildNew(tree);
+        assertNotNull(newIntervalsSet);
+        assertEquals(Double.NEGATIVE_INFINITY, newIntervalsSet.getInf(), 1e-10);
+        assertEquals(Double.POSITIVE_INFINITY, newIntervalsSet.getSup(), 1e-10);
+    }
+
+    @Test
+    public void testComputeGeometricalProperties() {
+        IntervalsSet intervalsSet = new IntervalsSet(1.0, 5.0);
+        intervalsSet.computeGeometricalProperties();
+        assertEquals(4.0, intervalsSet.getSize(), 1e-10);
+        assertEquals(3.0, intervalsSet.getBarycenter().getX(), 1e-10);
+    }
+
+    @Test
+    public void testGetInf() {
+        IntervalsSet intervalsSet = new IntervalsSet(1.0, 5.0);
+        assertEquals(1.0, intervalsSet.getInf(), 1e-10);
+    }
+
+    @Test
+    public void testGetSup() {
+        IntervalsSet intervalsSet = new IntervalsSet(1.0, 5.0);
+        assertEquals(5.0, intervalsSet.getSup(), 1e-10);
+    }
+
+    @Test
+    public void testAsList() {
+        IntervalsSet intervalsSet = new IntervalsSet(1.0, 5.0);
+        List<Interval> intervals = intervalsSet.asList();
+        assertEquals(1, intervals.size());
+        assertEquals(1.0, intervals.get(0).getInf(), 1e-10);
+        assertEquals(5.0, intervals.get(0).getSup(), 1e-10);
+    }
+
+    @Test
+    public void testAsListWithMultipleIntervals() {
+        IntervalsSet intervalsSet = new IntervalsSet();
+        intervalsSet = intervalsSet.buildNew(new BSPTree<>(new OrientedPoint(new Vector1D(1.0), false).wholeHyperplane(),
+                new BSPTree<>(Boolean.FALSE),
+                new BSPTree<>(new OrientedPoint(new Vector1D(5.0), true).wholeHyperplane(),
+                        new BSPTree<>(Boolean.FALSE),
+                        new BSPTree<>(Boolean.TRUE), null), null));
+        List<Interval> intervals = intervalsSet.asList();
+        assertEquals(1, intervals.size());
+        assertEquals(1.0, intervals.get(0).getInf(), 1e-10);
+        assertEquals(5.0, intervals.get(0).getSup(), 1e-10);
+    }
+}
+```
+
+### Explanation:
+- **Default Constructor Test**: Verifies that an `IntervalsSet` created with the default constructor is not null and has no intervals.
+- **Constructor with Bounds Test**: Checks that the constructor correctly initializes an interval with specified bounds.
+- **Constructor with Infinite Bounds Test**: Ensures that the constructor handles infinite bounds correctly.
+- **Constructor with Tree Test**: Tests the constructor that takes a `BSPTree` and verifies the resulting interval.
+- **Constructor with Boundary Test**: Verifies that the constructor with a boundary collection initializes correctly.
+- **Build New Test**: Checks that the `buildNew` method creates a new `IntervalsSet` with the specified tree.
+- **Compute Geometrical Properties Test**: Ensures that geometrical properties like size and barycenter are computed correctly.
+- **Get Inf and Sup Tests**: Verify that the methods return the correct lower and upper bounds of the interval.
+- **As List Tests**: Ensure that the `asList` method returns the correct list of intervals, including handling multiple intervals.
+
+This test suite should cover the main functionalities of the `IntervalsSet` class.

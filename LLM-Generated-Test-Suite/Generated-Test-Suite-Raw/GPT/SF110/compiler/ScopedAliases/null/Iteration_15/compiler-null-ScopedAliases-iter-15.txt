@@ -1,0 +1,153 @@
+Certainly! Below is a JUnit 4 test suite for the `ScopedAliases` class. This test suite aims to cover the main functionalities and edge cases of the class. Note that due to the complexity and dependencies of the `ScopedAliases` class, some mock objects and assumptions are made to facilitate testing.
+
+```java
+import static org.mockito.Mockito.*;
+
+import com.google.javascript.jscomp.*;
+import com.google.javascript.rhino.Node;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class ScopedAliasesTest {
+
+    private AbstractCompiler compiler;
+    private PreprocessorSymbolTable preprocessorSymbolTable;
+    private AliasTransformationHandler transformationHandler;
+    private ScopedAliases scopedAliases;
+
+    @Before
+    public void setUp() {
+        compiler = mock(AbstractCompiler.class);
+        preprocessorSymbolTable = mock(PreprocessorSymbolTable.class);
+        transformationHandler = mock(AliasTransformationHandler.class);
+        scopedAliases = new ScopedAliases(compiler, preprocessorSymbolTable, transformationHandler);
+    }
+
+    @Test
+    public void testProcess() {
+        Node externs = mock(Node.class);
+        Node root = mock(Node.class);
+
+        scopedAliases.process(externs, root);
+
+        verify(compiler, times(1)).reportCodeChange();
+    }
+
+    @Test
+    public void testHotSwapScript() {
+        Node root = mock(Node.class);
+        Node originalRoot = mock(Node.class);
+
+        scopedAliases.hotSwapScript(root, originalRoot);
+
+        verify(compiler, times(1)).reportCodeChange();
+    }
+
+    @Test
+    public void testAliasUsageApplyAlias() {
+        Node aliasReference = mock(Node.class);
+        Node aliasDefinition = mock(Node.class);
+        Node parent = mock(Node.class);
+
+        when(aliasReference.getParent()).thenReturn(parent);
+
+        ScopedAliases.AliasedNode aliasedNode = scopedAliases.new AliasedNode(aliasReference, aliasDefinition);
+        aliasedNode.applyAlias();
+
+        verify(parent, times(1)).replaceChild(eq(aliasReference), any(Node.class));
+    }
+
+    @Test
+    public void testAliasedTypeNodeApplyAlias() {
+        Node typeReference = mock(Node.class);
+        Node aliasDefinition = mock(Node.class);
+        String aliasName = "alias";
+
+        when(typeReference.getString()).thenReturn("alias.Type");
+        when(aliasDefinition.getQualifiedName()).thenReturn("qualified.Alias");
+
+        ScopedAliases.AliasedTypeNode aliasedTypeNode = scopedAliases.new AliasedTypeNode(typeReference, aliasDefinition, aliasName);
+        aliasedTypeNode.applyAlias();
+
+        verify(typeReference, times(1)).setString("qualified.Alias.Type");
+    }
+
+    @Test
+    public void testTraversalEnterScope() {
+        NodeTraversal t = mock(NodeTraversal.class);
+        Node n = mock(Node.class);
+        Node parent = mock(Node.class);
+
+        when(t.getCurrentNode()).thenReturn(n);
+        when(n.getParent()).thenReturn(parent);
+        when(parent.isCall()).thenReturn(true);
+        when(parent.getFirstChild()).thenReturn(n);
+        when(n.getQualifiedName()).thenReturn(ScopedAliases.SCOPING_METHOD_NAME);
+
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        traversal.enterScope(t);
+
+        // Verify that transformationHandler.logAliasTransformation is called
+        verify(transformationHandler, times(1)).logAliasTransformation(anyString(), any());
+    }
+
+    @Test
+    public void testTraversalExitScope() {
+        NodeTraversal t = mock(NodeTraversal.class);
+        when(t.getScopeDepth()).thenReturn(2);
+
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        traversal.exitScope(t);
+
+        // Verify that aliases and forbiddenLocals are cleared
+        assertTrue(traversal.getAliasDefinitionsInOrder().isEmpty());
+        assertTrue(traversal.getAliasUsages().isEmpty());
+        assertTrue(traversal.getScopeCalls().isEmpty());
+    }
+
+    @Test
+    public void testTraversalShouldTraverse() {
+        NodeTraversal t = mock(NodeTraversal.class);
+        Node n = mock(Node.class);
+        Node parent = mock(Node.class);
+
+        when(n.isFunction()).thenReturn(true);
+        when(t.inGlobalScope()).thenReturn(true);
+
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        boolean result = traversal.shouldTraverse(t, n, parent);
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testTraversalVisit() {
+        NodeTraversal t = mock(NodeTraversal.class);
+        Node n = mock(Node.class);
+        Node parent = mock(Node.class);
+
+        when(n.isCall()).thenReturn(true);
+        when(n.getFirstChild()).thenReturn(n);
+        when(n.getQualifiedName()).thenReturn(ScopedAliases.SCOPING_METHOD_NAME);
+
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        traversal.visit(t, n, parent);
+
+        // Verify that validateScopeCall is called
+        verify(preprocessorSymbolTable, times(1)).addReference(n.getFirstChild());
+    }
+}
+```
+
+### Explanation:
+- **Mocks and Stubs**: The test suite uses Mockito to create mock objects for dependencies like `AbstractCompiler`, `PreprocessorSymbolTable`, and `AliasTransformationHandler`.
+- **Test Methods**: Each test method is designed to test a specific functionality or method within the `ScopedAliases` class.
+- **Assertions and Verifications**: The test suite uses assertions to check the expected outcomes and Mockito's `verify` method to ensure that certain methods are called with expected arguments.
+- **Setup Method**: The `setUp` method initializes the necessary objects before each test.
+
+This test suite provides a basic structure for testing the `ScopedAliases` class. Depending on the actual implementation details and dependencies, additional setup or more detailed tests might be necessary.

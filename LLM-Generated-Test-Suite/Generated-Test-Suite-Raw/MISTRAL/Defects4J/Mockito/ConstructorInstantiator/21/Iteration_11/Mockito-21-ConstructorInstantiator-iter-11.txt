@@ -1,0 +1,106 @@
+```
+package org.mockito.internal.creation.instance;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.internal.creation.instance.ConstructorInstantiator;
+import org.mockito.internal.creation.instance.InstantationException;
+
+import static org.junit.Assert.*;
+
+public class ConstructorInstantiatorTest {
+
+    private ConstructorInstantiator instantiator;
+    private Object outerClassInstance;
+
+    @Before
+    public void setUp() {
+        outerClassInstance = new Object();
+        instantiator = new ConstructorInstantiator(outerClassInstance);
+    }
+
+    @Test
+    public void testNewInstanceWithNoArgConstructor() {
+        class NoArgClass {
+            public NoArgClass() {}
+        }
+
+        NoArgClass instance = instantiator.newInstance(NoArgClass.class);
+        assertNotNull(instance);
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNewInstanceWithNoArgConstructorThrowsException() {
+        class NoArgClass {
+            public NoArgClass(String arg) {}
+        }
+
+        instantiator.newInstance(NoArgClass.class);
+    }
+
+    @Test
+    public void testNewInstanceWithOuterClass() {
+        class OuterClass {
+            public OuterClass(Object outer) {}
+        }
+
+        OuterClass instance = instantiator.newInstance(OuterClass.class);
+        assertNotNull(instance);
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNewInstanceWithOuterClassThrowsException() {
+        class OuterClass {
+            public OuterClass(String outer) {}
+        }
+
+        instantiator.newInstance(OuterClass.class);
+    }
+
+    @Test
+    public void testNoArgConstructor() {
+        class NoArgClass {
+            public NoArgClass() {}
+        }
+
+        NoArgClass instance = ConstructorInstantiator.noArgConstructor(NoArgClass.class);
+        assertNotNull(instance);
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNoArgConstructorThrowsException() {
+        class NoArgClass {
+            public NoArgClass(String arg) {}
+        }
+
+        ConstructorInstantiator.noArgConstructor(NoArgClass.class);
+    }
+
+    @Test
+    public void testWithOuterClass() {
+        class OuterClass {
+            public OuterClass(Object outer) {}
+        }
+
+        OuterClass instance = instantiator.withOuterClass(OuterClass.class);
+        assertNotNull(instance);
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testWithOuterClassThrowsException() {
+        class OuterClass {
+            public OuterClass(String outer) {}
+        }
+
+        instantiator.withOuterClass(OuterClass.class);
+    }
+
+    @Test
+    public void testParamsException() {
+        Exception cause = new Exception("Test cause");
+        InstantationException exception = ConstructorInstantiator.paramsException(String.class, cause);
+        assertEquals("Unable to create mock instance of 'String'.\nPlease ensure that the outer instance has correct type and that the target class has parameter-less constructor.", exception.getMessage());
+        assertEquals(cause, exception.getCause());
+    }
+}
+```

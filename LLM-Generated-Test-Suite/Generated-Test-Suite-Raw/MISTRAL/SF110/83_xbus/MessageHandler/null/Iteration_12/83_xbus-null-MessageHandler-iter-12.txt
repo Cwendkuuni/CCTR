@@ -1,0 +1,80 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.*;
+import net.sf.xbus.base.core.MessageHandler;
+
+public class MessageHandlerTest {
+
+    private MessageHandler messageHandler;
+
+    @Before
+    public void setUp() {
+        messageHandler = MessageHandler.getInstance("test");
+    }
+
+    @Test
+    public void testGetMessage() {
+        // Test with existing key
+        List<String> params = Arrays.asList("param1", "param2");
+        String result = messageHandler.getMessage("existingKey", params);
+        assertNotNull(result);
+        assertTrue(result.contains("param1"));
+        assertTrue(result.contains("param2"));
+
+        // Test with non-existing key
+        result = messageHandler.getMessage("nonExistingKey", params);
+        assertEquals("Key: nonExistingKey not found in message file", result);
+    }
+
+    @Test
+    public void testGetMessageOptional() {
+        // Test with existing key
+        List<String> params = Arrays.asList("param1", "param2");
+        String result = messageHandler.getMessageOptional("existingKey", params);
+        assertNotNull(result);
+        assertTrue(result.contains("param1"));
+        assertTrue(result.contains("param2"));
+
+        // Test with non-existing key
+        result = messageHandler.getMessageOptional("nonExistingKey", params);
+        assertNull(result);
+
+        // Test with null params
+        result = messageHandler.getMessageOptional("existingKey", null);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testGetInstance() {
+        MessageHandler instance1 = MessageHandler.getInstance("test");
+        MessageHandler instance2 = MessageHandler.getInstance("test");
+        assertSame(instance1, instance2);
+
+        MessageHandler instance3 = MessageHandler.getInstance("test2");
+        assertNotSame(instance1, instance3);
+    }
+
+    @Test
+    public void testAddMessages() {
+        // This test assumes the existence of a test properties file named "test_en_US.properties"
+        // in the specified directories (Constants.XBUS_ETC and Constants.XBUS_PLUGIN_ETC).
+        // You may need to create these files for the test to pass.
+
+        // Test if messages are loaded correctly
+        String result = messageHandler.getMessageOptional("existingKey", null);
+        assertNotNull(result);
+        assertEquals("Expected message text", result);
+    }
+
+    @Test
+    public void testMessagesFilter() {
+        MessageHandler.MessagesFilter filter = new MessageHandler.MessagesFilter("test", "_en_US.properties");
+
+        assertTrue(filter.accept(null, "test_en_US.properties"));
+        assertFalse(filter.accept(null, "test_fr_FR.properties"));
+        assertFalse(filter.accept(null, "other_en_US.properties"));
+    }
+}
+```

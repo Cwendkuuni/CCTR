@@ -1,0 +1,127 @@
+Certainly! Below is a JUnit 4 test suite for the `Game` class. This suite aims to comprehensively test the methods provided in the class.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import lotus.core.*;
+import lotus.core.interfaces.*;
+import lotus.core.card.*;
+import lotus.core.phases.*;
+import java.util.*;
+
+public class GameTest {
+
+    private UserInterface mockUI1;
+    private UserInterface mockUI2;
+    private CardCollection mockDeck1;
+    private CardCollection mockDeck2;
+    private Player mockPlayer1;
+    private Player mockPlayer2;
+    private Card mockCard1;
+    private Card mockCard2;
+
+    @Before
+    public void setUp() {
+        mockUI1 = Mockito.mock(UserInterface.class);
+        mockUI2 = Mockito.mock(UserInterface.class);
+        mockDeck1 = Mockito.mock(CardCollection.class);
+        mockDeck2 = Mockito.mock(CardCollection.class);
+        mockPlayer1 = Mockito.mock(Player.class);
+        mockPlayer2 = Mockito.mock(Player.class);
+        mockCard1 = Mockito.mock(Card.class);
+        mockCard2 = Mockito.mock(Card.class);
+
+        Mockito.when(mockDeck1.iterator()).thenReturn(Arrays.asList(mockCard1).iterator());
+        Mockito.when(mockDeck2.iterator()).thenReturn(Arrays.asList(mockCard2).iterator());
+    }
+
+    @Test
+    public void testInit() {
+        Game.init(mockUI1, mockUI2, "Player1", "Player2", mockDeck1, mockDeck2);
+
+        assertNotNull(Game.player1);
+        assertNotNull(Game.player2);
+        assertEquals("Player1", Game.player1.getName());
+        assertEquals("Player2", Game.player2.getName());
+        assertEquals(1, Game.playingPlayer);
+        assertTrue(Game.currentPhase instanceof UntapPhase);
+
+        Mockito.verify(mockUI1).init(Game.player1);
+        Mockito.verify(mockUI2).init(Game.player2);
+        assertEquals(Game.player1, mockCard1.owner);
+        assertEquals(Game.player1.library, mockCard1.zone);
+        assertEquals(Game.player2, mockCard2.owner);
+        assertEquals(Game.player2.library, mockCard2.zone);
+    }
+
+    @Test
+    public void testGetPlayingPlayer() {
+        Game.player1 = mockPlayer1;
+        Game.player2 = mockPlayer2;
+        Game.playingPlayer = 1;
+        assertEquals(mockPlayer1, Game.getPlayingPlayer());
+
+        Game.playingPlayer = 2;
+        assertEquals(mockPlayer2, Game.getPlayingPlayer());
+    }
+
+    @Test
+    public void testGetNonPlayingPlayer() {
+        Game.player1 = mockPlayer1;
+        Game.player2 = mockPlayer2;
+        Game.playingPlayer = 1;
+        assertEquals(mockPlayer2, Game.getNonPlayingPlayer());
+
+        Game.playingPlayer = 2;
+        assertEquals(mockPlayer1, Game.getNonPlayingPlayer());
+    }
+
+    @Test
+    public void testGetOtherPlayer() {
+        Game.player1 = mockPlayer1;
+        Game.player2 = mockPlayer2;
+        assertEquals(mockPlayer2, Game.getOtherPlayer(mockPlayer1));
+        assertEquals(mockPlayer1, Game.getOtherPlayer(mockPlayer2));
+    }
+
+    @Test
+    public void testGivePriorityToCurrentPlayer() {
+        Game.player1 = mockPlayer1;
+        Game.player2 = mockPlayer2;
+        Game.stack = Mockito.mock(Stack.class);
+
+        Mockito.when(mockPlayer1.letPlayerSpeak()).thenReturn(false);
+        Mockito.when(mockPlayer2.letPlayerSpeak()).thenReturn(false);
+        Mockito.when(Game.stack.empty()).thenReturn(true);
+
+        Game.givePriorityToCurrentPlayer();
+
+        Mockito.verify(mockPlayer1, Mockito.atLeastOnce()).letPlayerSpeak();
+        Mockito.verify(mockPlayer2, Mockito.atLeastOnce()).letPlayerSpeak();
+    }
+
+    @Test
+    public void testGivePriorityToCurrentPlayerWithStack() {
+        Game.player1 = mockPlayer1;
+        Game.player2 = mockPlayer2;
+        Game.stack = Mockito.mock(Stack.class);
+
+        Mockito.when(mockPlayer1.letPlayerSpeak()).thenReturn(false);
+        Mockito.when(mockPlayer2.letPlayerSpeak()).thenReturn(false);
+        Mockito.when(Game.stack.empty()).thenReturn(false);
+
+        Game.givePriorityToCurrentPlayer();
+
+        Mockito.verify(Game.stack).resolveLast();
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: The test suite uses Mockito to create mock objects for `UserInterface`, `CardCollection`, `Player`, and `Card`. This allows us to simulate interactions and verify behaviors without needing actual implementations.
+- **Setup**: The `setUp` method initializes the mock objects and sets up the necessary conditions before each test.
+- **Tests**: Each method in the `Game` class has corresponding test methods that verify its behavior. The tests check for correct initialization, player retrieval, and priority handling.
+- **Assertions**: The tests use assertions to ensure that the expected outcomes match the actual results.
+- **Verification**: Mockito's `verify` method is used to ensure that certain methods are called as expected during the tests.

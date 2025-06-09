@@ -1,0 +1,107 @@
+```java
+package org.apache.commons.lang3;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+
+public class SerializationUtilsTest {
+
+    private static class TestSerializable implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private String value;
+
+        public TestSerializable(String value) {
+            this.value = value;
+        }
+
+        public String getValue() {
+            return value;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            TestSerializable that = (TestSerializable) obj;
+            return value != null ? value.equals(that.value) : that.value == null;
+        }
+
+        @Override
+        public int hashCode() {
+            return value != null ? value.hashCode() : 0;
+        }
+    }
+
+    private TestSerializable testObject;
+
+    @Before
+    public void setUp() {
+        testObject = new TestSerializable("testValue");
+    }
+
+    @Test
+    public void testClone() {
+        TestSerializable clonedObject = SerializationUtils.clone(testObject);
+        assertNotNull(clonedObject);
+        assertEquals(testObject, clonedObject);
+        assertNotSame(testObject, clonedObject);
+    }
+
+    @Test
+    public void testSerializeToOutputStream() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        SerializationUtils.serialize(testObject, baos);
+        byte[] serializedData = baos.toByteArray();
+        assertNotNull(serializedData);
+        assertTrue(serializedData.length > 0);
+    }
+
+    @Test
+    public void testSerializeToByteArray() {
+        byte[] serializedData = SerializationUtils.serialize(testObject);
+        assertNotNull(serializedData);
+        assertTrue(serializedData.length > 0);
+    }
+
+    @Test
+    public void testDeserializeFromInputStream() {
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        SerializationUtils.serialize(testObject, baos);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        TestSerializable deserializedObject = (TestSerializable) SerializationUtils.deserialize(bais);
+        assertNotNull(deserializedObject);
+        assertEquals(testObject, deserializedObject);
+    }
+
+    @Test
+    public void testDeserializeFromByteArray() {
+        byte[] serializedData = SerializationUtils.serialize(testObject);
+        TestSerializable deserializedObject = (TestSerializable) SerializationUtils.deserialize(serializedData);
+        assertNotNull(deserializedObject);
+        assertEquals(testObject, deserializedObject);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSerializeNullOutputStream() {
+        SerializationUtils.serialize(testObject, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeserializeNullInputStream() {
+        SerializationUtils.deserialize((InputStream) null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeserializeNullByteArray() {
+        SerializationUtils.deserialize((byte[]) null);
+    }
+}
+```

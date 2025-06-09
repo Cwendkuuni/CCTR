@@ -1,0 +1,123 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `SerializationUtils` class. This test suite covers all the methods in the class, including edge cases and error conditions.
+
+```java
+package org.apache.commons.lang3;
+
+import static org.junit.Assert.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
+import java.io.OutputStream;
+import java.io.Serializable;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.junit.Test;
+
+public class SerializationUtilsTest {
+
+    @Test
+    public void testClone() {
+        Map<String, String> original = new HashMap<>();
+        original.put("key", "value");
+
+        Map<String, String> clone = SerializationUtils.clone(original);
+
+        assertNotNull(clone);
+        assertNotSame(original, clone);
+        assertEquals(original, clone);
+    }
+
+    @Test(expected = SerializationException.class)
+    public void testCloneWithNonSerializableObject() {
+        SerializationUtils.clone(new NonSerializableObject());
+    }
+
+    @Test
+    public void testSerializeToOutputStream() {
+        Map<String, String> original = new HashMap<>();
+        original.put("key", "value");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        SerializationUtils.serialize(original, baos);
+
+        byte[] serializedData = baos.toByteArray();
+        assertNotNull(serializedData);
+        assertTrue(serializedData.length > 0);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSerializeToOutputStreamWithNullOutputStream() {
+        SerializationUtils.serialize(new HashMap<>(), null);
+    }
+
+    @Test
+    public void testSerializeToByteArray() {
+        Map<String, String> original = new HashMap<>();
+        original.put("key", "value");
+
+        byte[] serializedData = SerializationUtils.serialize(original);
+
+        assertNotNull(serializedData);
+        assertTrue(serializedData.length > 0);
+    }
+
+    @Test
+    public void testDeserializeFromInputStream() {
+        Map<String, String> original = new HashMap<>();
+        original.put("key", "value");
+
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        SerializationUtils.serialize(original, baos);
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        Map<String, String> deserialized = (Map<String, String>) SerializationUtils.deserialize(bais);
+
+        assertNotNull(deserialized);
+        assertEquals(original, deserialized);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeserializeFromInputStreamWithNullInputStream() {
+        SerializationUtils.deserialize((InputStream) null);
+    }
+
+    @Test
+    public void testDeserializeFromByteArray() {
+        Map<String, String> original = new HashMap<>();
+        original.put("key", "value");
+
+        byte[] serializedData = SerializationUtils.serialize(original);
+        Map<String, String> deserialized = (Map<String, String>) SerializationUtils.deserialize(serializedData);
+
+        assertNotNull(deserialized);
+        assertEquals(original, deserialized);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeserializeFromByteArrayWithNullByteArray() {
+        SerializationUtils.deserialize((byte[]) null);
+    }
+
+    private static class NonSerializableObject {
+        // This class is not serializable
+    }
+}
+```
+
+This test suite includes tests for:
+- Cloning a serializable object.
+- Handling non-serializable objects during cloning.
+- Serializing an object to an `OutputStream`.
+- Handling a `null` `OutputStream` during serialization.
+- Serializing an object to a byte array.
+- Deserializing an object from an `InputStream`.
+- Handling a `null` `InputStream` during deserialization.
+- Deserializing an object from a byte array.
+- Handling a `null` byte array during deserialization.
+
+Each test method is designed to verify the correct behavior of the corresponding method in the `SerializationUtils` class, including edge cases and error conditions.

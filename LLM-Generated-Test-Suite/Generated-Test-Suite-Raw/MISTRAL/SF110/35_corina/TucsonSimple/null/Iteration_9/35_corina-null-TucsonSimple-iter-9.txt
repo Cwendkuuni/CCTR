@@ -1,0 +1,124 @@
+```java
+package corina.formats;
+
+import corina.ui.*;
+import java.io.*;
+import corina.util.*;
+import corina.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+import org.mockito.*;
+
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+    private Sample sample;
+    private BufferedWriter writer;
+    private BufferedReader reader;
+
+    @Before
+    public void setUp() throws Exception {
+        tucsonSimple = new TucsonSimple();
+        sample = Mockito.mock(Sample.class);
+        writer = Mockito.mock(BufferedWriter.class);
+        reader = Mockito.mock(BufferedReader.class);
+    }
+
+    @Test
+    public void testToString() {
+        String expected = I18n.getText("format.tucsonsimple");
+        String actual = tucsonSimple.toString();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        String expected = ".RWL";
+        String actual = tucsonSimple.getDefaultExtension();
+        assertEquals(expected, actual);
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        tucsonSimple.load(reader);
+    }
+
+    @Test
+    public void testMake6digitCodeWithId() {
+        Mockito.when(sample.meta.containsKey("id")).thenReturn(true);
+        Mockito.when(sample.meta.get("id")).thenReturn("123456789");
+        String expected = "123456";
+        String actual = tucsonSimple.make6digitCode(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testMake6digitCodeWithoutId() {
+        Mockito.when(sample.meta.containsKey("id")).thenReturn(false);
+        String expected = "000000";
+        String actual = tucsonSimple.make6digitCode(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testMake6digitCodeWithShortId() {
+        Mockito.when(sample.meta.containsKey("id")).thenReturn(true);
+        Mockito.when(sample.meta.get("id")).thenReturn("123");
+        String expected = "123   ";
+        String actual = tucsonSimple.make6digitCode(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testSaveRowHeader() throws IOException {
+        Mockito.when(sample.range.getStart()).thenReturn(new Year(1900));
+        Year year = new Year(1899);
+        String code = "123456";
+        int yearWidth = 6;
+        tucsonSimple.saveRowHeader(writer, sample, code, yearWidth, year);
+        Mockito.verify(writer).write("123456 1900");
+    }
+
+    @Test
+    public void testSaveData() throws IOException {
+        Mockito.when(sample.range.getStart()).thenReturn(new Year(1900));
+        Mockito.when(sample.range.getEnd()).thenReturn(new Year(1901));
+        Mockito.when(sample.data.get(0)).thenReturn(100);
+        Mockito.when(sample.data.get(1)).thenReturn(200);
+        tucsonSimple.saveData(sample, writer);
+        Mockito.verify(writer).write("000000 1900   100");
+        Mockito.verify(writer).write("000000 1901   200");
+        Mockito.verify(writer).newLine();
+    }
+
+    @Test
+    public void testComputeRange() {
+        Mockito.when(sample.range.getStart()).thenReturn(new Year(1900));
+        Range expected = sample.range;
+        Range actual = tucsonSimple.computeRange(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testComputeRangeWithNegativeStart() {
+        Mockito.when(sample.range.getStart()).thenReturn(new Year(-1000));
+        Range expected = sample.range.redateBy(8000);
+        Range actual = tucsonSimple.computeRange(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testComputeRangeWithVeryNegativeStart() {
+        Mockito.when(sample.range.getStart()).thenReturn(new Year(-9000));
+        Range expected = sample.range.redateStartTo(new Year(1001));
+        Range actual = tucsonSimple.computeRange(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        tucsonSimple.save(sample, writer);
+        Mockito.verify(tucsonSimple).saveData(sample, writer);
+    }
+}
+```

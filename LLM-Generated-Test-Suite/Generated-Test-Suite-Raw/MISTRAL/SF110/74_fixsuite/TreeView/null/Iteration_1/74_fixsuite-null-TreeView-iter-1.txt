@@ -1,0 +1,192 @@
+```java
+package org.fixsuite.message.view;
+
+import org.fixsuite.message.info.*;
+import org.fixsuite.message.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.swing.*;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class TreeViewTest {
+
+    @Mock
+    private Library library;
+
+    @Mock
+    private DictionaryInfo dictionaryInfo;
+
+    @Mock
+    private MessageInfo messageInfo;
+
+    @Mock
+    private ComponentInfo componentInfo;
+
+    @Mock
+    private FieldInfo fieldInfo;
+
+    @Mock
+    private FixInfoTreeNode fixInfoTreeNode;
+
+    @Mock
+    private JTree fixTree;
+
+    @Mock
+    private JTextField searchTextField;
+
+    @Mock
+    private JButton searchButton;
+
+    @Mock
+    private JButton clearButton;
+
+    @Mock
+    private JButton expandButton;
+
+    @Mock
+    private JButton collapseButton;
+
+    private TreeView treeView;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+        treeView = new TreeView(library);
+        treeView.fixTree = fixTree;
+        treeView.searchTextField = searchTextField;
+        treeView.searchButton = searchButton;
+        treeView.clearButton = clearButton;
+        treeView.expandButton = expandButton;
+        treeView.collapseButton = collapseButton;
+    }
+
+    @Test
+    public void testInitGUI() {
+        treeView.initGUI();
+        // Add assertions to verify GUI components are initialized correctly
+    }
+
+    @Test
+    public void testLoadFIXTree() {
+        List<DictionaryInfo> dictionaries = new ArrayList<>();
+        dictionaries.add(dictionaryInfo);
+        when(library.getDictionaries()).thenReturn(dictionaries);
+
+        FixInfoTreeNode root = treeView.loadFIXTree();
+        assertNotNull(root);
+        assertEquals("Dictionaries", root.getUserObject());
+    }
+
+    @Test
+    public void testLoadMessages() {
+        List<MessageInfo> messages = new ArrayList<>();
+        messages.add(messageInfo);
+        when(dictionaryInfo.getMessages()).thenReturn(messages);
+
+        FixInfoTreeNode versionNode = new FixInfoTreeNode("Version");
+        treeView.loadMessages(versionNode, dictionaryInfo);
+        assertEquals(1, versionNode.getChildCount());
+    }
+
+    @Test
+    public void testLoadItems() {
+        List<FixInfo> items = new ArrayList<>();
+        items.add(fieldInfo);
+        when(messageInfo.getItems()).thenReturn(items);
+
+        FixInfoTreeNode branchNode = new FixInfoTreeNode("Branch");
+        treeView.loadItems(branchNode, messageInfo, 0);
+        assertEquals(1, branchNode.getChildCount());
+    }
+
+    @Test
+    public void testExpandAll() {
+        when(fixTree.getRowCount()).thenReturn(5);
+        treeView.expandAll();
+        verify(fixTree, times(5)).expandRow(anyInt());
+    }
+
+    @Test
+    public void testCollapseAll() {
+        when(fixTree.getRowCount()).thenReturn(5);
+        treeView.collapseAll();
+        verify(fixTree, times(5)).collapseRow(anyInt());
+    }
+
+    @Test
+    public void testSearch() {
+        when(fixTree.getModel()).thenReturn(new DefaultTreeModel(fixInfoTreeNode));
+        when(fixInfoTreeNode.getUserObject()).thenReturn(messageInfo);
+        when(messageInfo.getName()).thenReturn("TestMessage");
+        when(messageInfo.getMessageType()).thenReturn("TestType");
+
+        treeView.search(fixInfoTreeNode, "Test");
+        verify(fixTree).expandPath(any(TreePath.class));
+    }
+
+    @Test
+    public void testClear() {
+        when(fixInfoTreeNode.getChildCount()).thenReturn(1);
+        when(fixInfoTreeNode.getChildAt(0)).thenReturn(fixInfoTreeNode);
+
+        treeView.clear(fixInfoTreeNode);
+        verify(fixInfoTreeNode).setHighlighted(false);
+    }
+
+    @Test
+    public void testValueChanged() {
+        TreeSelectionEvent event = mock(TreeSelectionEvent.class);
+        when(fixTree.getLastSelectedPathComponent()).thenReturn(fixInfoTreeNode);
+        when(fixInfoTreeNode.getUserObject()).thenReturn(messageInfo);
+
+        treeView.valueChanged(event);
+        // Add assertions to verify the correct behavior
+    }
+
+    @Test
+    public void testActionPerformed() {
+        ActionEvent event = mock(ActionEvent.class);
+        when(event.getSource()).thenReturn(collapseButton);
+
+        treeView.actionPerformed(event);
+        verify(treeView).collapseAll();
+    }
+
+    @Test
+    public void testKeyPressed() {
+        KeyEvent event = mock(KeyEvent.class);
+        when(event.getKeyCode()).thenReturn(KeyEvent.VK_ENTER);
+
+        treeView.keyPressed(event);
+        verify(searchButton).doClick();
+    }
+
+    @Test
+    public void testKeyReleased() {
+        KeyEvent event = mock(KeyEvent.class);
+        treeView.keyReleased(event);
+        // No action expected
+    }
+
+    @Test
+    public void testKeyTyped() {
+        KeyEvent event = mock(KeyEvent.class);
+        treeView.keyTyped(event);
+        // No action expected
+    }
+}
+```

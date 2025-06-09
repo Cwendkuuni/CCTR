@@ -1,0 +1,105 @@
+Certainly! Below is a JUnit 4 test suite for the `InternalChatFrame` class. This suite aims to cover the main functionalities of the class, including adding and deleting users, adding text, and handling actions and mouse events.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+
+import javax.swing.text.BadLocationException;
+import javax.swing.text.StyledDocument;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+public class InternalChatFrameTest {
+
+    private InternalChatFrame chatFrame;
+    private MainFrame mockParent;
+
+    @Before
+    public void setUp() {
+        mockParent = mock(MainFrame.class);
+        when(mockParent.getSize()).thenReturn(new java.awt.Dimension(800, 600));
+        chatFrame = new InternalChatFrame(mockParent);
+    }
+
+    @Test
+    public void testAddUser() {
+        chatFrame.addUser("User1");
+        String[] users = chatFrame.getUserlist();
+        assertEquals(1, users.length);
+        assertEquals("User1", users[0]);
+    }
+
+    @Test
+    public void testDeleteUser() {
+        chatFrame.addUser("User1");
+        chatFrame.deleteUser("User1");
+        String[] users = chatFrame.getUserlist();
+        assertEquals(0, users.length);
+    }
+
+    @Test
+    public void testAddText() throws BadLocationException {
+        StyledDocument doc = chatFrame.showTxt.getStyledDocument();
+        chatFrame.addText("User1: Hello");
+        assertEquals("User1: Hello\n", doc.getText(0, doc.getLength()));
+    }
+
+    @Test
+    public void testAddTextWithStyles() throws BadLocationException {
+        StyledDocument doc = chatFrame.showTxt.getStyledDocument();
+        chatFrame.addText("User1: *Hello*");
+        assertEquals("User1: Hello\n", doc.getText(0, doc.getLength()));
+    }
+
+    @Test
+    public void testActionPerformedChooseColor() {
+        chatFrame.addUser("User1");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame, ActionEvent.ACTION_PERFORMED, "chooseColor");
+        chatFrame.actionPerformed(event);
+
+        // Verify that JColorChooser was shown
+        // Note: This test assumes user interaction, which is not possible in a headless environment.
+        // You might need to mock JColorChooser.showDialog if you want to test this in a headless environment.
+    }
+
+    @Test
+    public void testActionPerformedWhisper() {
+        chatFrame.addUser("User1");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame, ActionEvent.ACTION_PERFORMED, "whisper");
+        chatFrame.actionPerformed(event);
+        assertEquals("/w User1 ", chatFrame.txtInput.getText());
+    }
+
+    @Test
+    public void testMousePressedShowsPopup() {
+        chatFrame.addUser("User1");
+        chatFrame.list.setSelectedIndex(0);
+        MouseEvent event = new MouseEvent(chatFrame.list, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), MouseEvent.BUTTON3_MASK, 10, 10, 1, true);
+        chatFrame.mousePressed(event);
+
+        // Verify that the popup menu was shown
+        // Note: This test assumes user interaction, which is not possible in a headless environment.
+        // You might need to mock the popup menu if you want to test this in a headless environment.
+    }
+
+    @Test
+    public void testGetChatlog() {
+        chatFrame.addText("User1: Hello");
+        assertEquals("User1: Hello\n", chatFrame.getChatlog());
+    }
+}
+```
+
+### Notes:
+- **Mocking**: The `MainFrame` is mocked using Mockito to simulate the parent frame's behavior.
+- **Headless Environment**: Some tests, such as those involving `JColorChooser` or popup menus, may require additional setup or mocking to run in a headless environment.
+- **Assertions**: The tests use assertions to verify that the expected behavior matches the actual behavior of the methods.
+- **Setup**: The `setUp` method initializes the `InternalChatFrame` before each test, ensuring a clean state.

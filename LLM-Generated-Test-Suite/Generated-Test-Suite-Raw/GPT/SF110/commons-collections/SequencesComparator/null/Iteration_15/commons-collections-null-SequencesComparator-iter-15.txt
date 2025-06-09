@@ -1,0 +1,100 @@
+To create a comprehensive JUnit 4 test suite for the `SequencesComparator` class, we need to test the main functionalities provided by the class, particularly focusing on the `getScript` method, which is the primary public method. We will also need to test the constructor to ensure it initializes the object correctly. Here's a test suite that covers these aspects:
+
+```java
+import org.apache.commons.collections4.sequence.SequencesComparator;
+import org.apache.commons.collections4.sequence.EditScript;
+import org.apache.commons.collections4.sequence.KeepCommand;
+import org.apache.commons.collections4.sequence.InsertCommand;
+import org.apache.commons.collections4.sequence.DeleteCommand;
+import org.apache.commons.collections4.functors.DefaultEquator;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class SequencesComparatorTest {
+
+    private List<String> sequence1;
+    private List<String> sequence2;
+    private SequencesComparator<String> comparator;
+
+    @Before
+    public void setUp() {
+        sequence1 = Arrays.asList("a", "b", "c", "d");
+        sequence2 = Arrays.asList("a", "x", "c", "d");
+        comparator = new SequencesComparator<>(sequence1, sequence2);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull("Comparator should be initialized", comparator);
+    }
+
+    @Test
+    public void testGetScript() {
+        EditScript<String> script = comparator.getScript();
+        assertNotNull("EditScript should not be null", script);
+        assertEquals("EditScript size should be 5", 5, script.size());
+
+        assertTrue("First command should be KeepCommand", script.get(0) instanceof KeepCommand);
+        assertTrue("Second command should be DeleteCommand", script.get(1) instanceof DeleteCommand);
+        assertTrue("Third command should be InsertCommand", script.get(2) instanceof InsertCommand);
+        assertTrue("Fourth command should be KeepCommand", script.get(3) instanceof KeepCommand);
+        assertTrue("Fifth command should be KeepCommand", script.get(4) instanceof KeepCommand);
+    }
+
+    @Test
+    public void testGetScriptWithIdenticalSequences() {
+        SequencesComparator<String> identicalComparator = new SequencesComparator<>(sequence1, sequence1);
+        EditScript<String> script = identicalComparator.getScript();
+        assertNotNull("EditScript should not be null", script);
+        assertEquals("EditScript size should be 4", 4, script.size());
+
+        for (int i = 0; i < script.size(); i++) {
+            assertTrue("All commands should be KeepCommand", script.get(i) instanceof KeepCommand);
+        }
+    }
+
+    @Test
+    public void testGetScriptWithEmptySequences() {
+        SequencesComparator<String> emptyComparator = new SequencesComparator<>(Arrays.asList(), Arrays.asList());
+        EditScript<String> script = emptyComparator.getScript();
+        assertNotNull("EditScript should not be null", script);
+        assertEquals("EditScript size should be 0", 0, script.size());
+    }
+
+    @Test
+    public void testGetScriptWithOneEmptySequence() {
+        SequencesComparator<String> emptySequence1Comparator = new SequencesComparator<>(Arrays.asList(), sequence2);
+        EditScript<String> script1 = emptySequence1Comparator.getScript();
+        assertNotNull("EditScript should not be null", script1);
+        assertEquals("EditScript size should be equal to sequence2 size", sequence2.size(), script1.size());
+
+        for (int i = 0; i < script1.size(); i++) {
+            assertTrue("All commands should be InsertCommand", script1.get(i) instanceof InsertCommand);
+        }
+
+        SequencesComparator<String> emptySequence2Comparator = new SequencesComparator<>(sequence1, Arrays.asList());
+        EditScript<String> script2 = emptySequence2Comparator.getScript();
+        assertNotNull("EditScript should not be null", script2);
+        assertEquals("EditScript size should be equal to sequence1 size", sequence1.size(), script2.size());
+
+        for (int i = 0; i < script2.size(); i++) {
+            assertTrue("All commands should be DeleteCommand", script2.get(i) instanceof DeleteCommand);
+        }
+    }
+}
+```
+
+### Explanation:
+- **Test Setup**: The `setUp` method initializes two sequences and a `SequencesComparator` instance for use in the tests.
+- **Constructor Test**: Verifies that the `SequencesComparator` is initialized correctly.
+- **getScript Test**: Checks that the `getScript` method returns the correct sequence of edit commands for the given sequences.
+- **Identical Sequences Test**: Ensures that when both sequences are identical, the script consists only of `KeepCommand`.
+- **Empty Sequences Test**: Verifies behavior when both sequences are empty.
+- **One Empty Sequence Test**: Checks behavior when one sequence is empty, ensuring the script consists entirely of `InsertCommand` or `DeleteCommand` as appropriate.
+
+This test suite should provide a comprehensive check of the `SequencesComparator` class's functionality.

@@ -1,0 +1,87 @@
+```java
+package ghm.follow.gui;
+
+import ghm.follow.config.FollowAppAttributes;
+import ghm.follow.config.FileFollowingPane;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TabbedPaneTest {
+
+    private FollowAppAttributes mockAttributes;
+    private TabbedPane tabbedPane;
+
+    @Before
+    public void setUp() {
+        mockAttributes = mock(FollowAppAttributes.class);
+        tabbedPane = new TabbedPane(mockAttributes);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(tabbedPane);
+        assertEquals(mockAttributes, tabbedPane.attributes);
+    }
+
+    @Test
+    public void testFindComponentAt() {
+        // Mock components
+        JPanel panel1 = new JPanel();
+        JPanel panel2 = new JPanel();
+        tabbedPane.addTab("Tab1", panel1);
+        tabbedPane.addTab("Tab2", panel2);
+
+        // Test when coordinates are outside the component
+        assertNull(tabbedPane.findComponentAt(-1, -1));
+
+        // Test when coordinates are inside the component
+        Component comp = tabbedPane.findComponentAt(10, 10);
+        assertNotNull(comp);
+        assertTrue(comp instanceof JTabbedPane);
+    }
+
+    @Test
+    public void testSetSelectedIndex() {
+        tabbedPane.setSelectedIndex(0);
+        verify(mockAttributes, times(1)).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testSetSelectedComponent() {
+        FileFollowingPane mockPane = mock(FileFollowingPane.class);
+        when(mockPane.getFollowedFile()).thenReturn(new File("testFile"));
+
+        tabbedPane.setSelectedComponent(mockPane);
+        verify(mockAttributes, times(1)).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testRemoveTabAt() {
+        tabbedPane.removeTabAt(0);
+        verify(mockAttributes, times(1)).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testHandleSelectedFile() {
+        FileFollowingPane mockPane = mock(FileFollowingPane.class);
+        File mockFile = mock(File.class);
+        File mockParentFile = mock(File.class);
+
+        when(mockPane.getFollowedFile()).thenReturn(mockFile);
+        when(mockFile.getParentFile()).thenReturn(mockParentFile);
+
+        tabbedPane.addTab("TestTab", mockPane);
+        tabbedPane.setSelectedComponent(mockPane);
+
+        verify(mockAttributes, times(1)).setLastFileChooserDirectory(mockParentFile);
+    }
+}
+```

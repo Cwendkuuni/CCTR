@@ -1,0 +1,141 @@
+package net.sf.sugar.fspath.cli;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+
+import net.sf.sugar.fspath.FSPath;
+import net.sf.sugar.fspath.FSPathFactory;
+import net.sf.sugar.fspath.FSPathResult;
+import net.sf.sugar.fspath.FSPathResultList;
+import org.junit.Before;
+import org.junit.Test;
+
+public class FSPathExplorerTest {
+
+    private FSPathExplorer explorer;
+    private ByteArrayOutputStream outContent;
+    private ByteArrayOutputStream errContent;
+
+    @Before
+    public void setUp() {
+        outContent = new ByteArrayOutputStream();
+        errContent = new ByteArrayOutputStream();
+        explorer = new FSPathExplorer();
+        explorer.out = new PrintStream(outContent);
+        explorer.err = new PrintStream(errContent);
+    }
+
+    @Test
+    public void testShowWelcome() {
+        FSPathExplorer.showWelcome();
+        String output = outContent.toString();
+        assertTrue(output.contains("FSPathExplorer"));
+        assertTrue(output.contains("Type 'help' for commands..."));
+    }
+
+    @Test
+    public void testShowHelp() {
+        FSPathExplorer.showHelp();
+        String output = outContent.toString();
+        assertTrue(output.contains("FSPathExplorer help :"));
+        assertTrue(output.contains("Examples :"));
+        assertTrue(output.contains("Attributes :"));
+        assertTrue(output.contains("Commands :"));
+    }
+
+    @Test
+    public void testConfigureExplorerWithPathAndQuery() {
+        String[] args = {"-path", "/some/path", "-find", "//dir[@name='foo']"};
+        explorer.configureExplorer(args);
+        assertEquals(new File("/some/path"), explorer.rootPath);
+        assertEquals("//dir[@name='foo']", explorer.fsPathQuery);
+    }
+
+    @Test
+    public void testConfigureExplorerWithOnlyQuery() {
+        String[] args = {"-find", "//dir[@name='foo']"};
+        explorer.configureExplorer(args);
+        assertNull(explorer.rootPath);
+        assertEquals("//dir[@name='foo']", explorer.fsPathQuery);
+    }
+
+    @Test
+    public void testCreateFSPathWithRootPath() {
+        explorer.rootPath = new File("/some/path");
+        explorer.createFSPath();
+        assertNotNull(explorer.fsPath);
+        assertEquals(explorer.rootPath, explorer.fsPath.getRootDirectory());
+    }
+
+    @Test
+    public void testCreateFSPathWithoutRootPath() {
+        explorer.createFSPath();
+        assertNotNull(explorer.fsPath);
+    }
+
+    @Test
+    public void testStartWithExitCommand() throws Exception {
+        String input = "exit\n";
+        explorer.prompt = new Prompt(new ByteArrayInputStream(input.getBytes()), explorer.out, explorer.err);
+        explorer.start();
+        String output = outContent.toString();
+        assertTrue(output.contains("exiting....."));
+    }
+
+    @Test
+    public void testStartWithPwdCommand() throws Exception {
+        explorer.fsPath = FSPathFactory.newFSPath(new File("/some/path"));
+        String input = "pwd\nexit\n";
+        explorer.prompt = new Prompt(new ByteArrayInputStream(input.getBytes()), explorer.out, explorer.err);
+        explorer.start();
+        String output = outContent.toString();
+        assertTrue(output.contains("Current directory : /some/path"));
+    }
+
+    @Test
+    public void testStartWithCdCommand() throws Exception {
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(true);
+        when(mockDir.isDirectory()).thenReturn(true);
+        when(mockDir.canRead()).thenReturn(true);
+        when(mockDir.getAbsolutePath()).thenReturn("/new/path");
+
+        explorer.fsPath = FSPathFactory.newFSPath(new File("/some/path"));
+        String input = "cd /new/path\nexit\n";
+        explorer.prompt = new Prompt(new ByteArrayInputStream(input.getBytes()), explorer.out, explorer.err);
+        explorer.start();
+        String output = outContent.toString();
+        assertTrue(output.contains("changed to : /new/path"));
+    }
+
+    @Test
+    public void testStartWithHelpCommand() throws Exception {
+        String input = "help\nexit\n";
+        explorer.prompt = new Prompt(new ByteArrayInputStream(input.getBytes()), explorer.out, explorer.err);
+        explorer.start();
+        String output = outContent.toString();
+        assertTrue(output.contains("FSPathExplorer help :"));
+    }
+
+    @Test
+    public void testStartWithFSPathQuery() throws Exception {
+        FSPathResultList mockResults = mock(FSPathResultList.class);
+        FSPathResult mockResult = mock(FSPathResult.class);
+        when(mockResult.getFile()).thenReturn(new File("/some/path/file.txt"));
+        when(mockResults.iterator()).thenReturn(java.util.Collections.singletonList(mockResult).iterator());
+
+        explorer.fsPath = mock(FSPath.class);
+        when(explorer.fsPath.query(anyString())).thenReturn(mockResults);
+
+        String input = "//dir[@name='foo']\nexit\n";
+        explorer.prompt = new Prompt(new ByteArrayInputStream(input.getBytes()), explorer.out, explorer.err);
+        explorer.start();
+        String output = outContent.toString();
+        assertTrue(output.contains("/some/path/file.txt"));
+    }
+}

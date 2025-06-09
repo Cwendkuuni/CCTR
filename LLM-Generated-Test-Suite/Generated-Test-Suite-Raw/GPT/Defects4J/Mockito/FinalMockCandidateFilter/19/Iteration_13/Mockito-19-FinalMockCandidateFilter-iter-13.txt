@@ -1,0 +1,92 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.exceptions.Reporter;
+import org.mockito.internal.configuration.injection.filter.FinalMockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.OngoingInjecter;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collection;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class FinalMockCandidateFilterTest {
+
+    private MockCandidateFilter filter;
+    private Collection<Object> mocks;
+    private Field field;
+    private Object fieldInstance;
+
+    @Before
+    public void setUp() throws NoSuchFieldException {
+        filter = new FinalMockCandidateFilter();
+        mocks = new ArrayList<>();
+        fieldInstance = new TestClass();
+        field = TestClass.class.getDeclaredField("mockField");
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMock() {
+        Object mockObject = new Object();
+        mocks.add(mockObject);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        assertNotNull(injecter);
+
+        Object result = injecter.thenInject();
+        assertEquals(mockObject, result);
+    }
+
+    @Test
+    public void testFilterCandidateWithNoMocks() {
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        assertNotNull(injecter);
+
+        Object result = injecter.thenInject();
+        assertNull(result);
+    }
+
+    @Test
+    public void testFilterCandidateWithMultipleMocks() {
+        mocks.add(new Object());
+        mocks.add(new Object());
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        assertNotNull(injecter);
+
+        Object result = injecter.thenInject();
+        assertNull(result);
+    }
+
+    @Test
+    public void testFilterCandidateInjectionFailure() throws NoSuchFieldException {
+        field = TestClass.class.getDeclaredField("finalField");
+        Object mockObject = new Object();
+        mocks.add(mockObject);
+
+        Reporter reporter = mock(Reporter.class);
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        assertNotNull(injecter);
+
+        try {
+            injecter.thenInject();
+        } catch (RuntimeException e) {
+            verify(reporter).cannotInjectDependency(field, mockObject, e);
+        }
+    }
+
+    private static class TestClass {
+        private Object mockField;
+        private final Object finalField = null;
+    }
+}
+```
+
+This test suite covers the following scenarios:
+- A single mock object is present in the collection.
+- No mock objects are present in the collection.
+- Multiple mock objects are present in the collection.
+- Injection failure due to a final field, which should trigger the `Reporter` to log an error.

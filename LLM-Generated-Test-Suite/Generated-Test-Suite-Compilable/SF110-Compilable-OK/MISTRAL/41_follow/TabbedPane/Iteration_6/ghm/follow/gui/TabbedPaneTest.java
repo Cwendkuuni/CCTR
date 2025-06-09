@@ -1,0 +1,98 @@
+package ghm.follow.gui;
+
+import ghm.follow.config.FollowAppAttributes;
+import ghm.follow.gui.FileFollowingPane;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class TabbedPaneTest {
+
+    @Mock
+    private FollowAppAttributes attributes;
+
+    @Mock
+    private FileFollowingPane fileFollowingPane;
+
+    @Mock
+    private File file;
+
+    private TabbedPane tabbedPane;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        tabbedPane = new TabbedPane(attributes);
+    }
+
+    @Test
+    public void testFindComponentAt() {
+        // Mock components
+        JPanel panel1 = new JPanel();
+        JPanel panel2 = new JPanel();
+        tabbedPane.addTab("Tab1", panel1);
+        tabbedPane.addTab("Tab2", panel2);
+
+        // Test when component is found
+        panel1.setBounds(0, 0, 100, 100);
+        Component comp = tabbedPane.findComponentAt(50, 50);
+        assertEquals(panel1, comp);
+
+        // Test when component is not found
+        comp = tabbedPane.findComponentAt(150, 150);
+        assertNull(comp);
+    }
+
+    @Test
+    public void testSetSelectedIndex() {
+        tabbedPane.addTab("Tab1", new JPanel());
+        tabbedPane.addTab("Tab2", new JPanel());
+
+        tabbedPane.setSelectedIndex(1);
+        assertEquals(1, tabbedPane.getSelectedIndex());
+        verify(attributes).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testSetSelectedComponent() {
+        when(fileFollowingPane.getFollowedFile()).thenReturn(file);
+        when(file.getParentFile()).thenReturn(new File("parentDir"));
+
+        tabbedPane.setSelectedComponent(fileFollowingPane);
+        assertEquals(fileFollowingPane, tabbedPane.getSelectedComponent());
+        verify(attributes).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testRemoveTabAt() {
+        tabbedPane.addTab("Tab1", new JPanel());
+        tabbedPane.addTab("Tab2", new JPanel());
+
+        tabbedPane.removeTabAt(1);
+        assertEquals(1, tabbedPane.getTabCount());
+        verify(attributes).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testHandleSelectedFile() {
+        when(fileFollowingPane.getFollowedFile()).thenReturn(file);
+        when(file.getParentFile()).thenReturn(new File("parentDir"));
+
+        tabbedPane.addTab("Tab1", fileFollowingPane);
+        tabbedPane.setSelectedComponent(fileFollowingPane);
+
+        tabbedPane.handleSelectedFile();
+        verify(attributes).setLastFileChooserDirectory(any(File.class));
+    }
+}

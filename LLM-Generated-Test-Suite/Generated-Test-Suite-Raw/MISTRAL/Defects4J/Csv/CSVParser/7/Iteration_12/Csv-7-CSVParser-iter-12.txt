@@ -1,0 +1,149 @@
+```java
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class CSVParserTest {
+
+    private CSVParser parser;
+    private static final String CSV_STRING = "name,age\nJohn,30\nJane,25";
+    private static final String CSV_FILE_PATH = "test.csv";
+    private static final String CSV_URL = "http://example.com/test.csv";
+
+    @Before
+    public void setUp() throws IOException {
+        // Create a temporary CSV file for testing
+        File csvFile = new File(CSV_FILE_PATH);
+        csvFile.createNewFile();
+        // Write CSV content to the file
+        // (This part is omitted for brevity; in a real test, you would write the CSV content to the file)
+    }
+
+    @After
+    public void tearDown() {
+        // Delete the temporary CSV file
+        File csvFile = new File(CSV_FILE_PATH);
+        if (csvFile.exists()) {
+            csvFile.delete();
+        }
+    }
+
+    @Test
+    public void testParseFile() throws IOException {
+        File csvFile = new File(CSV_FILE_PATH);
+        parser = CSVParser.parse(csvFile, CSVFormat.DEFAULT);
+        assertNotNull(parser);
+        List<CSVRecord> records = parser.getRecords();
+        assertEquals(2, records.size());
+        parser.close();
+    }
+
+    @Test
+    public void testParseString() throws IOException {
+        parser = CSVParser.parse(CSV_STRING, CSVFormat.DEFAULT);
+        assertNotNull(parser);
+        List<CSVRecord> records = parser.getRecords();
+        assertEquals(2, records.size());
+        parser.close();
+    }
+
+    @Test
+    public void testParseURL() throws IOException {
+        URL url = new URL(CSV_URL);
+        parser = CSVParser.parse(url, StandardCharsets.UTF_8, CSVFormat.DEFAULT);
+        assertNotNull(parser);
+        List<CSVRecord> records = parser.getRecords();
+        assertEquals(2, records.size());
+        parser.close();
+    }
+
+    @Test
+    public void testGetCurrentLineNumber() throws IOException {
+        parser = CSVParser.parse(CSV_STRING, CSVFormat.DEFAULT);
+        assertEquals(1, parser.getCurrentLineNumber());
+        parser.nextRecord();
+        assertEquals(2, parser.getCurrentLineNumber());
+        parser.close();
+    }
+
+    @Test
+    public void testGetHeaderMap() throws IOException {
+        parser = CSVParser.parse(CSV_STRING, CSVFormat.DEFAULT.withFirstRecordAsHeader());
+        Map<String, Integer> headerMap = parser.getHeaderMap();
+        assertNotNull(headerMap);
+        assertEquals(2, headerMap.size());
+        assertEquals(Integer.valueOf(0), headerMap.get("name"));
+        assertEquals(Integer.valueOf(1), headerMap.get("age"));
+        parser.close();
+    }
+
+    @Test
+    public void testGetRecordNumber() throws IOException {
+        parser = CSVParser.parse(CSV_STRING, CSVFormat.DEFAULT);
+        assertEquals(0, parser.getRecordNumber());
+        parser.nextRecord();
+        assertEquals(1, parser.getRecordNumber());
+        parser.close();
+    }
+
+    @Test
+    public void testGetRecords() throws IOException {
+        parser = CSVParser.parse(CSV_STRING, CSVFormat.DEFAULT);
+        List<CSVRecord> records = parser.getRecords();
+        assertEquals(2, records.size());
+        parser.close();
+    }
+
+    @Test
+    public void testIterator() throws IOException {
+        parser = CSVParser.parse(CSV_STRING, CSVFormat.DEFAULT);
+        Iterator<CSVRecord> iterator = parser.iterator();
+        assertTrue(iterator.hasNext());
+        CSVRecord record = iterator.next();
+        assertNotNull(record);
+        assertTrue(iterator.hasNext());
+        record = iterator.next();
+        assertNotNull(record);
+        assertFalse(iterator.hasNext());
+        parser.close();
+    }
+
+    @Test
+    public void testNextRecord() throws IOException {
+        parser = CSVParser.parse(CSV_STRING, CSVFormat.DEFAULT);
+        CSVRecord record = parser.nextRecord();
+        assertNotNull(record);
+        assertEquals("John", record.get(0));
+        assertEquals("30", record.get(1));
+        record = parser.nextRecord();
+        assertNotNull(record);
+        assertEquals("Jane", record.get(0));
+        assertEquals("25", record.get(1));
+        assertNull(parser.nextRecord());
+        parser.close();
+    }
+
+    @Test(expected = IOException.class)
+    public void testInvalidParseSequence() throws IOException {
+        String invalidCSV = "name,age\nJohn,30\nJane,25\nInvalid";
+        parser = CSVParser.parse(invalidCSV, CSVFormat.DEFAULT);
+        while (parser.nextRecord() != null) {
+            // Do nothing
+        }
+        parser.close();
+    }
+}
+```

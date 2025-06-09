@@ -1,0 +1,113 @@
+To create a comprehensive JUnit 4 test suite for the `LagoonCLI` class, we need to consider testing the `main`, `getProperty`, and `showTime` methods. Since `main` is a static method that interacts with the system environment (e.g., reading files, printing to the console), testing it will require some setup to capture console output and simulate file input. The `getProperty` and `showTime` methods are more straightforward to test.
+
+Here's a JUnit 4 test suite for the `LagoonCLI` class:
+
+```java
+import nu.staldal.lagoon.LagoonCLI;
+import nu.staldal.lagoon.core.LagoonException;
+import org.junit.*;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
+
+import java.io.*;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
+
+public class LagoonCLITest {
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
+
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+
+    @Before
+    public void setUp() {
+        // Reset properties before each test
+        LagoonCLI.properties = new Properties();
+    }
+
+    @Test
+    public void testMainNoArguments() {
+        LagoonCLI.main(new String[]{});
+        assertTrue(systemOutRule.getLog().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainInvalidInterval() {
+        LagoonCLI.main(new String[]{"somefile.xml", "invalid"});
+        assertTrue(systemOutRule.getLog().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainValidInterval() {
+        exit.expectSystemExitWithStatus(0);
+        LagoonCLI.main(new String[]{"somefile.xml", "10"});
+        assertTrue(systemOutRule.getLog().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testMainBuild() {
+        exit.expectSystemExitWithStatus(0);
+        LagoonCLI.main(new String[]{"somefile.xml", "build"});
+        assertTrue(systemOutRule.getLog().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testMainForce() {
+        exit.expectSystemExitWithStatus(0);
+        LagoonCLI.main(new String[]{"somefile.xml", "force"});
+        assertTrue(systemOutRule.getLog().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testGetProperty() throws LagoonException {
+        LagoonCLI.properties.setProperty("testKey", "testValue");
+        assertEquals("testValue", LagoonCLI.getProperty("testKey"));
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyThrowsException() throws LagoonException {
+        LagoonCLI.getProperty("nonExistentKey");
+    }
+
+    @Test
+    public void testShowTimeMilliseconds() {
+        LagoonCLI.showTime(5000);
+        assertTrue(systemOutRule.getLog().contains("in 5000 ms"));
+    }
+
+    @Test
+    public void testShowTimeSeconds() {
+        LagoonCLI.showTime(15000);
+        assertTrue(systemOutRule.getLog().contains("in 15 s"));
+    }
+}
+```
+
+### Explanation:
+
+1. **System Rules**: We use `SystemOutRule` and `SystemErrRule` to capture console output for assertions. `ExpectedSystemExit` is used to handle and test for system exits.
+
+2. **Test Setup**: The `setUp` method resets the `properties` before each test to ensure a clean state.
+
+3. **Testing `main` Method**:
+   - **No Arguments**: Tests the behavior when no arguments are provided.
+   - **Invalid Interval**: Tests the behavior when an invalid interval is provided.
+   - **Valid Interval**: Tests the behavior when a valid interval is provided.
+   - **Build and Force**: Tests the behavior when "build" or "force" is provided as an argument.
+
+4. **Testing `getProperty` Method**:
+   - **Valid Property**: Tests retrieving a valid property.
+   - **Exception**: Tests that an exception is thrown when a property is not found.
+
+5. **Testing `showTime` Method**:
+   - **Milliseconds**: Tests the output when the time is less than 10 seconds.
+   - **Seconds**: Tests the output when the time is 10 seconds or more.
+
+This test suite covers the main functionalities of the `LagoonCLI` class. Note that testing the `main` method's full functionality might require more complex setups, such as mocking file inputs and outputs, which are not fully covered here.

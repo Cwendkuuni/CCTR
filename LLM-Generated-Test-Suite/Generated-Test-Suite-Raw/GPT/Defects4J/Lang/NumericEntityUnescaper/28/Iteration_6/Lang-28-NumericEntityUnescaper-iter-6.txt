@@ -1,0 +1,115 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `NumericEntityUnescaper` class. This suite includes tests for various scenarios, including valid and invalid numeric entities, both decimal and hexadecimal.
+
+```java
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
+
+import java.io.IOException;
+import java.io.StringWriter;
+
+import org.apache.commons.lang3.text.translate.NumericEntityUnescaper;
+import org.junit.Before;
+import org.junit.Test;
+
+public class NumericEntityUnescaperTest {
+
+    private NumericEntityUnescaper unescaper;
+
+    @Before
+    public void setUp() {
+        unescaper = new NumericEntityUnescaper();
+    }
+
+    @Test
+    public void testDecimalEntity() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaper.translate("&#65;", 0, writer);
+        assertEquals(5, result);
+        assertEquals("A", writer.toString());
+    }
+
+    @Test
+    public void testHexEntityLowerCase() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaper.translate("&#x41;", 0, writer);
+        assertEquals(6, result);
+        assertEquals("A", writer.toString());
+    }
+
+    @Test
+    public void testHexEntityUpperCase() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaper.translate("&#X41;", 0, writer);
+        assertEquals(6, result);
+        assertEquals("A", writer.toString());
+    }
+
+    @Test
+    public void testInvalidEntityMissingSemicolon() {
+        StringWriter writer = new StringWriter();
+        try {
+            unescaper.translate("&#65", 0, writer);
+            fail("Expected IOException due to missing semicolon");
+        } catch (IOException e) {
+            // Expected exception
+        }
+    }
+
+    @Test
+    public void testInvalidEntityNonNumeric() {
+        StringWriter writer = new StringWriter();
+        try {
+            unescaper.translate("&#abc;", 0, writer);
+            fail("Expected IOException due to non-numeric entity");
+        } catch (IOException e) {
+            // Expected exception
+        }
+    }
+
+    @Test
+    public void testNonEntity() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaper.translate("A", 0, writer);
+        assertEquals(0, result);
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testEntityAtEnd() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaper.translate("Test &#65;", 5, writer);
+        assertEquals(5, result);
+        assertEquals("A", writer.toString());
+    }
+
+    @Test
+    public void testEntityWithLeadingText() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaper.translate("Test &#65;", 0, writer);
+        assertEquals(0, result);
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testMultipleEntities() throws IOException {
+        StringWriter writer = new StringWriter();
+        String input = "&#65;&#66;&#67;";
+        int index = 0;
+        while (index < input.length()) {
+            index += unescaper.translate(input, index, writer);
+        }
+        assertEquals("ABC", writer.toString());
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes the `NumericEntityUnescaper` instance before each test.
+- **Tests**:
+  - `testDecimalEntity`, `testHexEntityLowerCase`, and `testHexEntityUpperCase` test valid decimal and hexadecimal entities.
+  - `testInvalidEntityMissingSemicolon` and `testInvalidEntityNonNumeric` test invalid entities.
+  - `testNonEntity` ensures non-entity strings are not altered.
+  - `testEntityAtEnd` and `testEntityWithLeadingText` test entities at different positions in the string.
+  - `testMultipleEntities` tests the handling of multiple consecutive entities.
+
+This suite aims to cover a wide range of scenarios to ensure the `NumericEntityUnescaper` class functions correctly.

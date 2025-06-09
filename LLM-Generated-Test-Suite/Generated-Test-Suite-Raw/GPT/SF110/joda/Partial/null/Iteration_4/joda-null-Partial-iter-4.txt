@@ -1,0 +1,203 @@
+To create a comprehensive JUnit 4 test suite for the `Partial` class, we need to cover all the methods and constructors. Below is a test suite that aims to test the functionality of the `Partial` class. Note that this is a basic test suite and may need to be expanded with more edge cases and scenarios depending on the specific requirements and context of use.
+
+```java
+import org.joda.time.*;
+import org.joda.time.format.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+
+public class PartialTest {
+
+    @Test
+    public void testDefaultConstructor() {
+        Partial partial = new Partial();
+        assertEquals(0, partial.size());
+        assertNotNull(partial.getChronology());
+    }
+
+    @Test
+    public void testConstructorWithChronology() {
+        Chronology chronology = ISOChronology.getInstanceUTC();
+        Partial partial = new Partial(chronology);
+        assertEquals(0, partial.size());
+        assertEquals(chronology, partial.getChronology());
+    }
+
+    @Test
+    public void testConstructorWithFieldTypeAndValue() {
+        DateTimeFieldType fieldType = DateTimeFieldType.year();
+        int value = 2023;
+        Partial partial = new Partial(fieldType, value);
+        assertEquals(1, partial.size());
+        assertEquals(fieldType, partial.getFieldType(0));
+        assertEquals(value, partial.getValue(0));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithNullFieldType() {
+        new Partial(null, 2023);
+    }
+
+    @Test
+    public void testConstructorWithFieldTypeValueAndChronology() {
+        DateTimeFieldType fieldType = DateTimeFieldType.year();
+        int value = 2023;
+        Chronology chronology = ISOChronology.getInstanceUTC();
+        Partial partial = new Partial(fieldType, value, chronology);
+        assertEquals(1, partial.size());
+        assertEquals(fieldType, partial.getFieldType(0));
+        assertEquals(value, partial.getValue(0));
+        assertEquals(chronology, partial.getChronology());
+    }
+
+    @Test
+    public void testConstructorWithFieldTypesAndValues() {
+        DateTimeFieldType[] fieldTypes = { DateTimeFieldType.year(), DateTimeFieldType.monthOfYear() };
+        int[] values = { 2023, 10 };
+        Partial partial = new Partial(fieldTypes, values);
+        assertEquals(2, partial.size());
+        assertArrayEquals(fieldTypes, partial.getFieldTypes());
+        assertArrayEquals(values, partial.getValues());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithNullFieldTypes() {
+        new Partial(null, new int[]{2023});
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithNullValues() {
+        new Partial(new DateTimeFieldType[]{DateTimeFieldType.year()}, null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithMismatchedFieldTypesAndValues() {
+        new Partial(new DateTimeFieldType[]{DateTimeFieldType.year()}, new int[]{2023, 10});
+    }
+
+    @Test
+    public void testWithChronologyRetainFields() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        Chronology newChronology = ISOChronology.getInstance();
+        Partial newPartial = partial.withChronologyRetainFields(newChronology);
+        assertEquals(partial.size(), newPartial.size());
+        assertEquals(newChronology, newPartial.getChronology());
+    }
+
+    @Test
+    public void testWith() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        Partial newPartial = partial.with(DateTimeFieldType.monthOfYear(), 10);
+        assertEquals(2, newPartial.size());
+        assertEquals(2023, newPartial.getValue(0));
+        assertEquals(10, newPartial.getValue(1));
+    }
+
+    @Test
+    public void testWithout() {
+        Partial partial = new Partial(new DateTimeFieldType[]{DateTimeFieldType.year(), DateTimeFieldType.monthOfYear()}, new int[]{2023, 10});
+        Partial newPartial = partial.without(DateTimeFieldType.monthOfYear());
+        assertEquals(1, newPartial.size());
+        assertEquals(2023, newPartial.getValue(0));
+    }
+
+    @Test
+    public void testWithField() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        Partial newPartial = partial.withField(DateTimeFieldType.year(), 2024);
+        assertEquals(1, newPartial.size());
+        assertEquals(2024, newPartial.getValue(0));
+    }
+
+    @Test
+    public void testWithFieldAdded() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        Partial newPartial = partial.withFieldAdded(DurationFieldType.years(), 1);
+        assertEquals(1, newPartial.size());
+        assertEquals(2024, newPartial.getValue(0));
+    }
+
+    @Test
+    public void testWithFieldAddWrapped() {
+        Partial partial = new Partial(DateTimeFieldType.monthOfYear(), 12);
+        Partial newPartial = partial.withFieldAddWrapped(DurationFieldType.months(), 1);
+        assertEquals(1, newPartial.size());
+        assertEquals(1, newPartial.getValue(0));
+    }
+
+    @Test
+    public void testWithPeriodAdded() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        Period period = Period.years(1);
+        Partial newPartial = partial.withPeriodAdded(period, 1);
+        assertEquals(1, newPartial.size());
+        assertEquals(2024, newPartial.getValue(0));
+    }
+
+    @Test
+    public void testPlus() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        Period period = Period.years(1);
+        Partial newPartial = partial.plus(period);
+        assertEquals(1, newPartial.size());
+        assertEquals(2024, newPartial.getValue(0));
+    }
+
+    @Test
+    public void testMinus() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        Period period = Period.years(1);
+        Partial newPartial = partial.minus(period);
+        assertEquals(1, newPartial.size());
+        assertEquals(2022, newPartial.getValue(0));
+    }
+
+    @Test
+    public void testProperty() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        Partial.Property property = partial.property(DateTimeFieldType.year());
+        assertEquals(2023, property.get());
+    }
+
+    @Test
+    public void testIsMatchReadableInstant() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        DateTime dateTime = new DateTime(2023, 1, 1, 0, 0);
+        assertTrue(partial.isMatch(dateTime));
+    }
+
+    @Test
+    public void testIsMatchReadablePartial() {
+        Partial partial1 = new Partial(DateTimeFieldType.year(), 2023);
+        Partial partial2 = new Partial(DateTimeFieldType.year(), 2023);
+        assertTrue(partial1.isMatch(partial2));
+    }
+
+    @Test
+    public void testGetFormatter() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        DateTimeFormatter formatter = partial.getFormatter();
+        assertNotNull(formatter);
+    }
+
+    @Test
+    public void testToString() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        assertEquals("[year=2023]", partial.toString());
+    }
+
+    @Test
+    public void testToStringWithPattern() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        assertEquals("2023", partial.toString("yyyy"));
+    }
+
+    @Test
+    public void testToStringWithPatternAndLocale() {
+        Partial partial = new Partial(DateTimeFieldType.year(), 2023);
+        assertEquals("2023", partial.toString("yyyy", Locale.US));
+    }
+}
+```
+
+This test suite covers the constructors, methods, and some edge cases for the `Partial` class. You may need to add more tests for specific scenarios or edge cases that are relevant to your application.

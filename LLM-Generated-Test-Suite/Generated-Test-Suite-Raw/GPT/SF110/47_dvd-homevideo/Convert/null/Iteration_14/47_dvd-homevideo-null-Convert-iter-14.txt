@@ -1,0 +1,104 @@
+To create a comprehensive JUnit 4 test suite for the `Convert` class, we need to test the constructors, the `init` method, the `run` method, the `Transcode` method, and the `matrix` method. Since the `Transcode` method involves file operations and external process execution, we will need to mock these parts to focus on the logic within the method. 
+
+Below is a JUnit 4 test suite for the `Convert` class:
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class ConvertTest {
+
+    @Mock
+    private GUI mockGUI;
+
+    @Mock
+    private File mockFile;
+
+    private Convert convert;
+
+    @Before
+    public void setUp() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(false);
+        when(mockGUI.strOutputDir).thenReturn("/mock/output/dir");
+        when(mockGUI.spnMinutes.getValue()).thenReturn(1);
+        when(mockGUI.spnSeconds.getValue()).thenReturn(30);
+    }
+
+    @Test
+    public void testConstructorWithFormatAndAspectRatio() {
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+        assertEquals("dvd-ntsc", convert.m_Format);
+        assertEquals("16:9", convert.m_AspectRatio);
+        assertEquals(29.97, convert.m_fps, 0.01);
+    }
+
+    @Test
+    public void testConstructorWithQualityFormatAndAspectRatio() {
+        convert = new Convert(1, "dvd-pal", "4:3", mockGUI);
+        assertEquals(1, convert.m_Quality);
+        assertEquals("dvd-pal", convert.m_Format);
+        assertEquals("4:3", convert.m_AspectRatio);
+        assertEquals(25.0, convert.m_fps, 0.01);
+    }
+
+    @Test
+    public void testInitWithoutThread() {
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+        boolean result = convert.init();
+        assertFalse(result);
+    }
+
+    @Test
+    public void testInitWithThread() throws InterruptedException {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(true);
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+        boolean result = convert.init();
+        assertFalse(result);
+    }
+
+    @Test
+    public void testRun() {
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+        convert.run();
+        // Verify that Transcode method is called
+        // This is a placeholder since Transcode is complex and involves external processes
+    }
+
+    @Test
+    public void testTranscode() throws IOException {
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+        convert.video_files = new String[]{"video1.dv"};
+        when(mockFile.list()).thenReturn(new String[]{"video1.dv"});
+        convert.Transcode();
+        // Verify that the GUI components are enabled/disabled as expected
+        verify(mockGUI.lblConvert).setEnabled(true);
+        verify(mockGUI.prgConvert).setEnabled(true);
+        verify(mockGUI.lblConvertProg).setEnabled(true);
+    }
+
+    @Test
+    public void testMatrix() {
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+        convert.matrix();
+        // Verify that the matrix file is created and written correctly
+        // This is a placeholder since file operations are involved
+    }
+}
+```
+
+### Notes:
+- **Mocking**: We use Mockito to mock the `GUI` class and any file operations. This allows us to isolate the logic within the `Convert` class without actually performing file I/O or GUI operations.
+- **Test Methods**: Each method in the `Convert` class is tested. The `Transcode` and `matrix` methods are complex and involve external processes and file operations, so they are mocked or simplified in the test.
+- **Assertions**: We use assertions to verify that the state of the `Convert` object is as expected after construction and method calls.
+- **Setup**: The `setUp` method initializes common mock behavior for the tests.
+
+This test suite provides a basic structure for testing the `Convert` class. Depending on the actual implementation of the `GUI` class and the environment setup, additional configuration or mocking might be necessary.

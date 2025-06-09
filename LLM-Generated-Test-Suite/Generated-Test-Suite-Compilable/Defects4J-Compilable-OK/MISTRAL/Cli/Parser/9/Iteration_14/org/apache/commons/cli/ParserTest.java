@@ -1,0 +1,116 @@
+package org.apache.commons.cli;
+
+import org.apache.commons.cli.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.Properties;
+
+public class ParserTest {
+
+    private Parser parser;
+    private Options options;
+
+    @Before
+    public void setUp() {
+        parser = new Parser() {
+            @Override
+            protected String[] flatten(Options opts, String[] arguments, boolean stopAtNonOption) {
+                return arguments;
+            }
+        };
+        options = new Options();
+    }
+
+    @Test
+    public void testSetOptions() {
+        parser.setOptions(options);
+        assertEquals(options, parser.getOptions());
+    }
+
+    @Test
+    public void testGetOptions() {
+        parser.setOptions(options);
+        assertEquals(options, parser.getOptions());
+    }
+
+    @Test
+    public void testGetRequiredOptions() {
+        Option option = new Option("t", "test", true, "test option");
+        option.setRequired(true);
+        options.addOption(option);
+        parser.setOptions(options);
+        assertEquals(1, parser.getRequiredOptions().size());
+    }
+
+    @Test
+    public void testParse() throws ParseException {
+        Option option = new Option("t", "test", true, "test option");
+        options.addOption(option);
+        String[] args = {"-t", "value"};
+        CommandLine cmd = parser.parse(options, args);
+        assertTrue(cmd.hasOption("t"));
+        assertEquals("value", cmd.getOptionValue("t"));
+    }
+
+    @Test
+    public void testParseWithProperties() throws ParseException {
+        Option option = new Option("t", "test", true, "test option");
+        options.addOption(option);
+        String[] args = {"-t", "value"};
+        Properties properties = new Properties();
+        properties.setProperty("t", "valueFromProperties");
+        CommandLine cmd = parser.parse(options, args, properties);
+        assertTrue(cmd.hasOption("t"));
+        assertEquals("valueFromProperties", cmd.getOptionValue("t"));
+    }
+
+    @Test
+    public void testParseWithStopAtNonOption() throws ParseException {
+        Option option = new Option("t", "test", true, "test option");
+        options.addOption(option);
+        String[] args = {"-t", "value", "nonOption"};
+        CommandLine cmd = parser.parse(options, args, true);
+        assertTrue(cmd.hasOption("t"));
+        assertEquals("value", cmd.getOptionValue("t"));
+        assertEquals(1, cmd.getArgList().size());
+        assertEquals("nonOption", cmd.getArgList().get(0));
+    }
+
+    @Test
+    public void testParseWithPropertiesAndStopAtNonOption() throws ParseException {
+        Option option = new Option("t", "test", true, "test option");
+        options.addOption(option);
+        String[] args = {"-t", "value", "nonOption"};
+        Properties properties = new Properties();
+        properties.setProperty("t", "valueFromProperties");
+        CommandLine cmd = parser.parse(options, args, properties, true);
+        assertTrue(cmd.hasOption("t"));
+        assertEquals("valueFromProperties", cmd.getOptionValue("t"));
+        assertEquals(1, cmd.getArgList().size());
+        assertEquals("nonOption", cmd.getArgList().get(0));
+    }
+
+    @Test(expected = MissingOptionException.class)
+    public void testCheckRequiredOptions() throws ParseException {
+        Option option = new Option("t", "test", true, "test option");
+        option.setRequired(true);
+        options.addOption(option);
+        String[] args = {};
+        parser.parse(options, args);
+    }
+
+    @Test(expected = MissingArgumentException.class)
+    public void testProcessArgs() throws ParseException {
+        Option option = new Option("t", "test", true, "test option");
+        options.addOption(option);
+        String[] args = {"-t"};
+        CommandLine cmd = parser.parse(options, args);
+    }
+
+    @Test(expected = UnrecognizedOptionException.class)
+    public void testProcessOption() throws ParseException {
+        String[] args = {"-u"};
+        parser.parse(options, args);
+    }
+}

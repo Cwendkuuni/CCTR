@@ -1,0 +1,75 @@
+Certainly! Below is a JUnit 4 test suite designed to test the `MP3` class. This test suite will focus on testing the constructor and the `run` method. Since the `run` method involves file I/O and audio processing, the tests will be limited to checking if the methods can be invoked without exceptions and verifying the behavior with mock objects.
+
+```java
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
+import org.mockito.*;
+
+import javax.sound.sampled.*;
+import java.io.*;
+
+import static org.mockito.Mockito.*;
+
+public class MP3Test {
+
+    @Rule
+    public TemporaryFolder folder = new TemporaryFolder();
+
+    @Test
+    public void testConstructor() {
+        // Test that the constructor initializes the filename correctly
+        String testFilename = "test.mp3";
+        MP3 mp3 = new MP3(testFilename);
+        Assert.assertEquals(testFilename, mp3.filename);
+    }
+
+    @Test
+    public void testRunMethodWithValidFile() throws Exception {
+        // Create a temporary file to simulate an MP3 file
+        File tempFile = folder.newFile("test.mp3");
+
+        // Mock AudioSystem and related classes
+        AudioInputStream mockAudioInputStream = mock(AudioInputStream.class);
+        SourceDataLine mockLine = mock(SourceDataLine.class);
+
+        when(AudioSystem.getAudioInputStream(tempFile)).thenReturn(mockAudioInputStream);
+        when(mockAudioInputStream.getFormat()).thenReturn(new AudioFormat(44100, 16, 2, true, false));
+        when(AudioSystem.getLine(any(DataLine.Info.class))).thenReturn(mockLine);
+
+        // Create an instance of MP3 with the temporary file
+        MP3 mp3 = new MP3(tempFile.getAbsolutePath());
+
+        // Run the method
+        mp3.run();
+
+        // Verify that the line was opened, started, and closed
+        verify(mockLine).open(any(AudioFormat.class));
+        verify(mockLine).start();
+        verify(mockLine).drain();
+        verify(mockLine).stop();
+        verify(mockLine).close();
+    }
+
+    @Test
+    public void testRunMethodWithInvalidFile() {
+        // Create an instance of MP3 with a non-existent file
+        MP3 mp3 = new MP3("non_existent_file.mp3");
+
+        // Run the method
+        mp3.run();
+
+        // Since the file doesn't exist, we expect no exceptions and no further actions
+        // This test will pass if no exceptions are thrown
+    }
+}
+```
+
+### Explanation:
+- **Constructor Test**: Verifies that the `filename` is correctly initialized.
+- **Run Method with Valid File**: Uses a temporary file and mocks `AudioSystem` and related classes to simulate audio processing. It verifies that the audio line is opened, started, and closed correctly.
+- **Run Method with Invalid File**: Tests the behavior when a non-existent file is provided. The test passes if no exceptions are thrown.
+
+### Note:
+- The `run` method is directly invoked in the tests to simulate the behavior of the `Thread` without actually starting a new thread.
+- The use of `Mockito` allows us to mock the `AudioSystem` and related classes to avoid actual file I/O and audio processing during testing.
+- The `TemporaryFolder` rule is used to create temporary files for testing purposes.

@@ -1,0 +1,197 @@
+To create a comprehensive JUnit 4 test suite for the `Tokeniser` class, we need to test each method thoroughly. This involves creating mock objects for dependencies like `CharacterReader`, `Token`, and `TokeniserState`, as well as testing various scenarios for each method. Below is a JUnit 4 test suite for the `Tokeniser` class:
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.jsoup.parser.Tokeniser;
+import org.jsoup.parser.TokeniserState;
+import org.jsoup.parser.CharacterReader;
+import org.jsoup.parser.Token;
+import org.jsoup.parser.ParseError;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TokeniserTest {
+
+    private CharacterReader mockReader;
+    private Tokeniser tokeniser;
+
+    @Before
+    public void setUp() {
+        mockReader = mock(CharacterReader.class);
+        tokeniser = new Tokeniser(mockReader);
+    }
+
+    @Test
+    public void testReadWithSelfClosingFlagNotAcknowledged() {
+        tokeniser.emit(new Token.StartTag());
+        tokeniser.read();
+        assertTrue(tokeniser.isTrackErrors());
+    }
+
+    @Test
+    public void testEmitToken() {
+        Token token = new Token.StartTag();
+        tokeniser.emit(token);
+        assertEquals(token, tokeniser.read());
+    }
+
+    @Test
+    public void testEmitString() {
+        String str = "test";
+        tokeniser.emit(str);
+        Token token = tokeniser.read();
+        assertTrue(token instanceof Token.Character);
+        assertEquals(str, ((Token.Character) token).getData());
+    }
+
+    @Test
+    public void testEmitChar() {
+        char c = 'a';
+        tokeniser.emit(c);
+        Token token = tokeniser.read();
+        assertTrue(token instanceof Token.Character);
+        assertEquals(String.valueOf(c), ((Token.Character) token).getData());
+    }
+
+    @Test
+    public void testGetState() {
+        assertEquals(TokeniserState.Data, tokeniser.getState());
+    }
+
+    @Test
+    public void testTransition() {
+        TokeniserState newState = TokeniserState.TagOpen;
+        tokeniser.transition(newState);
+        assertEquals(newState, tokeniser.getState());
+    }
+
+    @Test
+    public void testAdvanceTransition() {
+        TokeniserState newState = TokeniserState.TagOpen;
+        tokeniser.advanceTransition(newState);
+        verify(mockReader, times(1)).advance();
+        assertEquals(newState, tokeniser.getState());
+    }
+
+    @Test
+    public void testAcknowledgeSelfClosingFlag() {
+        tokeniser.acknowledgeSelfClosingFlag();
+        assertTrue(tokeniser.isTrackErrors());
+    }
+
+    @Test
+    public void testConsumeCharacterReference() {
+        when(mockReader.isEmpty()).thenReturn(false);
+        when(mockReader.current()).thenReturn('a');
+        when(mockReader.matchesAny('\t', '\n', '\f', '<', '&')).thenReturn(false);
+        when(mockReader.consumeLetterSequence()).thenReturn("amp");
+        when(mockReader.matches(';')).thenReturn(true);
+        when(mockReader.matchConsume(";")).thenReturn(true);
+
+        Character result = tokeniser.consumeCharacterReference(null, false);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testCreateTagPending() {
+        Token.Tag tag = tokeniser.createTagPending(true);
+        assertTrue(tag instanceof Token.StartTag);
+    }
+
+    @Test
+    public void testEmitTagPending() {
+        Token.Tag tag = tokeniser.createTagPending(true);
+        tokeniser.emitTagPending();
+        assertEquals(tag, tokeniser.read());
+    }
+
+    @Test
+    public void testCreateCommentPending() {
+        tokeniser.createCommentPending();
+        assertNotNull(tokeniser.commentPending);
+    }
+
+    @Test
+    public void testEmitCommentPending() {
+        tokeniser.createCommentPending();
+        tokeniser.emitCommentPending();
+        assertEquals(tokeniser.commentPending, tokeniser.read());
+    }
+
+    @Test
+    public void testCreateDoctypePending() {
+        tokeniser.createDoctypePending();
+        assertNotNull(tokeniser.doctypePending);
+    }
+
+    @Test
+    public void testEmitDoctypePending() {
+        tokeniser.createDoctypePending();
+        tokeniser.emitDoctypePending();
+        assertEquals(tokeniser.doctypePending, tokeniser.read());
+    }
+
+    @Test
+    public void testCreateTempBuffer() {
+        tokeniser.createTempBuffer();
+        assertNotNull(tokeniser.dataBuffer);
+    }
+
+    @Test
+    public void testIsAppropriateEndTagToken() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.tagName = "test";
+        tokeniser.lastStartTag = startTag;
+
+        Token.EndTag endTag = new Token.EndTag();
+        endTag.tagName = "test";
+        tokeniser.tagPending = endTag;
+
+        assertTrue(tokeniser.isAppropriateEndTagToken());
+    }
+
+    @Test
+    public void testIsTrackErrors() {
+        assertTrue(tokeniser.isTrackErrors());
+    }
+
+    @Test
+    public void testSetTrackErrors() {
+        tokeniser.setTrackErrors(false);
+        assertFalse(tokeniser.isTrackErrors());
+    }
+
+    @Test
+    public void testError() {
+        tokeniser.error(TokeniserState.Data);
+        List<ParseError> errors = tokeniser.errors;
+        assertFalse(errors.isEmpty());
+    }
+
+    @Test
+    public void testEofError() {
+        tokeniser.eofError(TokeniserState.Data);
+        List<ParseError> errors = tokeniser.errors;
+        assertFalse(errors.isEmpty());
+    }
+
+    @Test
+    public void testCharacterReferenceError() {
+        tokeniser.characterReferenceError();
+        List<ParseError> errors = tokeniser.errors;
+        assertFalse(errors.isEmpty());
+    }
+
+    @Test
+    public void testCurrentNodeInHtmlNS() {
+        assertTrue(tokeniser.currentNodeInHtmlNS());
+    }
+}
+```
+
+This test suite uses Mockito to mock dependencies and tests various scenarios for each method in the `Tokeniser` class. Note that some methods, like `consumeCharacterReference`, require more detailed testing based on the specific logic and conditions within the method. Adjustments may be needed based on the actual implementations of `CharacterReader`, `Token`, and other dependencies.

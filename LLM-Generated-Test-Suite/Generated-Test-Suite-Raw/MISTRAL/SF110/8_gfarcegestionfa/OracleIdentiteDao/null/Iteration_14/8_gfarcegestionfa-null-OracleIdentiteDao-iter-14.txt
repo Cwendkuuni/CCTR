@@ -1,0 +1,127 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `OracleIdentiteDao` class. This test suite includes tests for all the methods in the class.
+
+```java
+package fr.unice.gfarce.dao;
+
+import fr.unice.gfarce.identity.Candidat;
+import fr.unice.gfarce.identity.Identite;
+import fr.unice.gfarce.identity.RespFormation;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.EntityTransaction;
+import javax.persistence.Persistence;
+import java.util.Calendar;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class OracleIdentiteDaoTest {
+
+    private OracleIdentiteDao dao;
+    private EntityManagerFactory emf;
+    private EntityManager em;
+    private EntityTransaction tx;
+
+    @Before
+    public void setUp() {
+        dao = new OracleIdentiteDao();
+        emf = mock(EntityManagerFactory.class);
+        em = mock(EntityManager.class);
+        tx = mock(EntityTransaction.class);
+
+        when(emf.createEntityManager()).thenReturn(em);
+        when(em.getTransaction()).thenReturn(tx);
+    }
+
+    @After
+    public void tearDown() {
+        dao = null;
+        emf = null;
+        em = null;
+        tx = null;
+    }
+
+    @Test
+    public void testInsert() {
+        Identite identite = mock(Identite.class);
+        Calendar dateLimite = Calendar.getInstance();
+
+        dao.insert(identite, "nomForm", dateLimite);
+
+        verify(em).persist(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testUpdate() {
+        Identite identite = mock(Identite.class);
+        Identite existingIdentite = mock(Identite.class);
+
+        when(em.find(identite.getClass(), identite.getId())).thenReturn(existingIdentite);
+
+        dao.update(identite);
+
+        verify(existingIdentite).setEmail(identite.getEmail());
+        verify(existingIdentite).setNom(identite.getNom());
+        verify(existingIdentite).setPrenom(identite.getPrenom());
+        verify(existingIdentite).setSex(identite.getSex());
+        verify(existingIdentite).setType(identite.getType());
+        verify(em).merge(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testDelete() {
+        Identite identite = mock(Identite.class);
+        Identite existingIdentite = mock(Identite.class);
+
+        when(em.find(identite.getClass(), identite.getId())).thenReturn(existingIdentite);
+
+        dao.delete(identite);
+
+        verify(em).remove(existingIdentite);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testFind() {
+        List<Identite> identites = mock(List.class);
+        when(em.createQuery(anyString()).getResultList()).thenReturn(identites);
+
+        List<Identite> result = dao.find("nom", "prenom", "sex", "email", Identite.TypeIdentite.CANDIDAT);
+
+        assertEquals(identites, result);
+    }
+
+    @Test
+    public void testFindCandidat() {
+        List<Identite> identites = mock(List.class);
+        when(em.createQuery(anyString()).getResultList()).thenReturn(identites);
+
+        Candidat[] result = dao.findCandidat("nom", "prenom", "sex", "email");
+
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testFindRespForm() {
+        List<Identite> identites = mock(List.class);
+        when(em.createQuery(anyString()).getResultList()).thenReturn(identites);
+
+        RespFormation[] result = dao.findRespForm("nom", "prenom", "sex", "email");
+
+        assertNotNull(result);
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to mock the dependencies and verify the interactions with the mocked objects. Each method in the `OracleIdentiteDao` class is tested to ensure it behaves as expected.

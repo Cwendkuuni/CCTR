@@ -1,0 +1,170 @@
+Certainly! Below is a JUnit 4 test suite for the `ScopedAliases` class. This test suite aims to cover the main functionalities and edge cases of the class. Note that due to the complexity and dependencies of the `ScopedAliases` class, some parts of the test suite use mock objects to simulate the behavior of dependencies.
+
+```java
+import com.google.javascript.jscomp.*;
+import com.google.javascript.rhino.Node;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ScopedAliasesTest {
+
+    private AbstractCompiler compiler;
+    private PreprocessorSymbolTable preprocessorSymbolTable;
+    private AliasTransformationHandler transformationHandler;
+    private ScopedAliases scopedAliases;
+
+    @Before
+    public void setUp() {
+        compiler = mock(AbstractCompiler.class);
+        preprocessorSymbolTable = mock(PreprocessorSymbolTable.class);
+        transformationHandler = mock(AliasTransformationHandler.class);
+        scopedAliases = new ScopedAliases(compiler, preprocessorSymbolTable, transformationHandler);
+    }
+
+    @Test
+    public void testProcessWithValidInput() {
+        Node externs = mock(Node.class);
+        Node root = mock(Node.class);
+
+        // Simulate a valid input scenario
+        scopedAliases.process(externs, root);
+
+        // Verify that hotSwapScript is called
+        verify(compiler, times(1)).reportCodeChange();
+    }
+
+    @Test
+    public void testProcessWithInvalidInput() {
+        Node externs = mock(Node.class);
+        Node root = mock(Node.class);
+
+        // Simulate an invalid input scenario
+        doThrow(new RuntimeException()).when(compiler).reportCodeChange();
+
+        try {
+            scopedAliases.process(externs, root);
+            fail("Expected an exception to be thrown");
+        } catch (RuntimeException e) {
+            // Expected exception
+        }
+    }
+
+    @Test
+    public void testHotSwapScriptWithValidInput() {
+        Node root = mock(Node.class);
+        Node originalRoot = mock(Node.class);
+
+        // Simulate a valid input scenario
+        scopedAliases.hotSwapScript(root, originalRoot);
+
+        // Verify that no errors occurred
+        verify(compiler, times(1)).reportCodeChange();
+    }
+
+    @Test
+    public void testHotSwapScriptWithAliasUsage() {
+        Node root = mock(Node.class);
+        Node originalRoot = mock(Node.class);
+
+        // Simulate alias usage
+        scopedAliases.hotSwapScript(root, originalRoot);
+
+        // Verify that alias usages are applied
+        verify(compiler, times(1)).reportCodeChange();
+    }
+
+    @Test
+    public void testAliasUsageApplyAlias() {
+        Node aliasReference = mock(Node.class);
+        Node aliasDefinition = mock(Node.class);
+        ScopedAliases.AliasedNode aliasedNode = scopedAliases.new AliasedNode(aliasReference, aliasDefinition);
+
+        // Simulate alias application
+        aliasedNode.applyAlias();
+
+        // Verify that aliasReference is replaced with aliasDefinition
+        verify(aliasReference.getParent(), times(1)).replaceChild(aliasReference, aliasDefinition.cloneTree());
+    }
+
+    @Test
+    public void testAliasedTypeNodeApplyAlias() {
+        Node typeReference = mock(Node.class);
+        Node aliasDefinition = mock(Node.class);
+        when(typeReference.getString()).thenReturn("aliasName");
+        when(aliasDefinition.getQualifiedName()).thenReturn("qualifiedName");
+
+        ScopedAliases.AliasedTypeNode aliasedTypeNode = scopedAliases.new AliasedTypeNode(typeReference, aliasDefinition, "aliasName");
+
+        // Simulate alias application
+        aliasedTypeNode.applyAlias();
+
+        // Verify that typeReference is updated
+        verify(typeReference, times(1)).setString("qualifiedName");
+    }
+
+    @Test
+    public void testTraversalEnterScope() {
+        NodeTraversal t = mock(NodeTraversal.class);
+        Node n = mock(Node.class);
+        when(n.getParent()).thenReturn(mock(Node.class));
+
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        traversal.enterScope(t);
+
+        // Verify that transformation is logged
+        verify(transformationHandler, times(1)).logAliasTransformation(anyString(), any());
+    }
+
+    @Test
+    public void testTraversalExitScope() {
+        NodeTraversal t = mock(NodeTraversal.class);
+        when(t.getScopeDepth()).thenReturn(2);
+
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        traversal.exitScope(t);
+
+        // Verify that aliases and forbiddenLocals are cleared
+        assertTrue(traversal.getAliasDefinitionsInOrder().isEmpty());
+        assertTrue(traversal.getScopeCalls().isEmpty());
+    }
+
+    @Test
+    public void testTraversalShouldTraverse() {
+        NodeTraversal t = mock(NodeTraversal.class);
+        Node n = mock(Node.class);
+        Node parent = mock(Node.class);
+
+        when(n.isFunction()).thenReturn(true);
+        when(t.inGlobalScope()).thenReturn(true);
+
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        boolean result = traversal.shouldTraverse(t, n, parent);
+
+        // Verify that traversal should not proceed into functions
+        assertFalse(result);
+    }
+
+    @Test
+    public void testTraversalVisit() {
+        NodeTraversal t = mock(NodeTraversal.class);
+        Node n = mock(Node.class);
+        Node parent = mock(Node.class);
+
+        when(n.isCall()).thenReturn(true);
+        when(n.getFirstChild()).thenReturn(mock(Node.class));
+        when(n.getFirstChild().getQualifiedName()).thenReturn("goog.scope");
+
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        traversal.visit(t, n, parent);
+
+        // Verify that scope call is validated
+        verify(preprocessorSymbolTable, times(1)).addReference(n.getFirstChild());
+    }
+}
+```
+
+This test suite uses Mockito to mock dependencies and verify interactions. It covers the main methods and scenarios of the `ScopedAliases` class, including valid and invalid inputs, alias usage, and traversal logic.

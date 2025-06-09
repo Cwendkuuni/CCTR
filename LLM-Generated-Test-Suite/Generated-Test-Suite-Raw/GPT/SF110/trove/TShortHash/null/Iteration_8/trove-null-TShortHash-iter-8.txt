@@ -1,0 +1,136 @@
+Certainly! Below is a JUnit 4 test suite for the `TShortHash` class. This test suite aims to cover the various methods and constructors of the class. Note that since `TShortHash` is an abstract class, we need to create a concrete subclass for testing purposes.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import gnu.trove.procedure.TShortProcedure;
+import gnu.trove.impl.hash.TShortHash;
+
+public class TShortHashTest {
+
+    private TShortHashImpl tShortHash;
+
+    // Concrete subclass for testing
+    private static class TShortHashImpl extends TShortHash {
+        public TShortHashImpl() {
+            super();
+        }
+
+        public TShortHashImpl(int initialCapacity) {
+            super(initialCapacity);
+        }
+
+        public TShortHashImpl(int initialCapacity, float loadFactor) {
+            super(initialCapacity, loadFactor);
+        }
+
+        public TShortHashImpl(int initialCapacity, float loadFactor, short no_entry_value) {
+            super(initialCapacity, loadFactor, no_entry_value);
+        }
+    }
+
+    @Before
+    public void setUp() {
+        tShortHash = new TShortHashImpl();
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertEquals(Constants.DEFAULT_SHORT_NO_ENTRY_VALUE, tShortHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacity() {
+        TShortHashImpl hash = new TShortHashImpl(10);
+        assertEquals(Constants.DEFAULT_SHORT_NO_ENTRY_VALUE, hash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacityAndLoadFactor() {
+        TShortHashImpl hash = new TShortHashImpl(10, 0.5f);
+        assertEquals(Constants.DEFAULT_SHORT_NO_ENTRY_VALUE, hash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithAllParameters() {
+        short noEntryValue = -1;
+        TShortHashImpl hash = new TShortHashImpl(10, 0.5f, noEntryValue);
+        assertEquals(noEntryValue, hash.getNoEntryValue());
+    }
+
+    @Test
+    public void testSetUp() {
+        int capacity = tShortHash.setUp(10);
+        assertTrue(capacity >= 10);
+    }
+
+    @Test
+    public void testContains() {
+        tShortHash.insertKey((short) 5);
+        assertTrue(tShortHash.contains((short) 5));
+        assertFalse(tShortHash.contains((short) 10));
+    }
+
+    @Test
+    public void testForEach() {
+        tShortHash.insertKey((short) 5);
+        tShortHash.insertKey((short) 10);
+
+        TShortProcedure procedure = new TShortProcedure() {
+            @Override
+            public boolean execute(short value) {
+                return value > 0;
+            }
+        };
+
+        assertTrue(tShortHash.forEach(procedure));
+
+        procedure = new TShortProcedure() {
+            @Override
+            public boolean execute(short value) {
+                return value < 10;
+            }
+        };
+
+        assertFalse(tShortHash.forEach(procedure));
+    }
+
+    @Test
+    public void testRemoveAt() {
+        tShortHash.insertKey((short) 5);
+        int index = tShortHash.index((short) 5);
+        tShortHash.removeAt(index);
+        assertFalse(tShortHash.contains((short) 5));
+    }
+
+    @Test
+    public void testIndex() {
+        tShortHash.insertKey((short) 5);
+        assertTrue(tShortHash.index((short) 5) >= 0);
+        assertEquals(-1, tShortHash.index((short) 10));
+    }
+
+    @Test
+    public void testInsertKey() {
+        int index = tShortHash.insertKey((short) 5);
+        assertTrue(index >= 0);
+        assertTrue(tShortHash.contains((short) 5));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testInsertKeyRehashThrowsExceptionWhenFull() {
+        TShortHashImpl smallHash = new TShortHashImpl(1);
+        smallHash.insertKey((short) 1);
+        smallHash.insertKey((short) 2); // Should throw exception
+    }
+}
+```
+
+### Explanation:
+- **Concrete Subclass**: `TShortHashImpl` is a concrete subclass of `TShortHash` used for testing purposes.
+- **Test Methods**: Each method in `TShortHash` is tested, including constructors, `contains`, `forEach`, `removeAt`, `index`, and `insertKey`.
+- **Edge Cases**: The test suite includes edge cases such as inserting keys into a full hash table to ensure exceptions are thrown correctly.
+- **Setup**: The `setUp` method initializes a new instance of `TShortHashImpl` before each test.
+
+This test suite should provide a comprehensive coverage of the `TShortHash` class's functionality.

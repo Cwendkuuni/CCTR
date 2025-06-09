@@ -1,0 +1,121 @@
+To create a comprehensive JUnit 4 test suite for the `OracleIdentiteDao` class, we need to test each method in the class. This includes testing the `insert`, `update`, `delete`, `find`, `findCandidat`, and `findRespForm` methods. We will use mock objects to simulate the behavior of the `EntityManager` and `EntityTransaction` since these are part of the JPA and are typically managed by the container in a real application.
+
+Below is a JUnit 4 test suite for the `OracleIdentiteDao` class:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import javax.persistence.*;
+import java.util.*;
+
+import fr.unice.gfarce.identity.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class OracleIdentiteDaoTest {
+
+    @InjectMocks
+    private OracleIdentiteDao dao;
+
+    @Mock
+    private EntityManager em;
+
+    @Mock
+    private EntityTransaction tx;
+
+    @Mock
+    private EntityManagerFactory emf;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        when(em.getTransaction()).thenReturn(tx);
+    }
+
+    @Test
+    public void testInsert() {
+        Identite identite = new Identite();
+        dao.insert(identite, "testForm", Calendar.getInstance());
+
+        verify(em).persist(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testUpdate() {
+        Identite identite = new Identite();
+        identite.setId(1L);
+        when(em.find(Identite.class, identite.getId())).thenReturn(identite);
+
+        dao.update(identite);
+
+        verify(em).find(Identite.class, identite.getId());
+        verify(em).merge(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testDelete() {
+        Identite identite = new Identite();
+        identite.setId(1L);
+        when(em.find(Identite.class, identite.getId())).thenReturn(identite);
+
+        dao.delete(identite);
+
+        verify(em).find(Identite.class, identite.getId());
+        verify(em).remove(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testFind() {
+        List<Identite> expectedList = new ArrayList<>();
+        when(em.createQuery(anyString())).thenReturn(mock(Query.class));
+        when(em.createQuery(anyString()).getResultList()).thenReturn(expectedList);
+
+        List<Identite> result = dao.find("nom", "prenom", "M", "email", Identite.TypeIdentite.CANDIDAT);
+
+        assertEquals(expectedList, result);
+    }
+
+    @Test
+    public void testFindCandidat() {
+        List<Identite> expectedList = new ArrayList<>();
+        when(em.createQuery(anyString())).thenReturn(mock(Query.class));
+        when(em.createQuery(anyString()).getResultList()).thenReturn(expectedList);
+
+        Candidat[] result = dao.findCandidat("nom", "prenom", "M", "email");
+
+        assertNotNull(result);
+        assertEquals(expectedList.size(), result.length);
+    }
+
+    @Test
+    public void testFindRespForm() {
+        List<Identite> expectedList = new ArrayList<>();
+        when(em.createQuery(anyString())).thenReturn(mock(Query.class));
+        when(em.createQuery(anyString()).getResultList()).thenReturn(expectedList);
+
+        RespFormation[] result = dao.findRespForm("nom", "prenom", "M", "email");
+
+        assertNotNull(result);
+        assertEquals(expectedList.size(), result.length);
+    }
+}
+```
+
+### Explanation:
+- **Mockito**: We use Mockito to mock the `EntityManager`, `EntityTransaction`, and `EntityManagerFactory`. This allows us to simulate the behavior of these components without needing a real database.
+- **Test Methods**: Each method in the `OracleIdentiteDao` class has a corresponding test method. These tests verify that the correct JPA methods are called and that transactions are properly managed.
+- **Assertions**: We use assertions to verify the expected outcomes of the methods. For example, we check that the `persist`, `merge`, and `remove` methods are called on the `EntityManager` as expected.
+- **Mocking Queries**: For the `find`, `findCandidat`, and `findRespForm` methods, we mock the query execution to return a predefined list of results.
+
+This test suite provides a comprehensive set of tests for the `OracleIdentiteDao` class, ensuring that each method behaves as expected under normal conditions.

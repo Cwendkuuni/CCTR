@@ -1,0 +1,98 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `ConnectedComponents` class. This test suite will cover the constructor and the `apply` method, ensuring that the class behaves as expected under various conditions.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import jigl.image.ops.ConnectedComponents;
+import jigl.image.types.BinaryImage;
+import jigl.image.types.GrayImage;
+import jigl.image.exceptions.InvalidArgumentException;
+
+public class ConnectedComponentsTest {
+
+    private BinaryImage binaryImage;
+    private ConnectedComponents fourConnected;
+    private ConnectedComponents eightConnected;
+
+    @Before
+    public void setUp() throws InvalidArgumentException {
+        // Initialize a simple binary image for testing
+        binaryImage = new BinaryImage(5, 5);
+        binaryImage.set(0, 0, 1);
+        binaryImage.set(0, 1, 1);
+        binaryImage.set(1, 0, 1);
+        binaryImage.set(4, 4, 1);
+
+        // Initialize ConnectedComponents instances
+        fourConnected = new ConnectedComponents(ConnectedComponents.FOUR_CONNECTED, 0);
+        eightConnected = new ConnectedComponents(ConnectedComponents.EIGHT_CONNECTED, 0);
+    }
+
+    @Test(expected = InvalidArgumentException.class)
+    public void testConstructorInvalidNeighbors() throws InvalidArgumentException {
+        new ConnectedComponents(2, 0);
+    }
+
+    @Test(expected = InvalidArgumentException.class)
+    public void testConstructorInvalidBackground() throws InvalidArgumentException {
+        new ConnectedComponents(ConnectedComponents.FOUR_CONNECTED, 2);
+    }
+
+    @Test
+    public void testApplyFourConnected() {
+        GrayImage result = fourConnected.apply(binaryImage);
+        assertNotNull(result);
+        assertEquals(5, result.X());
+        assertEquals(5, result.Y());
+        assertEquals(1, result.get(0, 0));
+        assertEquals(1, result.get(0, 1));
+        assertEquals(1, result.get(1, 0));
+        assertEquals(0, result.get(4, 4)); // Should be a separate component
+    }
+
+    @Test
+    public void testApplyEightConnected() {
+        GrayImage result = eightConnected.apply(binaryImage);
+        assertNotNull(result);
+        assertEquals(5, result.X());
+        assertEquals(5, result.Y());
+        assertEquals(1, result.get(0, 0));
+        assertEquals(1, result.get(0, 1));
+        assertEquals(1, result.get(1, 0));
+        assertEquals(1, result.get(4, 4)); // Should be connected in 8-connected
+    }
+
+    @Test
+    public void testApplyEmptyImage() {
+        BinaryImage emptyImage = new BinaryImage(5, 5);
+        GrayImage result = fourConnected.apply(emptyImage);
+        for (int x = 0; x < result.X(); x++) {
+            for (int y = 0; y < result.Y(); y++) {
+                assertEquals(0, result.get(x, y));
+            }
+        }
+    }
+
+    @Test
+    public void testApplyFullImage() {
+        BinaryImage fullImage = new BinaryImage(5, 5);
+        for (int x = 0; x < fullImage.X(); x++) {
+            for (int y = 0; y < fullImage.Y(); y++) {
+                fullImage.set(x, y, 1);
+            }
+        }
+        GrayImage result = fourConnected.apply(fullImage);
+        for (int x = 0; x < result.X(); x++) {
+            for (int y = 0; y < result.Y(); y++) {
+                assertEquals(1, result.get(x, y));
+            }
+        }
+    }
+}
+```
+
+### Explanation:
+- **Constructor Tests**: Tests are included to ensure that invalid arguments for the constructor throw the expected `InvalidArgumentException`.
+- **`apply` Method Tests**: The `apply` method is tested with both four-connected and eight-connected configurations. The tests verify that the method correctly labels connected components in a binary image.
+- **Edge Cases**: Tests for an empty image and a fully filled image are included to ensure the method handles these cases correctly.

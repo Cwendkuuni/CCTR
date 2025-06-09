@@ -1,0 +1,99 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `ConnectedComponents` class. This suite includes tests for the constructor and the `apply` method, covering various scenarios.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import jigl.image.ops.ConnectedComponents;
+import jigl.image.types.BinaryImage;
+import jigl.image.types.GrayImage;
+import jigl.image.exceptions.InvalidArgumentException;
+
+public class ConnectedComponentsTest {
+
+    private BinaryImage binaryImage;
+    private ConnectedComponents fourConnected;
+    private ConnectedComponents eightConnected;
+
+    @Before
+    public void setUp() throws InvalidArgumentException {
+        // Initialize a simple binary image for testing
+        binaryImage = new BinaryImage(3, 3);
+        binaryImage.set(0, 0, 1);
+        binaryImage.set(0, 1, 1);
+        binaryImage.set(1, 0, 1);
+        binaryImage.set(1, 1, 0);
+        binaryImage.set(2, 2, 1);
+
+        // Initialize ConnectedComponents instances
+        fourConnected = new ConnectedComponents(ConnectedComponents.FOUR_CONNECTED, 0);
+        eightConnected = new ConnectedComponents(ConnectedComponents.EIGHT_CONNECTED, 0);
+    }
+
+    @Test
+    public void testConstructorValidArguments() {
+        try {
+            new ConnectedComponents(ConnectedComponents.FOUR_CONNECTED, 0);
+            new ConnectedComponents(ConnectedComponents.EIGHT_CONNECTED, 1);
+        } catch (InvalidArgumentException e) {
+            fail("Constructor threw InvalidArgumentException for valid arguments");
+        }
+    }
+
+    @Test(expected = InvalidArgumentException.class)
+    public void testConstructorInvalidNeighbors() throws InvalidArgumentException {
+        new ConnectedComponents(2, 0);
+    }
+
+    @Test(expected = InvalidArgumentException.class)
+    public void testConstructorInvalidBackground() throws InvalidArgumentException {
+        new ConnectedComponents(ConnectedComponents.FOUR_CONNECTED, 2);
+    }
+
+    @Test
+    public void testApplyFourConnected() {
+        GrayImage result = fourConnected.apply(binaryImage);
+        assertEquals(1, result.get(0, 0));
+        assertEquals(1, result.get(0, 1));
+        assertEquals(1, result.get(1, 0));
+        assertEquals(0, result.get(1, 1));
+        assertEquals(2, result.get(2, 2));
+    }
+
+    @Test
+    public void testApplyEightConnected() {
+        GrayImage result = eightConnected.apply(binaryImage);
+        assertEquals(1, result.get(0, 0));
+        assertEquals(1, result.get(0, 1));
+        assertEquals(1, result.get(1, 0));
+        assertEquals(0, result.get(1, 1));
+        assertEquals(1, result.get(2, 2));
+    }
+
+    @Test
+    public void testApplyWithBackground() throws InvalidArgumentException {
+        BinaryImage imageWithBackground = new BinaryImage(3, 3);
+        imageWithBackground.set(0, 0, 0);
+        imageWithBackground.set(0, 1, 1);
+        imageWithBackground.set(1, 0, 1);
+        imageWithBackground.set(1, 1, 0);
+        imageWithBackground.set(2, 2, 1);
+
+        ConnectedComponents cc = new ConnectedComponents(ConnectedComponents.FOUR_CONNECTED, 1);
+        GrayImage result = cc.apply(imageWithBackground);
+        assertEquals(0, result.get(0, 0));
+        assertEquals(1, result.get(0, 1));
+        assertEquals(1, result.get(1, 0));
+        assertEquals(0, result.get(1, 1));
+        assertEquals(2, result.get(2, 2));
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a simple 3x3 binary image and two `ConnectedComponents` instances for four-connected and eight-connected scenarios.
+- **Constructor Tests**: Tests for valid and invalid constructor arguments ensure that the class handles initialization correctly.
+- **Apply Method Tests**: Tests for the `apply` method check the output for both four-connected and eight-connected configurations, as well as a scenario with a different background color.
+- **Assertions**: The assertions verify that the resulting `GrayImage` has the expected labels for connected components.
+
+This test suite should provide a comprehensive check of the `ConnectedComponents` class functionality.

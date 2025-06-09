@@ -1,0 +1,196 @@
+```java
+package org.jsoup.parser;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.Entities;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TokeniserTest {
+
+    private CharacterReader mockReader;
+    private ParseErrorList mockErrors;
+    private Tokeniser tokeniser;
+
+    @Before
+    public void setUp() {
+        mockReader = mock(CharacterReader.class);
+        mockErrors = mock(ParseErrorList.class);
+        tokeniser = new Tokeniser(mockReader, mockErrors);
+    }
+
+    @Test
+    public void testRead() {
+        Token mockToken = mock(Token.class);
+        tokeniser.emitPending = mockToken;
+        tokeniser.isEmitPending = true;
+
+        Token result = tokeniser.read();
+
+        assertEquals(mockToken, result);
+        assertFalse(tokeniser.isEmitPending);
+    }
+
+    @Test
+    public void testEmitToken() {
+        Token mockToken = mock(Token.class);
+        tokeniser.emit(mockToken);
+
+        assertTrue(tokeniser.isEmitPending);
+        assertEquals(mockToken, tokeniser.emitPending);
+    }
+
+    @Test
+    public void testEmitString() {
+        tokeniser.emit("test");
+        assertEquals("test", tokeniser.charBuffer.toString());
+    }
+
+    @Test
+    public void testEmitChar() {
+        tokeniser.emit('a');
+        assertEquals("a", tokeniser.charBuffer.toString());
+    }
+
+    @Test
+    public void testGetState() {
+        assertEquals(TokeniserState.Data, tokeniser.getState());
+    }
+
+    @Test
+    public void testTransition() {
+        TokeniserState newState = TokeniserState.TagOpen;
+        tokeniser.transition(newState);
+        assertEquals(newState, tokeniser.getState());
+    }
+
+    @Test
+    public void testAdvanceTransition() {
+        TokeniserState newState = TokeniserState.TagOpen;
+        tokeniser.advanceTransition(newState);
+        verify(mockReader).advance();
+        assertEquals(newState, tokeniser.getState());
+    }
+
+    @Test
+    public void testAcknowledgeSelfClosingFlag() {
+        tokeniser.selfClosingFlagAcknowledged = false;
+        tokeniser.acknowledgeSelfClosingFlag();
+        assertTrue(tokeniser.selfClosingFlagAcknowledged);
+    }
+
+    @Test
+    public void testConsumeCharacterReference() {
+        when(mockReader.isEmpty()).thenReturn(false);
+        when(mockReader.current()).thenReturn('&');
+        when(mockReader.matchConsume("#")).thenReturn(true);
+        when(mockReader.matchConsumeIgnoreCase("X")).thenReturn(false);
+        when(mockReader.consumeDigitSequence()).thenReturn("65");
+        when(mockReader.matchConsume(";")).thenReturn(true);
+
+        Character result = tokeniser.consumeCharacterReference(null, false);
+
+        assertEquals(Character.valueOf('A'), result);
+    }
+
+    @Test
+    public void testCreateTagPending() {
+        Token.Tag tag = tokeniser.createTagPending(true);
+        assertTrue(tag instanceof Token.StartTag);
+    }
+
+    @Test
+    public void testEmitTagPending() {
+        Token.StartTag startTag = new Token.StartTag();
+        tokeniser.tagPending = startTag;
+        tokeniser.emitTagPending();
+
+        assertTrue(tokeniser.isEmitPending);
+        assertEquals(startTag, tokeniser.emitPending);
+    }
+
+    @Test
+    public void testCreateCommentPending() {
+        tokeniser.createCommentPending();
+        assertNotNull(tokeniser.commentPending);
+    }
+
+    @Test
+    public void testEmitCommentPending() {
+        Token.Comment comment = new Token.Comment();
+        tokeniser.commentPending = comment;
+        tokeniser.emitCommentPending();
+
+        assertTrue(tokeniser.isEmitPending);
+        assertEquals(comment, tokeniser.emitPending);
+    }
+
+    @Test
+    public void testCreateDoctypePending() {
+        tokeniser.createDoctypePending();
+        assertNotNull(tokeniser.doctypePending);
+    }
+
+    @Test
+    public void testEmitDoctypePending() {
+        Token.Doctype doctype = new Token.Doctype();
+        tokeniser.doctypePending = doctype;
+        tokeniser.emitDoctypePending();
+
+        assertTrue(tokeniser.isEmitPending);
+        assertEquals(doctype, tokeniser.emitPending);
+    }
+
+    @Test
+    public void testCreateTempBuffer() {
+        tokeniser.createTempBuffer();
+        assertNotNull(tokeniser.dataBuffer);
+    }
+
+    @Test
+    public void testIsAppropriateEndTagToken() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.tagName = "div";
+        tokeniser.lastStartTag = startTag;
+
+        Token.EndTag endTag = new Token.EndTag();
+        endTag.tagName = "div";
+        tokeniser.tagPending = endTag;
+
+        assertTrue(tokeniser.isAppropriateEndTagToken());
+    }
+
+    @Test
+    public void testAppropriateEndTagName() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.tagName = "div";
+        tokeniser.lastStartTag = startTag;
+
+        assertEquals("div", tokeniser.appropriateEndTagName());
+    }
+
+    @Test
+    public void testError() {
+        tokeniser.error(TokeniserState.Data);
+        verify(mockErrors).add(any(ParseError.class));
+    }
+
+    @Test
+    public void testEofError() {
+        tokeniser.eofError(TokeniserState.Data);
+        verify(mockErrors).add(any(ParseError.class));
+    }
+
+    @Test
+    public void testCurrentNodeInHtmlNS() {
+        assertTrue(tokeniser.currentNodeInHtmlNS());
+    }
+}
+```

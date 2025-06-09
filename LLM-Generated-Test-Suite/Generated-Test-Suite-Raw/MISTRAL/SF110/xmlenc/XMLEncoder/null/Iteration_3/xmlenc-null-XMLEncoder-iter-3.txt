@@ -1,0 +1,121 @@
+```java
+package org.znerd.xmlenc;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.UnsupportedEncodingException;
+
+import static org.junit.Assert.*;
+
+public class XMLEncoderTest {
+
+    private XMLEncoder encoder;
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    @Before
+    public void setUp() throws UnsupportedEncodingException {
+        encoder = XMLEncoder.getEncoder("UTF-8");
+    }
+
+    @Test
+    public void testGetEncoder() throws UnsupportedEncodingException {
+        XMLEncoder encoder = XMLEncoder.getEncoder("UTF-8");
+        assertNotNull(encoder);
+        assertEquals("UTF-8", encoder.getEncoding());
+    }
+
+    @Test
+    public void testGetEncoderInvalidEncoding() {
+        thrown.expect(UnsupportedEncodingException.class);
+        XMLEncoder.getEncoder("INVALID-ENCODING");
+    }
+
+    @Test
+    public void testGetEncoderNullEncoding() {
+        thrown.expect(IllegalArgumentException.class);
+        XMLEncoder.getEncoder(null);
+    }
+
+    @Test
+    public void testGetEncoding() {
+        assertEquals("UTF-8", encoder.getEncoding());
+    }
+
+    @Test
+    public void testDeclaration() throws IOException {
+        StringWriter writer = new StringWriter();
+        encoder.declaration(writer);
+        assertEquals("<?xml version=\"1.0\" encoding=\"UTF-8\"?>", writer.toString());
+    }
+
+    @Test
+    public void testTextString() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.text(writer, "test", false);
+        assertEquals("test", writer.toString());
+    }
+
+    @Test
+    public void testTextCharArray() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.text(writer, "test".toCharArray(), 0, 4, false);
+        assertEquals("test", writer.toString());
+    }
+
+    @Test
+    public void testTextChar() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.text(writer, 't');
+        assertEquals("t", writer.toString());
+    }
+
+    @Test
+    public void testTextCharEscapeAmpersands() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.text(writer, '&', true);
+        assertEquals("&amp;", writer.toString());
+    }
+
+    @Test
+    public void testWhitespaceString() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.whitespace(writer, " \t\n\r");
+        assertEquals(" \t\n\r", writer.toString());
+    }
+
+    @Test
+    public void testWhitespaceCharArray() throws IOException, InvalidXMLException {
+        StringWriter writer = new StringWriter();
+        encoder.whitespace(writer, " \t\n\r".toCharArray(), 0, 4);
+        assertEquals(" \t\n\r", writer.toString());
+    }
+
+    @Test
+    public void testAttribute() throws IOException {
+        StringWriter writer = new StringWriter();
+        encoder.attribute(writer, "name", "value", '"', false);
+        assertEquals(" name=\"value\"", writer.toString());
+    }
+
+    @Test
+    public void testAttributeEscapeAmpersands() throws IOException {
+        StringWriter writer = new StringWriter();
+        encoder.attribute(writer, "name", "value&", '"', true);
+        assertEquals(" name=\"value&amp;\"", writer.toString());
+    }
+
+    @Test
+    public void testAttributeInvalidQuotationMark() {
+        thrown.expect(IllegalArgumentException.class);
+        StringWriter writer = new StringWriter();
+        encoder.attribute(writer, "name", "value", 'x', false);
+    }
+}
+```

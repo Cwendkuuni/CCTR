@@ -1,0 +1,92 @@
+To create a comprehensive JUnit 4 test suite for the `TucsonSimple` class, we need to test each method, including both public and private methods. Since private methods cannot be directly tested, we will focus on testing the public methods and indirectly test the private methods through them. Below is a JUnit 4 test suite for the `TucsonSimple` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import java.io.*;
+import corina.*;
+import corina.util.*;
+import corina.formats.*;
+
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+
+    @Before
+    public void setUp() {
+        tucsonSimple = new TucsonSimple();
+    }
+
+    @Test
+    public void testToString() {
+        String expected = I18n.getText("format.tucsonsimple");
+        assertEquals(expected, tucsonSimple.toString());
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        assertEquals(".RWL", tucsonSimple.getDefaultExtension());
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoadThrowsWrongFiletypeException() throws IOException {
+        BufferedReader reader = Mockito.mock(BufferedReader.class);
+        tucsonSimple.load(reader);
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        Sample sample = Mockito.mock(Sample.class);
+        BufferedWriter writer = new BufferedWriter(new StringWriter());
+
+        // Mocking the necessary methods and fields in Sample
+        Mockito.when(sample.range).thenReturn(new Range(new Year(2000), new Year(2005)));
+        Mockito.when(sample.data).thenReturn(new DataList());
+        Mockito.when(sample.meta).thenReturn(new Metadata());
+
+        tucsonSimple.save(sample, writer);
+        // Since saveData is complex, we assume it works if no exceptions are thrown
+    }
+
+    // Additional tests for private methods can be indirectly tested through public methods
+    // For example, make6digitCode is tested through saveData indirectly
+
+    // Helper method to test private method make6digitCode indirectly
+    @Test
+    public void testMake6digitCodeIndirectly() throws IOException {
+        Sample sample = Mockito.mock(Sample.class);
+        BufferedWriter writer = new BufferedWriter(new StringWriter());
+
+        Metadata meta = new Metadata();
+        meta.put("id", "123");
+        Mockito.when(sample.meta).thenReturn(meta);
+
+        tucsonSimple.save(sample, writer);
+        // Check if the code "123   " is written in the output
+    }
+
+    // Helper method to test private method computeRange indirectly
+    @Test
+    public void testComputeRangeIndirectly() throws IOException {
+        Sample sample = Mockito.mock(Sample.class);
+        BufferedWriter writer = new BufferedWriter(new StringWriter());
+
+        Mockito.when(sample.range).thenReturn(new Range(new Year(-5000), new Year(2000)));
+
+        tucsonSimple.save(sample, writer);
+        // Check if the range is adjusted correctly in the output
+    }
+}
+```
+
+### Explanation:
+- **`setUp` Method**: Initializes a `TucsonSimple` instance before each test.
+- **`testToString` Method**: Verifies that the `toString` method returns the correct localized string.
+- **`testGetDefaultExtension` Method**: Checks that the default file extension is ".RWL".
+- **`testLoadThrowsWrongFiletypeException` Method**: Ensures that calling `load` throws a `WrongFiletypeException`.
+- **`testSave` Method**: Tests the `save` method by mocking a `Sample` and verifying that no exceptions are thrown during execution.
+- **Indirect Testing**: Since private methods cannot be directly tested, we test them indirectly through public methods like `save`.
+
+Note: The actual content of the `BufferedWriter` is not checked in these tests, as the focus is on ensuring that the methods execute without error. For more detailed testing, you would need to capture and verify the output written to the `BufferedWriter`.

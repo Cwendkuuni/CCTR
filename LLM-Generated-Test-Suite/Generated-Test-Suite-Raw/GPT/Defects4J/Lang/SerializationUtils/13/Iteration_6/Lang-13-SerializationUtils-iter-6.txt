@@ -1,0 +1,106 @@
+```java
+import org.apache.commons.lang3.SerializationUtils;
+import org.apache.commons.lang3.SerializationException;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.Serializable;
+
+public class SerializationUtilsTest {
+
+    static class TestObject implements Serializable {
+        private static final long serialVersionUID = 1L;
+        private String name;
+
+        public TestObject(String name) {
+            this.name = name;
+        }
+
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public boolean equals(Object obj) {
+            if (this == obj) return true;
+            if (obj == null || getClass() != obj.getClass()) return false;
+            TestObject that = (TestObject) obj;
+            return name.equals(that.name);
+        }
+    }
+
+    @Test
+    public void testClone() {
+        TestObject original = new TestObject("Test");
+        TestObject cloned = SerializationUtils.clone(original);
+        assertNotSame(original, cloned);
+        assertEquals(original, cloned);
+    }
+
+    @Test
+    public void testCloneNull() {
+        assertNull(SerializationUtils.clone(null));
+    }
+
+    @Test(expected = SerializationException.class)
+    public void testCloneNonSerializable() {
+        Object nonSerializable = new Object();
+        SerializationUtils.clone(nonSerializable);
+    }
+
+    @Test
+    public void testSerializeAndDeserialize() throws IOException {
+        TestObject original = new TestObject("Test");
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        SerializationUtils.serialize(original, baos);
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        TestObject deserialized = (TestObject) SerializationUtils.deserialize(bais);
+        assertNotSame(original, deserialized);
+        assertEquals(original, deserialized);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testSerializeWithNullOutputStream() {
+        SerializationUtils.serialize(new TestObject("Test"), null);
+    }
+
+    @Test(expected = SerializationException.class)
+    public void testSerializeIOException() {
+        Serializable obj = new TestObject("Test") {
+            private void writeObject(java.io.ObjectOutputStream out) throws IOException {
+                throw new IOException("Test IOException");
+            }
+        };
+        SerializationUtils.serialize(obj);
+    }
+
+    @Test
+    public void testSerializeToByteArray() {
+        TestObject original = new TestObject("Test");
+        byte[] data = SerializationUtils.serialize(original);
+        TestObject deserialized = (TestObject) SerializationUtils.deserialize(data);
+        assertNotSame(original, deserialized);
+        assertEquals(original, deserialized);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeserializeWithNullInputStream() {
+        SerializationUtils.deserialize((ByteArrayInputStream) null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testDeserializeWithNullByteArray() {
+        SerializationUtils.deserialize((byte[]) null);
+    }
+
+    @Test(expected = SerializationException.class)
+    public void testDeserializeIOException() {
+        byte[] data = new byte[]{0x00, 0x01, 0x02}; // Invalid serialized data
+        SerializationUtils.deserialize(data);
+    }
+}
+```
+This test suite covers all the methods in the `SerializationUtils` class, including edge cases and expected exceptions. Each test method is designed to verify the correct behavior of the serialization and deserialization processes, as well as the handling of null inputs and exceptions.

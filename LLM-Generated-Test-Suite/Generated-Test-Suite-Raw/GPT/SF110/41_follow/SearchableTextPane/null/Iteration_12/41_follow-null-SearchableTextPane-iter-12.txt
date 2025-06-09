@@ -1,0 +1,113 @@
+To create a comprehensive JUnit 4 test suite for the `SearchableTextPane` class, we need to test each public method, including the constructor, and ensure that the class behaves as expected under various conditions. Below is a JUnit 4 test suite that covers the functionality of the `SearchableTextPane` class.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import javax.swing.text.BadLocationException;
+import java.awt.Font;
+import java.util.List;
+import java.util.logging.Logger;
+
+public class SearchableTextPaneTest {
+
+    private SearchableTextPane textPane;
+
+    @Before
+    public void setUp() {
+        textPane = new SearchableTextPane(new Font("Arial", Font.PLAIN, 12), 4);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull("Logger should be initialized", textPane.log);
+        assertEquals("Initial lastSearchPos should be -1", -1, textPane.lastSearchPos);
+        assertNull("Initial lastSearchTerm should be null", textPane.lastSearchTerm);
+        assertNotNull("wordPainter should be initialized", textPane.wordPainter);
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth() {
+        assertTrue("Should track viewport width when parent is null", textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testHighlight() throws BadLocationException {
+        textPane.setText("This is a test. This test is simple.");
+        List<LineResult> results = textPane.highlight("test", 0);
+        assertEquals("Should find 2 occurrences of 'test'", 2, results.size());
+    }
+
+    @Test
+    public void testHighlightNoTerm() {
+        textPane.setText("This is a test.");
+        List<LineResult> results = textPane.highlight("", 0);
+        assertTrue("Should return empty list when term is empty", results.isEmpty());
+    }
+
+    @Test
+    public void testRemoveHighlights() throws BadLocationException {
+        textPane.setText("This is a test.");
+        textPane.highlight("test", 0);
+        textPane.removeHighlights();
+        assertEquals("Should have no highlights after removal", 0, textPane.getHighlighter().getHighlights().length);
+    }
+
+    @Test
+    public void testSearch() {
+        textPane.setText("This is a test. This test is simple.");
+        int pos = textPane.search("test");
+        assertEquals("First occurrence of 'test' should be at index 10", 10, pos);
+    }
+
+    @Test
+    public void testSearchNoTerm() {
+        textPane.setText("This is a test.");
+        int pos = textPane.search("");
+        assertEquals("Search position should be -1 for empty term", -1, pos);
+    }
+
+    @Test
+    public void testSearchWithStartPos() {
+        textPane.setText("This is a test. This test is simple.");
+        int pos = textPane.search("test", 11);
+        assertEquals("Second occurrence of 'test' should be at index 21", 21, pos);
+    }
+
+    @Test
+    public void testSearchWithInvalidStartPos() {
+        textPane.setText("This is a test.");
+        int pos = textPane.search("test", 100);
+        assertEquals("Search position should be -1 for startPos beyond text length", -1, pos);
+    }
+
+    @Test
+    public void testConvertWords2Lines() throws BadLocationException {
+        textPane.setText("This is a test.\nAnother line.");
+        List<WordResult> words = List.of(new WordResult(10, 14, null));
+        List<LineResult> lines = textPane.convertWords2Lines(words);
+        assertEquals("Should convert words to lines correctly", 1, lines.size());
+    }
+
+    @Test
+    public void testUpdateWordResult() throws BadLocationException {
+        textPane.setText("This is a test.");
+        WordResult wordResult = new WordResult(10, 14, null);
+        LineResult lineResult = new LineResult(0, 0, 15);
+        textPane.updateWordResult(wordResult, lineResult);
+        assertEquals("WordResult line number should be updated", 1, wordResult.parent.lineNumber);
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `SearchableTextPane` instance before each test.
+- **Constructor Test**: Verifies that the constructor initializes fields correctly.
+- **Scrollable Tracks Viewport Width**: Tests the behavior of `getScrollableTracksViewportWidth`.
+- **Highlight Tests**: Check the `highlight` method with valid and empty search terms.
+- **Remove Highlights**: Ensures highlights are removed correctly.
+- **Search Tests**: Validate the `search` method with various inputs, including empty terms and invalid start positions.
+- **Convert Words to Lines**: Tests the conversion of word results to line results.
+- **Update Word Result**: Verifies that word results are updated with correct line numbers.
+
+This test suite assumes the existence of `LineResult` and `WordResult` classes, as well as a `SearchEngine` class, which are not provided in the original code snippet. Adjustments may be necessary based on their actual implementations.

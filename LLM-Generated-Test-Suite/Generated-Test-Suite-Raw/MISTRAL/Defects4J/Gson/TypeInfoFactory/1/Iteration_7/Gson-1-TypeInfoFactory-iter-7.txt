@@ -1,0 +1,163 @@
+Certainly! Below is a complete JUnit 4 test suite to comprehensively test all methods in the `TypeInfoFactory` class.
+
+```java
+package com.google.gson;
+
+import static org.junit.Assert.*;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class TypeInfoFactoryTest {
+
+    private TypeInfoFactory typeInfoFactory;
+
+    @Before
+    public void setUp() {
+        typeInfoFactory = new TypeInfoFactory();
+    }
+
+    @Test
+    public void testGetTypeInfoForArray() {
+        Type arrayType = new TypeToken<String[]>() {}.getType();
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(arrayType);
+        assertNotNull(typeInfoArray);
+        assertEquals(arrayType, typeInfoArray.getType());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArrayWithNonArrayType() {
+        Type nonArrayType = new TypeToken<String>() {}.getType();
+        TypeInfoFactory.getTypeInfoForArray(nonArrayType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField() throws NoSuchFieldException {
+        class TestClass<T> {
+            T field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeDefiningF = new TypeToken<TestClass<String>>() {}.getType();
+
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+        assertNotNull(typeInfo);
+        assertEquals(String.class, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithParameterizedType() throws NoSuchFieldException {
+        class TestClass<T> {
+            List<T> field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeDefiningF = new TypeToken<TestClass<String>>() {}.getType();
+
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+        assertNotNull(typeInfo);
+        assertTrue(typeInfo.getType() instanceof ParameterizedType);
+        ParameterizedType parameterizedType = (ParameterizedType) typeInfo.getType();
+        assertEquals(List.class, parameterizedType.getRawType());
+        assertEquals(String.class, parameterizedType.getActualTypeArguments()[0]);
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithGenericArrayType() throws NoSuchFieldException {
+        class TestClass<T> {
+            T[] field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeDefiningF = new TypeToken<TestClass<String>>() {}.getType();
+
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+        assertNotNull(typeInfo);
+        assertTrue(typeInfo.getType() instanceof GenericArrayType);
+        GenericArrayType genericArrayType = (GenericArrayType) typeInfo.getType();
+        assertEquals(String.class, genericArrayType.getGenericComponentType());
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithTypeVariable() throws NoSuchFieldException {
+        class TestClass<T> {
+            T field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeDefiningF = new TypeToken<TestClass<String>>() {}.getType();
+
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+        assertNotNull(typeInfo);
+        assertEquals(String.class, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithWildcardType() throws NoSuchFieldException {
+        class TestClass<T> {
+            List<? extends T> field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeDefiningF = new TypeToken<TestClass<String>>() {}.getType();
+
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+        assertNotNull(typeInfo);
+        assertTrue(typeInfo.getType() instanceof ParameterizedType);
+        ParameterizedType parameterizedType = (ParameterizedType) typeInfo.getType();
+        assertEquals(List.class, parameterizedType.getRawType());
+        assertEquals(String.class, parameterizedType.getActualTypeArguments()[0]);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForFieldWithUnsupportedType() throws NoSuchFieldException {
+        class TestClass<T> {
+            T field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeDefiningF = new TypeToken<TestClass<Object>>() {}.getType();
+
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+    }
+
+    @Test
+    public void testExtractRealTypes() {
+        Type[] actualTypeArguments = new Type[]{String.class, Integer.class};
+        Type parentType = new TypeToken<List<String>>() {}.getType();
+        Class<?> rawParentClass = List.class;
+
+        Type[] realTypes = TypeInfoFactory.extractRealTypes(actualTypeArguments, parentType, rawParentClass);
+        assertNotNull(realTypes);
+        assertEquals(2, realTypes.length);
+        assertEquals(String.class, realTypes[0]);
+        assertEquals(Integer.class, realTypes[1]);
+    }
+
+    @Test
+    public void testGetIndex() {
+        TypeVariable<?>[] types = new TypeVariable<?>[]{String.class.getTypeParameters()[0]};
+        TypeVariable<?> type = String.class.getTypeParameters()[0];
+
+        int index = TypeInfoFactory.getIndex(types, type);
+        assertEquals(0, index);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetIndexWithNonExistentTypeVariable() {
+        TypeVariable<?>[] types = new TypeVariable<?>[]{String.class.getTypeParameters()[0]};
+        TypeVariable<?> type = Integer.class.getTypeParameters()[0];
+
+        TypeInfoFactory.getIndex(types, type);
+    }
+}
+```
+
+This test suite covers all the public and private methods in the `TypeInfoFactory` class, ensuring comprehensive testing of the class's functionality.

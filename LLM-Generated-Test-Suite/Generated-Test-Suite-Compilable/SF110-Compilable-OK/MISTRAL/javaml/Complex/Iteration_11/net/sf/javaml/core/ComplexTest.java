@@ -1,0 +1,101 @@
+package net.sf.javaml.core;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class ComplexTest {
+
+    private Complex complex1;
+    private Complex complex2;
+    private Complex complex3;
+
+    @Before
+    public void setUp() {
+        complex1 = new Complex(3.0, 4.0);
+        complex2 = new Complex(1.0, 2.0);
+        complex3 = new Complex();
+    }
+
+    @Test
+    public void testConstructor() {
+        assertEquals(3.0, complex1.re, 0.0001);
+        assertEquals(4.0, complex1.im, 0.0001);
+        assertEquals(0.0, complex3.re, 0.0001);
+        assertEquals(0.0, complex3.im, 0.0001);
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("3.0 + 4.0i", complex1.toString());
+        assertEquals("0.0 + 0.0i", complex3.toString());
+    }
+
+    @Test
+    public void testAbs() {
+        assertEquals(5.0, complex1.abs(), 0.0001);
+        assertEquals(Math.sqrt(5), complex2.abs(), 0.0001);
+    }
+
+    @Test
+    public void testPlus() {
+        complex1.plus(complex2);
+        assertEquals(4.0, complex1.re, 0.0001);
+        assertEquals(6.0, complex1.im, 0.0001);
+    }
+
+    @Test
+    public void testMinus() {
+        complex1.minus(complex2);
+        assertEquals(2.0, complex1.re, 0.0001);
+        assertEquals(2.0, complex1.im, 0.0001);
+    }
+
+    @Test
+    public void testTimesComplex() {
+        complex1.times(complex2);
+        assertEquals(-5.0, complex1.re, 0.0001);
+        assertEquals(10.0, complex1.im, 0.0001);
+    }
+
+    @Test
+    public void testTimesDouble() {
+        complex1.times(2.0);
+        assertEquals(6.0, complex1.re, 0.0001);
+        assertEquals(8.0, complex1.im, 0.0001);
+    }
+
+    @Test
+    public void testConjugate() {
+        complex1.conjugate();
+        assertEquals(3.0, complex1.re, 0.0001);
+        assertEquals(-4.0, complex1.im, 0.0001);
+    }
+
+    @Test
+    public void testStaticPlus() {
+        Complex result = Complex.plus(complex1, complex2);
+        assertEquals(4.0, result.re, 0.0001);
+        assertEquals(6.0, result.im, 0.0001);
+    }
+
+    @Test
+    public void testStaticMultiplyComplexDouble() {
+        Complex result = Complex.multiply(complex1, 2.0);
+        assertEquals(6.0, result.re, 0.0001);
+        assertEquals(8.0, result.im, 0.0001);
+    }
+
+    @Test
+    public void testStaticMultiplyComplexComplex() {
+        Complex result = Complex.multiply(complex1, complex2);
+        assertEquals(-5.0, result.re, 0.0001);
+        assertEquals(10.0, result.im, 0.0001);
+    }
+
+    @Test
+    public void testStaticI() {
+        assertEquals(0.0, Complex.I.re, 0.0001);
+        assertEquals(1.0, Complex.I.im, 0.0001);
+    }
+}

@@ -1,0 +1,225 @@
+package org.joda.time;
+
+import static org.junit.Assert.*;
+import org.joda.time.*;
+import org.joda.time.format.*;
+import org.junit.Test;
+
+public class MutablePeriodTest {
+
+    @Test
+    public void testParseString() {
+        MutablePeriod period = MutablePeriod.parse("P1Y2M3W4DT5H6M7.008S");
+        assertEquals(1, period.getYears());
+        assertEquals(2, period.getMonths());
+        assertEquals(3, period.getWeeks());
+        assertEquals(4, period.getDays());
+        assertEquals(5, period.getHours());
+        assertEquals(6, period.getMinutes());
+        assertEquals(7, period.getSeconds());
+        assertEquals(8, period.getMillis());
+    }
+
+    @Test
+    public void testParseStringWithFormatter() {
+        PeriodFormatter formatter = ISOPeriodFormat.standard();
+        MutablePeriod period = MutablePeriod.parse("P1Y2M3W4DT5H6M7.008S", formatter);
+        assertEquals(1, period.getYears());
+        assertEquals(2, period.getMonths());
+        assertEquals(3, period.getWeeks());
+        assertEquals(4, period.getDays());
+        assertEquals(5, period.getHours());
+        assertEquals(6, period.getMinutes());
+        assertEquals(7, period.getSeconds());
+        assertEquals(8, period.getMillis());
+    }
+
+    @Test
+    public void testConstructors() {
+        MutablePeriod period1 = new MutablePeriod();
+        assertEquals(0, period1.getYears());
+
+        MutablePeriod period2 = new MutablePeriod(PeriodType.standard());
+        assertEquals(0, period2.getYears());
+
+        MutablePeriod period3 = new MutablePeriod(1, 2, 3, 4);
+        assertEquals(1, period3.getHours());
+        assertEquals(2, period3.getMinutes());
+        assertEquals(3, period3.getSeconds());
+        assertEquals(4, period3.getMillis());
+
+        MutablePeriod period4 = new MutablePeriod(1, 2, 3, 4, 5, 6, 7, 8);
+        assertEquals(1, period4.getYears());
+        assertEquals(2, period4.getMonths());
+        assertEquals(3, period4.getWeeks());
+        assertEquals(4, period4.getDays());
+        assertEquals(5, period4.getHours());
+        assertEquals(6, period4.getMinutes());
+        assertEquals(7, period4.getSeconds());
+        assertEquals(8, period4.getMillis());
+
+        MutablePeriod period5 = new MutablePeriod(1000L);
+        assertEquals(1, period5.getSeconds());
+
+        MutablePeriod period6 = new MutablePeriod(1000L, PeriodType.standard());
+        assertEquals(1, period6.getSeconds());
+
+        MutablePeriod period7 = new MutablePeriod(1000L, 2000L);
+        assertEquals(1, period7.getSeconds());
+
+        MutablePeriod period8 = new MutablePeriod((ReadableInstant) null, (ReadableInstant) null);
+        assertEquals(0, period8.getYears());
+
+        MutablePeriod period9 = new MutablePeriod((ReadableDuration) null, (ReadableInstant) null);
+        assertEquals(0, period9.getYears());
+
+        MutablePeriod period10 = new MutablePeriod((Object) null);
+        assertEquals(0, period10.getYears());
+    }
+
+    @Test
+    public void testClear() {
+        MutablePeriod period = new MutablePeriod(1, 2, 3, 4, 5, 6, 7, 8);
+        period.clear();
+        assertEquals(0, period.getYears());
+        assertEquals(0, period.getMonths());
+        assertEquals(0, period.getWeeks());
+        assertEquals(0, period.getDays());
+        assertEquals(0, period.getHours());
+        assertEquals(0, period.getMinutes());
+        assertEquals(0, period.getSeconds());
+        assertEquals(0, period.getMillis());
+    }
+
+    @Test
+    public void testSetValue() {
+        MutablePeriod period = new MutablePeriod();
+        period.setValue(0, 5);
+        assertEquals(5, period.getYears());
+    }
+
+    @Test
+    public void testSet() {
+        MutablePeriod period = new MutablePeriod();
+        period.set(DurationFieldType.years(), 5);
+        assertEquals(5, period.getYears());
+    }
+
+    @Test
+    public void testSetPeriod() {
+        MutablePeriod period = new MutablePeriod();
+        period.setPeriod(1, 2, 3, 4, 5, 6, 7, 8);
+        assertEquals(1, period.getYears());
+        assertEquals(2, period.getMonths());
+        assertEquals(3, period.getWeeks());
+        assertEquals(4, period.getDays());
+        assertEquals(5, period.getHours());
+        assertEquals(6, period.getMinutes());
+        assertEquals(7, period.getSeconds());
+        assertEquals(8, period.getMillis());
+    }
+
+    @Test
+    public void testAdd() {
+        MutablePeriod period = new MutablePeriod();
+        period.add(DurationFieldType.years(), 5);
+        assertEquals(5, period.getYears());
+    }
+
+    @Test
+    public void testAddPeriod() {
+        MutablePeriod period = new MutablePeriod();
+        period.add(new Period(1, 2, 3, 4, 5, 6, 7, 8));
+        assertEquals(1, period.getYears());
+        assertEquals(2, period.getMonths());
+        assertEquals(3, period.getWeeks());
+        assertEquals(4, period.getDays());
+        assertEquals(5, period.getHours());
+        assertEquals(6, period.getMinutes());
+        assertEquals(7, period.getSeconds());
+        assertEquals(8, period.getMillis());
+    }
+
+    @Test
+    public void testMergePeriod() {
+        MutablePeriod period = new MutablePeriod();
+        period.mergePeriod(new Period(1, 2, 3, 4, 5, 6, 7, 8));
+        assertEquals(1, period.getYears());
+        assertEquals(2, period.getMonths());
+        assertEquals(3, period.getWeeks());
+        assertEquals(4, period.getDays());
+        assertEquals(5, period.getHours());
+        assertEquals(6, period.getMinutes());
+        assertEquals(7, period.getSeconds());
+        assertEquals(8, period.getMillis());
+    }
+
+    @Test
+    public void testGetters() {
+        MutablePeriod period = new MutablePeriod(1, 2, 3, 4, 5, 6, 7, 8);
+        assertEquals(1, period.getYears());
+        assertEquals(2, period.getMonths());
+        assertEquals(3, period.getWeeks());
+        assertEquals(4, period.getDays());
+        assertEquals(5, period.getHours());
+        assertEquals(6, period.getMinutes());
+        assertEquals(7, period.getSeconds());
+        assertEquals(8, period.getMillis());
+    }
+
+    @Test
+    public void testSetters() {
+        MutablePeriod period = new MutablePeriod();
+        period.setYears(1);
+        period.setMonths(2);
+        period.setWeeks(3);
+        period.setDays(4);
+        period.setHours(5);
+        period.setMinutes(6);
+        period.setSeconds(7);
+        period.setMillis(8);
+        assertEquals(1, period.getYears());
+        assertEquals(2, period.getMonths());
+        assertEquals(3, period.getWeeks());
+        assertEquals(4, period.getDays());
+        assertEquals(5, period.getHours());
+        assertEquals(6, period.getMinutes());
+        assertEquals(7, period.getSeconds());
+        assertEquals(8, period.getMillis());
+    }
+
+    @Test
+    public void testAdders() {
+        MutablePeriod period = new MutablePeriod();
+        period.addYears(1);
+        period.addMonths(2);
+        period.addWeeks(3);
+        period.addDays(4);
+        period.addHours(5);
+        period.addMinutes(6);
+        period.addSeconds(7);
+        period.addMillis(8);
+        assertEquals(1, period.getYears());
+        assertEquals(2, period.getMonths());
+        assertEquals(3, period.getWeeks());
+        assertEquals(4, period.getDays());
+        assertEquals(5, period.getHours());
+        assertEquals(6, period.getMinutes());
+        assertEquals(7, period.getSeconds());
+        assertEquals(8, period.getMillis());
+    }
+
+    @Test
+    public void testCopy() {
+        MutablePeriod period = new MutablePeriod(1, 2, 3, 4, 5, 6, 7, 8);
+        MutablePeriod copy = period.copy();
+        assertEquals(period, copy);
+    }
+
+    @Test
+    public void testClone() {
+        MutablePeriod period = new MutablePeriod(1, 2, 3, 4, 5, 6, 7, 8);
+        MutablePeriod clone = (MutablePeriod) period.clone();
+        assertEquals(period, clone);
+    }
+}

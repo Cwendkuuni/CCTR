@@ -1,0 +1,117 @@
+To create a comprehensive JUnit 4 test suite for the `AbstractLoader` class, we need to consider the following:
+
+1. **Constructor Testing**: Since `AbstractLoader` is abstract, we need a concrete subclass to test the constructors.
+2. **Method Testing**: We need to test `parseInputSource`, `resolveEntity`, `error`, and `fatalError` methods.
+3. **Exception Handling**: Ensure that exceptions are thrown as expected.
+
+Below is a JUnit 4 test suite for the `AbstractLoader` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+public class AbstractLoaderTest {
+
+    private AbstractLoader loader;
+    private Map<String, String> publicIdToResourceNameMap;
+
+    // Concrete subclass for testing
+    private class TestLoader extends AbstractLoader {
+        protected TestLoader(String publicId, String dtdResourceName) throws SAXException, ParserConfigurationException {
+            super(publicId, dtdResourceName);
+        }
+
+        protected TestLoader(Map<String, String> publicIdToResourceNameMap) throws SAXException, ParserConfigurationException {
+            super(publicIdToResourceNameMap);
+        }
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        publicIdToResourceNameMap = new HashMap<>();
+        publicIdToResourceNameMap.put("publicId", "dtdResourceName");
+        loader = new TestLoader(publicIdToResourceNameMap);
+    }
+
+    @Test
+    public void testConstructorWithMap() throws Exception {
+        assertNotNull(loader);
+    }
+
+    @Test
+    public void testConstructorWithPublicIdAndResourceName() throws Exception {
+        loader = new TestLoader("publicId", "dtdResourceName");
+        assertNotNull(loader);
+    }
+
+    @Test
+    public void testParseInputSource() throws Exception {
+        InputSource inputSource = mock(InputSource.class);
+        try {
+            loader.parseInputSource(inputSource);
+        } catch (Exception e) {
+            fail("Parsing should not throw an exception: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testResolveEntityWithKnownPublicId() throws Exception {
+        InputStream mockInputStream = mock(InputStream.class);
+        ClassLoader classLoader = mock(ClassLoader.class);
+        when(classLoader.getResourceAsStream("dtdResourceName")).thenReturn(mockInputStream);
+
+        ClassLoader originalClassLoader = Thread.currentThread().getContextClassLoader();
+        Thread.currentThread().setContextClassLoader(classLoader);
+
+        try {
+            InputSource result = loader.resolveEntity("publicId", "systemId");
+            assertNotNull(result);
+            assertEquals(mockInputStream, result.getByteStream());
+        } finally {
+            Thread.currentThread().setContextClassLoader(originalClassLoader);
+        }
+    }
+
+    @Test
+    public void testResolveEntityWithUnknownPublicId() throws Exception {
+        InputSource result = loader.resolveEntity("unknownPublicId", "systemId");
+        assertNull(result.getByteStream());
+    }
+
+    @Test(expected = SAXException.class)
+    public void testErrorThrowsSAXException() throws SAXException {
+        SAXParseException exception = mock(SAXParseException.class);
+        loader.error(exception);
+    }
+
+    @Test(expected = SAXException.class)
+    public void testFatalErrorThrowsSAXException() throws SAXException {
+        SAXParseException exception = mock(SAXParseException.class);
+        loader.fatalError(exception);
+    }
+}
+```
+
+### Explanation:
+- **Concrete Subclass**: `TestLoader` is a concrete subclass of `AbstractLoader` used for testing.
+- **Setup**: The `setUp` method initializes the `publicIdToResourceNameMap` and creates an instance of `TestLoader`.
+- **Constructor Tests**: Tests for both constructors ensure that the object is created without exceptions.
+- **Method Tests**:
+  - `testParseInputSource`: Verifies that parsing an `InputSource` does not throw exceptions.
+  - `testResolveEntityWithKnownPublicId`: Mocks the class loader to return a stream for a known public ID.
+  - `testResolveEntityWithUnknownPublicId`: Ensures that resolving an unknown public ID returns `null`.
+  - `testErrorThrowsSAXException` and `testFatalErrorThrowsSAXException`: Verify that `error` and `fatalError` methods throw `SAXException`.
+
+This test suite uses Mockito for mocking dependencies and verifying interactions.

@@ -1,0 +1,103 @@
+To create a comprehensive JUnit 4 test suite for the `SimpleSector` class, we need to test all public methods, including constructors, getters, and any other methods that affect the state of the object. Below is a test suite that covers these aspects. Note that this test suite assumes the existence of mock or stub implementations for `CombatantSide`, `CharacterClass`, `SectorBonus`, `Area`, `Combatant`, `Weapon`, and `SectorObserver`, as these are not provided in the original code.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import java.util.Set;
+import java.util.HashSet;
+
+public class SimpleSectorTest {
+
+    private SimpleSector sector;
+    private CombatantSide mockSide;
+    private CharacterClass mockClass;
+    private Area mockArea;
+    private SectorObserver mockObserver;
+
+    @Before
+    public void setUp() {
+        mockSide = mock(CombatantSide.class);
+        mockClass = mock(CharacterClass.class);
+        mockArea = mock(Area.class);
+        mockObserver = mock(SectorObserver.class);
+        sector = new SimpleSector(10, true, false, 5, 3, true, 2, mockClass);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(sector);
+        assertEquals(10, sector.getHeight());
+        assertTrue(sector.isDefenderSpawn());
+        assertFalse(sector.isAttackerSpawn());
+        assertTrue(sector.isFlag());
+    }
+
+    @Test
+    public void testGainControl() {
+        sector.gainControl(mockSide);
+        assertEquals(mockSide, sector.getOccupier());
+        assertTrue(sector.isOccupied());
+    }
+
+    @Test
+    public void testFree() {
+        sector.gainControl(mockSide);
+        sector.free();
+        assertNull(sector.getOccupier());
+        assertFalse(sector.isOccupied());
+    }
+
+    @Test
+    public void testGetBonus() {
+        SectorBonus bonus = sector.getBonus(mockClass);
+        assertNotNull(bonus);
+    }
+
+    @Test
+    public void testAddArea() {
+        sector._addArea(mockArea);
+        Set<Area> areas = sector.getAreas();
+        assertTrue(areas.contains(mockArea));
+    }
+
+    @Test
+    public void testAddObserver() {
+        sector.addObserver(mockObserver);
+        sector.gainControl(mockSide);
+        verify(mockObserver, times(1)).occupierChanged();
+    }
+
+    @Test
+    public void testRemoveObserver() {
+        sector.addObserver(mockObserver);
+        sector.removeObserver(mockObserver);
+        sector.gainControl(mockSide);
+        verify(mockObserver, never()).occupierChanged();
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        SimpleSector sameSector = new SimpleSector(10, true, false, 5, 3, true, 2, mockClass);
+        assertTrue(sector.equals(sameSector));
+        assertEquals(sector.hashCode(), sameSector.hashCode());
+
+        SimpleSector differentSector = new SimpleSector(9, false, true, 4, 2, false, 1, mockClass);
+        assertFalse(sector.equals(differentSector));
+        assertNotEquals(sector.hashCode(), differentSector.hashCode());
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `SimpleSector` instance and mocks necessary dependencies.
+- **Constructor Test**: Verifies that the constructor initializes the object correctly.
+- **Control Methods**: Tests `gainControl` and `free` methods to ensure they modify the occupier state correctly.
+- **Bonus Calculation**: Tests `getBonus` to ensure it returns a non-null `SectorBonus`.
+- **Area Management**: Tests `_addArea` to ensure areas are added correctly.
+- **Observer Pattern**: Tests `addObserver` and `removeObserver` to ensure observers are notified or not notified as expected.
+- **Equality and Hashing**: Tests `equals` and `hashCode` to ensure they behave correctly for equal and unequal objects.
+
+This test suite provides a comprehensive coverage of the `SimpleSector` class's functionality.

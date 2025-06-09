@@ -1,0 +1,106 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `TypeInfoFactory` class. This suite includes tests for each method, covering various scenarios and edge cases.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import com.google.gson.*;
+import org.junit.Test;
+import java.lang.reflect.*;
+import java.util.List;
+
+public class TypeInfoFactoryTest {
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArrayWithNonArrayType() {
+        Type nonArrayType = String.class;
+        TypeInfoFactory.getTypeInfoForArray(nonArrayType);
+    }
+
+    @Test
+    public void testGetTypeInfoForArrayWithArrayType() {
+        Type arrayType = String[].class;
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(arrayType);
+        assertNotNull(typeInfoArray);
+        assertEquals(arrayType, typeInfoArray.getType());
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithSimpleType() throws NoSuchFieldException {
+        class TestClass {
+            String field;
+        }
+        Field field = TestClass.class.getDeclaredField("field");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, TestClass.class);
+        assertNotNull(typeInfo);
+        assertEquals(String.class, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithParameterizedType() throws NoSuchFieldException {
+        class TestClass {
+            List<String> field;
+        }
+        Field field = TestClass.class.getDeclaredField("field");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, TestClass.class);
+        assertNotNull(typeInfo);
+        assertTrue(typeInfo.getType() instanceof ParameterizedType);
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithGenericArrayType() throws NoSuchFieldException {
+        class TestClass<T> {
+            T[] field;
+        }
+        Field field = TestClass.class.getDeclaredField("field");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, TestClass.class);
+        assertNotNull(typeInfo);
+        assertTrue(typeInfo.getType() instanceof GenericArrayType);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetTypeInfoForFieldWithTypeVariableWithoutParameterizedType() throws NoSuchFieldException {
+        class TestClass<T> {
+            T field;
+        }
+        Field field = TestClass.class.getDeclaredField("field");
+        TypeInfoFactory.getTypeInfoForField(field, TestClass.class);
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithTypeVariableWithParameterizedType() throws NoSuchFieldException {
+        class TestClass<T> {
+            T field;
+        }
+        Field field = TestClass.class.getDeclaredField("field");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, new TypeToken<TestClass<String>>(){}.getType());
+        assertNotNull(typeInfo);
+        assertEquals(String.class, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithWildcardType() throws NoSuchFieldException {
+        class TestClass {
+            List<? extends Number> field;
+        }
+        Field field = TestClass.class.getDeclaredField("field");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, TestClass.class);
+        assertNotNull(typeInfo);
+        assertTrue(typeInfo.getType() instanceof ParameterizedType);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetActualTypeWithInvalidType() {
+        Type invalidType = mock(Type.class);
+        TypeInfoFactory.getTypeInfoForField(mock(Field.class), invalidType);
+    }
+}
+```
+
+### Explanation:
+- **Test Setup**: The test suite uses JUnit 4 annotations and assertions to verify the behavior of the `TypeInfoFactory` methods.
+- **Mocking**: Mockito is used to create mock objects where necessary, particularly for testing invalid types.
+- **Edge Cases**: The tests cover various scenarios, including non-array types, parameterized types, generic array types, type variables, and wildcard types.
+- **Exception Handling**: Tests are included to ensure that the appropriate exceptions are thrown for invalid inputs.
+
+This test suite should provide comprehensive coverage for the `TypeInfoFactory` class.

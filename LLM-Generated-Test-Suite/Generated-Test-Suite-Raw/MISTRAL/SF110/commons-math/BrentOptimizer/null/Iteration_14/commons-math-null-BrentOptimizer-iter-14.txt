@@ -1,0 +1,81 @@
+```java
+package org.apache.commons.math3.optim.univariate;
+
+import org.apache.commons.math3.optim.*;
+import org.apache.commons.math3.exception.*;
+import org.apache.commons.math3.optim.nonlinear.scalar.*;
+import org.apache.commons.math3.util.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+
+public class BrentOptimizerTest {
+
+    private static final double RELATIVE_TOLERANCE = 1e-10;
+    private static final double ABSOLUTE_TOLERANCE = 1e-10;
+
+    @Test
+    public void testConstructorWithValidParameters() {
+        ConvergenceChecker<UnivariatePointValuePair> checker = new SimpleValueChecker(1e-6, 1e-6);
+        BrentOptimizer optimizer = new BrentOptimizer(RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE, checker);
+        assertNotNull(optimizer);
+    }
+
+    @Test(expected = NumberIsTooSmallException.class)
+    public void testConstructorWithInvalidRelativeTolerance() {
+        new BrentOptimizer(BrentOptimizer.MIN_RELATIVE_TOLERANCE - 1e-15, ABSOLUTE_TOLERANCE);
+    }
+
+    @Test(expected = NotStrictlyPositiveException.class)
+    public void testConstructorWithInvalidAbsoluteTolerance() {
+        new BrentOptimizer(RELATIVE_TOLERANCE, -1e-15);
+    }
+
+    @Test
+    public void testDoOptimize() {
+        ConvergenceChecker<UnivariatePointValuePair> checker = new SimpleValueChecker(1e-6, 1e-6);
+        BrentOptimizer optimizer = new BrentOptimizer(RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE, checker);
+
+        // Mock the necessary methods and fields
+        optimizer.setGoalType(GoalType.MINIMIZE);
+        optimizer.setMin(0.0);
+        optimizer.setStartValue(1.0);
+        optimizer.setMax(2.0);
+
+        // Mock computeObjectiveValue method
+        optimizer.setComputeObjectiveValue(x -> x * x);
+
+        UnivariatePointValuePair result = optimizer.doOptimize();
+        assertNotNull(result);
+        assertEquals(0.0, result.getPoint(), 1e-6);
+    }
+
+    @Test
+    public void testBest() {
+        BrentOptimizer optimizer = new BrentOptimizer(RELATIVE_TOLERANCE, ABSOLUTE_TOLERANCE);
+
+        UnivariatePointValuePair a = new UnivariatePointValuePair(1.0, 1.0);
+        UnivariatePointValuePair b = new UnivariatePointValuePair(2.0, 2.0);
+
+        UnivariatePointValuePair best = optimizer.best(a, b, true);
+        assertEquals(a, best);
+
+        best = optimizer.best(a, b, false);
+        assertEquals(b, best);
+    }
+
+    private static class SimpleValueChecker implements ConvergenceChecker<UnivariatePointValuePair> {
+        private final double relativeThreshold;
+        private final double absoluteThreshold;
+
+        public SimpleValueChecker(double relativeThreshold, double absoluteThreshold) {
+            this.relativeThreshold = relativeThreshold;
+            this.absoluteThreshold = absoluteThreshold;
+        }
+
+        @Override
+        public boolean converged(int iteration, UnivariatePointValuePair previous, UnivariatePointValuePair current) {
+            return FastMath.abs(previous.getValue() - current.getValue()) < relativeThreshold * FastMath.abs(current.getValue()) + absoluteThreshold;
+        }
+    }
+}
+```

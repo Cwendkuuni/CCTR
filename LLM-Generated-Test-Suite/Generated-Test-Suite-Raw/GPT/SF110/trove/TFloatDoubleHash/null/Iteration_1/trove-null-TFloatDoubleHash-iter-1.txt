@@ -1,0 +1,168 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import java.io.*;
+
+public class TFloatDoubleHashTest {
+
+    private TFloatDoubleHash hash;
+
+    @Before
+    public void setUp() {
+        hash = new TFloatDoubleHashImpl();
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertEquals(0.0f, hash.getNoEntryKey(), 0.0);
+        assertEquals(0.0, hash.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacity() {
+        hash = new TFloatDoubleHashImpl(10);
+        assertEquals(0.0f, hash.getNoEntryKey(), 0.0);
+        assertEquals(0.0, hash.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacityAndLoadFactor() {
+        hash = new TFloatDoubleHashImpl(10, 0.5f);
+        assertEquals(0.0f, hash.getNoEntryKey(), 0.0);
+        assertEquals(0.0, hash.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testConstructorWithAllParameters() {
+        hash = new TFloatDoubleHashImpl(10, 0.5f, -1.0f, -1.0);
+        assertEquals(-1.0f, hash.getNoEntryKey(), 0.0);
+        assertEquals(-1.0, hash.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testSetUp() {
+        int capacity = hash.setUp(10);
+        assertEquals(10, capacity);
+        assertNotNull(hash._set);
+    }
+
+    @Test
+    public void testContains() {
+        hash.insertKey(1.0f);
+        assertTrue(hash.contains(1.0f));
+        assertFalse(hash.contains(2.0f));
+    }
+
+    @Test
+    public void testForEach() {
+        TFloatProcedure procedure = Mockito.mock(TFloatProcedure.class);
+        Mockito.when(procedure.execute(Mockito.anyFloat())).thenReturn(true);
+
+        hash.insertKey(1.0f);
+        hash.insertKey(2.0f);
+
+        assertTrue(hash.forEach(procedure));
+        Mockito.verify(procedure, Mockito.times(2)).execute(Mockito.anyFloat());
+    }
+
+    @Test
+    public void testRemoveAt() {
+        hash.insertKey(1.0f);
+        int index = hash.index(1.0f);
+        hash.removeAt(index);
+        assertFalse(hash.contains(1.0f));
+    }
+
+    @Test
+    public void testIndex() {
+        hash.insertKey(1.0f);
+        int index = hash.index(1.0f);
+        assertTrue(index >= 0);
+        assertEquals(-1, hash.index(2.0f));
+    }
+
+    @Test
+    public void testIndexRehashed() {
+        hash.insertKey(1.0f);
+        int index = hash.indexRehashed(1.0f, 0, 0, (byte) 1);
+        assertTrue(index >= 0);
+        assertEquals(-1, hash.indexRehashed(2.0f, 0, 0, (byte) 0));
+    }
+
+    @Test
+    public void testInsertKey() {
+        int index = hash.insertKey(1.0f);
+        assertTrue(index >= 0);
+        assertTrue(hash.contains(1.0f));
+    }
+
+    @Test
+    public void testInsertKeyRehash() {
+        int index = hash.insertKeyRehash(1.0f, 0, 0, (byte) 0);
+        assertTrue(index >= 0);
+        assertTrue(hash.contains(1.0f));
+    }
+
+    @Test
+    public void testXinsertKey() {
+        int index = hash.XinsertKey(1.0f);
+        assertTrue(index >= 0);
+        assertTrue(hash.contains(1.0f));
+    }
+
+    @Test
+    public void testWriteExternal() throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutput out = new ObjectOutputStream(bos);
+        hash.writeExternal(out);
+        out.flush();
+        byte[] byteData = bos.toByteArray();
+        assertTrue(byteData.length > 0);
+    }
+
+    @Test
+    public void testReadExternal() throws IOException, ClassNotFoundException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutput out = new ObjectOutputStream(bos);
+        hash.writeExternal(out);
+        out.flush();
+        byte[] byteData = bos.toByteArray();
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(byteData);
+        ObjectInput in = new ObjectInputStream(bis);
+        TFloatDoubleHash newHash = new TFloatDoubleHashImpl();
+        newHash.readExternal(in);
+
+        assertEquals(hash.getNoEntryKey(), newHash.getNoEntryKey(), 0.0);
+        assertEquals(hash.getNoEntryValue(), newHash.getNoEntryValue(), 0.0);
+    }
+
+    // A simple implementation of TFloatDoubleHash for testing purposes
+    private static class TFloatDoubleHashImpl extends TFloatDoubleHash {
+        public TFloatDoubleHashImpl() {
+            super();
+        }
+
+        public TFloatDoubleHashImpl(int initialCapacity) {
+            super(initialCapacity);
+        }
+
+        public TFloatDoubleHashImpl(int initialCapacity, float loadFactor) {
+            super(initialCapacity, loadFactor);
+        }
+
+        public TFloatDoubleHashImpl(int initialCapacity, float loadFactor, float no_entry_key, double no_entry_value) {
+            super(initialCapacity, loadFactor, no_entry_key, no_entry_value);
+        }
+
+        @Override
+        protected int setUp(int initialCapacity) {
+            return super.setUp(initialCapacity);
+        }
+    }
+}
+```
+
+This test suite covers the constructors, methods, and serialization/deserialization of the `TFloatDoubleHash` class. It uses a simple subclass `TFloatDoubleHashImpl` to instantiate the abstract class for testing purposes. The tests use JUnit 4 annotations and assertions to verify the behavior of the class methods.

@@ -1,0 +1,97 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import jigl.image.ops.ConnectedComponents;
+import jigl.image.types.BinaryImage;
+import jigl.image.types.GrayImage;
+import jigl.image.exceptions.InvalidArgumentException;
+
+public class ConnectedComponentsTest {
+
+    private ConnectedComponents ccFourConnected;
+    private ConnectedComponents ccEightConnected;
+    private BinaryImage binaryImage;
+
+    @Before
+    public void setUp() throws InvalidArgumentException {
+        ccFourConnected = new ConnectedComponents(ConnectedComponents.FOUR_CONNECTED, 0);
+        ccEightConnected = new ConnectedComponents(ConnectedComponents.EIGHT_CONNECTED, 0);
+        binaryImage = new BinaryImage(3, 3);
+        binaryImage.set(0, 0, 1);
+        binaryImage.set(1, 1, 1);
+        binaryImage.set(2, 2, 1);
+    }
+
+    @Test
+    public void testConstructorValidArguments() throws InvalidArgumentException {
+        ConnectedComponents cc = new ConnectedComponents(ConnectedComponents.FOUR_CONNECTED, 0);
+        assertNotNull(cc);
+    }
+
+    @Test(expected = InvalidArgumentException.class)
+    public void testConstructorInvalidNeighbors() throws InvalidArgumentException {
+        new ConnectedComponents(2, 0);
+    }
+
+    @Test(expected = InvalidArgumentException.class)
+    public void testConstructorInvalidBackground() throws InvalidArgumentException {
+        new ConnectedComponents(ConnectedComponents.FOUR_CONNECTED, 2);
+    }
+
+    @Test
+    public void testApplyFourConnected() {
+        GrayImage result = ccFourConnected.apply(binaryImage);
+        assertEquals(1, result.get(0, 0));
+        assertEquals(0, result.get(0, 1));
+        assertEquals(0, result.get(0, 2));
+        assertEquals(0, result.get(1, 0));
+        assertEquals(2, result.get(1, 1));
+        assertEquals(0, result.get(1, 2));
+        assertEquals(0, result.get(2, 0));
+        assertEquals(0, result.get(2, 1));
+        assertEquals(3, result.get(2, 2));
+    }
+
+    @Test
+    public void testApplyEightConnected() {
+        GrayImage result = ccEightConnected.apply(binaryImage);
+        assertEquals(1, result.get(0, 0));
+        assertEquals(0, result.get(0, 1));
+        assertEquals(0, result.get(0, 2));
+        assertEquals(0, result.get(1, 0));
+        assertEquals(2, result.get(1, 1));
+        assertEquals(0, result.get(1, 2));
+        assertEquals(0, result.get(2, 0));
+        assertEquals(0, result.get(2, 1));
+        assertEquals(3, result.get(2, 2));
+    }
+
+    @Test
+    public void testApplyAllBackground() {
+        BinaryImage allBackground = new BinaryImage(3, 3);
+        GrayImage result = ccFourConnected.apply(allBackground);
+        for (int x = 0; x < 3; x++) {
+            for (int y = 0; y < 3; y++) {
+                assertEquals(0, result.get(x, y));
+            }
+        }
+    }
+
+    @Test
+    public void testApplyAllForeground() {
+        BinaryImage allForeground = new BinaryImage(3, 3);
+        for (int x = 0; x < 3; x++) {
+            for (int y = 0; y < 3; y++) {
+                allForeground.set(x, y, 1);
+            }
+        }
+        GrayImage result = ccFourConnected.apply(allForeground);
+        for (int x = 0; x < 3; x++) {
+            for (int y = 0; y < 3; y++) {
+                assertEquals(1, result.get(x, y));
+            }
+        }
+    }
+}
+```

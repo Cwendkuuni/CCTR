@@ -1,0 +1,179 @@
+```java
+package wheel.util;
+
+import wheel.components.*;
+import wheel.*;
+import java.util.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class DynamicSelectModelTest {
+
+    private DynamicSelectModel model;
+    private ElExpression mockCollection;
+    private ElExpression mockLabel;
+    private ElExpression mockValue;
+    private Component mockComponent;
+    private StandaloneComponent mockTopLevelComponent;
+
+    @Before
+    public void setUp() {
+        mockCollection = mock(ElExpression.class);
+        mockLabel = mock(ElExpression.class);
+        mockValue = mock(ElExpression.class);
+        mockComponent = mock(Component.class);
+        mockTopLevelComponent = mock(StandaloneComponent.class);
+
+        model = new DynamicSelectModel(mockCollection, mockLabel, mockValue);
+        model.setComponent(mockComponent);
+        model.setTopLevelComponent(mockTopLevelComponent);
+    }
+
+    @Test
+    public void testConstructorWithExpressions() {
+        assertNotNull(model);
+        assertEquals(mockCollection, model.collection);
+        assertEquals(mockLabel, model.label);
+        assertEquals(mockValue, model.value);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        DynamicSelectModel defaultModel = new DynamicSelectModel();
+        assertNotNull(defaultModel);
+    }
+
+    @Test
+    public void testCollectionMethod() {
+        String collectionExpr = "collectionExpr";
+        DynamicSelectModel model = new DynamicSelectModel().collection(collectionExpr);
+        assertEquals(new ElExpression(collectionExpr), model.collection);
+    }
+
+    @Test
+    public void testLabelMethod() {
+        String labelExpr = "labelExpr";
+        DynamicSelectModel model = new DynamicSelectModel().label(labelExpr);
+        assertEquals(new ElExpression(labelExpr), model.label);
+    }
+
+    @Test
+    public void testValueMethod() {
+        String valueExpr = "valueExpr";
+        DynamicSelectModel model = new DynamicSelectModel().value(valueExpr);
+        assertEquals(new ElExpression(valueExpr), model.value);
+    }
+
+    @Test
+    public void testEnumerationMethod() {
+        String enumeration = "enumeration";
+        DynamicSelectModel model = new DynamicSelectModel().enumeration(enumeration);
+        assertEquals(new ElExpression(enumeration + ".values()"), model.collection);
+        assertEquals(new ElExpression("toString()"), model.label);
+        assertEquals(new ElExpression("ordinal()"), model.value);
+    }
+
+    @Test
+    public void testTranslatorMethod() {
+        String translatorExpr = "translatorExpr";
+        DynamicSelectModel model = new DynamicSelectModel().translator(translatorExpr);
+        assertEquals(new ElExpression(translatorExpr), model.translator);
+    }
+
+    @Test
+    public void testEmptyMethod() {
+        Object emptyObject = new Object();
+        DynamicSelectModel model = new DynamicSelectModel().empty(emptyObject);
+        assertEquals(emptyObject, model.emptyObject);
+    }
+
+    @Test
+    public void testGetOptionCount() {
+        Collection<Object> objects = Arrays.asList(new Object(), new Object());
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(objects);
+        assertEquals(2, model.getOptionCount());
+    }
+
+    @Test
+    public void testGetLabel() {
+        Object obj = new Object();
+        when(mockLabel.eval(any(), eq(mockComponent))).thenReturn(obj);
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(Collections.singletonList(obj));
+        assertEquals(obj.toString(), model.getLabel(0));
+    }
+
+    @Test
+    public void testGetValue() {
+        Object obj = new Object();
+        when(mockValue.eval(any(), eq(mockComponent))).thenReturn(obj);
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(Collections.singletonList(obj));
+        assertEquals(obj.toString(), model.getValue(0));
+    }
+
+    @Test
+    public void testTranslateValue() {
+        Object obj = new Object();
+        when(mockValue.eval(any(), eq(mockComponent))).thenReturn(obj);
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(Collections.singletonList(obj));
+        when(mockTranslator.eval(any(), eq(mockComponent))).thenReturn(obj);
+        assertEquals(obj, model.translateValue(obj.toString()));
+    }
+
+    @Test
+    public void testGetObjects() {
+        Collection<Object> objects = Arrays.asList(new Object(), new Object());
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(objects);
+        assertEquals(objects, model.getObjects());
+    }
+
+    @Test
+    public void testGetComponent() {
+        assertEquals(mockComponent, model.getComponent());
+    }
+
+    @Test
+    public void testSetComponent() {
+        Component newComponent = mock(Component.class);
+        model.setComponent(newComponent);
+        assertEquals(newComponent, model.getComponent());
+    }
+
+    @Test
+    public void testGetTopLevelComponent() {
+        assertEquals(mockTopLevelComponent, model.getTopLevelComponent());
+    }
+
+    @Test
+    public void testSetTopLevelComponent() {
+        StandaloneComponent newTopLevelComponent = mock(StandaloneComponent.class);
+        model.setTopLevelComponent(newTopLevelComponent);
+        assertEquals(newTopLevelComponent, model.getTopLevelComponent());
+    }
+
+    @Test(expected = WheelException.class)
+    public void testValidateNullCollection() {
+        model.collection = null;
+        model.validate();
+    }
+
+    @Test(expected = WheelException.class)
+    public void testValidateNullLabel() {
+        model.label = null;
+        model.validate();
+    }
+
+    @Test(expected = WheelException.class)
+    public void testValidateNullValue() {
+        model.value = null;
+        model.validate();
+    }
+
+    @Test
+    public void testReset() {
+        model.objects = new ArrayList<>();
+        model.reset();
+        assertNull(model.objects);
+    }
+}
+```

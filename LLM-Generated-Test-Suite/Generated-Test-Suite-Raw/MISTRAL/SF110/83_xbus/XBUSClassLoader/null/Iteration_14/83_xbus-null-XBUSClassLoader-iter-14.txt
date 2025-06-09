@@ -1,0 +1,108 @@
+```java
+package net.sf.xbus.base.core.reflection;
+
+import net.sf.xbus.base.core.Constants;
+import net.sf.xbus.base.core.trace.Trace;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Vector;
+
+import static org.junit.Assert.*;
+
+public class XBUSClassLoaderTest {
+
+    private static final String TEST_XBUS_HOME = "test/XBUS_HOME";
+
+    @Before
+    public void setUp() {
+        // Set up the XBUS_HOME for testing
+        System.setProperty("XBUS_HOME", TEST_XBUS_HOME);
+        Constants.XBUS_HOME = TEST_XBUS_HOME;
+    }
+
+    @After
+    public void tearDown() {
+        // Clean up the XBUS_HOME after testing
+        System.clearProperty("XBUS_HOME");
+        Constants.XBUS_HOME = null;
+    }
+
+    @Test
+    public void testGetInstance() {
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parent);
+        assertNotNull(classLoader);
+    }
+
+    @Test
+    public void testCreateClassLoader() {
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader classLoader = XBUSClassLoader.createClassLoader(parent);
+        assertNotNull(classLoader);
+    }
+
+    @Test
+    public void testAddUrls() {
+        Vector<URL> urls = new Vector<>();
+        String dirName = TEST_XBUS_HOME + "/lib";
+
+        // Create a test directory with some jar files
+        File libPath = new File(dirName);
+        libPath.mkdirs();
+        try {
+            new File(dirName + "/test1.jar").createNewFile();
+            new File(dirName + "/test2.zip").createNewFile();
+            new File(dirName + "/test3.txt").createNewFile(); // Should be ignored
+        } catch (Exception e) {
+            fail("Failed to create test files: " + e.getMessage());
+        }
+
+        XBUSClassLoader.addUrls(urls, dirName);
+
+        assertEquals(2, urls.size());
+        assertTrue(urls.get(0).getPath().endsWith("test1.jar"));
+        assertTrue(urls.get(1).getPath().endsWith("test2.zip"));
+    }
+
+    @Test
+    public void testAddUrlsMalformedURL() {
+        Vector<URL> urls = new Vector<>();
+        String dirName = TEST_XBUS_HOME + "/lib";
+
+        // Create a test directory with a malformed URL file
+        File libPath = new File(dirName);
+        libPath.mkdirs();
+        try {
+            new File(dirName + "/test:malformed.jar").createNewFile();
+        } catch (Exception e) {
+            fail("Failed to create test files: " + e.getMessage());
+        }
+
+        try {
+            XBUSClassLoader.addUrls(urls, dirName);
+            fail("Expected MalformedURLException");
+        } catch (Exception e) {
+            assertTrue(e instanceof MalformedURLException);
+        }
+    }
+
+    @Test
+    public void testAddUrlsNoFiles() {
+        Vector<URL> urls = new Vector<>();
+        String dirName = TEST_XBUS_HOME + "/empty_lib";
+
+        // Create an empty test directory
+        File libPath = new File(dirName);
+        libPath.mkdirs();
+
+        XBUSClassLoader.addUrls(urls, dirName);
+
+        assertTrue(urls.isEmpty());
+    }
+}
+```

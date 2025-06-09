@@ -1,0 +1,206 @@
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.joda.time.*;
+import org.joda.time.format.*;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.Locale;
+
+public class DateTimeFormatterTest {
+
+    private DateTimePrinter mockPrinter;
+    private DateTimeParser mockParser;
+    private DateTimeFormatter formatter;
+
+    @Before
+    public void setUp() {
+        mockPrinter = mock(DateTimePrinter.class);
+        mockParser = mock(DateTimeParser.class);
+        formatter = new DateTimeFormatter(mockPrinter, mockParser);
+    }
+
+    @Test
+    public void testIsPrinter() {
+        assertTrue(formatter.isPrinter());
+        DateTimeFormatter noPrinterFormatter = new DateTimeFormatter(null, mockParser);
+        assertFalse(noPrinterFormatter.isPrinter());
+    }
+
+    @Test
+    public void testGetPrinter() {
+        assertEquals(mockPrinter, formatter.getPrinter());
+    }
+
+    @Test
+    public void testIsParser() {
+        assertTrue(formatter.isParser());
+        DateTimeFormatter noParserFormatter = new DateTimeFormatter(mockPrinter, null);
+        assertFalse(noParserFormatter.isParser());
+    }
+
+    @Test
+    public void testGetParser() {
+        assertEquals(mockParser, formatter.getParser());
+    }
+
+    @Test
+    public void testWithLocale() {
+        Locale locale = Locale.US;
+        DateTimeFormatter newFormatter = formatter.withLocale(locale);
+        assertEquals(locale, newFormatter.getLocale());
+        assertNotSame(formatter, newFormatter);
+    }
+
+    @Test
+    public void testWithOffsetParsed() {
+        DateTimeFormatter newFormatter = formatter.withOffsetParsed();
+        assertTrue(newFormatter.isOffsetParsed());
+        assertNotSame(formatter, newFormatter);
+    }
+
+    @Test
+    public void testWithChronology() {
+        Chronology chronology = ISOChronology.getInstance();
+        DateTimeFormatter newFormatter = formatter.withChronology(chronology);
+        assertEquals(chronology, newFormatter.getChronology());
+        assertNotSame(formatter, newFormatter);
+    }
+
+    @Test
+    public void testWithZoneUTC() {
+        DateTimeFormatter newFormatter = formatter.withZoneUTC();
+        assertEquals(DateTimeZone.UTC, newFormatter.getZone());
+        assertNotSame(formatter, newFormatter);
+    }
+
+    @Test
+    public void testWithZone() {
+        DateTimeZone zone = DateTimeZone.forID("America/New_York");
+        DateTimeFormatter newFormatter = formatter.withZone(zone);
+        assertEquals(zone, newFormatter.getZone());
+        assertNotSame(formatter, newFormatter);
+    }
+
+    @Test
+    public void testWithPivotYear() {
+        Integer pivotYear = 2020;
+        DateTimeFormatter newFormatter = formatter.withPivotYear(pivotYear);
+        assertEquals(pivotYear, newFormatter.getPivotYear());
+        assertNotSame(formatter, newFormatter);
+    }
+
+    @Test
+    public void testWithDefaultYear() {
+        int defaultYear = 1999;
+        DateTimeFormatter newFormatter = formatter.withDefaultYear(defaultYear);
+        assertEquals(defaultYear, newFormatter.getDefaultYear());
+        assertNotSame(formatter, newFormatter);
+    }
+
+    @Test
+    public void testPrintToStringBuffer() {
+        StringBuffer sb = new StringBuffer();
+        ReadableInstant instant = new DateTime();
+        formatter.printTo(sb, instant);
+        verify(mockPrinter).printTo(eq(sb), anyLong(), any(Chronology.class), anyInt(), any(DateTimeZone.class), eq(null));
+    }
+
+    @Test
+    public void testPrintToWriter() throws IOException {
+        StringWriter writer = new StringWriter();
+        ReadableInstant instant = new DateTime();
+        formatter.printTo(writer, instant);
+        verify(mockPrinter).printTo(eq(writer), anyLong(), any(Chronology.class), anyInt(), any(DateTimeZone.class), eq(null));
+    }
+
+    @Test
+    public void testPrintToAppendable() throws IOException {
+        StringBuilder appendable = new StringBuilder();
+        ReadableInstant instant = new DateTime();
+        formatter.printTo(appendable, instant);
+        verify(mockPrinter).printTo(any(Appendable.class), anyLong(), any(Chronology.class), anyInt(), any(DateTimeZone.class), eq(null));
+    }
+
+    @Test
+    public void testPrintReadableInstant() {
+        ReadableInstant instant = new DateTime();
+        when(mockPrinter.estimatePrintedLength()).thenReturn(20);
+        String result = formatter.print(instant);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testParseMillis() {
+        String dateTimeString = "2023-10-10T10:10:10";
+        when(mockParser.parseInto(any(DateTimeParserBucket.class), eq(dateTimeString), eq(0))).thenReturn(dateTimeString.length());
+        long millis = formatter.parseMillis(dateTimeString);
+        assertNotNull(millis);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testParseMillisInvalid() {
+        String invalidString = "invalid";
+        when(mockParser.parseInto(any(DateTimeParserBucket.class), eq(invalidString), eq(0))).thenReturn(-1);
+        formatter.parseMillis(invalidString);
+    }
+
+    @Test
+    public void testParseLocalDate() {
+        String dateString = "2023-10-10";
+        when(mockParser.parseInto(any(DateTimeParserBucket.class), eq(dateString), eq(0))).thenReturn(dateString.length());
+        LocalDate localDate = formatter.parseLocalDate(dateString);
+        assertNotNull(localDate);
+    }
+
+    @Test
+    public void testParseLocalTime() {
+        String timeString = "10:10:10";
+        when(mockParser.parseInto(any(DateTimeParserBucket.class), eq(timeString), eq(0))).thenReturn(timeString.length());
+        LocalTime localTime = formatter.parseLocalTime(timeString);
+        assertNotNull(localTime);
+    }
+
+    @Test
+    public void testParseLocalDateTime() {
+        String dateTimeString = "2023-10-10T10:10:10";
+        when(mockParser.parseInto(any(DateTimeParserBucket.class), eq(dateTimeString), eq(0))).thenReturn(dateTimeString.length());
+        LocalDateTime localDateTime = formatter.parseLocalDateTime(dateTimeString);
+        assertNotNull(localDateTime);
+    }
+
+    @Test
+    public void testParseDateTime() {
+        String dateTimeString = "2023-10-10T10:10:10";
+        when(mockParser.parseInto(any(DateTimeParserBucket.class), eq(dateTimeString), eq(0))).thenReturn(dateTimeString.length());
+        DateTime dateTime = formatter.parseDateTime(dateTimeString);
+        assertNotNull(dateTime);
+    }
+
+    @Test
+    public void testParseMutableDateTime() {
+        String dateTimeString = "2023-10-10T10:10:10";
+        when(mockParser.parseInto(any(DateTimeParserBucket.class), eq(dateTimeString), eq(0))).thenReturn(dateTimeString.length());
+        MutableDateTime mutableDateTime = formatter.parseMutableDateTime(dateTimeString);
+        assertNotNull(mutableDateTime);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRequirePrinterThrowsException() {
+        DateTimeFormatter noPrinterFormatter = new DateTimeFormatter(null, mockParser);
+        noPrinterFormatter.print(new DateTime());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRequireParserThrowsException() {
+        DateTimeFormatter noParserFormatter = new DateTimeFormatter(mockPrinter, null);
+        noParserFormatter.parseMillis("2023-10-10T10:10:10");
+    }
+}
+```
+
+This JUnit 4 test suite covers the methods of the `DateTimeFormatter` class. It uses Mockito to mock dependencies and verify interactions. The tests include checks for method functionality, exception handling, and object creation.

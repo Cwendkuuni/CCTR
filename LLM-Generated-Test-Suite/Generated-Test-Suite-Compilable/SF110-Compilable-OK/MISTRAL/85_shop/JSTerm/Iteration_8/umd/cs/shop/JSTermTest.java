@@ -1,0 +1,172 @@
+package umd.cs.shop;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.io.StreamTokenizer;
+import java.io.StringReader;
+
+public class JSTermTest {
+
+    private JSTerm term;
+    private StreamTokenizer tokenizer;
+
+    @Before
+    public void setUp() {
+        term = new JSTerm();
+        tokenizer = new StreamTokenizer(new StringReader(""));
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertNotNull(term);
+    }
+
+    @Test
+    public void testConstructorWithTokenizer() {
+        tokenizer = new StreamTokenizer(new StringReader("(call (add 1 2))"));
+        term = new JSTerm(tokenizer);
+        assertNotNull(term);
+    }
+
+    @Test(expected = JSParserError.class)
+    public void testConstructorWithTokenizerThrowsException() {
+        tokenizer = new StreamTokenizer(new StringReader("invalid input"));
+        term = new JSTerm(tokenizer);
+    }
+
+    @Test
+    public void testParseList() {
+        tokenizer = new StreamTokenizer(new StringReader("(list 1 2 3)"));
+        JSTerm listTerm = term.parseList(tokenizer);
+        assertNotNull(listTerm);
+    }
+
+    @Test(expected = JSParserError.class)
+    public void testParseListThrowsException() {
+        tokenizer = new StreamTokenizer(new StringReader("invalid list"));
+        term.parseList(tokenizer);
+    }
+
+    @Test
+    public void testCloneT() {
+        tokenizer = new StreamTokenizer(new StringReader("(call (add 1 2))"));
+        term = new JSTerm(tokenizer);
+        JSTerm clonedTerm = term.cloneT();
+        assertNotNull(clonedTerm);
+        assertEquals(term.toStr().toString(), clonedTerm.toStr().toString());
+    }
+
+    @Test
+    public void testApplySubstitutionT() {
+        tokenizer = new StreamTokenizer(new StringReader("(call (add 1 2))"));
+        term = new JSTerm(tokenizer);
+        JSSubstitution alpha = new JSSubstitution();
+        JSTerm substitutedTerm = term.applySubstitutionT(alpha);
+        assertNotNull(substitutedTerm);
+        assertEquals(term.toStr().toString(), substitutedTerm.toStr().toString());
+    }
+
+    @Test
+    public void testMatches() {
+        tokenizer = new StreamTokenizer(new StringReader("(call (add 1 2))"));
+        term = new JSTerm(tokenizer);
+        JSTerm otherTerm = new JSTerm(tokenizer);
+        JSSubstitution alpha = new JSSubstitution();
+        JSSubstitution result = term.matches(otherTerm, alpha);
+        assertNotNull(result);
+        assertFalse(result.fail());
+    }
+
+    @Test
+    public void testEquals() {
+        tokenizer = new StreamTokenizer(new StringReader("(call (add 1 2))"));
+        term = new JSTerm(tokenizer);
+        JSTerm otherTerm = new JSTerm(tokenizer);
+        assertTrue(term.equals(otherTerm));
+    }
+
+    @Test
+    public void testIsVariable() {
+        tokenizer = new StreamTokenizer(new StringReader("?x"));
+        term = new JSTerm(tokenizer);
+        assertTrue(term.isVariable());
+    }
+
+    @Test
+    public void testIsConstant() {
+        tokenizer = new StreamTokenizer(new StringReader("123"));
+        term = new JSTerm(tokenizer);
+        assertTrue(term.isConstant());
+    }
+
+    @Test
+    public void testIsFunction() {
+        tokenizer = new StreamTokenizer(new StringReader("(add 1 2)"));
+        term = new JSTerm(tokenizer);
+        assertTrue(term.isFunction());
+    }
+
+    @Test
+    public void testIsEval() {
+        tokenizer = new StreamTokenizer(new StringReader("(call (add 1 2))"));
+        term = new JSTerm(tokenizer);
+        assertTrue(term.isEval());
+    }
+
+    @Test
+    public void testMakeFunction() {
+        term.makeFunction();
+        assertTrue(term.isFunction());
+    }
+
+    @Test
+    public void testMakeVariable() {
+        term.makeVariable();
+        assertTrue(term.isVariable());
+    }
+
+    @Test
+    public void testMakeConstant() {
+        term.makeConstant();
+        assertTrue(term.isConstant());
+    }
+
+    @Test
+    public void testMakeEval() {
+        term.makeEval(true);
+        assertTrue(term.isEval());
+    }
+
+    @Test
+    public void testToStr() {
+        tokenizer = new StreamTokenizer(new StringReader("(call (add 1 2))"));
+        term = new JSTerm(tokenizer);
+        StringBuffer expected = new StringBuffer("(call (add 1 2))");
+        assertEquals(expected.toString(), term.toStr().toString());
+    }
+
+    @Test
+    public void testIsGround() {
+        tokenizer = new StreamTokenizer(new StringReader("123"));
+        term = new JSTerm(tokenizer);
+        assertTrue(term.isGround());
+    }
+
+    @Test
+    public void testStandardizerTerm() {
+        tokenizer = new StreamTokenizer(new StringReader("(call (add 1 2))"));
+        term = new JSTerm(tokenizer);
+        JSTerm standardizedTerm = term.standardizerTerm();
+        assertNotNull(standardizedTerm);
+    }
+
+    @Test
+    public void testCall() {
+        tokenizer = new StreamTokenizer(new StringReader("(call (add 1 2))"));
+        term = new JSTerm(tokenizer);
+        JSTerm result = term.call();
+        assertNotNull(result);
+    }
+}

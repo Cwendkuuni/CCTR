@@ -1,0 +1,63 @@
+package org.apache.commons.lang.enums;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+import org.apache.commons.lang.enums.ValuedEnum;
+
+public class ValuedEnumTest {
+
+    // Mock subclass for testing
+    public static class MockValuedEnum extends ValuedEnum {
+        public static final MockValuedEnum VALUE_1 = new MockValuedEnum("Value1", 1);
+        public static final MockValuedEnum VALUE_2 = new MockValuedEnum("Value2", 2);
+
+        private MockValuedEnum(String name, int value) {
+            super(name, value);
+        }
+
+        public static MockValuedEnum getEnum(int value) {
+            return (MockValuedEnum) getEnum(MockValuedEnum.class, value);
+        }
+    }
+
+    @Test
+    public void testGetValue() {
+        assertEquals(1, MockValuedEnum.VALUE_1.getValue());
+        assertEquals(2, MockValuedEnum.VALUE_2.getValue());
+    }
+
+    @Test
+    public void testGetEnum() {
+        assertEquals(MockValuedEnum.VALUE_1, MockValuedEnum.getEnum(1));
+        assertEquals(MockValuedEnum.VALUE_2, MockValuedEnum.getEnum(2));
+        assertNull(MockValuedEnum.getEnum(3));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetEnumWithNullClass() {
+        ValuedEnum.getEnum(null, 1);
+    }
+
+    @Test
+    public void testCompareTo() {
+        assertTrue(MockValuedEnum.VALUE_1.compareTo(MockValuedEnum.VALUE_2) < 0);
+        assertTrue(MockValuedEnum.VALUE_2.compareTo(MockValuedEnum.VALUE_1) > 0);
+        assertEquals(0, MockValuedEnum.VALUE_1.compareTo(MockValuedEnum.VALUE_1));
+    }
+
+    @Test(expected = ClassCastException.class)
+    public void testCompareToWithDifferentType() {
+        MockValuedEnum.VALUE_1.compareTo(new Object());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testCompareToWithNull() {
+        MockValuedEnum.VALUE_1.compareTo(null);
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("MockValuedEnum[Value1=1]", MockValuedEnum.VALUE_1.toString());
+        assertEquals("MockValuedEnum[Value2=2]", MockValuedEnum.VALUE_2.toString());
+    }
+}

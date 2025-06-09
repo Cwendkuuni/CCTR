@@ -1,0 +1,109 @@
+```java
+package Joshua.FoxHunt;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame foxHuntFrame;
+
+    @Before
+    public void setUp() {
+        foxHuntFrame = new FoxHuntFrame();
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(foxHuntFrame);
+        assertEquals("Triangulation", foxHuntFrame.getTitle());
+        assertTrue(foxHuntFrame.isVisible());
+    }
+
+    @Test
+    public void testActionPerformed() {
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.052235");
+        foxHuntFrame.lon.setText("-118.243683");
+
+        foxHuntFrame.actionPerformed(new ActionEvent(foxHuntFrame.add, ActionEvent.ACTION_PERFORMED, null));
+
+        assertEquals(1, foxHuntFrame.points.size());
+    }
+
+    @Test
+    public void testAddPoint() {
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.052235");
+        foxHuntFrame.lon.setText("-118.243683");
+
+        foxHuntFrame.addPoint();
+
+        assertEquals(1, foxHuntFrame.points.size());
+
+        foxHuntFrame.theta.setText("90");
+        foxHuntFrame.lat.setText("34.052236");
+        foxHuntFrame.lon.setText("-118.243684");
+
+        foxHuntFrame.addPoint();
+
+        assertEquals(2, foxHuntFrame.points.size());
+        assertEquals(1, foxHuntFrame.fox.size());
+    }
+
+    @Test
+    public void testLoadLandmarks() throws IOException {
+        File tempFile = File.createTempFile("landmarks", ".cfg");
+        try (FileWriter writer = new FileWriter(tempFile)) {
+            writer.write("NUM 2\n");
+            writer.write("FILE icon1.gif\n");
+            writer.write("LAT 34.052235\n");
+            writer.write("LON -118.243683\n");
+            writer.write("FILE icon2.gif\n");
+            writer.write("LAT 34.052236\n");
+            writer.write("LON -118.243684\n");
+        }
+
+        foxHuntFrame.loadLandmarks();
+
+        assertEquals(2, foxHuntFrame.display.getLandmarks().size());
+
+        tempFile.delete();
+    }
+
+    @Test
+    public void testError() {
+        foxHuntFrame.error("Test Error");
+        // This test is interactive and depends on user input, so it's hard to automate fully.
+        // You might want to mock JOptionPane to test this method properly.
+    }
+
+    @Test
+    public void testFoxTableModel() {
+        FoxTableModel model = foxHuntFrame.new FoxTableModel();
+
+        assertEquals(2, model.getColumnCount());
+        assertEquals(0, model.getRowCount());
+
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.052235");
+        foxHuntFrame.lon.setText("-118.243683");
+        foxHuntFrame.addPoint();
+
+        foxHuntFrame.theta.setText("90");
+        foxHuntFrame.lat.setText("34.052236");
+        foxHuntFrame.lon.setText("-118.243684");
+        foxHuntFrame.addPoint();
+
+        assertEquals(1, model.getRowCount());
+        assertEquals("34.052235", model.getValueAt(0, 0));
+        assertEquals("-118.243684", model.getValueAt(0, 1));
+    }
+}
+```

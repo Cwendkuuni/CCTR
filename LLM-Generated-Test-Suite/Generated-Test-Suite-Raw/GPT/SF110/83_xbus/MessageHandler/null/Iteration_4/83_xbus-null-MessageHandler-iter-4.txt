@@ -1,0 +1,121 @@
+```java
+import net.sf.xbus.base.core.MessageHandler;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class MessageHandlerTest {
+
+    private static final String TEST_BASENAME = "testMessages";
+    private static final String TEST_DIR = "testDir/";
+    private static final String TEST_FILE = TEST_DIR + TEST_BASENAME + "_en.properties";
+
+    @Before
+    public void setUp() throws IOException {
+        // Create test directory and file
+        File dir = new File(TEST_DIR);
+        if (!dir.exists()) {
+            dir.mkdir();
+        }
+
+        // Create a test properties file
+        Properties properties = new Properties();
+        properties.setProperty("greeting", "Hello, $1$!");
+        properties.setProperty("farewell", "Goodbye, $1$!");
+
+        FileWriter writer = new FileWriter(TEST_FILE);
+        properties.store(writer, "Test Messages");
+        writer.close();
+    }
+
+    @Test
+    public void testGetInstance() {
+        MessageHandler handler = MessageHandler.getInstance(TEST_BASENAME);
+        assertNotNull(handler);
+    }
+
+    @Test
+    public void testGetMessage() {
+        MessageHandler handler = MessageHandler.getInstance(TEST_BASENAME);
+        List<String> params = Arrays.asList("World");
+        String message = handler.getMessage("greeting", params);
+        assertEquals("Hello, World!", message);
+    }
+
+    @Test
+    public void testGetMessageOptional() {
+        MessageHandler handler = MessageHandler.getInstance(TEST_BASENAME);
+        List<String> params = Arrays.asList("World");
+        String message = handler.getMessageOptional("greeting", params);
+        assertEquals("Hello, World!", message);
+    }
+
+    @Test
+    public void testGetMessageWithMissingKey() {
+        MessageHandler handler = MessageHandler.getInstance(TEST_BASENAME);
+        List<String> params = Arrays.asList("World");
+        String message = handler.getMessage("nonexistent", params);
+        assertEquals("Key: nonexistent not found in message file", message);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithMissingKey() {
+        MessageHandler handler = MessageHandler.getInstance(TEST_BASENAME);
+        List<String> params = Arrays.asList("World");
+        String message = handler.getMessageOptional("nonexistent", params);
+        assertNull(message);
+    }
+
+    @Test
+    public void testGetMessageWithNullParams() {
+        MessageHandler handler = MessageHandler.getInstance(TEST_BASENAME);
+        String message = handler.getMessage("greeting", null);
+        assertEquals("Hello, $1$!", message);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNullParams() {
+        MessageHandler handler = MessageHandler.getInstance(TEST_BASENAME);
+        String message = handler.getMessageOptional("greeting", null);
+        assertEquals("Hello, $1$!", message);
+    }
+
+    @Test
+    public void testGetMessageWithNullMessageTable() {
+        MessageHandler handler = new MessageHandler("nonexistent");
+        List<String> params = Arrays.asList("World");
+        String message = handler.getMessage("greeting", params);
+        assertEquals("Key: greeting not found in message file", message);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNullMessageTable() {
+        MessageHandler handler = new MessageHandler("nonexistent");
+        List<String> params = Arrays.asList("World");
+        String message = handler.getMessageOptional("greeting", params);
+        assertNull(message);
+    }
+}
+```
+
+### Explanation:
+- **Setup**: A test directory and properties file are created to simulate the message files that `MessageHandler` would load.
+- **Tests**: The test suite covers:
+  - Getting an instance of `MessageHandler`.
+  - Retrieving messages with and without parameters.
+  - Handling missing keys.
+  - Handling null parameters.
+  - Handling cases where the message table is null.
+- **Assertions**: Each test checks the expected output against the actual output from the `MessageHandler` methods.

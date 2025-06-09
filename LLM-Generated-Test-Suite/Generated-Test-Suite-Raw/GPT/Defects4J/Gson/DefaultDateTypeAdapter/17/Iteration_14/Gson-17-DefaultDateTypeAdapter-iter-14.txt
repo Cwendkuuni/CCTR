@@ -1,0 +1,117 @@
+```java
+import com.google.gson.DefaultDateTypeAdapter;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+import static org.junit.Assert.*;
+
+public class DefaultDateTypeAdapterTest {
+
+    private DefaultDateTypeAdapter dateAdapter;
+    private DefaultDateTypeAdapter timestampAdapter;
+    private DefaultDateTypeAdapter sqlDateAdapter;
+
+    @Before
+    public void setUp() {
+        dateAdapter = new DefaultDateTypeAdapter(Date.class);
+        timestampAdapter = new DefaultDateTypeAdapter(Timestamp.class);
+        sqlDateAdapter = new DefaultDateTypeAdapter(java.sql.Date.class);
+    }
+
+    @Test
+    public void testWriteNullDate() throws IOException {
+        StringWriter writer = new StringWriter();
+        JsonWriter jsonWriter = new JsonWriter(writer);
+        dateAdapter.write(jsonWriter, null);
+        assertEquals("null", writer.toString());
+    }
+
+    @Test
+    public void testWriteDate() throws IOException {
+        Date date = new Date();
+        StringWriter writer = new StringWriter();
+        JsonWriter jsonWriter = new JsonWriter(writer);
+        dateAdapter.write(jsonWriter, date);
+        DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US);
+        assertEquals("\"" + dateFormat.format(date) + "\"", writer.toString());
+    }
+
+    @Test
+    public void testReadDate() throws IOException {
+        DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US);
+        Date date = new Date();
+        String dateString = dateFormat.format(date);
+        JsonReader jsonReader = new JsonReader(new StringReader("\"" + dateString + "\""));
+        Date parsedDate = dateAdapter.read(jsonReader);
+        assertEquals(dateFormat.format(date), dateFormat.format(parsedDate));
+    }
+
+    @Test
+    public void testReadTimestamp() throws IOException {
+        DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US);
+        Date date = new Date();
+        String dateString = dateFormat.format(date);
+        JsonReader jsonReader = new JsonReader(new StringReader("\"" + dateString + "\""));
+        Timestamp parsedTimestamp = (Timestamp) timestampAdapter.read(jsonReader);
+        assertEquals(dateFormat.format(date), dateFormat.format(parsedTimestamp));
+    }
+
+    @Test
+    public void testReadSqlDate() throws IOException {
+        DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US);
+        Date date = new Date();
+        String dateString = dateFormat.format(date);
+        JsonReader jsonReader = new JsonReader(new StringReader("\"" + dateString + "\""));
+        java.sql.Date parsedSqlDate = (java.sql.Date) sqlDateAdapter.read(jsonReader);
+        assertEquals(dateFormat.format(date), dateFormat.format(parsedSqlDate));
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testReadInvalidDate() throws IOException {
+        JsonReader jsonReader = new JsonReader(new StringReader("12345"));
+        dateAdapter.read(jsonReader);
+    }
+
+    @Test(expected = JsonSyntaxException.class)
+    public void testDeserializeToDateInvalidFormat() {
+        String invalidDate = "invalid-date";
+        dateAdapter.deserializeToDate(invalidDate);
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "DefaultDateTypeAdapter(SimpleDateFormat)";
+        assertEquals(expected, dateAdapter.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidDateType() {
+        new DefaultDateTypeAdapter(String.class);
+    }
+}
+```
+
+This test suite covers the following scenarios:
+
+1. Writing a `null` date.
+2. Writing a valid `Date` object.
+3. Reading a valid `Date` string.
+4. Reading a valid `Timestamp` string.
+5. Reading a valid `java.sql.Date` string.
+6. Attempting to read an invalid date format (non-string).
+7. Attempting to deserialize an invalid date string format.
+8. Checking the `toString` method.
+9. Attempting to create an adapter with an invalid date type, which should throw an `IllegalArgumentException`.

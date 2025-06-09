@@ -1,0 +1,125 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `XmlTreeBuilder` class. This test suite aims to cover the various methods and functionalities provided by the class.
+
+```java
+import org.jsoup.nodes.*;
+import org.jsoup.parser.*;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class XmlTreeBuilderTest {
+
+    private XmlTreeBuilder xmlTreeBuilder;
+    private String baseUri;
+
+    @Before
+    public void setUp() {
+        xmlTreeBuilder = new XmlTreeBuilder();
+        baseUri = "http://example.com";
+    }
+
+    @Test
+    public void testDefaultSettings() {
+        assertEquals(ParseSettings.preserveCase, xmlTreeBuilder.defaultSettings());
+    }
+
+    @Test
+    public void testInitialiseParse() {
+        Reader input = new StringReader("<root></root>");
+        Parser parser = new Parser(xmlTreeBuilder);
+        xmlTreeBuilder.initialiseParse(input, baseUri, parser);
+        assertEquals(Document.OutputSettings.Syntax.xml, xmlTreeBuilder.doc.outputSettings().syntax());
+        assertTrue(xmlTreeBuilder.stack.contains(xmlTreeBuilder.doc));
+    }
+
+    @Test
+    public void testParseWithReader() {
+        Reader input = new StringReader("<root><child /></root>");
+        Document doc = xmlTreeBuilder.parse(input, baseUri);
+        assertNotNull(doc);
+        assertEquals("root", doc.child(0).nodeName());
+    }
+
+    @Test
+    public void testParseWithString() {
+        String input = "<root><child /></root>";
+        Document doc = xmlTreeBuilder.parse(input, baseUri);
+        assertNotNull(doc);
+        assertEquals("root", doc.child(0).nodeName());
+    }
+
+    @Test
+    public void testProcessStartTag() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.name("root");
+        xmlTreeBuilder.process(startTag);
+        assertEquals("root", xmlTreeBuilder.stack.get(1).nodeName());
+    }
+
+    @Test
+    public void testProcessEndTag() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.name("root");
+        xmlTreeBuilder.process(startTag);
+
+        Token.EndTag endTag = new Token.EndTag();
+        endTag.tagName = "root";
+        xmlTreeBuilder.process(endTag);
+
+        assertEquals(1, xmlTreeBuilder.stack.size());
+    }
+
+    @Test
+    public void testProcessComment() {
+        Token.Comment commentToken = new Token.Comment();
+        commentToken.data = "This is a comment";
+        xmlTreeBuilder.process(commentToken);
+        assertTrue(xmlTreeBuilder.doc.childNode(0) instanceof Comment);
+    }
+
+    @Test
+    public void testProcessCharacter() {
+        Token.Character characterToken = new Token.Character();
+        characterToken.data = "Some text";
+        xmlTreeBuilder.process(characterToken);
+        assertTrue(xmlTreeBuilder.doc.childNode(0) instanceof TextNode);
+    }
+
+    @Test
+    public void testProcessDoctype() {
+        Token.Doctype doctypeToken = new Token.Doctype();
+        doctypeToken.name = "html";
+        xmlTreeBuilder.process(doctypeToken);
+        assertTrue(xmlTreeBuilder.doc.childNode(0) instanceof DocumentType);
+    }
+
+    @Test
+    public void testParseFragment() {
+        String inputFragment = "<child />";
+        List<Node> nodes = xmlTreeBuilder.parseFragment(inputFragment, baseUri, new Parser(xmlTreeBuilder));
+        assertEquals(1, nodes.size());
+        assertEquals("child", nodes.get(0).nodeName());
+    }
+
+    @Test
+    public void testParseFragmentWithContext() {
+        String inputFragment = "<child />";
+        Element context = new Element(Tag.valueOf("root"), baseUri);
+        List<Node> nodes = xmlTreeBuilder.parseFragment(inputFragment, context, baseUri, new Parser(xmlTreeBuilder));
+        assertEquals(1, nodes.size());
+        assertEquals("child", nodes.get(0).nodeName());
+    }
+}
+```
+
+This test suite covers the following aspects:
+- Initialization and default settings.
+- Parsing XML from both `Reader` and `String`.
+- Processing different types of tokens: start tags, end tags, comments, characters, and doctypes.
+- Parsing XML fragments with and without context.
+
+Make sure to include the necessary imports and dependencies for JUnit 4 and Jsoup in your project to run these tests successfully.

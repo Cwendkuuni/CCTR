@@ -1,0 +1,174 @@
+Certainly! Below is a JUnit 4 test suite for the `WriteableCommandLineImpl` class. This suite aims to cover the various methods provided in the class. Note that this is a basic test suite and might need further refinement based on the actual behavior and requirements of the methods.
+
+```java
+import org.apache.commons.cli2.Argument;
+import org.apache.commons.cli2.Option;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.apache.commons.cli2.option.PropertyOption;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Set;
+
+import static org.junit.Assert.*;
+
+public class WriteableCommandLineImplTest {
+
+    private WriteableCommandLineImpl commandLine;
+    private Option mockOption;
+    private List<String> arguments;
+
+    @Before
+    public void setUp() {
+        mockOption = new MockOption();
+        arguments = new ArrayList<>(Arrays.asList("arg1", "arg2"));
+        commandLine = new WriteableCommandLineImpl(mockOption, arguments);
+    }
+
+    @Test
+    public void testAddOption() {
+        commandLine.addOption(mockOption);
+        assertTrue(commandLine.hasOption(mockOption));
+    }
+
+    @Test
+    public void testAddValue() {
+        commandLine.addValue(mockOption, "value1");
+        List<String> values = commandLine.getValues(mockOption, null);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test
+    public void testAddSwitch() {
+        commandLine.addSwitch(mockOption, true);
+        assertTrue(commandLine.getSwitch(mockOption, false));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAddSwitchAlreadySet() {
+        commandLine.addSwitch(mockOption, true);
+        commandLine.addSwitch(mockOption, false); // Should throw exception
+    }
+
+    @Test
+    public void testGetOption() {
+        commandLine.addOption(mockOption);
+        assertEquals(mockOption, commandLine.getOption(mockOption.getPreferredName()));
+    }
+
+    @Test
+    public void testGetValuesWithDefaults() {
+        List<String> defaultValues = Arrays.asList("default1", "default2");
+        List<String> values = commandLine.getValues(mockOption, defaultValues);
+        assertEquals(defaultValues, values);
+    }
+
+    @Test
+    public void testGetUndefaultedValues() {
+        commandLine.addValue(mockOption, "value1");
+        List<String> values = commandLine.getUndefaultedValues(mockOption);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test
+    public void testGetSwitchWithDefault() {
+        Boolean defaultValue = Boolean.TRUE;
+        assertEquals(defaultValue, commandLine.getSwitch(mockOption, defaultValue));
+    }
+
+    @Test
+    public void testAddProperty() {
+        commandLine.addProperty(mockOption, "key", "value");
+        assertEquals("value", commandLine.getProperty(mockOption, "key", null));
+    }
+
+    @Test
+    public void testGetProperties() {
+        commandLine.addProperty(mockOption, "key", "value");
+        Set<String> properties = commandLine.getProperties(mockOption);
+        assertTrue(properties.contains("key"));
+    }
+
+    @Test
+    public void testLooksLikeOption() {
+        assertTrue(commandLine.looksLikeOption("--option"));
+        assertFalse(commandLine.looksLikeOption("value"));
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "arg1 arg2";
+        assertEquals(expected, commandLine.toString());
+    }
+
+    @Test
+    public void testGetOptions() {
+        commandLine.addOption(mockOption);
+        List<Option> options = commandLine.getOptions();
+        assertTrue(options.contains(mockOption));
+    }
+
+    @Test
+    public void testGetOptionTriggers() {
+        commandLine.addOption(mockOption);
+        Set<String> triggers = commandLine.getOptionTriggers();
+        assertTrue(triggers.contains(mockOption.getPreferredName()));
+    }
+
+    @Test
+    public void testSetDefaultValues() {
+        List<String> defaults = Arrays.asList("default1", "default2");
+        commandLine.setDefaultValues(mockOption, defaults);
+        List<String> values = commandLine.getValues(mockOption, null);
+        assertEquals(defaults, values);
+    }
+
+    @Test
+    public void testSetDefaultSwitch() {
+        commandLine.setDefaultSwitch(mockOption, Boolean.TRUE);
+        assertTrue(commandLine.getSwitch(mockOption, null));
+    }
+
+    @Test
+    public void testGetNormalised() {
+        List<String> normalised = commandLine.getNormalised();
+        assertEquals(arguments, normalised);
+    }
+
+    // Mock Option class for testing purposes
+    private static class MockOption implements Option {
+        @Override
+        public String getPreferredName() {
+            return "--mock";
+        }
+
+        @Override
+        public List<String> getTriggers() {
+            return Collections.singletonList("--mock");
+        }
+
+        @Override
+        public Set<String> getPrefixes() {
+            return Collections.singleton("-");
+        }
+
+        @Override
+        public Option getParent() {
+            return null;
+        }
+    }
+}
+```
+
+### Explanation:
+- **MockOption Class**: A simple mock implementation of the `Option` interface is provided to facilitate testing.
+- **Test Methods**: Each method in the `WriteableCommandLineImpl` class is tested with various scenarios, including edge cases like exceptions.
+- **Assertions**: The tests use assertions to verify that the methods behave as expected.
+
+This test suite should be further refined based on the actual behavior of the `Option` interface and any additional requirements or constraints not covered here.

@@ -1,0 +1,144 @@
+```java
+package org.apache.commons.csv;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+public class LexerTest {
+
+    @Mock
+    private CSVFormat format;
+
+    @Mock
+    private ExtendedBufferedReader in;
+
+    private Lexer lexer;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        when(format.getDelimiter()).thenReturn(',');
+        when(format.getEscape()).thenReturn('\\');
+        when(format.getQuoteChar()).thenReturn('"');
+        when(format.getCommentStart()).thenReturn('#');
+        when(format.getIgnoreSurroundingSpaces()).thenReturn(true);
+        when(format.getIgnoreEmptyLines()).thenReturn(true);
+
+        lexer = new Lexer(format, in) {
+            @Override
+            Token nextToken(Token reusableToken) throws IOException {
+                return null;
+            }
+        };
+    }
+
+    @Test
+    public void testGetLineNumber() throws IOException {
+        when(in.getLineNumber()).thenReturn(42L);
+        assertEquals(42L, lexer.getLineNumber());
+    }
+
+    @Test
+    public void testReadEscape() throws IOException {
+        when(in.read()).thenReturn((int) 'n');
+        assertEquals(LF, lexer.readEscape());
+
+        when(in.read()).thenReturn((int) 'r');
+        assertEquals(CR, lexer.readEscape());
+
+        when(in.read()).thenReturn((int) 't');
+        assertEquals(TAB, lexer.readEscape());
+
+        when(in.read()).thenReturn((int) 'b');
+        assertEquals(BACKSPACE, lexer.readEscape());
+
+        when(in.read()).thenReturn((int) 'f');
+        assertEquals(FF, lexer.readEscape());
+
+        when(in.read()).thenReturn(END_OF_STREAM);
+        try {
+            lexer.readEscape();
+            fail("Expected IOException");
+        } catch (IOException e) {
+            assertEquals("EOF whilst processing escape sequence", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testTrimTrailingSpaces() {
+        StringBuilder buffer = new StringBuilder("test ");
+        lexer.trimTrailingSpaces(buffer);
+        assertEquals("test", buffer.toString());
+
+        buffer = new StringBuilder(" test ");
+        lexer.trimTrailingSpaces(buffer);
+        assertEquals(" test", buffer.toString());
+    }
+
+    @Test
+    public void testReadEndOfLine() throws IOException {
+        when(in.lookAhead()).thenReturn(LF);
+        when(in.read()).thenReturn(CR);
+        assertTrue(lexer.readEndOfLine(CR));
+
+        when(in.lookAhead()).thenReturn(CR);
+        when(in.read()).thenReturn(LF);
+        assertTrue(lexer.readEndOfLine(LF));
+
+        when(in.lookAhead()).thenReturn(END_OF_STREAM);
+        when(in.read()).thenReturn(END_OF_STREAM);
+        assertFalse(lexer.readEndOfLine(END_OF_STREAM));
+    }
+
+    @Test
+    public void testIsWhitespace() {
+        assertTrue(lexer.isWhitespace(' '));
+        assertFalse(lexer.isWhitespace(','));
+    }
+
+    @Test
+    public void testIsStartOfLine() {
+        assertTrue(lexer.isStartOfLine(LF));
+        assertTrue(lexer.isStartOfLine(CR));
+        assertTrue(lexer.isStartOfLine(UNDEFINED));
+        assertFalse(lexer.isStartOfLine('a'));
+    }
+
+    @Test
+    public void testIsEndOfFile() {
+        assertTrue(lexer.isEndOfFile(END_OF_STREAM));
+        assertFalse(lexer.isEndOfFile('a'));
+    }
+
+    @Test
+    public void testIsDelimiter() {
+        assertTrue(lexer.isDelimiter(','));
+        assertFalse(lexer.isDelimiter(';'));
+    }
+
+    @Test
+    public void testIsEscape() {
+        assertTrue(lexer.isEscape('\\'));
+        assertFalse(lexer.isEscape('/'));
+    }
+
+    @Test
+    public void testIsQuoteChar() {
+        assertTrue(lexer.isQuoteChar('"'));
+        assertFalse(lexer.isQuoteChar('\''));
+    }
+
+    @Test
+    public void testIsCommentStart() {
+        assertTrue(lexer.isCommentStart('#'));
+        assertFalse(lexer.isCommentStart('!'));
+    }
+}
+```

@@ -1,0 +1,116 @@
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import com.allenstudio.ir.core.InspirentoMediator;
+import com.allenstudio.ir.util.InspirentoUtilities;
+import com.allenstudio.ir.util.UIResources;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.swing.*;
+import java.util.MissingResourceException;
+
+@RunWith(MockitoJUnitRunner.class)
+public class MainMenuTest {
+
+    @Mock
+    private InspirentoMediator mediator;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void testMainMenuConstructor() {
+        // Mock the UIResources and InspirentoUtilities
+        mockStatic(UIResources.class);
+        mockStatic(InspirentoUtilities.class);
+
+        // Define the behavior of the mocked methods
+        when(UIResources.getString("menu")).thenReturn("file edit view");
+        when(InspirentoUtilities.tokenize("file edit view")).thenReturn(new String[]{"file", "edit", "view"});
+
+        // Create the MainMenu instance
+        MainMenu mainMenu = new MainMenu(mediator);
+
+        // Verify that the createMenu method is called for each menu
+        verifyStatic(UIResources.class, times(1));
+        UIResources.getString("menu");
+
+        verifyStatic(InspirentoUtilities.class, times(1));
+        InspirentoUtilities.tokenize("file edit view");
+
+        // Check that the menus are added
+        assertEquals(3, mainMenu.getMenuCount());
+    }
+
+    @Test
+    public void testCreateMenu() {
+        // Mock the UIResources and InspirentoUtilities
+        mockStatic(UIResources.class);
+        mockStatic(InspirentoUtilities.class);
+
+        // Define the behavior of the mocked methods
+        when(UIResources.getString("fileLabel")).thenReturn("File*F");
+        when(UIResources.getString("file")).thenReturn("new open save");
+        when(InspirentoUtilities.tokenize("new open save")).thenReturn(new String[]{"new", "open", "save"});
+
+        // Create the MainMenu instance
+        MainMenu mainMenu = new MainMenu(mediator);
+
+        // Invoke the private method createMenu using reflection
+        JMenu fileMenu = mainMenu.createMenu("file");
+
+        // Check that the menu is created with the correct label and mnemonic
+        assertEquals("File", fileMenu.getText());
+        assertEquals('F', fileMenu.getMnemonic());
+
+        // Check that the menu items are added
+        assertEquals(3, fileMenu.getItemCount());
+    }
+
+    @Test
+    public void testAddShortcutAndIcon() {
+        // Mock the UIResources
+        mockStatic(UIResources.class);
+
+        // Define the behavior of the mocked methods
+        when(UIResources.getString("newShortcut")).thenReturn("ctrl N");
+        when(UIResources.getString("newIcon")).thenReturn("/icons/new.png");
+
+        // Create the MainMenu instance
+        MainMenu mainMenu = new MainMenu(mediator);
+
+        // Create a JMenuItem
+        JMenuItem menuItem = new JMenuItem();
+
+        // Invoke the private method addShortcutAndIcon using reflection
+        mainMenu.addShortcutAndIcon(menuItem, "new");
+
+        // Check that the shortcut is set
+        assertEquals(KeyStroke.getKeyStroke("ctrl N"), menuItem.getAccelerator());
+
+        // Check that the icon is set
+        assertNotNull(menuItem.getIcon());
+    }
+
+    @Test
+    public void testChanged() {
+        // Create the MainMenu instance
+        MainMenu mainMenu = new MainMenu(mediator);
+
+        // Call the changed method
+        mainMenu.changed();
+
+        // Since the changed method is empty, we just ensure no exceptions are thrown
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to test the `MainMenu` class. It includes tests for the constructor, `createMenu`, `addShortcutAndIcon`, and `changed` methods. The tests use mocking to simulate the behavior of external dependencies like `UIResources` and `InspirentoUtilities`.

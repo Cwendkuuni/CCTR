@@ -1,0 +1,216 @@
+```java
+package macaw.util;
+
+import macaw.businessLayer.*;
+import macaw.system.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class DisplayableListPanelTest {
+
+    private SessionProperties sessionProperties;
+    private DisplayableListParentForm parentForm;
+    private UserInterfaceFactory userInterfaceFactory;
+    private DisplayableList displayableList;
+    private DisplayableListPanel displayableListPanel;
+    private Log log;
+    private User currentUser;
+
+    @Before
+    public void setUp() {
+        sessionProperties = mock(SessionProperties.class);
+        parentForm = mock(DisplayableListParentForm.class);
+        userInterfaceFactory = mock(UserInterfaceFactory.class);
+        displayableList = mock(DisplayableList.class);
+        log = mock(Log.class);
+        currentUser = mock(User.class);
+
+        when(sessionProperties.getUserInterfaceFactory()).thenReturn(userInterfaceFactory);
+        when(sessionProperties.getLog()).thenReturn(log);
+        when(sessionProperties.getProperty("currentUser")).thenReturn(currentUser);
+        when(currentUser.getUserID()).thenReturn("testUserID");
+
+        displayableListPanel = new DisplayableListPanel(sessionProperties, parentForm, "Test Panel", true);
+    }
+
+    @Test
+    public void testInit() {
+        verify(sessionProperties).getUserInterfaceFactory();
+        verify(sessionProperties).getLog();
+        verify(sessionProperties).getProperty("currentUser");
+        verify(currentUser).getUserID();
+        assertNotNull(displayableListPanel.getPanel());
+    }
+
+    @Test
+    public void testSetNewRecord() {
+        displayableListPanel.setNewRecord(true);
+        verify(displayableListPanel).updateButtonStates();
+    }
+
+    @Test
+    public void testGetPanel() {
+        JPanel panel = displayableListPanel.getPanel();
+        assertNotNull(panel);
+    }
+
+    @Test
+    public void testSetDisplayableListItemSelector() {
+        DisplayableListItemSelector selector = mock(DisplayableListItemSelector.class);
+        displayableListPanel.setDisplayableListItemSelector(selector);
+        assertEquals(selector, displayableListPanel.listItemSelector);
+    }
+
+    @Test
+    public void testSetDisplayableListItemAdder() {
+        DisplayableListItemAdder adder = mock(DisplayableListItemAdder.class);
+        displayableListPanel.setDisplayableListItemAdder(adder);
+        assertEquals(adder, displayableListPanel.listItemAdder);
+    }
+
+    @Test
+    public void testSetDisplayableListItemEditor() {
+        DisplayableListItemEditor editor = mock(DisplayableListItemEditor.class);
+        displayableListPanel.setDisplayableListItemEditor(editor);
+        assertEquals(editor, displayableListPanel.listItemEditor);
+    }
+
+    @Test
+    public void testSetDisplayableListItemViewer() {
+        DisplayableListItemViewer viewer = mock(DisplayableListItemViewer.class);
+        displayableListPanel.setDisplayableListItemViewer(viewer);
+        assertEquals(viewer, displayableListPanel.listItemViewer);
+    }
+
+    @Test
+    public void testSetDisplayableListItemDeleter() {
+        DisplayableListItemDeleter deleter = mock(DisplayableListItemDeleter.class);
+        displayableListPanel.setDisplayableListItemDeleter(deleter);
+        assertEquals(deleter, displayableListPanel.listItemDeleter);
+    }
+
+    @Test
+    public void testAddListItem() {
+        DisplayableListItemAdder adder = mock(DisplayableListItemAdder.class);
+        displayableListPanel.setDisplayableListItemAdder(adder);
+
+        displayableListPanel.addListItem();
+
+        verify(parentForm).commitChanges();
+        verify(adder).addItems(anyString(), any(DisplayableList.class));
+        verify(displayableListPanel).updateButtonStates();
+    }
+
+    @Test
+    public void testDeleteSelectedListItems() {
+        DisplayableListItemDeleter deleter = mock(DisplayableListItemDeleter.class);
+        displayableListPanel.setDisplayableListItemDeleter(deleter);
+
+        when(displayableList.itemsAreSelected()).thenReturn(true);
+
+        displayableListPanel.deleteSelectedListItems();
+
+        verify(parentForm).commitChanges();
+        verify(deleter).deleteListItems(anyString(), any(DisplayableList.class));
+        verify(displayableListPanel).updateButtonStates();
+    }
+
+    @Test
+    public void testUpdateButtonStates() {
+        displayableListPanel.updateButtonStates();
+
+        verify(displayableList, atLeastOnce()).isEmpty();
+    }
+
+    @Test
+    public void testSetDisplayableItems() {
+        ArrayList<Displayable> masterList = new ArrayList<>();
+        displayableListPanel.setDisplayableItems(masterList);
+
+        verify(displayableList).setDisplayItems(masterList);
+        verify(displayableListPanel).updateButtonStates();
+    }
+
+    @Test
+    public void testSave() {
+        ArrayList<Displayable> currentList = new ArrayList<>();
+        when(displayableList.getAllItems()).thenReturn(currentList);
+
+        displayableListPanel.save();
+
+        assertEquals(currentList, displayableListPanel.masterList);
+    }
+
+    @Test
+    public void testGetAllListItems() {
+        ArrayList<Displayable> currentList = new ArrayList<>();
+        when(displayableList.getAllItems()).thenReturn(currentList);
+
+        assertEquals(currentList, displayableListPanel.getAllListItems());
+    }
+
+    @Test
+    public void testSetListOwnerName() {
+        displayableListPanel.setListOwnerName("testOwner");
+        assertEquals("testOwner", displayableListPanel.listOwnerName);
+    }
+
+    @Test
+    public void testActionPerformedSelect() {
+        JButton selectButton = mock(JButton.class);
+        displayableListPanel.select = selectButton;
+
+        displayableListPanel.actionPerformed(new ActionEvent(selectButton, ActionEvent.ACTION_PERFORMED, "Select"));
+
+        verify(displayableListPanel).selectListItems();
+    }
+
+    @Test
+    public void testActionPerformedAdd() {
+        JButton addButton = mock(JButton.class);
+        displayableListPanel.add = addButton;
+
+        displayableListPanel.actionPerformed(new ActionEvent(addButton, ActionEvent.ACTION_PERFORMED, "Add"));
+
+        verify(displayableListPanel).addListItem();
+    }
+
+    @Test
+    public void testActionPerformedEdit() {
+        JButton editButton = mock(JButton.class);
+        displayableListPanel.edit = editButton;
+
+        displayableListPanel.actionPerformed(new ActionEvent(editButton, ActionEvent.ACTION_PERFORMED, "Edit"));
+
+        verify(displayableListPanel).editSelectedListItem();
+    }
+
+    @Test
+    public void testActionPerformedView() {
+        JButton viewButton = mock(JButton.class);
+        displayableListPanel.view = viewButton;
+
+        displayableListPanel.actionPerformed(new ActionEvent(viewButton, ActionEvent.ACTION_PERFORMED, "View"));
+
+        verify(displayableListPanel).viewSelectedListItem();
+    }
+
+    @Test
+    public void testActionPerformedDelete() {
+        JButton deleteButton = mock(JButton.class);
+        displayableListPanel.delete = deleteButton;
+
+        displayableListPanel.actionPerformed(new ActionEvent(deleteButton, ActionEvent.ACTION_PERFORMED, "Delete"));
+
+        verify(displayableListPanel).deleteSelectedListItems();
+    }
+}
+```

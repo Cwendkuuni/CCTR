@@ -1,0 +1,165 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import gnu.trove.decorator.TDoubleShortMapDecorator;
+import gnu.trove.map.TDoubleShortMap;
+import gnu.trove.map.hash.TDoubleShortHashMap;
+
+public class TDoubleShortMapDecoratorTest {
+
+    private TDoubleShortMapDecorator decorator;
+    private TDoubleShortMap map;
+
+    @Before
+    public void setUp() {
+        map = new TDoubleShortHashMap();
+        decorator = new TDoubleShortMapDecorator(map);
+    }
+
+    @Test
+    public void testGetMap() {
+        assertSame(map, decorator.getMap());
+    }
+
+    @Test
+    public void testPut() {
+        Short result = decorator.put(1.0, (short) 1);
+        assertNull(result);
+        assertEquals((short) 1, map.get(1.0));
+
+        result = decorator.put(1.0, (short) 2);
+        assertEquals((short) 1, result.shortValue());
+        assertEquals((short) 2, map.get(1.0));
+    }
+
+    @Test
+    public void testGet() {
+        map.put(1.0, (short) 1);
+        assertEquals((short) 1, decorator.get(1.0).shortValue());
+        assertNull(decorator.get(2.0));
+        assertNull(decorator.get(null));
+    }
+
+    @Test
+    public void testClear() {
+        map.put(1.0, (short) 1);
+        decorator.clear();
+        assertTrue(map.isEmpty());
+    }
+
+    @Test
+    public void testRemove() {
+        map.put(1.0, (short) 1);
+        Short result = decorator.remove(1.0);
+        assertEquals((short) 1, result.shortValue());
+        assertNull(decorator.remove(1.0));
+        assertNull(decorator.remove(null));
+    }
+
+    @Test
+    public void testEntrySet() {
+        map.put(1.0, (short) 1);
+        map.put(2.0, (short) 2);
+
+        assertEquals(2, decorator.entrySet().size());
+        assertTrue(decorator.entrySet().contains(new AbstractMap.SimpleEntry<>(1.0, (short) 1)));
+        assertTrue(decorator.entrySet().contains(new AbstractMap.SimpleEntry<>(2.0, (short) 2)));
+    }
+
+    @Test
+    public void testContainsValue() {
+        map.put(1.0, (short) 1);
+        assertTrue(decorator.containsValue((short) 1));
+        assertFalse(decorator.containsValue((short) 2));
+    }
+
+    @Test
+    public void testContainsKey() {
+        map.put(1.0, (short) 1);
+        assertTrue(decorator.containsKey(1.0));
+        assertFalse(decorator.containsKey(2.0));
+        assertFalse(decorator.containsKey(null));
+    }
+
+    @Test
+    public void testSize() {
+        assertEquals(0, decorator.size());
+        map.put(1.0, (short) 1);
+        assertEquals(1, decorator.size());
+    }
+
+    @Test
+    public void testIsEmpty() {
+        assertTrue(decorator.isEmpty());
+        map.put(1.0, (short) 1);
+        assertFalse(decorator.isEmpty());
+    }
+
+    @Test
+    public void testPutAll() {
+        TDoubleShortMap otherMap = new TDoubleShortHashMap();
+        otherMap.put(1.0, (short) 1);
+        otherMap.put(2.0, (short) 2);
+
+        decorator.putAll(otherMap);
+
+        assertEquals((short) 1, map.get(1.0));
+        assertEquals((short) 2, map.get(2.0));
+    }
+
+    @Test
+    public void testWrapKey() {
+        assertEquals(1.0, decorator.wrapKey(1.0));
+    }
+
+    @Test
+    public void testUnwrapKey() {
+        assertEquals(1.0, decorator.unwrapKey(1.0), 0.0);
+    }
+
+    @Test
+    public void testWrapValue() {
+        assertEquals((short) 1, decorator.wrapValue((short) 1).shortValue());
+    }
+
+    @Test
+    public void testUnwrapValue() {
+        assertEquals((short) 1, decorator.unwrapValue((short) 1));
+    }
+
+    @Test
+    public void testReadExternal() throws Exception {
+        // Mocking ObjectInput and ObjectOutput for testing readExternal and writeExternal
+        // This is a simplified test and may need adjustments based on actual implementation
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeByte(0);
+        oos.writeObject(map);
+        oos.close();
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        ObjectInputStream ois = new ObjectInputStream(bais);
+        decorator.readExternal(ois);
+        ois.close();
+
+        assertSame(map, decorator.getMap());
+    }
+
+    @Test
+    public void testWriteExternal() throws Exception {
+        // Mocking ObjectInput and ObjectOutput for testing readExternal and writeExternal
+        // This is a simplified test and may need adjustments based on actual implementation
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        decorator.writeExternal(oos);
+        oos.close();
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        ObjectInputStream ois = new ObjectInputStream(bais);
+        assertEquals(0, ois.readByte());
+        assertSame(map, ois.readObject());
+        ois.close();
+    }
+}
+```

@@ -1,0 +1,199 @@
+package org.apache.commons.compress.archivers.tar;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+public class TarUtilsTest {
+
+    @Test
+    public void testParseOctal() {
+        byte[] buffer = new byte[] { ' ', ' ', '1', '2', '3', ' ', 0 };
+        assertEquals(83, TarUtils.parseOctal(buffer, 0, 7));
+
+        buffer = new byte[] { ' ', ' ', '1', '2', '3', '4', ' ', 0 };
+        assertEquals(451, TarUtils.parseOctal(buffer, 0, 8));
+
+        buffer = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+        assertEquals(0, TarUtils.parseOctal(buffer, 0, 8));
+
+        buffer = new byte[] { ' ', ' ', '1', '2', '3', '4', '5', '6' };
+        try {
+            TarUtils.parseOctal(buffer, 0, 8);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+
+        buffer = new byte[] { ' ', ' ', '1', '2', '3', '8', ' ', 0 };
+        try {
+            TarUtils.parseOctal(buffer, 0, 8);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testParseOctalOrBinary() {
+        byte[] buffer = new byte[] { ' ', ' ', '1', '2', '3', ' ', 0 };
+        assertEquals(83, TarUtils.parseOctalOrBinary(buffer, 0, 7));
+
+        buffer = new byte[] { (byte) 0x80, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07 };
+        assertEquals(0x01020304050607L, TarUtils.parseOctalOrBinary(buffer, 0, 8));
+
+        buffer = new byte[] { (byte) 0x80, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF };
+        try {
+            TarUtils.parseOctalOrBinary(buffer, 0, 8);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testParseBoolean() {
+        byte[] buffer = new byte[] { 1 };
+        assertTrue(TarUtils.parseBoolean(buffer, 0));
+
+        buffer = new byte[] { 0 };
+        assertFalse(TarUtils.parseBoolean(buffer, 0));
+
+        buffer = new byte[] { 2 };
+        try {
+            TarUtils.parseBoolean(buffer, 0);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testParseName() {
+        byte[] buffer = new byte[] { 't', 'e', 's', 't', 0, 0, 0, 0 };
+        assertEquals("test", TarUtils.parseName(buffer, 0, 8));
+
+        buffer = new byte[] { 't', 'e', 's', 't', 'n', 'a', 'm', 'e' };
+        assertEquals("testname", TarUtils.parseName(buffer, 0, 8));
+
+        buffer = new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 };
+        assertEquals("", TarUtils.parseName(buffer, 0, 8));
+    }
+
+    @Test
+    public void testFormatNameBytes() {
+        byte[] buffer = new byte[8];
+        assertEquals(8, TarUtils.formatNameBytes("test", buffer, 0, 8));
+        assertArrayEquals(new byte[] { 't', 'e', 's', 't', 0, 0, 0, 0 }, buffer);
+
+        buffer = new byte[8];
+        assertEquals(8, TarUtils.formatNameBytes("testname", buffer, 0, 8));
+        assertArrayEquals(new byte[] { 't', 'e', 's', 't', 'n', 'a', 'm', 'e' }, buffer);
+
+        buffer = new byte[8];
+        assertEquals(8, TarUtils.formatNameBytes("", buffer, 0, 8));
+        assertArrayEquals(new byte[] { 0, 0, 0, 0, 0, 0, 0, 0 }, buffer);
+    }
+
+    @Test
+    public void testFormatUnsignedOctalString() {
+        byte[] buffer = new byte[8];
+        TarUtils.formatUnsignedOctalString(123, buffer, 0, 8);
+        assertArrayEquals(new byte[] { '0', '0', '0', '0', '0', '0', '1', '7' }, buffer);
+
+        buffer = new byte[8];
+        TarUtils.formatUnsignedOctalString(0, buffer, 0, 8);
+        assertArrayEquals(new byte[] { '0', '0', '0', '0', '0', '0', '0', '0' }, buffer);
+
+        buffer = new byte[8];
+        try {
+            TarUtils.formatUnsignedOctalString(Long.MAX_VALUE, buffer, 0, 8);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testFormatOctalBytes() {
+        byte[] buffer = new byte[8];
+        assertEquals(8, TarUtils.formatOctalBytes(123, buffer, 0, 8));
+        assertArrayEquals(new byte[] { '0', '0', '0', '0', '0', '0', '1', '7', ' ', 0 }, buffer);
+
+        buffer = new byte[8];
+        assertEquals(8, TarUtils.formatOctalBytes(0, buffer, 0, 8));
+        assertArrayEquals(new byte[] { '0', '0', '0', '0', '0', '0', '0', '0', ' ', 0 }, buffer);
+
+        buffer = new byte[8];
+        try {
+            TarUtils.formatOctalBytes(Long.MAX_VALUE, buffer, 0, 8);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testFormatLongOctalBytes() {
+        byte[] buffer = new byte[8];
+        assertEquals(8, TarUtils.formatLongOctalBytes(123, buffer, 0, 8));
+        assertArrayEquals(new byte[] { '0', '0', '0', '0', '0', '0', '1', '7', ' ' }, buffer);
+
+        buffer = new byte[8];
+        assertEquals(8, TarUtils.formatLongOctalBytes(0, buffer, 0, 8));
+        assertArrayEquals(new byte[] { '0', '0', '0', '0', '0', '0', '0', '0', ' ' }, buffer);
+
+        buffer = new byte[8];
+        try {
+            TarUtils.formatLongOctalBytes(Long.MAX_VALUE, buffer, 0, 8);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testFormatLongOctalOrBinaryBytes() {
+        byte[] buffer = new byte[8];
+        assertEquals(8, TarUtils.formatLongOctalOrBinaryBytes(123, buffer, 0, 8));
+        assertArrayEquals(new byte[] { '0', '0', '0', '0', '0', '0', '1', '7', ' ' }, buffer);
+
+        buffer = new byte[8];
+        assertEquals(8, TarUtils.formatLongOctalOrBinaryBytes(0, buffer, 0, 8));
+        assertArrayEquals(new byte[] { '0', '0', '0', '0', '0', '0', '0', '0', ' ' }, buffer);
+
+        buffer = new byte[8];
+        assertEquals(8, TarUtils.formatLongOctalOrBinaryBytes(Long.MAX_VALUE, buffer, 0, 8));
+        assertArrayEquals(new byte[] { (byte) 0x80, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF }, buffer);
+    }
+
+    @Test
+    public void testFormatCheckSumOctalBytes() {
+        byte[] buffer = new byte[8];
+        assertEquals(8, TarUtils.formatCheckSumOctalBytes(123, buffer, 0, 8));
+        assertArrayEquals(new byte[] { '0', '0', '0', '0', '0', '0', '1', '7', 0, ' ' }, buffer);
+
+        buffer = new byte[8];
+        assertEquals(8, TarUtils.formatCheckSumOctalBytes(0, buffer, 0, 8));
+        assertArrayEquals(new byte[] { '0', '0', '0', '0', '0', '0', '0', '0', 0, ' ' }, buffer);
+
+        buffer = new byte[8];
+        try {
+            TarUtils.formatCheckSumOctalBytes(Long.MAX_VALUE, buffer, 0, 8);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testComputeCheckSum() {
+        byte[] buffer = new byte[] { 't', 'e', 's', 't' };
+        assertEquals(448, TarUtils.computeCheckSum(buffer));
+
+        buffer = new byte[] { 0, 0, 0, 0 };
+        assertEquals(0, TarUtils.computeCheckSum(buffer));
+
+        buffer = new byte[] { (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF };
+        assertEquals(1020, TarUtils.computeCheckSum(buffer));
+    }
+}

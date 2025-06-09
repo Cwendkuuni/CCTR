@@ -1,0 +1,86 @@
+```java
+import net.kencochrane.a4j.DAO.Product;
+import net.kencochrane.a4j.beans.*;
+import net.kencochrane.a4j.file.FileUtil;
+import com.wutka.jox.JOXBeanInputStream;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ProductTest {
+
+    private Product product;
+    private FileUtil fileUtil;
+    private Search search;
+
+    @Before
+    public void setUp() {
+        product = new Product();
+        fileUtil = mock(FileUtil.class);
+        search = mock(Search.class);
+    }
+
+    @Test
+    public void testGetProduct_NullFileInputStream() {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        when(fileUtil.fetchASINFile(asin, "heavy", offer, page)).thenReturn(null);
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetProduct_ValidFileInputStream() throws Exception {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        FileInputStream fileIn = mock(FileInputStream.class);
+        JOXBeanInputStream joxIn = mock(JOXBeanInputStream.class);
+        ProductInfo productInfoBean = mock(ProductInfo.class);
+        ProductDetails productDetails = mock(ProductDetails.class);
+        Accessories accessories = mock(Accessories.class);
+        ArrayList accessoryArray = new ArrayList();
+        ArrayList detailsArray = new ArrayList();
+
+        when(fileUtil.fetchASINFile(asin, "heavy", offer, page)).thenReturn(fileIn);
+        when(joxIn.readObject(ProductInfo.class)).thenReturn(productInfoBean);
+        when(productInfoBean.getDetails()).thenReturn(new ProductDetails[]{productDetails});
+        when(productDetails.getAccessories()).thenReturn(accessories);
+        when(accessories.getAccessoryArray()).thenReturn(accessoryArray);
+        when(fileUtil.fetchAccessories(asin, accessoryArray)).thenReturn(fileIn);
+        when(productInfoBean.getProductsArrayList()).thenReturn(detailsArray);
+        when(search.SimilaritesSearch(asin, "1")).thenReturn(productInfoBean);
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNotNull(result);
+        verify(fileIn, times(2)).close();
+        verify(joxIn, times(2)).close();
+    }
+
+    @Test
+    public void testGetProduct_ExceptionHandling() {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        when(fileUtil.fetchASINFile(asin, "heavy", offer, page)).thenThrow(new RuntimeException("Test Exception"));
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNotNull(result);
+    }
+}
+```

@@ -1,0 +1,223 @@
+```java
+package org.jsoup.parser;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.jsoup.nodes.Attributes;
+
+import static org.junit.Assert.*;
+
+public class TokenTest {
+
+    private Token.Doctype doctype;
+    private Token.StartTag startTag;
+    private Token.EndTag endTag;
+    private Token.Comment comment;
+    private Token.Character character;
+    private Token.CData cdata;
+    private Token.EOF eof;
+
+    @Before
+    public void setUp() {
+        doctype = new Token.Doctype();
+        startTag = new Token.StartTag();
+        endTag = new Token.EndTag();
+        comment = new Token.Comment();
+        character = new Token.Character();
+        cdata = new Token.CData("cdata content");
+        eof = new Token.EOF();
+    }
+
+    @Test
+    public void testTokenType() {
+        assertEquals("Doctype", doctype.tokenType());
+        assertEquals("StartTag", startTag.tokenType());
+        assertEquals("EndTag", endTag.tokenType());
+        assertEquals("Comment", comment.tokenType());
+        assertEquals("Character", character.tokenType());
+        assertEquals("CData", cdata.tokenType());
+        assertEquals("EOF", eof.tokenType());
+    }
+
+    @Test
+    public void testDoctypeReset() {
+        doctype.name.append("html");
+        doctype.pubSysKey = "public";
+        doctype.publicIdentifier.append("publicId");
+        doctype.systemIdentifier.append("systemId");
+        doctype.forceQuirks = true;
+
+        doctype.reset();
+
+        assertEquals("", doctype.name.toString());
+        assertNull(doctype.pubSysKey);
+        assertEquals("", doctype.publicIdentifier.toString());
+        assertEquals("", doctype.systemIdentifier.toString());
+        assertFalse(doctype.forceQuirks);
+    }
+
+    @Test
+    public void testTagReset() {
+        startTag.tagName = "div";
+        startTag.normalName = "div";
+        startTag.pendingAttributeName = "class";
+        startTag.pendingAttributeValue.append("container");
+        startTag.pendingAttributeValueS = "container";
+        startTag.hasEmptyAttributeValue = true;
+        startTag.hasPendingAttributeValue = true;
+        startTag.selfClosing = true;
+        startTag.attributes = new Attributes();
+
+        startTag.reset();
+
+        assertNull(startTag.tagName);
+        assertNull(startTag.normalName);
+        assertNull(startTag.pendingAttributeName);
+        assertEquals("", startTag.pendingAttributeValue.toString());
+        assertNull(startTag.pendingAttributeValueS);
+        assertFalse(startTag.hasEmptyAttributeValue);
+        assertFalse(startTag.hasPendingAttributeValue);
+        assertFalse(startTag.selfClosing);
+        assertNotNull(startTag.attributes);
+    }
+
+    @Test
+    public void testStartTagNameAttr() {
+        Attributes attributes = new Attributes();
+        attributes.put("class", "container");
+
+        startTag.nameAttr("div", attributes);
+
+        assertEquals("div", startTag.tagName);
+        assertEquals("div", startTag.normalName);
+        assertEquals(attributes, startTag.attributes);
+    }
+
+    @Test
+    public void testStartTagToString() {
+        startTag.nameAttr("div", new Attributes());
+        assertEquals("<div>", startTag.toString());
+
+        Attributes attributes = new Attributes();
+        attributes.put("class", "container");
+        startTag.nameAttr("div", attributes);
+        assertEquals("<div class=\"container\">", startTag.toString());
+    }
+
+    @Test
+    public void testEndTagToString() {
+        endTag.name("div");
+        assertEquals("</div>", endTag.toString());
+    }
+
+    @Test
+    public void testCommentReset() {
+        comment.data.append("comment data");
+        comment.bogus = true;
+
+        comment.reset();
+
+        assertEquals("", comment.data.toString());
+        assertFalse(comment.bogus);
+    }
+
+    @Test
+    public void testCommentToString() {
+        comment.data.append("comment data");
+        assertEquals("<!--comment data-->", comment.toString());
+    }
+
+    @Test
+    public void testCharacterReset() {
+        character.data("character data");
+
+        character.reset();
+
+        assertNull(character.data);
+    }
+
+    @Test
+    public void testCharacterToString() {
+        character.data("character data");
+        assertEquals("character data", character.toString());
+    }
+
+    @Test
+    public void testCDataToString() {
+        assertEquals("<![CDATA[cdata content]]>", cdata.toString());
+    }
+
+    @Test
+    public void testEOFReset() {
+        eof.reset();
+        // EOF reset does nothing, so just ensure it doesn't throw an exception
+    }
+
+    @Test
+    public void testIsDoctype() {
+        assertTrue(doctype.isDoctype());
+        assertFalse(startTag.isDoctype());
+    }
+
+    @Test
+    public void testAsDoctype() {
+        assertEquals(doctype, doctype.asDoctype());
+    }
+
+    @Test
+    public void testIsStartTag() {
+        assertTrue(startTag.isStartTag());
+        assertFalse(endTag.isStartTag());
+    }
+
+    @Test
+    public void testAsStartTag() {
+        assertEquals(startTag, startTag.asStartTag());
+    }
+
+    @Test
+    public void testIsEndTag() {
+        assertTrue(endTag.isEndTag());
+        assertFalse(startTag.isEndTag());
+    }
+
+    @Test
+    public void testAsEndTag() {
+        assertEquals(endTag, endTag.asEndTag());
+    }
+
+    @Test
+    public void testIsComment() {
+        assertTrue(comment.isComment());
+        assertFalse(startTag.isComment());
+    }
+
+    @Test
+    public void testAsComment() {
+        assertEquals(comment, comment.asComment());
+    }
+
+    @Test
+    public void testIsCharacter() {
+        assertTrue(character.isCharacter());
+        assertFalse(startTag.isCharacter());
+    }
+
+    @Test
+    public void testIsCData() {
+        assertTrue(cdata.isCData());
+        assertFalse(character.isCData());
+    }
+
+    @Test
+    public void testAsCharacter() {
+        assertEquals(character, character.asCharacter());
+    }
+
+    @Test
+    public void testIsEOF() {
+        assertTrue(eof.isEOF());
+        assertFalse(startTag.isEOF());
+    }
+}
+```

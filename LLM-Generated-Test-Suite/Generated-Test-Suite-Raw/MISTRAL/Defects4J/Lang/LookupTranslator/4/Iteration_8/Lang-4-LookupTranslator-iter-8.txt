@@ -1,0 +1,97 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.apache.commons.lang3.text.translate.LookupTranslator;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+
+import static org.junit.Assert.*;
+
+public class LookupTranslatorTest {
+
+    private LookupTranslator translator;
+
+    @Before
+    public void setUp() {
+        CharSequence[][] lookup = {
+            {"a", "1"},
+            {"ab", "2"},
+            {"abc", "3"}
+        };
+        translator = new LookupTranslator(lookup);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(translator);
+        assertEquals(1, translator.shortest);
+        assertEquals(3, translator.longest);
+    }
+
+    @Test
+    public void testTranslateSingleChar() throws IOException {
+        Writer out = new StringWriter();
+        int result = translator.translate("a", 0, out);
+        assertEquals(1, result);
+        assertEquals("1", out.toString());
+    }
+
+    @Test
+    public void testTranslateMultipleChars() throws IOException {
+        Writer out = new StringWriter();
+        int result = translator.translate("abc", 0, out);
+        assertEquals(3, result);
+        assertEquals("3", out.toString());
+    }
+
+    @Test
+    public void testTranslateNoMatch() throws IOException {
+        Writer out = new StringWriter();
+        int result = translator.translate("xyz", 0, out);
+        assertEquals(0, result);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateGreedyAlgorithm() throws IOException {
+        Writer out = new StringWriter();
+        int result = translator.translate("abcd", 0, out);
+        assertEquals(3, result);
+        assertEquals("3", out.toString());
+    }
+
+    @Test
+    public void testTranslatePartialMatch() throws IOException {
+        Writer out = new StringWriter();
+        int result = translator.translate("ab", 0, out);
+        assertEquals(2, result);
+        assertEquals("2", out.toString());
+    }
+
+    @Test
+    public void testTranslateEmptyInput() throws IOException {
+        Writer out = new StringWriter();
+        int result = translator.translate("", 0, out);
+        assertEquals(0, result);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateOutOfBounds() throws IOException {
+        Writer out = new StringWriter();
+        int result = translator.translate("a", 1, out);
+        assertEquals(0, result);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateNullLookup() {
+        LookupTranslator nullTranslator = new LookupTranslator((CharSequence[][]) null);
+        assertNotNull(nullTranslator);
+        assertEquals(Integer.MAX_VALUE, nullTranslator.shortest);
+        assertEquals(0, nullTranslator.longest);
+    }
+}
+```

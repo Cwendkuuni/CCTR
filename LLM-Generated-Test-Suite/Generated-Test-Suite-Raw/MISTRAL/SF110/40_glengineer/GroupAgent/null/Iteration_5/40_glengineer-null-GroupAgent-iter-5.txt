@@ -1,0 +1,207 @@
+```java
+package glengineer.agents;
+
+import glengineer.agents.settings.Settings;
+import glengineer.agents.setters.ComponentAgent;
+import glengineer.agents.setters.GapAgent;
+import glengineer.agents.setters.ParallelGroupAgent;
+import glengineer.agents.setters.SequentialGroupAgent;
+import glengineer.agents.setters.TemporaryGapAgent;
+import glengineer.GroupCreatorAndElementAdder;
+import glengineer.GroupLayout;
+import glengineer.GroupLayoutEngineer;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.util.LinkedList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class GroupAgentTest {
+
+    private GroupAgent groupAgent;
+    private Agent mockAgent;
+    private ComponentAgent mockComponentAgent;
+    private ParallelGroupAgent mockParallelGroupAgent;
+    private SequentialGroupAgent mockSequentialGroupAgent;
+    private TemporaryGapAgent mockTemporaryGapAgent;
+    private GroupLayoutEngineer.TemporaryGapsToGaps mockMap;
+
+    @Before
+    public void setUp() {
+        groupAgent = new GroupAgent() {
+            @Override
+            public GroupLayout.Group groupContent(GroupCreatorAndElementAdder creatorAndAdder) {
+                return null;
+            }
+
+            @Override
+            public FunctionsOnGroup getFunctionsOnGroupImplemenation() {
+                return null;
+            }
+        };
+        mockAgent = mock(Agent.class);
+        mockComponentAgent = mock(ComponentAgent.class);
+        mockParallelGroupAgent = mock(ParallelGroupAgent.class);
+        mockSequentialGroupAgent = mock(SequentialGroupAgent.class);
+        mockTemporaryGapAgent = mock(TemporaryGapAgent.class);
+        mockMap = mock(GroupLayoutEngineer.TemporaryGapsToGaps.class);
+    }
+
+    @Test
+    public void testGetFirstName() {
+        when(mockAgent.getFirstName()).thenReturn("John");
+        groupAgent.addAgent(mockAgent);
+        assertEquals("John", groupAgent.getFirstName());
+    }
+
+    @Test
+    public void testGetLastName() {
+        when(mockAgent.getLastName()).thenReturn("Doe");
+        groupAgent.addAgent(mockAgent);
+        assertEquals("Doe", groupAgent.getLastName());
+    }
+
+    @Test
+    public void testIsComponent() {
+        assertFalse(groupAgent.isComponent("componentName"));
+    }
+
+    @Test
+    public void testIsGroup() {
+        when(mockAgent.getFirstName()).thenReturn("John");
+        when(mockAgent.getLastName()).thenReturn("Doe");
+        groupAgent.addAgent(mockAgent);
+        assertTrue(groupAgent.isGroup("John", "Doe"));
+    }
+
+    @Test
+    public void testIsGap() {
+        assertFalse(groupAgent.isGap());
+    }
+
+    @Test
+    public void testEquals() {
+        when(mockAgent.getFirstName()).thenReturn("John");
+        when(mockAgent.getLastName()).thenReturn("Doe");
+        groupAgent.addAgent(mockAgent);
+        assertTrue(groupAgent.equals(mockAgent));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddAgentNull() {
+        groupAgent.addAgent(null);
+    }
+
+    @Test
+    public void testGetChildren() {
+        groupAgent.addAgent(mockAgent);
+        List<Agent> children = groupAgent.getChildren();
+        assertEquals(1, children.size());
+        assertEquals(mockAgent, children.get(0));
+    }
+
+    @Test
+    public void testGetNumberOfChildren() {
+        groupAgent.addAgent(mockAgent);
+        assertEquals(1, groupAgent.getNumberOfChildren());
+    }
+
+    @Test
+    public void testGetComponent() {
+        when(mockComponentAgent.isComponent("componentName")).thenReturn(true);
+        groupAgent.addAgent(mockComponentAgent);
+        assertEquals(mockComponentAgent, groupAgent.getComponent("componentName"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetComponentNotFound() {
+        groupAgent.getComponent("componentName");
+    }
+
+    @Test
+    public void testGetGroup() {
+        when(mockAgent.isGroup("firstName", "lastName")).thenReturn(true);
+        groupAgent.addAgent(mockAgent);
+        assertEquals(mockAgent, groupAgent.getGroup("firstName", "lastName"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetGroupNotFound() {
+        groupAgent.getGroup("firstName", "lastName");
+    }
+
+    @Test
+    public void testFindDependingComponentByName() {
+        when(mockComponentAgent.findDependingComponentByName("componentName")).thenReturn(mockComponentAgent);
+        groupAgent.addAgent(mockComponentAgent);
+        assertEquals(mockComponentAgent, groupAgent.findDependingComponentByName("componentName"));
+    }
+
+    @Test
+    public void testFindDependingGroupByNames() {
+        when(mockAgent.findDependingGroupByNames("firstName", "lastName")).thenReturn(mockAgent);
+        groupAgent.addAgent(mockAgent);
+        assertEquals(mockAgent, groupAgent.findDependingGroupByNames("firstName", "lastName"));
+    }
+
+    @Test
+    public void testFindDependingParallelGroupByNames() {
+        when(mockParallelGroupAgent.findDependingParallelGroupByNames("firstName", "lastName")).thenReturn(mockParallelGroupAgent);
+        groupAgent.addAgent(mockParallelGroupAgent);
+        assertEquals(mockParallelGroupAgent, groupAgent.findDependingParallelGroupByNames("firstName", "lastName"));
+    }
+
+    @Test
+    public void testFindDependingSequentialGroupByNames() {
+        when(mockSequentialGroupAgent.findDependingSequentialGroupByNames("firstName", "lastName")).thenReturn(mockSequentialGroupAgent);
+        groupAgent.addAgent(mockSequentialGroupAgent);
+        assertEquals(mockSequentialGroupAgent, groupAgent.findDependingSequentialGroupByNames("firstName", "lastName"));
+    }
+
+    @Test
+    public void testRemoveGapsFromParallelGroups() {
+        groupAgent.removeGapsFromParallelGroups();
+        // Add assertions based on the expected behavior
+    }
+
+    @Test
+    public void testReplaceTemporaryGapsByRealGaps() {
+        when(mockTemporaryGapAgent.isGap()).thenReturn(true);
+        when(mockMap.gap(mockTemporaryGapAgent)).thenReturn(mockAgent);
+        groupAgent.addAgent(mockTemporaryGapAgent);
+        groupAgent.replaceTemporaryGapsByRealGaps(mockMap);
+        assertEquals(1, groupAgent.getNumberOfChildren());
+        assertEquals(mockAgent, groupAgent.getChildren().get(0));
+    }
+
+    @Test
+    public void testAddContentToGroup() {
+        GroupCreatorAndElementAdder mockCreatorAndAdder = mock(GroupCreatorAndElementAdder.class);
+        GroupLayout.Group mockGroup = mock(GroupLayout.Group.class);
+        groupAgent.addContentToGroup(mockGroup, mockCreatorAndAdder);
+        verify(mockCreatorAndAdder).addGroupToGroup(null, groupAgent.settings, mockGroup);
+    }
+
+    @Test
+    public void testAddGapBefore() {
+        GapAgent gapAgent = new GapAgent(10);
+        groupAgent.addAgent(mockAgent);
+        groupAgent.addGapBefore(gapAgent, mockAgent);
+        assertEquals(2, groupAgent.getNumberOfChildren());
+        assertEquals(gapAgent, groupAgent.getChildren().get(0));
+    }
+
+    @Test
+    public void testAddGapAfter() {
+        GapAgent gapAgent = new GapAgent(10);
+        groupAgent.addAgent(mockAgent);
+        groupAgent.addGapAfter(gapAgent, mockAgent);
+        assertEquals(2, groupAgent.getNumberOfChildren());
+        assertEquals(gapAgent, groupAgent.getChildren().get(1));
+    }
+}
+```

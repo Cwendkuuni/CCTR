@@ -1,0 +1,148 @@
+Certainly! Below is a JUnit 4 test suite for the `ExtendedMessageFormat` class. This test suite aims to cover the various methods and constructors of the class, including edge cases and expected exceptions.
+
+```java
+import org.apache.commons.lang.text.ExtendedMessageFormat;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.text.Format;
+import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class ExtendedMessageFormatTest {
+
+    private static final String PATTERN = "Hello, {0}!";
+    private static final String INVALID_PATTERN = "Hello, {0";
+    private static final Locale LOCALE = Locale.US;
+    private static final Map<String, FormatFactory> REGISTRY = new HashMap<>();
+
+    private ExtendedMessageFormat emf;
+
+    @Before
+    public void setUp() {
+        emf = new ExtendedMessageFormat(PATTERN, LOCALE, REGISTRY);
+    }
+
+    @Test
+    public void testConstructorWithPattern() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(PATTERN);
+        assertEquals(PATTERN, emf.toPattern());
+    }
+
+    @Test
+    public void testConstructorWithPatternAndLocale() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(PATTERN, LOCALE);
+        assertEquals(PATTERN, emf.toPattern());
+    }
+
+    @Test
+    public void testConstructorWithPatternAndRegistry() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat(PATTERN, REGISTRY);
+        assertEquals(PATTERN, emf.toPattern());
+    }
+
+    @Test
+    public void testConstructorWithPatternLocaleAndRegistry() {
+        assertEquals(PATTERN, emf.toPattern());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithInvalidPattern() {
+        new ExtendedMessageFormat(INVALID_PATTERN);
+    }
+
+    @Test
+    public void testToPattern() {
+        assertEquals(PATTERN, emf.toPattern());
+    }
+
+    @Test
+    public void testApplyPattern() {
+        String newPattern = "Goodbye, {0}!";
+        emf.applyPattern(newPattern);
+        assertEquals(newPattern, emf.toPattern());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormat() {
+        emf.setFormat(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatByArgumentIndex() {
+        emf.setFormatByArgumentIndex(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormats() {
+        emf.setFormats(new Format[0]);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatsByArgumentIndex() {
+        emf.setFormatsByArgumentIndex(new Format[0]);
+    }
+
+    @Test
+    public void testGetFormat() {
+        // Assuming a custom FormatFactory is added to the registry
+        REGISTRY.put("custom", new CustomFormatFactory());
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("{0,custom}", LOCALE, REGISTRY);
+        Format[] formats = emf.getFormats();
+        assertNotNull(formats[0]);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testReadArgumentIndexWithInvalidPattern() {
+        emf.applyPattern("Invalid {pattern");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testParseFormatDescriptionWithUnterminatedElement() {
+        emf.applyPattern("{0,custom");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAppendQuotedStringWithUnterminatedQuote() {
+        emf.applyPattern("Hello, '{0}");
+    }
+
+    @Test
+    public void testContainsElements() {
+        assertFalse(emf.containsElements(null));
+        assertFalse(emf.containsElements(new ArrayList<>()));
+        List<String> list = new ArrayList<>();
+        list.add(null);
+        assertFalse(emf.containsElements(list));
+        list.add("element");
+        assertTrue(emf.containsElements(list));
+    }
+
+    // Custom FormatFactory for testing purposes
+    private static class CustomFormatFactory implements FormatFactory {
+        @Override
+        public Format getFormat(String name, String args, Locale locale) {
+            return new CustomFormat();
+        }
+    }
+
+    // Custom Format for testing purposes
+    private static class CustomFormat extends Format {
+        @Override
+        public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
+            return toAppendTo.append("custom");
+        }
+
+        @Override
+        public Object parseObject(String source, ParsePosition pos) {
+            return "custom";
+        }
+    }
+}
+```
+
+This test suite includes tests for the constructors, the `applyPattern` method, and the unsupported operations. It also includes tests for handling invalid patterns and custom formats. The `CustomFormatFactory` and `CustomFormat` classes are used to test the registry functionality.

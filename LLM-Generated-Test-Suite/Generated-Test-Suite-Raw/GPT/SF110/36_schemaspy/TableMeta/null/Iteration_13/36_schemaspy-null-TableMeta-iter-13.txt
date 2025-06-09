@@ -1,0 +1,89 @@
+```java
+package net.sourceforge.schemaspy.model.xml;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.w3c.dom.*;
+import org.w3c.dom.bootstrap.DOMImplementationRegistry;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSParser;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TableMetaTest {
+
+    private Document document;
+    private Element tableElement;
+    private TableMeta tableMeta;
+
+    @Before
+    public void setUp() throws Exception {
+        // Initialize a DOM Document for testing
+        DOMImplementationRegistry registry = DOMImplementationRegistry.newInstance();
+        DOMImplementationLS impl = (DOMImplementationLS) registry.getDOMImplementation("LS");
+        LSParser parser = impl.createLSParser(DOMImplementationLS.MODE_SYNCHRONOUS, null);
+        document = parser.parseURI("data:,");
+
+        // Create a mock Element to simulate the XML structure
+        tableElement = document.createElement("table");
+        tableElement.setAttribute("name", "testTable");
+        tableElement.setAttribute("comments", "Test comments");
+        tableElement.setAttribute("remoteCatalog", "testCatalog");
+        tableElement.setAttribute("remoteSchema", "testSchema");
+
+        // Add mock column elements
+        Element columnElement = document.createElement("column");
+        tableElement.appendChild(columnElement);
+
+        // Initialize TableMeta with the mock Element
+        tableMeta = new TableMeta(tableElement);
+    }
+
+    @Test
+    public void testGetName() {
+        assertEquals("testTable", tableMeta.getName());
+    }
+
+    @Test
+    public void testGetComments() {
+        assertEquals("Test comments", tableMeta.getComments());
+    }
+
+    @Test
+    public void testGetColumns() {
+        List<TableColumnMeta> columns = tableMeta.getColumns();
+        assertNotNull(columns);
+        assertEquals(1, columns.size());
+    }
+
+    @Test
+    public void testGetRemoteCatalog() {
+        assertEquals("testCatalog", tableMeta.getRemoteCatalog());
+    }
+
+    @Test
+    public void testGetRemoteSchema() {
+        assertEquals("testSchema", tableMeta.getRemoteSchema());
+    }
+
+    @Test
+    public void testConstructorWithMissingAttributes() {
+        // Create a mock Element with missing attributes
+        Element incompleteElement = document.createElement("table");
+        incompleteElement.setAttribute("name", "incompleteTable");
+
+        TableMeta incompleteTableMeta = new TableMeta(incompleteElement);
+
+        assertEquals("incompleteTable", incompleteTableMeta.getName());
+        assertNull(incompleteTableMeta.getComments());
+        assertNull(incompleteTableMeta.getRemoteCatalog());
+        assertNull(incompleteTableMeta.getRemoteSchema());
+        assertTrue(incompleteTableMeta.getColumns().isEmpty());
+    }
+}
+```
+
+This test suite uses JUnit 4 to test the `TableMeta` class. It includes tests for all the getter methods and checks the behavior of the constructor when some attributes are missing. The test suite uses a mock XML `Element` to simulate the input to the `TableMeta` constructor.

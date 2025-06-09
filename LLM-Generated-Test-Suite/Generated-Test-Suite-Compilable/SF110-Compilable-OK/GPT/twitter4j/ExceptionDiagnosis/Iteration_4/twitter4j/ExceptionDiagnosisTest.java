@@ -1,0 +1,101 @@
+package twitter4j;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+import twitter4j.ExceptionDiagnosis;
+
+public class ExceptionDiagnosisTest {
+
+    @Test
+    public void testConstructorWithThrowableOnly() {
+        Throwable throwable = new Throwable();
+        ExceptionDiagnosis diagnosis = new ExceptionDiagnosis(throwable);
+
+        assertNotNull(diagnosis);
+        assertEquals(0, diagnosis.getStackLineHash());
+        assertEquals(0, diagnosis.getLineNumberHash());
+        assertNotNull(diagnosis.asHexString());
+    }
+
+    @Test
+    public void testConstructorWithThrowableAndInclusionFilter() {
+        Throwable throwable = new Throwable();
+        String[] inclusionFilter = {"java.lang"};
+        ExceptionDiagnosis diagnosis = new ExceptionDiagnosis(throwable, inclusionFilter);
+
+        assertNotNull(diagnosis);
+        assertEquals(0, diagnosis.getStackLineHash());
+        assertEquals(0, diagnosis.getLineNumberHash());
+        assertNotNull(diagnosis.asHexString());
+    }
+
+    @Test
+    public void testGetStackLineHash() {
+        Throwable throwable = new Throwable();
+        ExceptionDiagnosis diagnosis = new ExceptionDiagnosis(throwable);
+
+        assertEquals(0, diagnosis.getStackLineHash());
+    }
+
+    @Test
+    public void testGetLineNumberHash() {
+        Throwable throwable = new Throwable();
+        ExceptionDiagnosis diagnosis = new ExceptionDiagnosis(throwable);
+
+        assertEquals(0, diagnosis.getLineNumberHash());
+    }
+
+    @Test
+    public void testAsHexString() {
+        Throwable throwable = new Throwable();
+        ExceptionDiagnosis diagnosis = new ExceptionDiagnosis(throwable);
+
+        assertNotNull(diagnosis.asHexString());
+        assertTrue(diagnosis.asHexString().matches("[0-9a-f]{8}-[0-9a-f]{8}"));
+    }
+
+    @Test
+    public void testEqualsSameObject() {
+        Throwable throwable = new Throwable();
+        ExceptionDiagnosis diagnosis = new ExceptionDiagnosis(throwable);
+
+        assertTrue(diagnosis.equals(diagnosis));
+    }
+
+    @Test
+    public void testEqualsDifferentObjectSameValues() {
+        Throwable throwable = new Throwable();
+        ExceptionDiagnosis diagnosis1 = new ExceptionDiagnosis(throwable);
+        ExceptionDiagnosis diagnosis2 = new ExceptionDiagnosis(throwable);
+
+        assertTrue(diagnosis1.equals(diagnosis2));
+    }
+
+    @Test
+    public void testEqualsDifferentObjectDifferentValues() {
+        Throwable throwable1 = new Throwable();
+        Throwable throwable2 = new Throwable(new Exception("Different"));
+        ExceptionDiagnosis diagnosis1 = new ExceptionDiagnosis(throwable1);
+        ExceptionDiagnosis diagnosis2 = new ExceptionDiagnosis(throwable2);
+
+        assertFalse(diagnosis1.equals(diagnosis2));
+    }
+
+    @Test
+    public void testHashCode() {
+        Throwable throwable = new Throwable();
+        ExceptionDiagnosis diagnosis = new ExceptionDiagnosis(throwable);
+
+        int expectedHashCode = 31 * diagnosis.getStackLineHash() + diagnosis.getLineNumberHash();
+        assertEquals(expectedHashCode, diagnosis.hashCode());
+    }
+
+    @Test
+    public void testToString() {
+        Throwable throwable = new Throwable();
+        ExceptionDiagnosis diagnosis = new ExceptionDiagnosis(throwable);
+
+        String expectedString = "ExceptionDiagnosis{stackLineHash=0, lineNumberHash=0}";
+        assertEquals(expectedString, diagnosis.toString());
+    }
+}

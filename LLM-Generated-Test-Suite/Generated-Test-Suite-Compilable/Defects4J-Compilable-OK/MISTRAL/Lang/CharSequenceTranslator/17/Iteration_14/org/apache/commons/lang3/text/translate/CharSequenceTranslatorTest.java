@@ -1,0 +1,100 @@
+package org.apache.commons.lang3.text.translate;
+
+import org.apache.commons.lang3.text.translate.CharSequenceTranslator;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+
+import static org.junit.Assert.*;
+
+public class CharSequenceTranslatorTest {
+
+    private CharSequenceTranslator translator;
+
+    @Before
+    public void setUp() {
+        translator = new CharSequenceTranslator() {
+            @Override
+            public int translate(CharSequence input, int index, Writer out) throws IOException {
+                // Mock implementation for testing
+                out.write(input.charAt(index));
+                return 1;
+            }
+        };
+    }
+
+    @Test
+    public void testTranslateCharSequence() {
+        String input = "Hello World";
+        String expectedOutput = "Hello World";
+        String output = translator.translate(input);
+        assertEquals(expectedOutput, output);
+    }
+
+    @Test
+    public void testTranslateCharSequenceNull() {
+        String input = null;
+        String output = translator.translate(input);
+        assertNull(output);
+    }
+
+    @Test
+    public void testTranslateCharSequenceWriter() throws IOException {
+        String input = "Hello World";
+        StringWriter writer = new StringWriter();
+        translator.translate(input, writer);
+        String output = writer.toString();
+        assertEquals(input, output);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTranslateCharSequenceWriterNull() throws IOException {
+        String input = "Hello World";
+        Writer writer = null;
+        translator.translate(input, writer);
+    }
+
+    @Test
+    public void testTranslateCharSequenceWriterNullInput() throws IOException {
+        String input = null;
+        StringWriter writer = new StringWriter();
+        translator.translate(input, writer);
+        String output = writer.toString();
+        assertEquals("", output);
+    }
+
+    @Test
+    public void testWith() {
+        CharSequenceTranslator mockTranslator = Mockito.mock(CharSequenceTranslator.class);
+        CharSequenceTranslator mergedTranslator = translator.with(mockTranslator);
+        assertNotNull(mergedTranslator);
+    }
+
+    @Test
+    public void testHex() {
+        int codepoint = 65; // ASCII 'A'
+        String expectedOutput = "41";
+        String output = CharSequenceTranslator.hex(codepoint);
+        assertEquals(expectedOutput, output);
+    }
+
+    @Test
+    public void testHexZero() {
+        int codepoint = 0;
+        String expectedOutput = "0";
+        String output = CharSequenceTranslator.hex(codepoint);
+        assertEquals(expectedOutput, output);
+    }
+
+    @Test
+    public void testHexNegative() {
+        int codepoint = -1;
+        String expectedOutput = "FFFFFFFF";
+        String output = CharSequenceTranslator.hex(codepoint);
+        assertEquals(expectedOutput, output);
+    }
+}

@@ -1,0 +1,158 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `Request` class. This suite tests various methods and scenarios, including edge cases and error handling.
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import org.mockito.*;
+import org.scribe.exceptions.OAuthException;
+import org.scribe.model.*;
+import org.scribe.utils.URLUtils;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(JUnit4.class)
+public class RequestTest {
+
+    private Request request;
+    private HttpURLConnection mockConnection;
+
+    @Before
+    public void setUp() throws Exception {
+        mockConnection = mock(HttpURLConnection.class);
+        request = new Request(Verb.GET, "http://example.com");
+        request.setConnection(mockConnection);
+    }
+
+    @Test
+    public void testConstructorInitializesFields() {
+        assertEquals("http://example.com", request.getUrl());
+        assertEquals(Verb.GET, request.getVerb());
+        assertTrue(request.getQueryStringParams().isEmpty());
+        assertTrue(request.getBodyParams().isEmpty());
+        assertTrue(request.getHeaders().isEmpty());
+    }
+
+    @Test
+    public void testAddHeader() {
+        request.addHeader("Content-Type", "application/json");
+        assertEquals("application/json", request.getHeaders().get("Content-Type"));
+    }
+
+    @Test
+    public void testAddBodyParameter() {
+        request.addBodyParameter("key", "value");
+        assertEquals("value", request.getBodyParams().get("key"));
+    }
+
+    @Test
+    public void testAddQuerystringParameter() {
+        request.addQuerystringParameter("key", "value");
+        assertEquals("value", request.getQueryStringParams().get("key"));
+    }
+
+    @Test
+    public void testAddPayloadString() {
+        request.addPayload("payload");
+        assertEquals("payload", request.getBodyContents());
+    }
+
+    @Test
+    public void testAddPayloadByteArray() {
+        byte[] payload = "payload".getBytes();
+        request.addPayload(payload);
+        assertArrayEquals(payload, request.getByteBodyContents());
+    }
+
+    @Test
+    public void testGetSanitizedUrl() {
+        Request requestWithPort = new Request(Verb.GET, "http://example.com:8080/path?query=1");
+        assertEquals("http://example.com/path", requestWithPort.getSanitizedUrl());
+    }
+
+    @Test
+    public void testGetBodyContentsWithCharset() throws UnsupportedEncodingException {
+        request.setCharset("UTF-8");
+        request.addPayload("payload");
+        assertEquals("payload", request.getBodyContents());
+    }
+
+    @Test(expected = OAuthException.class)
+    public void testGetBodyContentsWithUnsupportedCharset() {
+        request.setCharset("UNSUPPORTED_CHARSET");
+        request.getBodyContents();
+    }
+
+    @Test
+    public void testGetCharset() {
+        assertEquals(Charset.defaultCharset().name(), request.getCharset());
+        request.setCharset("UTF-8");
+        assertEquals("UTF-8", request.getCharset());
+    }
+
+    @Test
+    public void testSetConnectTimeout() {
+        request.setConnectTimeout(10, TimeUnit.SECONDS);
+        verify(mockConnection).setConnectTimeout(10000);
+    }
+
+    @Test
+    public void testSetReadTimeout() {
+        request.setReadTimeout(10, TimeUnit.SECONDS);
+        verify(mockConnection).setReadTimeout(10000);
+    }
+
+    @Test
+    public void testSetConnectionKeepAlive() {
+        request.setConnectionKeepAlive(true);
+        assertTrue(System.getProperty("http.keepAlive").equals("true"));
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("@Request(GET http://example.com)", request.toString());
+    }
+
+    @Test(expected = OAuthException.class)
+    public void testSendThrowsExceptionOnMalformedUrl() throws Exception {
+        Request malformedRequest = new Request(Verb.GET, "malformed-url");
+        malformedRequest.send();
+    }
+
+    @Test(expected = OAuthException.class)
+    public void testSendThrowsExceptionOnIOException() throws Exception {
+        doThrow(new IOException()).when(mockConnection).setRequestMethod(anyString());
+        request.send();
+    }
+
+    @Test
+    public void testSendSuccess() throws Exception {
+        Response mockResponse = mock(Response.class);
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getInputStream()).thenReturn(mock(InputStream.class));
+        Response response = request.send();
+        assertNotNull(response);
+    }
+}
+```
+
+### Explanation:
+- **Setup and Mocks**: The `setUp` method initializes a `Request` object and a mocked `HttpURLConnection` to simulate network interactions.
+- **Basic Tests**: Tests for constructor initialization, adding headers, body parameters, and query string parameters.
+- **Payload Tests**: Tests for adding payloads as strings and byte arrays.
+- **URL and Charset Tests**: Tests for URL sanitization and charset handling, including unsupported charsets.
+- **Timeout and Keep-Alive Tests**: Tests for setting connection and read timeouts, and connection keep-alive settings.
+- **Exception Handling**: Tests for exceptions thrown during sending, such as malformed URLs and IO exceptions.
+- **Response Handling**: Tests for successful sending and response creation.
+
+This suite covers a wide range of scenarios to ensure the `Request` class functions as expected.

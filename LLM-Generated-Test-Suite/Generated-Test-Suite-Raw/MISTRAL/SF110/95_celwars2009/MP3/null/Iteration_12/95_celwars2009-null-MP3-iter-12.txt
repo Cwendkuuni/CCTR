@@ -1,0 +1,91 @@
+```java
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import java.io.File;
+import java.io.IOException;
+
+public class MP3Test {
+
+    private MP3 mp3;
+    private String testFilename;
+
+    @Before
+    public void setUp() {
+        testFilename = "test.mp3";
+        mp3 = new MP3(testFilename);
+    }
+
+    @After
+    public void tearDown() {
+        mp3 = null;
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(mp3);
+        assertEquals(testFilename, mp3.filename);
+    }
+
+    @Test
+    public void testRun() {
+        // This test is a bit tricky because it involves multithreading and audio playback.
+        // We can't easily test the actual audio playback, but we can test that the thread starts.
+        assertTrue(mp3.isAlive());
+
+        // Give the thread some time to start and do its work
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Check if the thread has finished its execution
+        try {
+            mp3.join(2000); // Wait for up to 2 seconds for the thread to finish
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertFalse(mp3.isAlive());
+    }
+
+    @Test
+    public void testFileNotFound() {
+        String nonExistentFile = "non_existent_file.mp3";
+        MP3 mp3NonExistent = new MP3(nonExistentFile);
+
+        // Give the thread some time to start and do its work
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        // Check if the thread has finished its execution
+        try {
+            mp3NonExistent.join(2000); // Wait for up to 2 seconds for the thread to finish
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertFalse(mp3NonExistent.isAlive());
+    }
+
+    @Test
+    public void testAudioInputStream() {
+        try {
+            File file = new File(testFilename);
+            AudioInputStream in = AudioSystem.getAudioInputStream(file);
+            assertNotNull(in);
+            in.close();
+        } catch (Exception e) {
+            fail("Exception should not be thrown: " + e.getMessage());
+        }
+    }
+}
+```

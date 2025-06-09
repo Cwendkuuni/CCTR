@@ -1,0 +1,87 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+import org.apache.commons.lang3.text.translate.CharSequenceTranslator;
+
+public class CharSequenceTranslatorTest {
+
+    // A simple implementation of CharSequenceTranslator for testing purposes
+    private static class SimpleTranslator extends CharSequenceTranslator {
+        @Override
+        public int translate(CharSequence input, int index, Writer out) throws IOException {
+            if (input.charAt(index) == 'a') {
+                out.write('b');
+                return 1;
+            }
+            return 0;
+        }
+    }
+
+    @Test
+    public void testTranslateCharSequenceToString() {
+        CharSequenceTranslator translator = new SimpleTranslator();
+        String result = translator.translate("a");
+        assertEquals("b", result);
+
+        result = translator.translate("abc");
+        assertEquals("bbc", result);
+
+        result = translator.translate("xyz");
+        assertEquals("xyz", result);
+
+        result = translator.translate(null);
+        assertNull(result);
+    }
+
+    @Test
+    public void testTranslateCharSequenceToWriter() throws IOException {
+        CharSequenceTranslator translator = new SimpleTranslator();
+        StringWriter writer = new StringWriter();
+        translator.translate("a", writer);
+        assertEquals("b", writer.toString());
+
+        writer = new StringWriter();
+        translator.translate("abc", writer);
+        assertEquals("bbc", writer.toString());
+
+        writer = new StringWriter();
+        translator.translate("xyz", writer);
+        assertEquals("xyz", writer.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTranslateWithNullWriter() throws IOException {
+        CharSequenceTranslator translator = new SimpleTranslator();
+        translator.translate("a", null);
+    }
+
+    @Test
+    public void testWithMethod() {
+        CharSequenceTranslator translator1 = new SimpleTranslator();
+        CharSequenceTranslator translator2 = new SimpleTranslator() {
+            @Override
+            public int translate(CharSequence input, int index, Writer out) throws IOException {
+                if (input.charAt(index) == 'b') {
+                    out.write('c');
+                    return 1;
+                }
+                return 0;
+            }
+        };
+
+        CharSequenceTranslator combined = translator1.with(translator2);
+        String result = combined.translate("abc");
+        assertEquals("bcc", result);
+    }
+
+    @Test
+    public void testHexMethod() {
+        assertEquals("41", CharSequenceTranslator.hex(65)); // 'A'
+        assertEquals("7A", CharSequenceTranslator.hex(122)); // 'z'
+        assertEquals("1F600", CharSequenceTranslator.hex(0x1F600)); // 😀
+    }
+}
+```

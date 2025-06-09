@@ -1,0 +1,113 @@
+To create a comprehensive JUnit 4 test suite for the `MacawWorkBench` class, we need to consider the following:
+
+1. **Testing the Constructor**: Ensure that the constructor initializes the dialog and buttons correctly.
+2. **Testing the `actionPerformed` Method**: Simulate button clicks and verify that the correct methods are called.
+3. **Testing the `show` Method**: Verify that the dialog is made visible.
+4. **Mocking External Dependencies**: Since the class interacts with UI components and other classes, we will use mocking to isolate the tests.
+
+Below is a JUnit 4 test suite for the `MacawWorkBench` class:
+
+```java
+import org.junit.*;
+import org.mockito.*;
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+import java.awt.event.ActionEvent;
+import javax.swing.*;
+
+public class MacawWorkBenchTest {
+
+    @Mock
+    private SessionProperties mockSessionProperties;
+    @Mock
+    private UserInterfaceFactory mockUserInterfaceFactory;
+    @Mock
+    private JDialog mockDialog;
+    @Mock
+    private JButton mockEditConstantsButton;
+    @Mock
+    private JButton mockEditVariablesButton;
+    @Mock
+    private JButton mockExportVariableDataButton;
+    @Mock
+    private JButton mockExitButton;
+    @Mock
+    private VariableConstantsEditor mockVariableConstantsEditor;
+    @Mock
+    private MacawVariableBrowser mockMacawVariableBrowser;
+    @Mock
+    private ExportVariablesToMacawXML mockExportVariablesToMacawXML;
+
+    private MacawWorkBench macawWorkBench;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+
+        when(mockSessionProperties.getUserInterfaceFactory()).thenReturn(mockUserInterfaceFactory);
+        when(mockUserInterfaceFactory.createDialog()).thenReturn(mockDialog);
+        when(mockUserInterfaceFactory.createButton(anyString())).thenReturn(mockEditConstantsButton, mockEditVariablesButton, mockExportVariableDataButton, mockExitButton);
+
+        macawWorkBench = new MacawWorkBench(mockSessionProperties);
+    }
+
+    @Test
+    public void testConstructorInitializesComponents() {
+        assertNotNull(macawWorkBench);
+        verify(mockDialog).setTitle(anyString());
+        verify(mockDialog).setModal(true);
+        verify(mockDialog).setSize(300, 300);
+    }
+
+    @Test
+    public void testShowMethod() {
+        macawWorkBench.show();
+        verify(mockDialog).setVisible(true);
+    }
+
+    @Test
+    public void testActionPerformedEditConstants() {
+        ActionEvent event = new ActionEvent(mockEditConstantsButton, ActionEvent.ACTION_PERFORMED, null);
+        macawWorkBench.actionPerformed(event);
+        // Assuming editConstants() creates and shows a VariableConstantsEditor
+        verify(mockVariableConstantsEditor).show();
+    }
+
+    @Test
+    public void testActionPerformedEditVariables() {
+        ActionEvent event = new ActionEvent(mockEditVariablesButton, ActionEvent.ACTION_PERFORMED, null);
+        macawWorkBench.actionPerformed(event);
+        // Assuming editVariables() creates and shows a MacawVariableBrowser
+        verify(mockMacawVariableBrowser).show();
+    }
+
+    @Test
+    public void testActionPerformedExportVariableData() {
+        ActionEvent event = new ActionEvent(mockExportVariableDataButton, ActionEvent.ACTION_PERFORMED, null);
+        macawWorkBench.actionPerformed(event);
+        // Assuming exportVariableData() calls export on ExportVariablesToMacawXML
+        verify(mockExportVariablesToMacawXML).export();
+    }
+
+    @Test
+    public void testActionPerformedExit() {
+        ActionEvent event = new ActionEvent(mockExitButton, ActionEvent.ACTION_PERFORMED, null);
+        try {
+            macawWorkBench.actionPerformed(event);
+            fail("Expected System.exit to be called");
+        } catch (SecurityException e) {
+            // Expected exception due to System.exit being called
+        }
+    }
+
+    @After
+    public void tearDown() {
+        // Clean up resources if needed
+    }
+}
+```
+
+### Notes:
+- **Mocking**: We use Mockito to mock dependencies like `SessionProperties`, `UserInterfaceFactory`, and UI components.
+- **System.exit Handling**: The `exit` method calls `System.exit(0)`, which would terminate the JVM. In a real test environment, you might want to use a `SecurityManager` to prevent the JVM from exiting during tests.
+- **Assumptions**: The test assumes that methods like `editConstants`, `editVariables`, and `exportVariableData` create and show specific objects. You might need to adjust the test based on the actual implementation of these methods.

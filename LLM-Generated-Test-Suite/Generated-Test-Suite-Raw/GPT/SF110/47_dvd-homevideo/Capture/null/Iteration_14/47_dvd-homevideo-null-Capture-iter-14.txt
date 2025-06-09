@@ -1,0 +1,121 @@
+To create a comprehensive JUnit 4 test suite for the `Capture` class, we need to mock the dependencies and interactions with the `GUI` class and file system operations. Since the `Capture` class heavily relies on the `GUI` class and file operations, we'll use mocking frameworks like Mockito to simulate these interactions.
+
+Below is a JUnit 4 test suite for the `Capture` class:
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class CaptureTest {
+
+    @Mock
+    private GUI mockGUI;
+
+    @InjectMocks
+    private Capture capture;
+
+    @Before
+    public void setUp() {
+        // Initialize the Capture object with mocked GUI
+        capture = new Capture(1, 30, mockGUI);
+    }
+
+    @Test
+    public void testInitWithThreadSelected() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(true);
+
+        boolean result = capture.init();
+
+        assertFalse(result);
+        assertNotNull(capture.m_Thread);
+        assertTrue(capture.m_Thread.isAlive());
+    }
+
+    @Test
+    public void testInitWithoutThreadSelected() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(false);
+        when(mockGUI.ErrorCheck(anyString())).thenReturn(false);
+
+        boolean result = capture.init();
+
+        assertFalse(result);
+        verify(mockGUI).ErrorCheck(anyString());
+    }
+
+    @Test
+    public void testDV_CaptureOutputDirExistsAndIsDirectory() throws IOException, InterruptedException {
+        File mockFile = mock(File.class);
+        when(mockFile.exists()).thenReturn(true);
+        when(mockFile.isDirectory()).thenReturn(true);
+        when(mockGUI.strOutputDir).thenReturn("mockDir");
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+
+        capture.DV_Capture();
+
+        verify(mockGUI).MessageBox(contains("already exists"));
+        verify(mockGUI).MessageBox(contains("IO Error"), eq(0));
+    }
+
+    @Test
+    public void testDV_CaptureOutputDirExistsAndIsFile() throws IOException, InterruptedException {
+        File mockFile = mock(File.class);
+        when(mockFile.exists()).thenReturn(true);
+        when(mockFile.isDirectory()).thenReturn(false);
+        when(mockGUI.strOutputDir).thenReturn("mockDir");
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+
+        capture.DV_Capture();
+
+        verify(mockGUI).MessageBox(contains("file with the Output directory name"));
+        verify(mockGUI).MessageBox(contains("IO Error"), eq(0));
+    }
+
+    @Test
+    public void testDV_CaptureOutputDirDoesNotExist() throws IOException, InterruptedException {
+        File mockFile = mock(File.class);
+        when(mockFile.exists()).thenReturn(false);
+        when(mockGUI.strOutputDir).thenReturn("mockDir");
+        when(mockGUI.blnBegin).thenReturn(true);
+
+        capture.DV_Capture();
+
+        verify(mockFile).mkdir();
+        verify(mockGUI).MessageBox(contains("Could not locate dvgrab"), eq(0));
+    }
+
+    @Test
+    public void testDV_CaptureErrorHandling() throws IOException, InterruptedException {
+        when(mockGUI.strOutputDir).thenReturn("mockDir");
+        when(mockGUI.blnBegin).thenReturn(true);
+
+        capture.DV_Capture();
+
+        verify(mockGUI).MessageBox(contains("IO Error"), eq(0));
+        verify(mockGUI).MessageBox(contains("Error executing Runtime.getRuntime().exec()"), eq(0));
+        verify(mockGUI).MessageBox(contains("Illegal argument sent to Runtime.getRuntime().exec()"), eq(0));
+        verify(mockGUI).MessageBox(contains("Unknown Error occurred"), eq(0));
+    }
+}
+```
+
+### Explanation:
+- **Mockito** is used to mock the `GUI` class and its methods. This allows us to simulate different scenarios without needing a real GUI.
+- **Test Methods**:
+  - `testInitWithThreadSelected`: Tests the `init` method when the thread option is selected.
+  - `testInitWithoutThreadSelected`: Tests the `init` method when the thread option is not selected.
+  - `testDV_CaptureOutputDirExistsAndIsDirectory`: Tests the `DV_Capture` method when the output directory exists and is a directory.
+  - `testDV_CaptureOutputDirExistsAndIsFile`: Tests the `DV_Capture` method when the output directory exists and is a file.
+  - `testDV_CaptureOutputDirDoesNotExist`: Tests the `DV_Capture` method when the output directory does not exist.
+  - `testDV_CaptureErrorHandling`: Tests the error handling in the `DV_Capture` method.
+
+This test suite covers various scenarios and interactions within the `Capture` class, ensuring that the methods behave as expected under different conditions.

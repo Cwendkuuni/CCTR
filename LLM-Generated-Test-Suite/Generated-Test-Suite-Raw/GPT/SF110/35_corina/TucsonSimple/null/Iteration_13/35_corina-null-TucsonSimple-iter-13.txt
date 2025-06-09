@@ -1,0 +1,121 @@
+Certainly! Below is a JUnit 4 test suite for the `TucsonSimple` class. This suite includes tests for each method in the class, focusing on both expected behavior and edge cases.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import corina.formats.TucsonSimple;
+import corina.Sample;
+import corina.Year;
+import corina.Range;
+import corina.WrongFiletypeException;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
+
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+    private Sample sample;
+    private BufferedWriter writer;
+
+    @Before
+    public void setUp() {
+        tucsonSimple = new TucsonSimple();
+        sample = mock(Sample.class);
+        writer = mock(BufferedWriter.class);
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("format.tucsonsimple", tucsonSimple.toString());
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        assertEquals(".RWL", tucsonSimple.getDefaultExtension());
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        BufferedReader reader = mock(BufferedReader.class);
+        tucsonSimple.load(reader);
+    }
+
+    @Test
+    public void testMake6digitCodeWithId() {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "1234567");
+        when(sample.meta).thenReturn(meta);
+
+        String code = tucsonSimple.make6digitCode(sample);
+        assertEquals("123456", code);
+    }
+
+    @Test
+    public void testMake6digitCodeWithoutId() {
+        Map<String, Object> meta = new HashMap<>();
+        when(sample.meta).thenReturn(meta);
+
+        String code = tucsonSimple.make6digitCode(sample);
+        assertEquals("000000", code);
+    }
+
+    @Test
+    public void testSaveRowHeader() throws IOException {
+        Year year = new Year(2000);
+        Range range = mock(Range.class);
+        when(range.getStart()).thenReturn(new Year(1990));
+        when(sample.range).thenReturn(range);
+
+        tucsonSimple.saveRowHeader(writer, sample, "123456", 6, year);
+        verify(writer).write("123456 2000");
+    }
+
+    @Test
+    public void testSaveData() throws IOException {
+        Range range = mock(Range.class);
+        when(range.getStart()).thenReturn(new Year(1990));
+        when(range.getEnd()).thenReturn(new Year(2000));
+        when(sample.range).thenReturn(range);
+        when(sample.data).thenReturn(new HashMap<>());
+        when(sample.count).thenReturn(new HashMap<>());
+
+        tucsonSimple.saveData(sample, writer);
+        verify(writer, atLeastOnce()).write(anyString());
+    }
+
+    @Test
+    public void testComputeRange() {
+        Range range = mock(Range.class);
+        when(range.getStart()).thenReturn(new Year(1990));
+        when(sample.range).thenReturn(range);
+
+        Range computedRange = tucsonSimple.computeRange(sample);
+        assertEquals(range, computedRange);
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        tucsonSimple.save(sample, writer);
+        verify(writer, atLeastOnce()).write(anyString());
+    }
+}
+```
+
+### Explanation:
+- **`testToString`**: Verifies that the `toString` method returns the expected string.
+- **`testGetDefaultExtension`**: Checks that the `getDefaultExtension` method returns ".RWL".
+- **`testLoad`**: Ensures that calling `load` throws a `WrongFiletypeException`.
+- **`testMake6digitCodeWithId`**: Tests `make6digitCode` when the sample has an "id" in its metadata.
+- **`testMake6digitCodeWithoutId`**: Tests `make6digitCode` when the sample does not have an "id".
+- **`testSaveRowHeader`**: Verifies that `saveRowHeader` writes the correct header to the writer.
+- **`testSaveData`**: Ensures that `saveData` writes data to the writer.
+- **`testComputeRange`**: Checks that `computeRange` returns the correct range.
+- **`testSave`**: Verifies that `save` calls `write` on the writer.
+
+This test suite uses Mockito to mock dependencies and focuses on verifying the behavior of each method in the `TucsonSimple` class.

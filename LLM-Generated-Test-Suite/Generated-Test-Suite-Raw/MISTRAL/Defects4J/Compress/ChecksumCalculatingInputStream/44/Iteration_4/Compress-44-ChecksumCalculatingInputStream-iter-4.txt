@@ -1,0 +1,84 @@
+```java
+import org.apache.commons.compress.utils.ChecksumCalculatingInputStream;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.Assert;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.util.zip.Adler32;
+import java.util.zip.CRC32;
+import java.util.zip.Checksum;
+
+public class ChecksumCalculatingInputStreamTest {
+
+    private Checksum checksum;
+    private ByteArrayInputStream inputStream;
+    private ChecksumCalculatingInputStream checksumInputStream;
+
+    @Before
+    public void setUp() {
+        checksum = new CRC32();
+        byte[] data = "Hello, World!".getBytes();
+        inputStream = new ByteArrayInputStream(data);
+        checksumInputStream = new ChecksumCalculatingInputStream(checksum, inputStream);
+    }
+
+    @Test
+    public void testReadSingleByte() throws IOException {
+        int byteRead = checksumInputStream.read();
+        Assert.assertEquals('H', byteRead);
+        Assert.assertEquals(72, checksumInputStream.getValue()); // ASCII value of 'H'
+    }
+
+    @Test
+    public void testReadByteArray() throws IOException {
+        byte[] buffer = new byte[5];
+        int bytesRead = checksumInputStream.read(buffer);
+        Assert.assertEquals(5, bytesRead);
+        Assert.assertEquals("Hello", new String(buffer));
+        Assert.assertEquals(532067671, checksumInputStream.getValue()); // CRC32 checksum of "Hello"
+    }
+
+    @Test
+    public void testReadByteArrayWithOffsetAndLength() throws IOException {
+        byte[] buffer = new byte[10];
+        int bytesRead = checksumInputStream.read(buffer, 2, 5);
+        Assert.assertEquals(5, bytesRead);
+        Assert.assertEquals("  Hello     ", new String(buffer));
+        Assert.assertEquals(532067671, checksumInputStream.getValue()); // CRC32 checksum of "Hello"
+    }
+
+    @Test
+    public void testSkip() throws IOException {
+        long skipped = checksumInputStream.skip(1);
+        Assert.assertEquals(1, skipped);
+        Assert.assertEquals(72, checksumInputStream.getValue()); // ASCII value of 'H'
+    }
+
+    @Test
+    public void testGetValue() {
+        Assert.assertEquals(0, checksumInputStream.getValue()); // Initial value
+    }
+
+    @Test
+    public void testReadEntireStream() throws IOException {
+        byte[] buffer = new byte[1024];
+        while (checksumInputStream.read(buffer) != -1) {
+            // Read the entire stream
+        }
+        Assert.assertEquals(2517816866L, checksumInputStream.getValue()); // CRC32 checksum of "Hello, World!"
+    }
+
+    @Test
+    public void testDifferentChecksumAlgorithm() throws IOException {
+        checksum = new Adler32();
+        checksumInputStream = new ChecksumCalculatingInputStream(checksum, inputStream);
+        byte[] buffer = new byte[1024];
+        while (checksumInputStream.read(buffer) != -1) {
+            // Read the entire stream
+        }
+        Assert.assertEquals(163487598, checksumInputStream.getValue()); // Adler32 checksum of "Hello, World!"
+    }
+}
+```

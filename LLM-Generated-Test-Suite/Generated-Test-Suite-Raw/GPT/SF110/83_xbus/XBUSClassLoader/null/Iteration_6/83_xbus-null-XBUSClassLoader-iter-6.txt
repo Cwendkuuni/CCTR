@@ -1,0 +1,89 @@
+To create a comprehensive JUnit 4 test suite for the `XBUSClassLoader` class, we need to test the public methods and any significant private methods indirectly through the public interface. The main focus will be on the `getInstance` method, as it is the primary public method. We will also indirectly test the `createClassLoader` and `addUrls` methods through this public interface.
+
+Here is a JUnit 4 test suite for the `XBUSClassLoader` class:
+
+```java
+import net.sf.xbus.base.core.reflection.XBUSClassLoader;
+import org.junit.*;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.io.File;
+import java.lang.reflect.Field;
+import java.util.Vector;
+
+import static org.junit.Assert.*;
+
+public class XBUSClassLoaderTest {
+
+    private static final String XBUS_HOME = "test/resources/xbus_home";
+
+    @BeforeClass
+    public static void setUpBeforeClass() throws Exception {
+        // Set the XBUS_HOME constant for testing
+        Field xbusHomeField = Constants.class.getDeclaredField("XBUS_HOME");
+        xbusHomeField.setAccessible(true);
+        xbusHomeField.set(null, XBUS_HOME);
+    }
+
+    @AfterClass
+    public static void tearDownAfterClass() throws Exception {
+        // Reset the XBUS_HOME constant after testing
+        Field xbusHomeField = Constants.class.getDeclaredField("XBUS_HOME");
+        xbusHomeField.setAccessible(true);
+        xbusHomeField.set(null, null);
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        // Reset the singleton instance before each test
+        Field classLoaderField = XBUSClassLoader.class.getDeclaredField("mClassLoader");
+        classLoaderField.setAccessible(true);
+        classLoaderField.set(null, null);
+    }
+
+    @Test
+    public void testGetInstance() {
+        ClassLoader parentClassLoader = new URLClassLoader(new URL[]{});
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parentClassLoader);
+        assertNotNull("ClassLoader instance should not be null", classLoader);
+        assertSame("ClassLoader instance should be a singleton", classLoader, XBUSClassLoader.getInstance(parentClassLoader));
+    }
+
+    @Test
+    public void testCreateClassLoader() {
+        ClassLoader parentClassLoader = new URLClassLoader(new URL[]{});
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parentClassLoader);
+        assertNotNull("ClassLoader instance should not be null", classLoader);
+        assertTrue("ClassLoader should be an instance of URLClassLoader", classLoader instanceof URLClassLoader);
+    }
+
+    @Test
+    public void testAddUrls() throws Exception {
+        Vector<URL> urls = new Vector<>();
+        File testLibDir = new File(XBUS_HOME + "/lib");
+        if (!testLibDir.exists()) {
+            testLibDir.mkdirs();
+        }
+        File testJar = new File(testLibDir, "test.jar");
+        testJar.createNewFile();
+
+        // Invoke the private addUrls method
+        Method addUrlsMethod = XBUSClassLoader.class.getDeclaredMethod("addUrls", Vector.class, String.class);
+        addUrlsMethod.setAccessible(true);
+        addUrlsMethod.invoke(null, urls, testLibDir.getAbsolutePath());
+
+        assertEquals("URLs vector should contain one URL", 1, urls.size());
+        assertTrue("URL should point to the test jar file", urls.get(0).toString().endsWith("test.jar"));
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: We use `@BeforeClass` and `@AfterClass` to set and reset the `XBUS_HOME` constant, which is crucial for the class loader to function correctly.
+- **Singleton Reset**: Before each test, we reset the singleton instance of `XBUSClassLoader` to ensure tests are independent.
+- **Test Methods**:
+  - `testGetInstance`: Verifies that the `getInstance` method returns a non-null singleton instance.
+  - `testCreateClassLoader`: Ensures that the created class loader is an instance of `URLClassLoader`.
+  - `testAddUrls`: Tests the `addUrls` method indirectly by checking if it correctly adds URLs to the vector.
+
+This test suite assumes the existence of a `Constants` class with a mutable `XBUS_HOME` field for testing purposes. Adjustments may be necessary based on the actual implementation of the `Constants` class.

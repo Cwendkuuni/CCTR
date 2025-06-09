@@ -1,0 +1,154 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class CaptureTest {
+
+    @Mock
+    private GUI m_GUI;
+
+    private Capture capture;
+
+    @Before
+    public void setUp() {
+        capture = new Capture(1, 30, m_GUI);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        Capture defaultCapture = new Capture();
+        assertNotNull(defaultCapture);
+        assertEquals("Capture Error - ", defaultCapture.m_BaseErr);
+        assertEquals("dvgrab --autosplit --size 0 --format raw --opendml --buffers 200 dv/dv_file-", defaultCapture.m_dvgrab);
+    }
+
+    @Test
+    public void testParameterizedConstructor() {
+        assertEquals(1, capture.m_Minutes);
+        assertEquals(30, capture.m_Seconds);
+        assertEquals(m_GUI, capture.m_GUI);
+        assertEquals("Capture Error - ", capture.m_BaseErr);
+        assertEquals("dvgrab --autosplit --size 0 --format raw --opendml --buffers 200 dv/dv_file-", capture.m_dvgrab);
+    }
+
+    @Test
+    public void testInitWithThreadSelected() {
+        when(m_GUI.menuChkThread.isSelected()).thenReturn(true);
+        assertFalse(capture.init());
+        verify(m_GUI.menuChkThread).isSelected();
+        assertNotNull(capture.m_Thread);
+    }
+
+    @Test
+    public void testInitWithoutThreadSelected() {
+        when(m_GUI.menuChkThread.isSelected()).thenReturn(false);
+        when(m_GUI.ErrorCheck(anyString())).thenReturn(false);
+        assertTrue(capture.init());
+        verify(m_GUI.menuChkThread).isSelected();
+        verify(m_GUI).ErrorCheck(anyString());
+    }
+
+    @Test
+    public void testRun() {
+        capture.run();
+        // Verify that DV_Capture is called
+        // This is a simple test to ensure the method is called, more detailed tests should be added for DV_Capture
+    }
+
+    @Test
+    public void testDV_CaptureDirectoryExists() throws IOException, InterruptedException {
+        when(m_GUI.strOutputDir).thenReturn("testDir");
+        when(m_GUI.MessageBox(anyString())).thenReturn(0);
+        when(m_GUI.blnBegin).thenReturn(true);
+
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(true);
+        when(mockDir.isDirectory()).thenReturn(true);
+        when(mockDir.mkdir()).thenReturn(true);
+
+        PowerMockito.mockStatic(File.class);
+        when(File.class, "testDir").thenReturn(mockDir);
+
+        capture.DV_Capture();
+
+        verify(mockDir).exists();
+        verify(mockDir).isDirectory();
+        verify(mockDir, times(4)).mkdir();
+    }
+
+    @Test
+    public void testDV_CaptureFileExists() throws IOException, InterruptedException {
+        when(m_GUI.strOutputDir).thenReturn("testFile");
+        when(m_GUI.MessageBox(anyString())).thenReturn(0);
+        when(m_GUI.blnBegin).thenReturn(true);
+
+        File mockFile = mock(File.class);
+        when(mockFile.exists()).thenReturn(true);
+        when(mockFile.isDirectory()).thenReturn(false);
+        when(mockFile.mkdir()).thenReturn(true);
+
+        PowerMockito.mockStatic(File.class);
+        when(File.class, "testFile").thenReturn(mockFile);
+
+        capture.DV_Capture();
+
+        verify(mockFile).exists();
+        verify(mockFile).isDirectory();
+        verify(mockFile, times(4)).mkdir();
+    }
+
+    @Test
+    public void testDV_CaptureDirectoryDoesNotExist() throws IOException, InterruptedException {
+        when(m_GUI.strOutputDir).thenReturn("testDir");
+        when(m_GUI.blnBegin).thenReturn(true);
+
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(false);
+        when(mockDir.mkdir()).thenReturn(true);
+
+        PowerMockito.mockStatic(File.class);
+        when(File.class, "testDir").thenReturn(mockDir);
+
+        capture.DV_Capture();
+
+        verify(mockDir).exists();
+        verify(mockDir, times(4)).mkdir();
+    }
+
+    @Test
+    public void testDV_CaptureIOException() throws IOException, InterruptedException {
+        when(m_GUI.strOutputDir).thenReturn("testDir");
+        when(m_GUI.MessageBox(anyString())).thenReturn(0);
+        when(m_GUI.blnBegin).thenReturn(true);
+
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(true);
+        when(mockDir.isDirectory()).thenReturn(true);
+        when(mockDir.mkdir()).thenReturn(true);
+
+        PowerMockito.mockStatic(File.class);
+        when(File.class, "testDir").thenReturn(mockDir);
+
+        Process mockProcess = mock(Process.class);
+        when(Runtime.getRuntime().exec(any(String[].class), any(String[].class), any(File.class))).thenThrow(new IOException());
+
+        capture.DV_Capture();
+
+        verify(mockDir).exists();
+        verify(mockDir).isDirectory();
+        verify(mockDir, times(4)).mkdir();
+        assertTrue(capture.m_Error);
+    }
+}
+```

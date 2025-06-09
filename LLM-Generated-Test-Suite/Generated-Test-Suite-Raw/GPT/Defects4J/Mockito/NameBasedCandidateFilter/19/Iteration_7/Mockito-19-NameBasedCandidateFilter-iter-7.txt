@@ -1,0 +1,114 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `NameBasedCandidateFilter` class. This suite includes tests for various scenarios, such as when there are multiple mocks, when mock names match the field name, and when they do not.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.NameBasedCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.OngoingInjecter;
+import org.mockito.internal.util.MockUtil;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static org.junit.Assert.assertSame;
+import static org.mockito.Mockito.*;
+
+public class NameBasedCandidateFilterTest {
+
+    private MockCandidateFilter nextFilter;
+    private NameBasedCandidateFilter nameBasedCandidateFilter;
+    private MockUtil mockUtil;
+
+    @Before
+    public void setUp() {
+        nextFilter = mock(MockCandidateFilter.class);
+        nameBasedCandidateFilter = new NameBasedCandidateFilter(nextFilter);
+        mockUtil = mock(MockUtil.class);
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMock() throws NoSuchFieldException {
+        Collection<Object> mocks = new ArrayList<>();
+        Object mock = new Object();
+        mocks.add(mock);
+
+        Field field = TestClass.class.getDeclaredField("singleMockField");
+        Object fieldInstance = new Object();
+
+        OngoingInjecter expectedInjecter = mock(OngoingInjecter.class);
+        when(nextFilter.filterCandidate(mocks, field, fieldInstance)).thenReturn(expectedInjecter);
+
+        OngoingInjecter result = nameBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        assertSame(expectedInjecter, result);
+        verify(nextFilter).filterCandidate(mocks, field, fieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidateWithMatchingMockName() throws NoSuchFieldException {
+        Collection<Object> mocks = new ArrayList<>();
+        Object mock1 = new Object();
+        Object mock2 = new Object();
+        mocks.add(mock1);
+        mocks.add(mock2);
+
+        Field field = TestClass.class.getDeclaredField("matchingMockField");
+        Object fieldInstance = new Object();
+
+        when(mockUtil.getMockName(mock1)).thenReturn("nonMatchingName");
+        when(mockUtil.getMockName(mock2)).thenReturn("matchingMockField");
+
+        List<Object> expectedMocks = new ArrayList<>();
+        expectedMocks.add(mock2);
+
+        OngoingInjecter expectedInjecter = mock(OngoingInjecter.class);
+        when(nextFilter.filterCandidate(expectedMocks, field, fieldInstance)).thenReturn(expectedInjecter);
+
+        OngoingInjecter result = nameBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        assertSame(expectedInjecter, result);
+        verify(nextFilter).filterCandidate(expectedMocks, field, fieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidateWithNoMatchingMockName() throws NoSuchFieldException {
+        Collection<Object> mocks = new ArrayList<>();
+        Object mock1 = new Object();
+        Object mock2 = new Object();
+        mocks.add(mock1);
+        mocks.add(mock2);
+
+        Field field = TestClass.class.getDeclaredField("noMatchingMockField");
+        Object fieldInstance = new Object();
+
+        when(mockUtil.getMockName(mock1)).thenReturn("nonMatchingName1");
+        when(mockUtil.getMockName(mock2)).thenReturn("nonMatchingName2");
+
+        OngoingInjecter expectedInjecter = mock(OngoingInjecter.class);
+        when(nextFilter.filterCandidate(mocks, field, fieldInstance)).thenReturn(expectedInjecter);
+
+        OngoingInjecter result = nameBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        assertSame(expectedInjecter, result);
+        verify(nextFilter).filterCandidate(mocks, field, fieldInstance);
+    }
+
+    private static class TestClass {
+        private Object singleMockField;
+        private Object matchingMockField;
+        private Object noMatchingMockField;
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes the necessary mocks and the `NameBasedCandidateFilter` instance.
+- **Test Methods**:
+  - `testFilterCandidateWithSingleMock`: Tests the scenario where there is only one mock in the collection.
+  - `testFilterCandidateWithMatchingMockName`: Tests the scenario where one of the mocks has a name matching the field name.
+  - `testFilterCandidateWithNoMatchingMockName`: Tests the scenario where none of the mocks have a name matching the field name.
+- **Mocking**: The `MockUtil` class is mocked to simulate the behavior of `getMockName`.
+- **Assertions**: Each test verifies that the `filterCandidate` method returns the expected `OngoingInjecter` and that the `nextFilter` is called with the correct parameters.

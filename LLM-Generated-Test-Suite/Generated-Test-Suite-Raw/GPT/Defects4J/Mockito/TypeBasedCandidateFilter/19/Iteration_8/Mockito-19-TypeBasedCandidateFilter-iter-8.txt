@@ -1,0 +1,110 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `TypeBasedCandidateFilter` class. This suite includes tests for the `filterCandidate` method, ensuring it behaves correctly under various scenarios.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.OngoingInjecter;
+import org.mockito.internal.configuration.injection.filter.TypeBasedCandidateFilter;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TypeBasedCandidateFilterTest {
+
+    private MockCandidateFilter nextMockCandidateFilter;
+    private TypeBasedCandidateFilter typeBasedCandidateFilter;
+
+    @Before
+    public void setUp() {
+        nextMockCandidateFilter = mock(MockCandidateFilter.class);
+        typeBasedCandidateFilter = new TypeBasedCandidateFilter(nextMockCandidateFilter);
+    }
+
+    @Test
+    public void testFilterCandidate_withMatchingType() throws NoSuchFieldException {
+        // Arrange
+        Collection<Object> mocks = new ArrayList<>();
+        mocks.add("StringMock");
+        mocks.add(123);
+
+        Field field = TestClass.class.getDeclaredField("stringField");
+        Object fieldInstance = new TestClass();
+
+        List<Object> expectedMatches = new ArrayList<>();
+        expectedMatches.add("StringMock");
+
+        OngoingInjecter ongoingInjecterMock = mock(OngoingInjecter.class);
+        when(nextMockCandidateFilter.filterCandidate(expectedMatches, field, fieldInstance)).thenReturn(ongoingInjecterMock);
+
+        // Act
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        // Assert
+        assertEquals(ongoingInjecterMock, result);
+        verify(nextMockCandidateFilter).filterCandidate(expectedMatches, field, fieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidate_withNoMatchingType() throws NoSuchFieldException {
+        // Arrange
+        Collection<Object> mocks = new ArrayList<>();
+        mocks.add(123);
+        mocks.add(456);
+
+        Field field = TestClass.class.getDeclaredField("stringField");
+        Object fieldInstance = new TestClass();
+
+        List<Object> expectedMatches = new ArrayList<>();
+
+        OngoingInjecter ongoingInjecterMock = mock(OngoingInjecter.class);
+        when(nextMockCandidateFilter.filterCandidate(expectedMatches, field, fieldInstance)).thenReturn(ongoingInjecterMock);
+
+        // Act
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        // Assert
+        assertEquals(ongoingInjecterMock, result);
+        verify(nextMockCandidateFilter).filterCandidate(expectedMatches, field, fieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidate_withEmptyMocks() throws NoSuchFieldException {
+        // Arrange
+        Collection<Object> mocks = new ArrayList<>();
+
+        Field field = TestClass.class.getDeclaredField("stringField");
+        Object fieldInstance = new TestClass();
+
+        List<Object> expectedMatches = new ArrayList<>();
+
+        OngoingInjecter ongoingInjecterMock = mock(OngoingInjecter.class);
+        when(nextMockCandidateFilter.filterCandidate(expectedMatches, field, fieldInstance)).thenReturn(ongoingInjecterMock);
+
+        // Act
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        // Assert
+        assertEquals(ongoingInjecterMock, result);
+        verify(nextMockCandidateFilter).filterCandidate(expectedMatches, field, fieldInstance);
+    }
+
+    private static class TestClass {
+        private String stringField;
+    }
+}
+```
+
+### Explanation:
+- **Mocks and Stubs**: The test suite uses Mockito to create mock objects for `MockCandidateFilter` and `OngoingInjecter`.
+- **Test Cases**:
+  - **Matching Type**: Tests that the filter correctly identifies mocks that match the field type.
+  - **No Matching Type**: Tests the behavior when no mocks match the field type.
+  - **Empty Mocks**: Tests the behavior when the collection of mocks is empty.
+- **Reflection**: Uses Java reflection to obtain the `Field` object for testing.
+- **Assertions**: Verifies that the `filterCandidate` method of the `next` filter is called with the expected list of matching mocks.

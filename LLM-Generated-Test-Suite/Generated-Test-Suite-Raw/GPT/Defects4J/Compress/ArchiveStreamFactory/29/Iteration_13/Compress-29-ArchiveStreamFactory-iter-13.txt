@@ -1,0 +1,131 @@
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.StreamingNotSupportedException;
+import org.junit.Before;
+import org.junit.Test;
+
+public class ArchiveStreamFactoryTest {
+
+    private ArchiveStreamFactory factory;
+
+    @Before
+    public void setUp() {
+        factory = new ArchiveStreamFactory();
+    }
+
+    @Test
+    public void testCreateArchiveInputStreamWithValidArchiverName() throws Exception {
+        InputStream mockInputStream = mock(InputStream.class);
+        when(mockInputStream.read(any(byte[].class), anyInt(), anyInt())).thenReturn(-1);
+
+        ArchiveInputStream ais = factory.createArchiveInputStream(ArchiveStreamFactory.ZIP, mockInputStream);
+        assertNotNull(ais);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveInputStreamWithNullArchiverName() throws Exception {
+        factory.createArchiveInputStream(null, new ByteArrayInputStream(new byte[0]));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveInputStreamWithNullInputStream() throws Exception {
+        factory.createArchiveInputStream(ArchiveStreamFactory.ZIP, null);
+    }
+
+    @Test(expected = ArchiveException.class)
+    public void testCreateArchiveInputStreamWithUnknownArchiverName() throws Exception {
+        factory.createArchiveInputStream("unknown", new ByteArrayInputStream(new byte[0]));
+    }
+
+    @Test(expected = StreamingNotSupportedException.class)
+    public void testCreateArchiveInputStreamWithSevenZ() throws Exception {
+        factory.createArchiveInputStream(ArchiveStreamFactory.SEVEN_Z, new ByteArrayInputStream(new byte[0]));
+    }
+
+    @Test
+    public void testCreateArchiveOutputStreamWithValidArchiverName() throws Exception {
+        OutputStream mockOutputStream = mock(OutputStream.class);
+
+        ArchiveOutputStream aos = factory.createArchiveOutputStream(ArchiveStreamFactory.ZIP, mockOutputStream);
+        assertNotNull(aos);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveOutputStreamWithNullArchiverName() throws Exception {
+        factory.createArchiveOutputStream(null, new ByteArrayOutputStream());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveOutputStreamWithNullOutputStream() throws Exception {
+        factory.createArchiveOutputStream(ArchiveStreamFactory.ZIP, null);
+    }
+
+    @Test(expected = ArchiveException.class)
+    public void testCreateArchiveOutputStreamWithUnknownArchiverName() throws Exception {
+        factory.createArchiveOutputStream("unknown", new ByteArrayOutputStream());
+    }
+
+    @Test(expected = StreamingNotSupportedException.class)
+    public void testCreateArchiveOutputStreamWithSevenZ() throws Exception {
+        factory.createArchiveOutputStream(ArchiveStreamFactory.SEVEN_Z, new ByteArrayOutputStream());
+    }
+
+    @Test
+    public void testCreateArchiveInputStreamAutoDetect() throws Exception {
+        byte[] zipSignature = new byte[] { 'P', 'K', 3, 4 };
+        InputStream in = new ByteArrayInputStream(zipSignature);
+        ArchiveInputStream ais = factory.createArchiveInputStream(in);
+        assertNotNull(ais);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveInputStreamAutoDetectWithNullStream() throws Exception {
+        factory.createArchiveInputStream(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveInputStreamAutoDetectWithNonMarkSupportedStream() throws Exception {
+        InputStream in = new ByteArrayInputStream(new byte[0]) {
+            @Override
+            public boolean markSupported() {
+                return false;
+            }
+        };
+        factory.createArchiveInputStream(in);
+    }
+
+    @Test(expected = ArchiveException.class)
+    public void testCreateArchiveInputStreamAutoDetectWithUnknownSignature() throws Exception {
+        byte[] unknownSignature = new byte[] { 0, 0, 0, 0 };
+        InputStream in = new ByteArrayInputStream(unknownSignature);
+        factory.createArchiveInputStream(in);
+    }
+
+    @Test
+    public void testGetEntryEncoding() {
+        assertNull(factory.getEntryEncoding());
+    }
+
+    @Test
+    public void testSetEntryEncoding() {
+        factory.setEntryEncoding("UTF-8");
+        assertEquals("UTF-8", factory.getEntryEncoding());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testSetEntryEncodingWithConstructorEncoding() {
+        ArchiveStreamFactory factoryWithEncoding = new ArchiveStreamFactory("UTF-8");
+        factoryWithEncoding.setEntryEncoding("ISO-8859-1");
+    }
+}
+```

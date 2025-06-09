@@ -1,0 +1,131 @@
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import com.allenstudio.ir.core.InspirentoMediator;
+import com.allenstudio.ir.util.InspirentoUtilities;
+import com.allenstudio.ir.util.UIResources;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.swing.*;
+import java.util.MissingResourceException;
+
+@RunWith(MockitoJUnitRunner.class)
+public class MainMenuTest {
+
+    @Mock
+    private InspirentoMediator mockMediator;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void testMainMenuConstructor() {
+        // Mock the UIResources and InspirentoUtilities
+        mockStatic(UIResources.class);
+        mockStatic(InspirentoUtilities.class);
+
+        // Define the behavior of the mocked methods
+        when(UIResources.getString("menu")).thenReturn("file edit");
+        when(InspirentoUtilities.tokenize("file edit")).thenReturn(new String[]{"file", "edit"});
+        when(UIResources.getString("fileLabel")).thenReturn("File");
+        when(UIResources.getString("editLabel")).thenReturn("Edit");
+
+        // Create an instance of MainMenu
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        // Verify that the menus are created
+        assertEquals(2, mainMenu.getMenuCount());
+        assertEquals("File", mainMenu.getMenu(0).getText());
+        assertEquals("Edit", mainMenu.getMenu(1).getText());
+    }
+
+    @Test
+    public void testCreateMenuWithSubMenu() {
+        // Mock the UIResources and InspirentoUtilities
+        mockStatic(UIResources.class);
+        mockStatic(InspirentoUtilities.class);
+
+        // Define the behavior of the mocked methods
+        when(UIResources.getString("file")).thenReturn("new> open");
+        when(UIResources.getString("newLabel")).thenReturn("New");
+        when(UIResources.getString("openLabel")).thenReturn("Open");
+
+        // Create an instance of MainMenu
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        // Use reflection to access the private createMenu method
+        JMenu fileMenu = mainMenu.createMenu("file");
+
+        // Verify that the submenus are created
+        assertEquals(2, fileMenu.getItemCount());
+        assertEquals("New", fileMenu.getItem(0).getText());
+        assertEquals("Open", fileMenu.getItem(1).getText());
+    }
+
+    @Test
+    public void testCreateMenuWithCheckBoxMenuItem() {
+        // Mock the UIResources and InspirentoUtilities
+        mockStatic(UIResources.class);
+        mockStatic(InspirentoUtilities.class);
+
+        // Define the behavior of the mocked methods
+        when(UIResources.getString("view")).thenReturn("#showStatusBar");
+        when(UIResources.getString("showStatusBarLabel")).thenReturn("Show Status Bar");
+
+        // Create an instance of MainMenu
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        // Use reflection to access the private createMenu method
+        JMenu viewMenu = mainMenu.createMenu("view");
+
+        // Verify that the JCheckBoxMenuItem is created
+        assertEquals(1, viewMenu.getItemCount());
+        assertTrue(viewMenu.getItem(0) instanceof JCheckBoxMenuItem);
+        assertEquals("Show Status Bar", viewMenu.getItem(0).getText());
+    }
+
+    @Test
+    public void testAddShortcutAndIcon() {
+        // Mock the UIResources
+        mockStatic(UIResources.class);
+
+        // Define the behavior of the mocked methods
+        when(UIResources.getString("saveShortcut")).thenReturn("ctrl S");
+        when(UIResources.getString("saveIcon")).thenReturn("/icons/save.png");
+
+        // Create an instance of MainMenu
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        // Create a JMenuItem
+        JMenuItem menuItem = new JMenuItem("Save");
+
+        // Use reflection to access the private addShortcutAndIcon method
+        mainMenu.addShortcutAndIcon(menuItem, "save");
+
+        // Verify that the shortcut and icon are set
+        assertEquals(KeyStroke.getKeyStroke("ctrl S"), menuItem.getAccelerator());
+        assertNotNull(menuItem.getIcon());
+    }
+
+    @Test
+    public void testChanged() {
+        // Create an instance of MainMenu
+        MainMenu mainMenu = new MainMenu(mockMediator);
+
+        // Call the changed method
+        mainMenu.changed();
+
+        // Verify that no exception is thrown
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to test the `MainMenu` class. It covers the constructor, the `createMenu` method with different scenarios (submenus, checkboxes), the `addShortcutAndIcon` method, and the `changed` method. The tests use mocking to simulate the behavior of external dependencies like `UIResources` and `InspirentoUtilities`.

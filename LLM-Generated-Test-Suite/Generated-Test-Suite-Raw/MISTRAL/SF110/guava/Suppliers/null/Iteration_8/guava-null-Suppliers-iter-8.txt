@@ -1,0 +1,127 @@
+```java
+package com.google.common.base;
+
+import com.google.common.annotations.GwtCompatible;
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.base.Suppliers.MemoizingSupplier;
+import com.google.common.base.Suppliers.SupplierComposition;
+import com.google.common.base.Suppliers.SupplierOfInstance;
+import com.google.common.base.Suppliers.ThreadSafeSupplier;
+import com.google.common.base.Suppliers.ExpiringMemoizingSupplier;
+import com.google.common.base.Suppliers.SupplierFunctionImpl;
+import com.google.common.base.Suppliers.SupplierFunction;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.concurrent.TimeUnit;
+
+@GwtCompatible
+public class SuppliersTest {
+
+    private Supplier<String> supplier;
+    private Function<String, Integer> function;
+
+    @Before
+    public void setUp() {
+        supplier = () -> "test";
+        function = input -> input.length();
+    }
+
+    @Test
+    public void testCompose() {
+        Supplier<Integer> composedSupplier = Suppliers.compose(function, supplier);
+        assertEquals(Integer.valueOf(4), composedSupplier.get());
+    }
+
+    @Test
+    public void testMemoize() {
+        Supplier<String> memoizedSupplier = Suppliers.memoize(supplier);
+        assertEquals("test", memoizedSupplier.get());
+        assertEquals("test", memoizedSupplier.get());
+    }
+
+    @Test
+    public void testMemoizeWithExpiration() {
+        Supplier<String> expiringSupplier = Suppliers.memoizeWithExpiration(supplier, 1, TimeUnit.SECONDS);
+        assertEquals("test", expiringSupplier.get());
+        try {
+            Thread.sleep(1100); // Sleep for 1.1 seconds to ensure expiration
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+        assertEquals("test", expiringSupplier.get());
+    }
+
+    @Test
+    public void testOfInstance() {
+        Supplier<String> instanceSupplier = Suppliers.ofInstance("test");
+        assertEquals("test", instanceSupplier.get());
+    }
+
+    @Test
+    public void testSynchronizedSupplier() {
+        Supplier<String> synchronizedSupplier = Suppliers.synchronizedSupplier(supplier);
+        assertEquals("test", synchronizedSupplier.get());
+    }
+
+    @Test
+    public void testSupplierFunction() {
+        Function<Supplier<String>, String> supplierFunction = Suppliers.supplierFunction();
+        assertEquals("test", supplierFunction.apply(supplier));
+    }
+
+    @Test
+    public void testSupplierCompositionEquals() {
+        SupplierComposition<String, Integer> composition1 = new SupplierComposition<>(function, supplier);
+        SupplierComposition<String, Integer> composition2 = new SupplierComposition<>(function, supplier);
+        assertEquals(composition1, composition2);
+    }
+
+    @Test
+    public void testSupplierCompositionHashCode() {
+        SupplierComposition<String, Integer> composition1 = new SupplierComposition<>(function, supplier);
+        SupplierComposition<String, Integer> composition2 = new SupplierComposition<>(function, supplier);
+        assertEquals(composition1.hashCode(), composition2.hashCode());
+    }
+
+    @Test
+    public void testMemoizingSupplierToString() {
+        MemoizingSupplier<String> memoizingSupplier = new MemoizingSupplier<>(supplier);
+        assertEquals("Suppliers.memoize(com.google.common.base.SuppliersTest$$Lambda$1/0x0000000800000000@0)", memoizingSupplier.toString());
+    }
+
+    @Test
+    public void testExpiringMemoizingSupplierToString() {
+        ExpiringMemoizingSupplier<String> expiringSupplier = new ExpiringMemoizingSupplier<>(supplier, 1, TimeUnit.SECONDS);
+        assertEquals("Suppliers.memoizeWithExpiration(com.google.common.base.SuppliersTest$$Lambda$1/0x0000000800000000@0, 1000000000, NANOS)", expiringSupplier.toString());
+    }
+
+    @Test
+    public void testSupplierOfInstanceEquals() {
+        SupplierOfInstance<String> instance1 = new SupplierOfInstance<>("test");
+        SupplierOfInstance<String> instance2 = new SupplierOfInstance<>("test");
+        assertEquals(instance1, instance2);
+    }
+
+    @Test
+    public void testSupplierOfInstanceHashCode() {
+        SupplierOfInstance<String> instance1 = new SupplierOfInstance<>("test");
+        SupplierOfInstance<String> instance2 = new SupplierOfInstance<>("test");
+        assertEquals(instance1.hashCode(), instance2.hashCode());
+    }
+
+    @Test
+    public void testThreadSafeSupplierToString() {
+        ThreadSafeSupplier<String> threadSafeSupplier = new ThreadSafeSupplier<>(supplier);
+        assertEquals("Suppliers.synchronizedSupplier(com.google.common.base.SuppliersTest$$Lambda$1/0x0000000800000000@0)", threadSafeSupplier.toString());
+    }
+
+    @Test
+    public void testSupplierFunctionImplToString() {
+        assertEquals("Suppliers.supplierFunction()", SupplierFunctionImpl.INSTANCE.toString());
+    }
+}
+```

@@ -1,0 +1,205 @@
+```java
+package macaw.util;
+
+import macaw.businessLayer.*;
+import macaw.system.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class DisplayableListPanelTest {
+
+    private DisplayableListPanel displayableListPanel;
+    private SessionProperties sessionProperties;
+    private DisplayableListParentForm parentForm;
+    private UserInterfaceFactory userInterfaceFactory;
+    private DisplayableList displayableList;
+    private DisplayableListItemSelector listItemSelector;
+    private DisplayableListItemAdder listItemAdder;
+    private DisplayableListItemEditor listItemEditor;
+    private DisplayableListItemViewer listItemViewer;
+    private DisplayableListItemDeleter listItemDeleter;
+    private Log log;
+    private User currentUser;
+
+    @Before
+    public void setUp() {
+        sessionProperties = mock(SessionProperties.class);
+        parentForm = mock(DisplayableListParentForm.class);
+        userInterfaceFactory = mock(UserInterfaceFactory.class);
+        displayableList = mock(DisplayableList.class);
+        listItemSelector = mock(DisplayableListItemSelector.class);
+        listItemAdder = mock(DisplayableListItemAdder.class);
+        listItemEditor = mock(DisplayableListItemEditor.class);
+        listItemViewer = mock(DisplayableListItemViewer.class);
+        listItemDeleter = mock(DisplayableListItemDeleter.class);
+        log = mock(Log.class);
+        currentUser = mock(User.class);
+
+        when(sessionProperties.getUserInterfaceFactory()).thenReturn(userInterfaceFactory);
+        when(sessionProperties.getLog()).thenReturn(log);
+        when(sessionProperties.getProperty("currentUser")).thenReturn(currentUser);
+        when(currentUser.getUserID()).thenReturn("testUser");
+
+        displayableListPanel = new DisplayableListPanel(sessionProperties, parentForm, "Test Panel", true);
+    }
+
+    @Test
+    public void testInit() {
+        assertNotNull(displayableListPanel.getPanel());
+        verify(userInterfaceFactory, times(1)).createButton(anyString());
+        verify(userInterfaceFactory, times(1)).createPanel();
+    }
+
+    @Test
+    public void testSetNewRecord() {
+        displayableListPanel.setNewRecord(true);
+        verify(displayableListPanel).updateButtonStates();
+    }
+
+    @Test
+    public void testGetPanel() {
+        JPanel panel = displayableListPanel.getPanel();
+        assertNotNull(panel);
+    }
+
+    @Test
+    public void testSetDisplayableListItemSelector() {
+        displayableListPanel.setDisplayableListItemSelector(listItemSelector);
+        assertEquals(listItemSelector, displayableListPanel.listItemSelector);
+    }
+
+    @Test
+    public void testSetDisplayableListItemAdder() {
+        displayableListPanel.setDisplayableListItemAdder(listItemAdder);
+        assertEquals(listItemAdder, displayableListPanel.listItemAdder);
+    }
+
+    @Test
+    public void testSetDisplayableListItemEditor() {
+        displayableListPanel.setDisplayableListItemEditor(listItemEditor);
+        assertEquals(listItemEditor, displayableListPanel.listItemEditor);
+    }
+
+    @Test
+    public void testSetDisplayableListItemViewer() {
+        displayableListPanel.setDisplayableListItemViewer(listItemViewer);
+        assertEquals(listItemViewer, displayableListPanel.listItemViewer);
+    }
+
+    @Test
+    public void testSetDisplayableListItemDeleter() {
+        displayableListPanel.setDisplayableListItemDeleter(listItemDeleter);
+        assertEquals(listItemDeleter, displayableListPanel.listItemDeleter);
+    }
+
+    @Test
+    public void testAddListItem() {
+        displayableListPanel.setDisplayableListItemAdder(listItemAdder);
+        displayableListPanel.addListItem();
+        verify(listItemAdder, times(1)).addItems(anyString(), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testEditSelectedListItem() {
+        when(displayableList.itemsAreSelected()).thenReturn(true);
+        displayableListPanel.setDisplayableListItemEditor(listItemEditor);
+        displayableListPanel.editSelectedListItem();
+        verify(listItemEditor, times(1)).editListItem(anyString(), any(Displayable.class), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testViewSelectedListItem() {
+        when(displayableList.itemsAreSelected()).thenReturn(true);
+        displayableListPanel.setDisplayableListItemViewer(listItemViewer);
+        displayableListPanel.viewSelectedListItem();
+        verify(listItemViewer, times(1)).viewListItem(any(Displayable.class));
+    }
+
+    @Test
+    public void testDeleteSelectedListItems() {
+        when(displayableList.itemsAreSelected()).thenReturn(true);
+        displayableListPanel.setDisplayableListItemDeleter(listItemDeleter);
+        displayableListPanel.deleteSelectedListItems();
+        verify(listItemDeleter, times(1)).deleteListItems(anyString(), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testSelectListItems() {
+        displayableListPanel.setDisplayableListItemSelector(listItemSelector);
+        displayableListPanel.selectListItems();
+        verify(listItemSelector, times(1)).selectListItems(anyString(), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testUpdateButtonStates() {
+        displayableListPanel.updateButtonStates();
+        verify(displayableListPanel.add, times(1)).setEnabled(anyBoolean());
+        verify(displayableListPanel.delete, times(1)).setEnabled(anyBoolean());
+        verify(displayableListPanel.edit, times(1)).setEnabled(anyBoolean());
+        verify(displayableListPanel.view, times(1)).setEnabled(anyBoolean());
+        verify(displayableListPanel.select, times(1)).setEnabled(anyBoolean());
+    }
+
+    @Test
+    public void testSetDisplayableItems() {
+        ArrayList<Displayable> masterList = new ArrayList<>();
+        displayableListPanel.setDisplayableItems(masterList);
+        assertEquals(masterList, displayableListPanel.masterList);
+        verify(displayableList, times(1)).setDisplayItems(masterList);
+    }
+
+    @Test
+    public void testSave() {
+        ArrayList<Displayable> currentList = new ArrayList<>();
+        when(displayableList.getAllItems()).thenReturn(currentList);
+        displayableListPanel.save();
+        assertEquals(currentList, displayableListPanel.masterList);
+    }
+
+    @Test
+    public void testGetAllListItems() {
+        ArrayList<Displayable> currentList = new ArrayList<>();
+        when(displayableList.getAllItems()).thenReturn(currentList);
+        assertEquals(currentList, displayableListPanel.getAllListItems());
+    }
+
+    @Test
+    public void testSetListOwnerName() {
+        displayableListPanel.setListOwnerName("testOwner");
+        assertEquals("testOwner", displayableListPanel.listOwnerName);
+    }
+
+    @Test
+    public void testActionPerformed() {
+        ActionEvent event = mock(ActionEvent.class);
+
+        when(event.getSource()).thenReturn(displayableListPanel.select);
+        displayableListPanel.actionPerformed(event);
+        verify(displayableListPanel, times(1)).selectListItems();
+
+        when(event.getSource()).thenReturn(displayableListPanel.add);
+        displayableListPanel.actionPerformed(event);
+        verify(displayableListPanel, times(1)).addListItem();
+
+        when(event.getSource()).thenReturn(displayableListPanel.edit);
+        displayableListPanel.actionPerformed(event);
+        verify(displayableListPanel, times(1)).editSelectedListItem();
+
+        when(event.getSource()).thenReturn(displayableListPanel.view);
+        displayableListPanel.actionPerformed(event);
+        verify(displayableListPanel, times(1)).viewSelectedListItem();
+
+        when(event.getSource()).thenReturn(displayableListPanel.delete);
+        displayableListPanel.actionPerformed(event);
+        verify(displayableListPanel, times(1)).deleteSelectedListItems();
+    }
+}
+```

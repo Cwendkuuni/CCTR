@@ -1,0 +1,62 @@
+package org.scribe.model;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.scribe.model.OAuthRequest;
+import org.scribe.model.Verb;
+
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class OAuthRequestTest {
+
+    private OAuthRequest request;
+
+    @Before
+    public void setUp() {
+        request = new OAuthRequest(Verb.GET, "http://example.com");
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull("OAuth parameters map should be initialized", request.getOauthParameters());
+        assertTrue("OAuth parameters map should be empty", request.getOauthParameters().isEmpty());
+    }
+
+    @Test
+    public void testAddOAuthParameterWithValidKey() {
+        request.addOAuthParameter("oauth_token", "tokenValue");
+        Map<String, String> params = request.getOauthParameters();
+        assertEquals("OAuth parameters map should contain one entry", 1, params.size());
+        assertEquals("OAuth parameter value should match", "tokenValue", params.get("oauth_token"));
+    }
+
+    @Test
+    public void testAddOAuthParameterWithScopeKey() {
+        request.addOAuthParameter("scope", "read");
+        Map<String, String> params = request.getOauthParameters();
+        assertEquals("OAuth parameters map should contain one entry", 1, params.size());
+        assertEquals("OAuth parameter value should match", "read", params.get("scope"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddOAuthParameterWithInvalidKey() {
+        request.addOAuthParameter("invalid_key", "value");
+    }
+
+    @Test
+    public void testGetOauthParameters() {
+        request.addOAuthParameter("oauth_token", "tokenValue");
+        Map<String, String> params = request.getOauthParameters();
+        assertNotNull("OAuth parameters map should not be null", params);
+        assertEquals("OAuth parameters map should contain one entry", 1, params.size());
+        assertEquals("OAuth parameter value should match", "tokenValue", params.get("oauth_token"));
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "@OAuthRequest(GET, http://example.com)";
+        assertEquals("toString method should return the correct format", expected, request.toString());
+    }
+}

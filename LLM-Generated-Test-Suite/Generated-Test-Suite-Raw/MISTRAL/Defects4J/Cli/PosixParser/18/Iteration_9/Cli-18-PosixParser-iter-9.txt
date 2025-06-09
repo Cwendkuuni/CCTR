@@ -1,0 +1,127 @@
+```java
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.Option;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class PosixParserTest {
+
+    private PosixParser parser;
+    private Options options;
+
+    @Before
+    public void setUp() {
+        parser = new PosixParser();
+        options = new Options();
+        options.addOption("a", false, "Option a");
+        options.addOption("b", true, "Option b");
+        options.addOption("c", false, "Option c");
+    }
+
+    @Test
+    public void testFlattenWithValidOptions() {
+        String[] args = {"-a", "-b", "value", "-c"};
+        String[] expected = {"-a", "-b", "value", "-c"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithInvalidOption() {
+        String[] args = {"-a", "-d", "-c"};
+        String[] expected = {"-a", "-d", "-c"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithStopAtNonOption() {
+        String[] args = {"-a", "value", "-c"};
+        String[] expected = {"-a", "value", "-c"};
+        String[] result = parser.flatten(options, args, true);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithDoubleHyphen() {
+        String[] args = {"--", "value", "-c"};
+        String[] expected = {"--", "value", "-c"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithSingleHyphen() {
+        String[] args = {"-", "value", "-c"};
+        String[] expected = {"-", "value", "-c"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithBursting() {
+        String[] args = {"-abc"};
+        String[] expected = {"-a", "-b", "-c"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithBurstingAndStopAtNonOption() {
+        String[] args = {"-abd"};
+        String[] expected = {"-a", "-b", "--", "d"};
+        String[] result = parser.flatten(options, args, true);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testGobble() {
+        parser.init();
+        parser.eatTheRest = true;
+        parser.gobble(Arrays.asList("value1", "value2").iterator());
+        String[] expected = {"value1", "value2"};
+        String[] result = (String[]) parser.tokens.toArray(new String[parser.tokens.size()]);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testProcess() {
+        parser.init();
+        parser.currentOption = options.getOption("b");
+        parser.process("value");
+        String[] expected = {"value"};
+        String[] result = (String[]) parser.tokens.toArray(new String[parser.tokens.size()]);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testProcessSingleHyphen() {
+        parser.init();
+        parser.processSingleHyphen("-");
+        String[] expected = {"-"};
+        String[] result = (String[]) parser.tokens.toArray(new String[parser.tokens.size()]);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testProcessOptionToken() {
+        parser.init();
+        parser.options = options;
+        parser.processOptionToken("-a", false);
+        String[] expected = {"-a"};
+        String[] result = (String[]) parser.tokens.toArray(new String[parser.tokens.size()]);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testBurstToken() {
+        parser.init();
+        parser.options = options;
+        parser.burstToken("-abc", false);
+        String[] expected = {"-a", "-b", "-c"};
+        String[] result = (String[]) parser.tokens.toArray(new String[parser.tokens.size()]);
+        assertArrayEquals(expected, result);
+    }
+}
+```

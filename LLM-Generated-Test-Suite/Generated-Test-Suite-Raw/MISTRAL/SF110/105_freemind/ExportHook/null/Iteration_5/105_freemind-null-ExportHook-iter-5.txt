@@ -1,0 +1,130 @@
+```java
+package freemind.extensions;
+
+import freemind.view.mindmapview.*;
+import javax.swing.filechooser.*;
+import java.text.*;
+import javax.swing.*;
+import freemind.modes.*;
+import java.awt.image.*;
+import java.awt.*;
+import freemind.main.*;
+import java.net.*;
+import java.io.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ExportHookTest {
+
+    private ExportHook exportHook;
+    private ModeController mockController;
+    private MapView mockView;
+
+    @Before
+    public void setUp() {
+        exportHook = new ExportHook();
+        mockController = mock(ModeController.class);
+        mockView = mock(MapView.class);
+        when(mockController.getView()).thenReturn(mockView);
+        exportHook.setController(mockController);
+    }
+
+    @Test
+    public void testChooseFile() {
+        String type = "png";
+        String description = "PNG Image";
+        String nameExtension = ".png";
+        File mockFile = mock(File.class);
+        when(mockController.getFileChooser(any(FileFilter.class))).thenReturn(mock(FreeMindFileDialog.class));
+        when(mockController.getMap()).thenReturn(mock(MindMap.class));
+        when(mockController.getMap().getFile()).thenReturn(mockFile);
+        when(mockFile.getAbsolutePath()).thenReturn("/path/to/file.mm");
+
+        File result = exportHook.chooseFile(type, description, nameExtension);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testChooseImageFile() {
+        String type = "png";
+        String description = "PNG Image";
+        String nameExtension = ".png";
+        File mockFile = mock(File.class);
+        when(mockController.getFileChooser(any(FileFilter.class))).thenReturn(mock(FreeMindFileDialog.class));
+        when(mockController.getMap()).thenReturn(mock(MindMap.class));
+        when(mockController.getMap().getFile()).thenReturn(mockFile);
+        when(mockFile.getAbsolutePath()).thenReturn("/path/to/file.mm");
+
+        File result = ExportHook.chooseImageFile(type, description, nameExtension, mockController);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testGetTranslatableResourceString() {
+        String resourceName = "%test";
+        when(mockController.getText("test")).thenReturn("Test String");
+
+        String result = exportHook.getTranslatableResourceString(resourceName);
+        assertEquals("Test String", result);
+    }
+
+    @Test
+    public void testCreateBufferedImage() {
+        when(mockView.getInnerBounds()).thenReturn(new Rectangle(0, 0, 100, 100));
+        when(mockView.createImage(100, 100)).thenReturn(new BufferedImage(100, 100, BufferedImage.TYPE_INT_ARGB));
+
+        BufferedImage result = exportHook.createBufferedImage();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testCopyFromResource() {
+        String prefix = "/resources/";
+        String fileName = "test.txt";
+        String destinationDirectory = "/destination/";
+        URL mockURL = mock(URL.class);
+        when(exportHook.getResource(prefix + fileName)).thenReturn(mockURL);
+
+        exportHook.copyFromResource(prefix, fileName, destinationDirectory);
+        // Verify that the copyStream method was called
+        verify(Tools.class);
+    }
+
+    @Test
+    public void testCopyFromFile() {
+        String dir = "/source/";
+        String fileName = "test.txt";
+        String destinationDirectory = "/destination/";
+        File mockFile = mock(File.class);
+        when(new File(dir, fileName)).thenReturn(mockFile);
+
+        exportHook.copyFromFile(dir, fileName, destinationDirectory);
+        // Verify that the copyStream method was called
+        verify(Tools.class);
+    }
+
+    @Test
+    public void testImageFilterAccept() {
+        String type = "png";
+        String description = "PNG Image";
+        ExportHook.ImageFilter imageFilter = new ExportHook.ImageFilter(type, description);
+        File mockFile = mock(File.class);
+        when(mockFile.isDirectory()).thenReturn(false);
+        when(mockFile.getName()).thenReturn("test.png");
+
+        boolean result = imageFilter.accept(mockFile);
+        assertTrue(result);
+    }
+
+    @Test
+    public void testImageFilterGetDescription() {
+        String type = "png";
+        String description = "PNG Image";
+        ExportHook.ImageFilter imageFilter = new ExportHook.ImageFilter(type, description);
+
+        String result = imageFilter.getDescription();
+        assertEquals(description, result);
+    }
+}
+```

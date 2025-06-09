@@ -1,0 +1,145 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `TypeInfoFactory` class. This suite includes tests for each method, ensuring that the expected behavior is verified.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import com.google.gson.TypeInfoFactory;
+import com.google.gson.TypeInfo;
+import com.google.gson.TypeInfoArray;
+import com.google.gson.internal.Preconditions;
+import com.google.gson.internal.TypeUtils;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.GenericArrayType;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+
+@RunWith(MockitoJUnitRunner.class)
+public class TypeInfoFactoryTest {
+
+    @Mock
+    private Type mockType;
+
+    @Mock
+    private Field mockField;
+
+    @Mock
+    private ParameterizedType mockParameterizedType;
+
+    @Mock
+    private GenericArrayType mockGenericArrayType;
+
+    @Mock
+    private TypeVariable<?> mockTypeVariable;
+
+    @Mock
+    private WildcardType mockWildcardType;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void testGetTypeInfoForArray() {
+        when(TypeUtils.isArray(mockType)).thenReturn(true);
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(mockType);
+        assertNotNull(typeInfoArray);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArrayWithNonArrayType() {
+        when(TypeUtils.isArray(mockType)).thenReturn(false);
+        TypeInfoFactory.getTypeInfoForArray(mockType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField() throws NoSuchFieldException {
+        class TestClass {
+            public String field;
+        }
+        Field field = TestClass.class.getField("field");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, TestClass.class);
+        assertNotNull(typeInfo);
+    }
+
+    @Test
+    public void testGetActualTypeWithClass() {
+        Type actualType = TypeInfoFactory.getTypeInfoForField(mockField, String.class);
+        assertNotNull(actualType);
+    }
+
+    @Test
+    public void testGetActualTypeWithParameterizedType() {
+        when(mockParameterizedType.getActualTypeArguments()).thenReturn(new Type[]{String.class});
+        when(mockParameterizedType.getRawType()).thenReturn(String.class);
+        Type actualType = TypeInfoFactory.getTypeInfoForField(mockField, mockParameterizedType);
+        assertNotNull(actualType);
+    }
+
+    @Test
+    public void testGetActualTypeWithGenericArrayType() {
+        when(mockGenericArrayType.getGenericComponentType()).thenReturn(String.class);
+        Type actualType = TypeInfoFactory.getTypeInfoForField(mockField, mockGenericArrayType);
+        assertNotNull(actualType);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetActualTypeWithTypeVariable() {
+        when(mockTypeVariable.getBounds()).thenReturn(new Type[]{String.class});
+        TypeInfoFactory.getTypeInfoForField(mockField, mockTypeVariable);
+    }
+
+    @Test
+    public void testGetActualTypeWithWildcardType() {
+        when(mockWildcardType.getUpperBounds()).thenReturn(new Type[]{String.class});
+        Type actualType = TypeInfoFactory.getTypeInfoForField(mockField, mockWildcardType);
+        assertNotNull(actualType);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetActualTypeWithInvalidType() {
+        Type invalidType = mock(Type.class);
+        TypeInfoFactory.getTypeInfoForField(mockField, invalidType);
+    }
+
+    @Test
+    public void testExtractRealTypes() {
+        Type[] types = new Type[]{String.class, Integer.class};
+        Type[] realTypes = TypeInfoFactory.extractRealTypes(types, String.class, String.class);
+        assertArrayEquals(types, realTypes);
+    }
+
+    @Test
+    public void testGetIndex() {
+        TypeVariable<?>[] typeVariables = new TypeVariable<?>[]{mockTypeVariable};
+        when(mockTypeVariable.equals(mockTypeVariable)).thenReturn(true);
+        int index = TypeInfoFactory.getIndex(typeVariables, mockTypeVariable);
+        assertEquals(0, index);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetIndexWithInvalidType() {
+        TypeVariable<?>[] typeVariables = new TypeVariable<?>[]{mockTypeVariable};
+        TypeVariable<?> invalidTypeVariable = mock(TypeVariable.class);
+        TypeInfoFactory.getIndex(typeVariables, invalidTypeVariable);
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: The test suite uses Mockito to mock the `Type`, `Field`, `ParameterizedType`, `GenericArrayType`, `TypeVariable`, and `WildcardType` interfaces. This allows us to simulate various scenarios and test the behavior of the `TypeInfoFactory` methods.
+- **Test Methods**: Each method in the `TypeInfoFactory` class is tested, including edge cases and expected exceptions.
+- **Assertions**: The tests use assertions to verify that the methods return the expected results or throw the expected exceptions.
+- **Setup**: The `setUp` method initializes the mocks before each test.
+
+This test suite should provide comprehensive coverage for the `TypeInfoFactory` class.

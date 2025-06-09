@@ -1,0 +1,102 @@
+Certainly! Below is a JUnit 4 test suite for the `TabbedPane` class. This test suite aims to cover the methods in the class, including constructor behavior, overridden methods, and private method effects through public interfaces.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import javax.swing.*;
+import java.awt.*;
+import java.io.File;
+
+@RunWith(MockitoJUnitRunner.class)
+public class TabbedPaneTest {
+
+    @Mock
+    private FollowAppAttributes mockAttributes;
+
+    @Mock
+    private FileFollowingPane mockPane;
+
+    private TabbedPane tabbedPane;
+
+    @Before
+    public void setUp() {
+        when(mockAttributes.getTabPlacement()).thenReturn(JTabbedPane.TOP);
+        tabbedPane = new TabbedPane(mockAttributes);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertEquals(JTabbedPane.TOP, tabbedPane.getTabPlacement());
+        assertNotNull(tabbedPane);
+    }
+
+    @Test
+    public void testFindComponentAt_NotContained() {
+        Component result = tabbedPane.findComponentAt(-1, -1);
+        assertNull(result);
+    }
+
+    @Test
+    public void testFindComponentAt_Contained() {
+        JPanel panel = new JPanel();
+        tabbedPane.addTab("Tab 1", panel);
+        Component result = tabbedPane.findComponentAt(0, 0);
+        assertEquals(panel, result);
+    }
+
+    @Test
+    public void testSetSelectedIndex() {
+        tabbedPane.addTab("Tab 1", mockPane);
+        tabbedPane.setSelectedIndex(0);
+        verify(mockAttributes, times(1)).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testSetSelectedComponent() {
+        tabbedPane.addTab("Tab 1", mockPane);
+        when(mockPane.getFollowedFile()).thenReturn(new File("test.txt"));
+        tabbedPane.setSelectedComponent(mockPane);
+        verify(mockAttributes, times(1)).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testRemoveTabAt() {
+        tabbedPane.addTab("Tab 1", mockPane);
+        tabbedPane.removeTabAt(0);
+        verify(mockAttributes, times(1)).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testHandleSelectedFile_NullPane() {
+        tabbedPane.handleSelectedFile();
+        verify(mockAttributes, never()).setLastFileChooserDirectory(any(File.class));
+    }
+
+    @Test
+    public void testHandleSelectedFile_NonNullPane() {
+        tabbedPane.addTab("Tab 1", mockPane);
+        when(mockPane.getFollowedFile()).thenReturn(new File("test.txt"));
+        tabbedPane.setSelectedComponent(mockPane);
+        tabbedPane.handleSelectedFile();
+        verify(mockAttributes, times(1)).setLastFileChooserDirectory(any(File.class));
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: We use Mockito to create mock objects for `FollowAppAttributes` and `FileFollowingPane` to isolate the `TabbedPane` class during testing.
+- **Constructor Test**: Verifies that the `TabbedPane` is initialized with the correct tab placement.
+- **findComponentAt Tests**: Tests both when the point is outside and inside the component.
+- **setSelectedIndex Test**: Ensures that `handleSelectedFile` is called when the selected index changes.
+- **setSelectedComponent Test**: Verifies that `handleSelectedFile` is called when a component is selected.
+- **removeTabAt Test**: Ensures `handleSelectedFile` is called when a tab is removed.
+- **handleSelectedFile Tests**: Directly tests the private method's effect through public methods, checking behavior with null and non-null panes.
+
+This test suite should provide a comprehensive check of the `TabbedPane` class's functionality.

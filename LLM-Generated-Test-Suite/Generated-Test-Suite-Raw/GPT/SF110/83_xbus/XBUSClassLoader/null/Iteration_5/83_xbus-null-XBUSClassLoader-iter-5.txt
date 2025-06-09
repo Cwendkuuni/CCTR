@@ -1,0 +1,109 @@
+To create a comprehensive JUnit 4 test suite for the `XBUSClassLoader` class, we need to test the public methods and any static methods that affect the class's behavior. Since `XBUSClassLoader` is a singleton, we will focus on testing the `getInstance` method and indirectly test the `createClassLoader` method. We will also test the `addUrls` method indirectly by verifying the URLs added to the class loader.
+
+Here is a JUnit 4 test suite for the `XBUSClassLoader` class:
+
+```java
+import net.sf.xbus.base.core.reflection.XBUSClassLoader;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.After;
+import org.junit.Assert;
+
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.net.MalformedURLException;
+import java.util.Vector;
+
+public class XBUSClassLoaderTest {
+
+    private static final String XBUS_HOME = "testXBUSHome";
+
+    @Before
+    public void setUp() {
+        // Set up a mock XBUS_HOME directory structure
+        new File(XBUS_HOME + "/lib").mkdirs();
+        new File(XBUS_HOME + "/lib/runtime").mkdirs();
+        new File(XBUS_HOME + "/plugin/lib").mkdirs();
+        new File(XBUS_HOME + "/test/lib").mkdirs();
+        
+        // Create dummy jar files
+        createDummyJarFile(XBUS_HOME + "/lib/test1.jar");
+        createDummyJarFile(XBUS_HOME + "/lib/runtime/test2.jar");
+        createDummyJarFile(XBUS_HOME + "/plugin/lib/test3.jar");
+        createDummyJarFile(XBUS_HOME + "/test/lib/test4.jar");
+        
+        // Set the XBUS_HOME constant
+        Constants.XBUS_HOME = XBUS_HOME;
+    }
+
+    @After
+    public void tearDown() {
+        // Clean up the mock XBUS_HOME directory structure
+        deleteDirectory(new File(XBUS_HOME));
+    }
+
+    @Test
+    public void testGetInstance() {
+        ClassLoader parentClassLoader = getClass().getClassLoader();
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parentClassLoader);
+        Assert.assertNotNull("ClassLoader instance should not be null", classLoader);
+        Assert.assertTrue("ClassLoader should be an instance of URLClassLoader", classLoader instanceof URLClassLoader);
+    }
+
+    @Test
+    public void testSingletonProperty() {
+        ClassLoader parentClassLoader = getClass().getClassLoader();
+        XBUSClassLoader firstInstance = XBUSClassLoader.getInstance(parentClassLoader);
+        XBUSClassLoader secondInstance = XBUSClassLoader.getInstance(parentClassLoader);
+        Assert.assertSame("Both instances should be the same", firstInstance, secondInstance);
+    }
+
+    @Test
+    public void testUrlsAdded() throws MalformedURLException {
+        ClassLoader parentClassLoader = getClass().getClassLoader();
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parentClassLoader);
+        
+        URL[] expectedUrls = {
+            new File(XBUS_HOME + "/lib/test1.jar").toURI().toURL(),
+            new File(XBUS_HOME + "/lib/runtime/test2.jar").toURI().toURL(),
+            new File(XBUS_HOME + "/plugin/lib/test3.jar").toURI().toURL(),
+            new File(XBUS_HOME + "/test/lib/test4.jar").toURI().toURL()
+        };
+        
+        URL[] actualUrls = classLoader.getURLs();
+        
+        Assert.assertArrayEquals("URLs should match the expected URLs", expectedUrls, actualUrls);
+    }
+
+    private void createDummyJarFile(String path) {
+        try {
+            new File(path).createNewFile();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+    }
+
+    private void deleteDirectory(File directory) {
+        if (directory.isDirectory()) {
+            File[] files = directory.listFiles();
+            if (files != null) {
+                for (File file : files) {
+                    deleteDirectory(file);
+                }
+            }
+        }
+        directory.delete();
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: We create a mock directory structure and dummy jar files to simulate the `XBUS_HOME` environment. This allows us to test the `addUrls` method indirectly.
+- **Test Methods**:
+  - `testGetInstance`: Verifies that the `getInstance` method returns a non-null instance of `XBUSClassLoader`.
+  - `testSingletonProperty`: Ensures that the `XBUSClassLoader` maintains its singleton property.
+  - `testUrlsAdded`: Checks that the URLs added to the class loader match the expected URLs from the mock `XBUS_HOME` directory.
+- **Helper Methods**: `createDummyJarFile` and `deleteDirectory` are used to manage the test environment setup and cleanup.
+
+This test suite should cover the main functionalities of the `XBUSClassLoader` class.

@@ -1,0 +1,130 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `XmlTreeBuilder` class. This suite includes tests for each method in the class, ensuring that the functionality is thoroughly validated.
+
+```java
+import org.jsoup.nodes.*;
+import org.jsoup.parser.*;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.StringReader;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class XmlTreeBuilderTest {
+
+    private XmlTreeBuilder xmlTreeBuilder;
+    private String baseUri;
+
+    @Before
+    public void setUp() {
+        xmlTreeBuilder = new XmlTreeBuilder();
+        baseUri = "http://example.com";
+    }
+
+    @Test
+    public void testDefaultSettings() {
+        assertEquals(ParseSettings.preserveCase, xmlTreeBuilder.defaultSettings());
+    }
+
+    @Test
+    public void testInitialiseParse() {
+        Reader input = new StringReader("<root></root>");
+        Parser parser = new Parser(xmlTreeBuilder);
+        xmlTreeBuilder.initialiseParse(input, baseUri, parser);
+        assertEquals(Document.OutputSettings.Syntax.xml, xmlTreeBuilder.doc.outputSettings().syntax());
+        assertFalse(xmlTreeBuilder.stack.isEmpty());
+    }
+
+    @Test
+    public void testParseWithReader() {
+        Reader input = new StringReader("<root><child /></root>");
+        Document doc = xmlTreeBuilder.parse(input, baseUri);
+        assertNotNull(doc);
+        assertEquals("root", doc.child(0).nodeName());
+    }
+
+    @Test
+    public void testParseWithString() {
+        String input = "<root><child /></root>";
+        Document doc = xmlTreeBuilder.parse(input, baseUri);
+        assertNotNull(doc);
+        assertEquals("root", doc.child(0).nodeName());
+    }
+
+    @Test
+    public void testProcessStartTag() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.name("root");
+        assertTrue(xmlTreeBuilder.process(startTag));
+        assertEquals("root", xmlTreeBuilder.stack.get(0).nodeName());
+    }
+
+    @Test
+    public void testProcessEndTag() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.name("root");
+        xmlTreeBuilder.process(startTag);
+
+        Token.EndTag endTag = new Token.EndTag();
+        endTag.tagName = "root";
+        assertTrue(xmlTreeBuilder.process(endTag));
+        assertTrue(xmlTreeBuilder.stack.isEmpty());
+    }
+
+    @Test
+    public void testProcessComment() {
+        Token.Comment commentToken = new Token.Comment();
+        commentToken.data = "This is a comment";
+        assertTrue(xmlTreeBuilder.process(commentToken));
+        assertEquals("This is a comment", ((Comment) xmlTreeBuilder.doc.childNode(0)).getData());
+    }
+
+    @Test
+    public void testProcessCharacter() {
+        Token.Character characterToken = new Token.Character();
+        characterToken.data = "Some text";
+        assertTrue(xmlTreeBuilder.process(characterToken));
+        assertEquals("Some text", ((TextNode) xmlTreeBuilder.doc.childNode(0)).text());
+    }
+
+    @Test
+    public void testProcessDoctype() {
+        Token.Doctype doctypeToken = new Token.Doctype();
+        doctypeToken.name = "html";
+        doctypeToken.publicIdentifier = "-//W3C//DTD XHTML 1.0 Transitional//EN";
+        doctypeToken.systemIdentifier = "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd";
+        assertTrue(xmlTreeBuilder.process(doctypeToken));
+        DocumentType doctype = (DocumentType) xmlTreeBuilder.doc.childNode(0);
+        assertEquals("html", doctype.name());
+        assertEquals("-//W3C//DTD XHTML 1.0 Transitional//EN", doctype.publicId());
+        assertEquals("http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd", doctype.systemId());
+    }
+
+    @Test
+    public void testParseFragmentWithString() {
+        String inputFragment = "<child />";
+        List<Node> nodes = xmlTreeBuilder.parseFragment(inputFragment, baseUri, new Parser(xmlTreeBuilder));
+        assertEquals(1, nodes.size());
+        assertEquals("child", nodes.get(0).nodeName());
+    }
+
+    @Test
+    public void testParseFragmentWithElement() {
+        Element context = new Element(Tag.valueOf("root"), baseUri);
+        String inputFragment = "<child />";
+        List<Node> nodes = xmlTreeBuilder.parseFragment(inputFragment, context, baseUri, new Parser(xmlTreeBuilder));
+        assertEquals(1, nodes.size());
+        assertEquals("child", nodes.get(0).nodeName());
+    }
+}
+```
+
+This test suite covers the following:
+
+- Initialization and default settings.
+- Parsing XML from both `Reader` and `String` inputs.
+- Processing different types of tokens: start tags, end tags, comments, characters, and doctypes.
+- Parsing XML fragments with and without a context element.
+
+Each test ensures that the `XmlTreeBuilder` behaves as expected, and the assertions verify the correctness of the operations performed by the class methods.

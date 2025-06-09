@@ -1,0 +1,213 @@
+```java
+package org.jsoup.select;
+
+import org.jsoup.helper.StringUtil;
+import org.jsoup.helper.Validate;
+import org.jsoup.parser.TokenQueue;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class QueryParserTest {
+
+    private QueryParser queryParser;
+    private TokenQueue tokenQueue;
+
+    @Before
+    public void setUp() {
+        tokenQueue = mock(TokenQueue.class);
+        queryParser = spy(new QueryParser("div"));
+        doReturn(tokenQueue).when(queryParser).getTq();
+    }
+
+    @Test
+    public void testParse() {
+        Evaluator evaluator = QueryParser.parse("div");
+        assertNotNull(evaluator);
+    }
+
+    @Test(expected = Selector.SelectorParseException.class)
+    public void testParseException() {
+        QueryParser.parse("invalid query");
+    }
+
+    @Test
+    public void testParseQuery() {
+        Evaluator evaluator = queryParser.parse();
+        assertNotNull(evaluator);
+    }
+
+    @Test
+    public void testCombinator() {
+        queryParser.combinator(' ');
+        verify(queryParser).parse(anyString());
+    }
+
+    @Test(expected = Selector.SelectorParseException.class)
+    public void testCombinatorException() {
+        queryParser.combinator('x');
+    }
+
+    @Test
+    public void testConsumeSubQuery() {
+        when(tokenQueue.isEmpty()).thenReturn(true);
+        String subQuery = queryParser.consumeSubQuery();
+        assertEquals("", subQuery);
+    }
+
+    @Test
+    public void testFindElements() {
+        queryParser.findElements();
+        verify(queryParser, times(1)).byTag();
+    }
+
+    @Test(expected = Selector.SelectorParseException.class)
+    public void testFindElementsException() {
+        when(tokenQueue.matchChomp("#")).thenReturn(false);
+        when(tokenQueue.matchChomp(".")).thenReturn(false);
+        when(tokenQueue.matchesWord()).thenReturn(false);
+        when(tokenQueue.matches("*|")).thenReturn(false);
+        when(tokenQueue.matches("[")).thenReturn(false);
+        when(tokenQueue.matchChomp("*")).thenReturn(false);
+        when(tokenQueue.matchChomp(":lt(")).thenReturn(false);
+        when(tokenQueue.matchChomp(":gt(")).thenReturn(false);
+        when(tokenQueue.matchChomp(":eq(")).thenReturn(false);
+        when(tokenQueue.matches(":has(")).thenReturn(false);
+        when(tokenQueue.matches(":contains(")).thenReturn(false);
+        when(tokenQueue.matches(":containsOwn(")).thenReturn(false);
+        when(tokenQueue.matches(":containsData(")).thenReturn(false);
+        when(tokenQueue.matches(":matches(")).thenReturn(false);
+        when(tokenQueue.matches(":matchesOwn(")).thenReturn(false);
+        when(tokenQueue.matches(":not(")).thenReturn(false);
+        when(tokenQueue.matchChomp(":nth-child(")).thenReturn(false);
+        when(tokenQueue.matchChomp(":nth-last-child(")).thenReturn(false);
+        when(tokenQueue.matchChomp(":nth-of-type(")).thenReturn(false);
+        when(tokenQueue.matchChomp(":nth-last-of-type(")).thenReturn(false);
+        when(tokenQueue.matchChomp(":first-child")).thenReturn(false);
+        when(tokenQueue.matchChomp(":last-child")).thenReturn(false);
+        when(tokenQueue.matchChomp(":first-of-type")).thenReturn(false);
+        when(tokenQueue.matchChomp(":last-of-type")).thenReturn(false);
+        when(tokenQueue.matchChomp(":only-child")).thenReturn(false);
+        when(tokenQueue.matchChomp(":only-of-type")).thenReturn(false);
+        when(tokenQueue.matchChomp(":empty")).thenReturn(false);
+        when(tokenQueue.matchChomp(":root")).thenReturn(false);
+        queryParser.findElements();
+    }
+
+    @Test
+    public void testById() {
+        when(tokenQueue.consumeCssIdentifier()).thenReturn("id");
+        queryParser.byId();
+        verify(queryParser).getEvals().add(any(Evaluator.Id.class));
+    }
+
+    @Test
+    public void testByClass() {
+        when(tokenQueue.consumeCssIdentifier()).thenReturn("class");
+        queryParser.byClass();
+        verify(queryParser).getEvals().add(any(Evaluator.Class.class));
+    }
+
+    @Test
+    public void testByTag() {
+        when(tokenQueue.consumeElementSelector()).thenReturn("tag");
+        queryParser.byTag();
+        verify(queryParser).getEvals().add(any(Evaluator.Tag.class));
+    }
+
+    @Test
+    public void testByAttribute() {
+        when(tokenQueue.chompBalanced('[', ']')).thenReturn("[attr=value]");
+        TokenQueue contentQueue = new TokenQueue("[attr=value]");
+        when(tokenQueue.consumeToAny(any(String[].class))).thenReturn("attr");
+        when(tokenQueue.consumeWhitespace()).thenReturn(true);
+        when(tokenQueue.matchChomp("=")).thenReturn(true);
+        when(tokenQueue.remainder()).thenReturn("value");
+        queryParser.byAttribute();
+        verify(queryParser).getEvals().add(any(Evaluator.AttributeWithValue.class));
+    }
+
+    @Test
+    public void testAllElements() {
+        queryParser.allElements();
+        verify(queryParser).getEvals().add(any(Evaluator.AllElements.class));
+    }
+
+    @Test
+    public void testIndexLessThan() {
+        when(tokenQueue.chompTo(")")).thenReturn("5");
+        queryParser.indexLessThan();
+        verify(queryParser).getEvals().add(any(Evaluator.IndexLessThan.class));
+    }
+
+    @Test
+    public void testIndexGreaterThan() {
+        when(tokenQueue.chompTo(")")).thenReturn("5");
+        queryParser.indexGreaterThan();
+        verify(queryParser).getEvals().add(any(Evaluator.IndexGreaterThan.class));
+    }
+
+    @Test
+    public void testIndexEquals() {
+        when(tokenQueue.chompTo(")")).thenReturn("5");
+        queryParser.indexEquals();
+        verify(queryParser).getEvals().add(any(Evaluator.IndexEquals.class));
+    }
+
+    @Test
+    public void testCssNthChild() {
+        when(tokenQueue.chompTo(")")).thenReturn("2n+1");
+        queryParser.cssNthChild(false, false);
+        verify(queryParser).getEvals().add(any(Evaluator.IsNthChild.class));
+    }
+
+    @Test
+    public void testConsumeIndex() {
+        when(tokenQueue.chompTo(")")).thenReturn("5");
+        int index = queryParser.consumeIndex();
+        assertEquals(5, index);
+    }
+
+    @Test
+    public void testHas() {
+        when(tokenQueue.chompBalanced('(', ')')).thenReturn("div");
+        queryParser.has();
+        verify(queryParser).getEvals().add(any(StructuralEvaluator.Has.class));
+    }
+
+    @Test
+    public void testContains() {
+        when(tokenQueue.chompBalanced('(', ')')).thenReturn("text");
+        queryParser.contains(false);
+        verify(queryParser).getEvals().add(any(Evaluator.ContainsText.class));
+    }
+
+    @Test
+    public void testContainsData() {
+        when(tokenQueue.chompBalanced('(', ')')).thenReturn("data");
+        queryParser.containsData();
+        verify(queryParser).getEvals().add(any(Evaluator.ContainsData.class));
+    }
+
+    @Test
+    public void testMatches() {
+        when(tokenQueue.chompBalanced('(', ')')).thenReturn("regex");
+        queryParser.matches(false);
+        verify(queryParser).getEvals().add(any(Evaluator.Matches.class));
+    }
+
+    @Test
+    public void testNot() {
+        when(tokenQueue.chompBalanced('(', ')')).thenReturn("div");
+        queryParser.not();
+        verify(queryParser).getEvals().add(any(StructuralEvaluator.Not.class));
+    }
+}
+```

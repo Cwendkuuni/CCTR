@@ -1,0 +1,120 @@
+To create a comprehensive JUnit 4 test suite for the `SimplexTableau` class, we need to cover all the methods and ensure that they behave as expected. Below is a test suite that includes tests for the constructor, as well as various methods within the class. Note that this test suite assumes the existence of appropriate mock or stub classes for `LinearObjectiveFunction`, `LinearConstraint`, `GoalType`, `Relationship`, `RealVector`, and other dependencies.
+
+```java
+import org.apache.commons.math3.optimization.linear.*;
+import org.apache.commons.math3.optimization.GoalType;
+import org.apache.commons.math3.linear.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.util.*;
+
+import static org.junit.Assert.*;
+
+public class SimplexTableauTest {
+
+    private LinearObjectiveFunction objectiveFunction;
+    private List<LinearConstraint> constraints;
+    private GoalType goalType;
+    private boolean restrictToNonNegative;
+    private double epsilon;
+    private int maxUlps;
+
+    @Before
+    public void setUp() {
+        // Initialize the test data
+        RealVector coefficients = new ArrayRealVector(new double[]{1, 2});
+        objectiveFunction = new LinearObjectiveFunction(coefficients, 0);
+        constraints = new ArrayList<>();
+        constraints.add(new LinearConstraint(new double[]{1, 1}, Relationship.LEQ, 2));
+        constraints.add(new LinearConstraint(new double[]{1, 0}, Relationship.GEQ, 1));
+        goalType = GoalType.MAXIMIZE;
+        restrictToNonNegative = true;
+        epsilon = 1e-6;
+        maxUlps = 10;
+    }
+
+    @Test
+    public void testConstructor() {
+        SimplexTableau tableau = new SimplexTableau(objectiveFunction, constraints, goalType, restrictToNonNegative, epsilon, maxUlps);
+        assertNotNull(tableau);
+    }
+
+    @Test
+    public void testInitializeColumnLabels() {
+        SimplexTableau tableau = new SimplexTableau(objectiveFunction, constraints, goalType, restrictToNonNegative, epsilon, maxUlps);
+        tableau.initializeColumnLabels();
+        List<String> columnLabels = tableau.columnLabels;
+        assertTrue(columnLabels.contains("Z"));
+        assertTrue(columnLabels.contains("x0"));
+        assertTrue(columnLabels.contains("x1"));
+        assertTrue(columnLabels.contains("s0"));
+        assertTrue(columnLabels.contains("s1"));
+        assertTrue(columnLabels.contains("RHS"));
+    }
+
+    @Test
+    public void testCreateTableau() {
+        SimplexTableau tableau = new SimplexTableau(objectiveFunction, constraints, goalType, restrictToNonNegative, epsilon, maxUlps);
+        RealMatrix matrix = tableau.createTableau(true);
+        assertNotNull(matrix);
+        assertEquals(3, matrix.getRowDimension());
+        assertEquals(6, matrix.getColumnDimension());
+    }
+
+    @Test
+    public void testNormalizeConstraints() {
+        SimplexTableau tableau = new SimplexTableau(objectiveFunction, constraints, goalType, restrictToNonNegative, epsilon, maxUlps);
+        List<LinearConstraint> normalizedConstraints = tableau.normalizeConstraints(constraints);
+        assertEquals(constraints.size(), normalizedConstraints.size());
+    }
+
+    @Test
+    public void testIsOptimal() {
+        SimplexTableau tableau = new SimplexTableau(objectiveFunction, constraints, goalType, restrictToNonNegative, epsilon, maxUlps);
+        assertFalse(tableau.isOptimal());
+    }
+
+    @Test
+    public void testGetSolution() {
+        SimplexTableau tableau = new SimplexTableau(objectiveFunction, constraints, goalType, restrictToNonNegative, epsilon, maxUlps);
+        PointValuePair solution = tableau.getSolution();
+        assertNotNull(solution);
+    }
+
+    @Test
+    public void testDivideRow() {
+        SimplexTableau tableau = new SimplexTableau(objectiveFunction, constraints, goalType, restrictToNonNegative, epsilon, maxUlps);
+        tableau.divideRow(0, 2);
+        assertEquals(0.5, tableau.getEntry(0, 0), epsilon);
+    }
+
+    @Test
+    public void testSubtractRow() {
+        SimplexTableau tableau = new SimplexTableau(objectiveFunction, constraints, goalType, restrictToNonNegative, epsilon, maxUlps);
+        tableau.subtractRow(1, 0, 1);
+        assertEquals(0, tableau.getEntry(1, 0), epsilon);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        SimplexTableau tableau1 = new SimplexTableau(objectiveFunction, constraints, goalType, restrictToNonNegative, epsilon, maxUlps);
+        SimplexTableau tableau2 = new SimplexTableau(objectiveFunction, constraints, goalType, restrictToNonNegative, epsilon, maxUlps);
+        assertEquals(tableau1, tableau2);
+        assertEquals(tableau1.hashCode(), tableau2.hashCode());
+    }
+
+    @Test
+    public void testGetters() {
+        SimplexTableau tableau = new SimplexTableau(objectiveFunction, constraints, goalType, restrictToNonNegative, epsilon, maxUlps);
+        assertEquals(2, tableau.getNumDecisionVariables());
+        assertEquals(2, tableau.getNumSlackVariables());
+        assertEquals(1, tableau.getNumObjectiveFunctions());
+    }
+}
+```
+
+### Notes:
+- This test suite assumes that the necessary dependencies (`LinearObjectiveFunction`, `LinearConstraint`, `GoalType`, `Relationship`, `RealVector`, etc.) are available and correctly implemented.
+- The tests cover the constructor, initialization methods, and core functionalities of the `SimplexTableau` class.
+- The tests use assertions to verify the expected behavior of each method.
+- The test suite uses JUnit 4 annotations and assertions. Make sure to include JUnit 4 in your project's dependencies to run these tests.

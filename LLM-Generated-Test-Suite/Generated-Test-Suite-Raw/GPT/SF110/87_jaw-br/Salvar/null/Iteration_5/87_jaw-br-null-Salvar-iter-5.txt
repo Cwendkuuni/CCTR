@@ -1,0 +1,110 @@
+To create a comprehensive JUnit 4 test suite for the `Salvar` class, we need to consider the various functionalities and scenarios that the constructor of the `Salvar` class handles. This includes testing different `tipoSalvar` values, handling exceptions, and verifying file operations. Since the class relies on external dependencies like `ProcessarEntidades`, `Main`, `Serializacao`, and `SerializacaoXML`, we'll need to mock these dependencies.
+
+Below is a JUnit 4 test suite for the `Salvar` class:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import jaw.entrada.Salvar;
+import jaw.metamodelo.Entidade;
+import jaw.ProcessarEntidades;
+import jaw.Serializacao;
+import jaw.SerializacaoXML;
+import jaw.Main;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import javax.swing.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.util.List;
+import java.util.Vector;
+
+@RunWith(MockitoJUnitRunner.class)
+public class SalvarTest {
+
+    @Mock
+    private ProcessarEntidades mockForm;
+    @Mock
+    private Serializacao mockSerializacao;
+    @Mock
+    private SerializacaoXML mockSerializacaoXML;
+    @Mock
+    private Main mockMain;
+
+    private List<Entidade> mockEntidades;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        mockEntidades = new Vector<>();
+        when(mockForm.getEntidades()).thenReturn(mockEntidades);
+        when(mockForm.getNomeArquivoSalvo()).thenReturn("Novo Projeto");
+        when(mockForm.getName()).thenReturn("");
+        Main.janelaPrincipal = mockMain;
+    }
+
+    @Test
+    public void testSalvarXML() throws Exception {
+        when(mockSerializacaoXML.entidades2XML(mockEntidades)).thenReturn("<xml></xml>");
+        new Salvar(mockForm, Salvar.SALVAR_XML);
+        verify(mockSerializacaoXML).entidades2XML(mockEntidades);
+    }
+
+    @Test
+    public void testSalvar() throws Exception {
+        when(mockSerializacao.salvar(mockEntidades, "Novo Projeto.jaw")).thenReturn(true);
+        new Salvar(mockForm, Salvar.SALVAR);
+        verify(mockSerializacao).salvar(mockEntidades, "Novo Projeto.jaw");
+    }
+
+    @Test
+    public void testSalvarComo() throws Exception {
+        when(mockSerializacao.salvar(mockEntidades, "Novo Projeto.jaw")).thenReturn(true);
+        new Salvar(mockForm, Salvar.SALVAR_COMO);
+        verify(mockSerializacao).salvar(mockEntidades, "Novo Projeto.jaw");
+    }
+
+    @Test
+    public void testSalvarXMLFileExtension() throws Exception {
+        when(mockSerializacaoXML.entidades2XML(mockEntidades)).thenReturn("<xml></xml>");
+        when(mockForm.getNomeArquivoSalvo()).thenReturn("test");
+        new Salvar(mockForm, Salvar.SALVAR_XML);
+        assertTrue(mockForm.getNomeArquivoSalvo().endsWith(".jaw.xml"));
+    }
+
+    @Test
+    public void testSalvarFileExtension() throws Exception {
+        when(mockSerializacao.salvar(mockEntidades, "test.jaw")).thenReturn(true);
+        when(mockForm.getNomeArquivoSalvo()).thenReturn("test");
+        new Salvar(mockForm, Salvar.SALVAR);
+        assertTrue(mockForm.getNomeArquivoSalvo().endsWith(".jaw"));
+    }
+
+    @Test
+    public void testExceptionHandling() throws Exception {
+        when(mockForm.getEntidades()).thenThrow(new RuntimeException("Test Exception"));
+        new Salvar(mockForm, Salvar.SALVAR);
+        verify(mockMain).log("java.lang.RuntimeException: Test Exception");
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: We use Mockito to mock dependencies like `ProcessarEntidades`, `Serializacao`, `SerializacaoXML`, and `Main`.
+- **Setup**: The `setUp` method initializes the mocks and sets default behaviors.
+- **Test Methods**: Each test method targets a specific functionality or scenario:
+  - `testSalvarXML`: Tests the XML saving functionality.
+  - `testSalvar`: Tests the regular save functionality.
+  - `testSalvarComo`: Tests the "Save As" functionality.
+  - `testSalvarXMLFileExtension`: Ensures the correct file extension is added for XML files.
+  - `testSalvarFileExtension`: Ensures the correct file extension is added for regular files.
+  - `testExceptionHandling`: Verifies that exceptions are logged correctly.
+
+This test suite provides a comprehensive coverage of the `Salvar` class's functionalities.

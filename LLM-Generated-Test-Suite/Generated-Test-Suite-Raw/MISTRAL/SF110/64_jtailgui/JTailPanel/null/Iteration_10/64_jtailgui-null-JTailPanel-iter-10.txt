@@ -1,0 +1,125 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `JTailPanel` class. This test suite includes tests for the constructor, getter methods, and the `update` method.
+
+```java
+package fr.pingtimeout.jtail.gui.view;
+
+import fr.pingtimeout.jtail.util.*;
+import fr.pingtimeout.jtail.gui.controller.*;
+import fr.pingtimeout.jtail.gui.model.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
+import java.awt.*;
+import java.util.Observable;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class JTailPanelTest {
+
+    @Mock
+    private JTailModel model;
+
+    @Mock
+    private JTailModelEvent event;
+
+    private JTailPanel jTailPanel;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        jTailPanel = new JTailPanel(model);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(jTailPanel);
+        assertNotNull(jTailPanel.model);
+        assertNotNull(jTailPanel.scrollPane);
+        assertNotNull(jTailPanel.verticalScrollBar);
+        assertNotNull(jTailPanel.dataTable);
+        assertNotNull(jTailPanel.tableModel);
+        assertTrue(jTailPanel.characterHeight > 0);
+    }
+
+    @Test
+    public void testGetCharacterHeight() {
+        int characterHeight = jTailPanel.getCharacterHeight();
+        assertTrue(characterHeight > 0);
+    }
+
+    @Test
+    public void testGetVerticalScrollBar() {
+        JScrollBar verticalScrollBar = jTailPanel.getVerticalScrollBar();
+        assertNotNull(verticalScrollBar);
+    }
+
+    @Test
+    public void testUpdateResizedEvent() {
+        when(event.type).thenReturn(JTailModelEvent.Type.RESIZED);
+        when(event.minLine).thenReturn(0);
+        when(event.firstLine).thenReturn(0);
+        when(event.nbDisplayedLines).thenReturn(10);
+        when(event.maxLine).thenReturn(10);
+        when(model.getLineNumbers()).thenReturn("1\n2\n3\n4\n5\n6\n7\n8\n9\n10");
+        when(model.getContent()).thenReturn("Line1\nLine2\nLine3\nLine4\nLine5\nLine6\nLine7\nLine8\nLine9\nLine10");
+
+        jTailPanel.update(model, event);
+
+        BoundedRangeModel rangeModel = jTailPanel.verticalScrollBar.getModel();
+        assertEquals(0, rangeModel.getMinimum());
+        assertEquals(0, rangeModel.getValue());
+        assertEquals(10, rangeModel.getExtent());
+        assertEquals(10, rangeModel.getMaximum());
+        assertFalse(jTailPanel.verticalScrollBar.isEnabled());
+
+        assertEquals(10, jTailPanel.tableModel.getRowCount());
+        assertEquals("1", jTailPanel.tableModel.getValueAt(0, 0));
+        assertEquals("Line1", jTailPanel.tableModel.getValueAt(0, 1));
+    }
+
+    @Test
+    public void testUpdateScrolledEvent() {
+        when(event.type).thenReturn(JTailModelEvent.Type.SCROLLED);
+        when(model.getLineNumbers()).thenReturn("1\n2\n3\n4\n5\n6\n7\n8\n9\n10");
+        when(model.getContent()).thenReturn("Line1\nLine2\nLine3\nLine4\nLine5\nLine6\nLine7\nLine8\nLine9\nLine10");
+
+        jTailPanel.update(model, event);
+
+        assertEquals(10, jTailPanel.tableModel.getRowCount());
+        assertEquals("1", jTailPanel.tableModel.getValueAt(0, 0));
+        assertEquals("Line1", jTailPanel.tableModel.getValueAt(0, 1));
+    }
+
+    @Test
+    public void testUpdateDataTable() {
+        String lineNumbers = "1\n2\n3\n4\n5\n6\n7\n8\n9\n10";
+        String lines = "Line1\nLine2\nLine3\nLine4\nLine5\nLine6\nLine7\nLine8\nLine9\nLine10";
+
+        jTailPanel.updateDataTable(lineNumbers, lines);
+
+        assertEquals(10, jTailPanel.tableModel.getRowCount());
+        assertEquals("1", jTailPanel.tableModel.getValueAt(0, 0));
+        assertEquals("Line1", jTailPanel.tableModel.getValueAt(0, 1));
+
+        TableColumn numbersColumn = jTailPanel.dataTable.getColumnModel().getColumn(0);
+        TableColumn linesColumn = jTailPanel.dataTable.getColumnModel().getColumn(1);
+
+        int numbersColumnWidth = lineNumbers.split("\n")[lineNumbers.split("\n").length - 1].length() * jTailPanel.maxCharacterWidth;
+        int linesColumnWidth = jTailPanel.dataTable.getWidth() - numbersColumnWidth;
+
+        assertEquals(numbersColumnWidth, numbersColumn.getPreferredWidth());
+        assertEquals(linesColumnWidth, linesColumn.getPreferredWidth());
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to create and verify the behavior of the `JTailPanel` class. It includes tests for the constructor, getter methods, and the `update` method, ensuring comprehensive coverage of the class functionality.

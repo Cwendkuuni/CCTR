@@ -1,0 +1,114 @@
+```java
+package net.sf.xbus.base.core.reflection;
+
+import net.sf.xbus.base.core.Constants;
+import net.sf.xbus.base.core.trace.Trace;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Vector;
+
+import static org.junit.Assert.*;
+
+public class XBUSClassLoaderTest {
+
+    private static final String TEST_XBUS_HOME = "test/xbus_home";
+
+    @Before
+    public void setUp() {
+        // Set up the XBUS_HOME for testing
+        System.setProperty("XBUS_HOME", TEST_XBUS_HOME);
+        Constants.XBUS_HOME = TEST_XBUS_HOME;
+    }
+
+    @After
+    public void tearDown() {
+        // Clean up the XBUS_HOME after testing
+        System.clearProperty("XBUS_HOME");
+        Constants.XBUS_HOME = null;
+    }
+
+    @Test
+    public void testGetInstance() {
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parent);
+        assertNotNull(classLoader);
+    }
+
+    @Test
+    public void testCreateClassLoader() {
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader classLoader = XBUSClassLoader.createClassLoader(parent);
+        assertNotNull(classLoader);
+    }
+
+    @Test
+    public void testAddUrls() {
+        Vector<URL> urls = new Vector<>();
+        String dirName = TEST_XBUS_HOME + "/lib";
+        File libPath = new File(dirName);
+        if (!libPath.exists()) {
+            libPath.mkdirs();
+        }
+
+        // Create a test jar file
+        File testJar = new File(libPath, "test.jar");
+        try {
+            testJar.createNewFile();
+            XBUSClassLoader.addUrls(urls, dirName);
+            assertEquals(1, urls.size());
+            assertEquals(testJar.toURI().toURL(), urls.get(0));
+        } catch (IOException e) {
+            fail("IOException occurred: " + e.getMessage());
+        } finally {
+            testJar.delete();
+        }
+    }
+
+    @Test
+    public void testAddUrlsNoJars() {
+        Vector<URL> urls = new Vector<>();
+        String dirName = TEST_XBUS_HOME + "/lib";
+        File libPath = new File(dirName);
+        if (!libPath.exists()) {
+            libPath.mkdirs();
+        }
+
+        // No jar files in the directory
+        XBUSClassLoader.addUrls(urls, dirName);
+        assertEquals(0, urls.size());
+    }
+
+    @Test
+    public void testAddUrlsMalformedURLException() {
+        Vector<URL> urls = new Vector<>();
+        String dirName = TEST_XBUS_HOME + "/lib";
+        File libPath = new File(dirName);
+        if (!libPath.exists()) {
+            libPath.mkdirs();
+        }
+
+        // Create a test file with an invalid name
+        File invalidFile = new File(libPath, "invalid file name");
+        try {
+            invalidFile.createNewFile();
+            XBUSClassLoader.addUrls(urls, dirName);
+            assertEquals(0, urls.size());
+        } catch (IOException e) {
+            fail("IOException occurred: " + e.getMessage());
+        } finally {
+            invalidFile.delete();
+        }
+    }
+
+    @Test
+    public void testStaticBlock() {
+        assertNull(XBUSClassLoader.mClassLoader);
+        assertEquals(XBUSClassLoader.class, XBUSClassLoader.classLock);
+    }
+}
+```

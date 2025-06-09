@@ -1,0 +1,223 @@
+Certainly! Below is a JUnit 4 test suite for the `Shift` class. This test suite covers the different methods and scenarios, including both wrapping and non-wrapping shifts for different image types.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import jigl.image.ops.Shift;
+import jigl.image.types.*;
+import jigl.image.*;
+
+public class ShiftTest {
+
+    private GrayImage grayImage;
+    private RealGrayImage realGrayImage;
+    private ColorImage colorImage;
+    private RealColorImage realColorImage;
+
+    @Before
+    public void setUp() {
+        // Initialize a 3x3 GrayImage with values 0 to 8
+        grayImage = new GrayImage(3, 3);
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                grayImage.set(x, y, y * 3 + x);
+            }
+        }
+
+        // Initialize a 3x3 RealGrayImage with values 0.0 to 8.0
+        realGrayImage = new RealGrayImage(3, 3);
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                realGrayImage.set(x, y, (float) (y * 3 + x));
+            }
+        }
+
+        // Initialize a 3x3 ColorImage with planes having values 0 to 8
+        colorImage = new ColorImage(3, 3);
+        for (int plane = 0; plane < 3; plane++) {
+            GrayImage planeImage = new GrayImage(3, 3);
+            for (int y = 0; y < 3; y++) {
+                for (int x = 0; x < 3; x++) {
+                    planeImage.set(x, y, y * 3 + x);
+                }
+            }
+            colorImage.setPlane(plane, planeImage);
+        }
+
+        // Initialize a 3x3 RealColorImage with planes having values 0.0 to 8.0
+        realColorImage = new RealColorImage(3, 3);
+        for (int plane = 0; plane < 3; plane++) {
+            RealGrayImage planeImage = new RealGrayImage(3, 3);
+            for (int y = 0; y < 3; y++) {
+                for (int x = 0; x < 3; x++) {
+                    planeImage.set(x, y, (float) (y * 3 + x));
+                }
+            }
+            realColorImage.setPlane(plane, planeImage);
+        }
+    }
+
+    @Test
+    public void testGrayImageShiftNoWrap() {
+        Shift shift = new Shift(1, 1, Shift.NOWRAP);
+        GrayImage result = shift.apply(grayImage);
+
+        // Expected result after shifting right and down by 1 without wrap
+        int[][] expected = {
+            {0, 0, 0},
+            {0, 0, 1},
+            {0, 3, 4}
+        };
+
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                assertEquals(expected[y][x], result.get(x, y).intValue());
+            }
+        }
+    }
+
+    @Test
+    public void testGrayImageShiftWrap() {
+        Shift shift = new Shift(1, 1, Shift.WRAP);
+        GrayImage result = shift.apply(grayImage);
+
+        // Expected result after shifting right and down by 1 with wrap
+        int[][] expected = {
+            {8, 6, 7},
+            {2, 0, 1},
+            {5, 3, 4}
+        };
+
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                assertEquals(expected[y][x], result.get(x, y).intValue());
+            }
+        }
+    }
+
+    @Test
+    public void testRealGrayImageShiftNoWrap() {
+        Shift shift = new Shift(1, 1, Shift.NOWRAP);
+        RealGrayImage result = shift.apply(realGrayImage);
+
+        // Expected result after shifting right and down by 1 without wrap
+        float[][] expected = {
+            {0.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f},
+            {0.0f, 3.0f, 4.0f}
+        };
+
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                assertEquals(expected[y][x], result.get(x, y), 0.001f);
+            }
+        }
+    }
+
+    @Test
+    public void testRealGrayImageShiftWrap() {
+        Shift shift = new Shift(1, 1, Shift.WRAP);
+        RealGrayImage result = shift.apply(realGrayImage);
+
+        // Expected result after shifting right and down by 1 with wrap
+        float[][] expected = {
+            {8.0f, 6.0f, 7.0f},
+            {2.0f, 0.0f, 1.0f},
+            {5.0f, 3.0f, 4.0f}
+        };
+
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                assertEquals(expected[y][x], result.get(x, y), 0.001f);
+            }
+        }
+    }
+
+    @Test
+    public void testColorImageShiftNoWrap() {
+        Shift shift = new Shift(1, 1, Shift.NOWRAP);
+        ColorImage result = shift.apply(colorImage);
+
+        // Expected result after shifting right and down by 1 without wrap
+        int[][] expected = {
+            {0, 0, 0},
+            {0, 0, 1},
+            {0, 3, 4}
+        };
+
+        for (int plane = 0; plane < 3; plane++) {
+            for (int y = 0; y < 3; y++) {
+                for (int x = 0; x < 3; x++) {
+                    assertEquals(expected[y][x], result.plane(plane).get(x, y).intValue());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testColorImageShiftWrap() {
+        Shift shift = new Shift(1, 1, Shift.WRAP);
+        ColorImage result = shift.apply(colorImage);
+
+        // Expected result after shifting right and down by 1 with wrap
+        int[][] expected = {
+            {8, 6, 7},
+            {2, 0, 1},
+            {5, 3, 4}
+        };
+
+        for (int plane = 0; plane < 3; plane++) {
+            for (int y = 0; y < 3; y++) {
+                for (int x = 0; x < 3; x++) {
+                    assertEquals(expected[y][x], result.plane(plane).get(x, y).intValue());
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testRealColorImageShiftNoWrap() {
+        Shift shift = new Shift(1, 1, Shift.NOWRAP);
+        RealColorImage result = shift.apply(realColorImage);
+
+        // Expected result after shifting right and down by 1 without wrap
+        float[][] expected = {
+            {0.0f, 0.0f, 0.0f},
+            {0.0f, 0.0f, 1.0f},
+            {0.0f, 3.0f, 4.0f}
+        };
+
+        for (int plane = 0; plane < 3; plane++) {
+            for (int y = 0; y < 3; y++) {
+                for (int x = 0; x < 3; x++) {
+                    assertEquals(expected[y][x], result.plane(plane).get(x, y), 0.001f);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void testRealColorImageShiftWrap() {
+        Shift shift = new Shift(1, 1, Shift.WRAP);
+        RealColorImage result = shift.apply(realColorImage);
+
+        // Expected result after shifting right and down by 1 with wrap
+        float[][] expected = {
+            {8.0f, 6.0f, 7.0f},
+            {2.0f, 0.0f, 1.0f},
+            {5.0f, 3.0f, 4.0f}
+        };
+
+        for (int plane = 0; plane < 3; plane++) {
+            for (int y = 0; y < 3; y++) {
+                for (int x = 0; x < 3; x++) {
+                    assertEquals(expected[y][x], result.plane(plane).get(x, y), 0.001f);
+                }
+            }
+        }
+    }
+}
+```
+
+This test suite initializes different types of images and tests the `Shift` class's `apply` method for both wrapping and non-wrapping scenarios. It checks the correctness of the shifted images by comparing them to expected results.

@@ -1,0 +1,105 @@
+package org.apache.commons.compress.compressors.deflate;
+
+import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
+import org.apache.commons.compress.compressors.deflate.DeflateParameters;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+
+import static org.junit.Assert.*;
+
+public class DeflateCompressorInputStreamTest {
+
+    private ByteArrayInputStream compressedData;
+    private DeflateCompressorInputStream deflateInputStream;
+
+    @Before
+    public void setUp() throws IOException {
+        // Create some test data
+        String testData = "This is a test string for compression.";
+        byte[] data = testData.getBytes();
+
+        // Compress the data
+        ByteArrayOutputStream compressedOutputStream = new ByteArrayOutputStream();
+        Deflater deflater = new Deflater();
+        DeflaterOutputStream deflaterOutputStream = new DeflaterOutputStream(compressedOutputStream, deflater);
+        deflaterOutputStream.write(data);
+        deflaterOutputStream.close();
+
+        // Create an input stream from the compressed data
+        compressedData = new ByteArrayInputStream(compressedOutputStream.toByteArray());
+        deflateInputStream = new DeflateCompressorInputStream(compressedData);
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        if (deflateInputStream != null) {
+            deflateInputStream.close();
+        }
+        if (compressedData != null) {
+            compressedData.close();
+        }
+    }
+
+    @Test
+    public void testRead() throws IOException {
+        int data;
+        StringBuilder decompressedData = new StringBuilder();
+        while ((data = deflateInputStream.read()) != -1) {
+            decompressedData.append((char) data);
+        }
+        assertEquals("This is a test string for compression.", decompressedData.toString());
+    }
+
+    @Test
+    public void testReadByteArray() throws IOException {
+        byte[] buffer = new byte[1024];
+        int bytesRead = deflateInputStream.read(buffer, 0, buffer.length);
+        String decompressedData = new String(buffer, 0, bytesRead);
+        assertEquals("This is a test string for compression.", decompressedData);
+    }
+
+    @Test
+    public void testSkip() throws IOException {
+        long skipped = deflateInputStream.skip(5);
+        assertEquals(5, skipped);
+        byte[] buffer = new byte[1024];
+        int bytesRead = deflateInputStream.read(buffer, 0, buffer.length);
+        String decompressedData = new String(buffer, 0, bytesRead);
+        assertEquals(" is a test string for compression.", decompressedData);
+    }
+
+    @Test
+    public void testAvailable() throws IOException {
+        assertTrue(deflateInputStream.available() > 0);
+    }
+
+    @Test
+    public void testClose() throws IOException {
+        deflateInputStream.close();
+        try {
+            deflateInputStream.read();
+            fail("Expected IOException after close");
+        } catch (IOException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testConstructorWithParameters() throws IOException {
+        DeflateParameters parameters = new DeflateParameters();
+        deflateInputStream = new DeflateCompressorInputStream(compressedData, parameters);
+        int data;
+        StringBuilder decompressedData = new StringBuilder();
+        while ((data = deflateInputStream.read()) != -1) {
+            decompressedData.append((char) data);
+        }
+        assertEquals("This is a test string for compression.", decompressedData.toString());
+    }
+}

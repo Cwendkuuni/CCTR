@@ -1,0 +1,122 @@
+package com.fasterxml.jackson.core.io;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+public class NumberInputTest {
+
+    @Test
+    public void testParseIntCharArray() {
+        char[] digits = "123456789".toCharArray();
+        assertEquals(123456789, NumberInput.parseInt(digits, 0, 9));
+
+        digits = "987654321".toCharArray();
+        assertEquals(987654321, NumberInput.parseInt(digits, 0, 9));
+
+        digits = "0".toCharArray();
+        assertEquals(0, NumberInput.parseInt(digits, 0, 1));
+    }
+
+    @Test
+    public void testParseIntString() {
+        assertEquals(123456789, NumberInput.parseInt("123456789"));
+        assertEquals(-123456789, NumberInput.parseInt("-123456789"));
+        assertEquals(0, NumberInput.parseInt("0"));
+        assertEquals(1234567890, NumberInput.parseInt("1234567890"));
+    }
+
+    @Test
+    public void testParseLongCharArray() {
+        char[] digits = "123456789012345678".toCharArray();
+        assertEquals(123456789012345678L, NumberInput.parseLong(digits, 0, 18));
+
+        digits = "987654321098765432".toCharArray();
+        assertEquals(987654321098765432L, NumberInput.parseLong(digits, 0, 18));
+    }
+
+    @Test
+    public void testParseLongString() {
+        assertEquals(1234567890L, NumberInput.parseLong("1234567890"));
+        assertEquals(-1234567890L, NumberInput.parseLong("-1234567890"));
+        assertEquals(123456789012345678L, NumberInput.parseLong("123456789012345678"));
+    }
+
+    @Test
+    public void testInLongRangeCharArray() {
+        char[] digits = "9223372036854775807".toCharArray();
+        assertTrue(NumberInput.inLongRange(digits, 0, 19, false));
+
+        digits = "9223372036854775808".toCharArray();
+        assertFalse(NumberInput.inLongRange(digits, 0, 19, false));
+
+        digits = "9223372036854775807".toCharArray();
+        assertTrue(NumberInput.inLongRange(digits, 0, 19, true));
+    }
+
+    @Test
+    public void testInLongRangeString() {
+        assertTrue(NumberInput.inLongRange("9223372036854775807", false));
+        assertFalse(NumberInput.inLongRange("9223372036854775808", false));
+        assertTrue(NumberInput.inLongRange("9223372036854775807", true));
+    }
+
+    @Test
+    public void testParseAsInt() {
+        assertEquals(123, NumberInput.parseAsInt("123", 0));
+        assertEquals(-123, NumberInput.parseAsInt("-123", 0));
+        assertEquals(0, NumberInput.parseAsInt("", 0));
+        assertEquals(0, NumberInput.parseAsInt(null, 0));
+        assertEquals(123, NumberInput.parseAsInt("123.45", 0));
+        assertEquals(0, NumberInput.parseAsInt("abc", 0));
+    }
+
+    @Test
+    public void testParseAsLong() {
+        assertEquals(123L, NumberInput.parseAsLong("123", 0L));
+        assertEquals(-123L, NumberInput.parseAsLong("-123", 0L));
+        assertEquals(0L, NumberInput.parseAsLong("", 0L));
+        assertEquals(0L, NumberInput.parseAsLong(null, 0L));
+        assertEquals(123L, NumberInput.parseAsLong("123.45", 0L));
+        assertEquals(0L, NumberInput.parseAsLong("abc", 0L));
+    }
+
+    @Test
+    public void testParseAsDouble() {
+        assertEquals(123.45, NumberInput.parseAsDouble("123.45", 0.0), 0.0001);
+        assertEquals(-123.45, NumberInput.parseAsDouble("-123.45", 0.0), 0.0001);
+        assertEquals(0.0, NumberInput.parseAsDouble("", 0.0), 0.0001);
+        assertEquals(0.0, NumberInput.parseAsDouble(null, 0.0), 0.0001);
+        assertEquals(0.0, NumberInput.parseAsDouble("abc", 0.0), 0.0001);
+    }
+
+    @Test
+    public void testParseDouble() {
+        assertEquals(123.45, NumberInput.parseDouble("123.45"), 0.0001);
+        assertEquals(-123.45, NumberInput.parseDouble("-123.45"), 0.0001);
+        assertEquals(Double.MIN_VALUE, NumberInput.parseDouble(NumberInput.NASTY_SMALL_DOUBLE), 0.0001);
+    }
+
+    @Test
+    public void testParseBigDecimalString() {
+        assertEquals(new java.math.BigDecimal("123.45"), NumberInput.parseBigDecimal("123.45"));
+        assertEquals(new java.math.BigDecimal("-123.45"), NumberInput.parseBigDecimal("-123.45"));
+    }
+
+    @Test
+    public void testParseBigDecimalCharArray() {
+        char[] digits = "123.45".toCharArray();
+        assertEquals(new java.math.BigDecimal("123.45"), NumberInput.parseBigDecimal(digits));
+
+        digits = "-123.45".toCharArray();
+        assertEquals(new java.math.BigDecimal("-123.45"), NumberInput.parseBigDecimal(digits));
+    }
+
+    @Test
+    public void testParseBigDecimalCharArrayWithOffset() {
+        char[] digits = "123.45".toCharArray();
+        assertEquals(new java.math.BigDecimal("123.45"), NumberInput.parseBigDecimal(digits, 0, 6));
+
+        digits = "-123.45".toCharArray();
+        assertEquals(new java.math.BigDecimal("-123.45"), NumberInput.parseBigDecimal(digits, 0, 7));
+    }
+}

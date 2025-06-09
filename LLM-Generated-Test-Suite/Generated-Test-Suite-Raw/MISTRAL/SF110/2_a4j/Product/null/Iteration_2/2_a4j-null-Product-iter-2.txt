@@ -1,0 +1,112 @@
+```java
+package net.kencochrane.a4j.DAO;
+
+import net.kencochrane.a4j.beans.*;
+import net.kencochrane.a4j.file.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ProductTest {
+
+    private Product product;
+    private FileUtil fileUtilMock;
+    private Search searchMock;
+
+    @Before
+    public void setUp() {
+        product = new Product();
+        fileUtilMock = Mockito.mock(FileUtil.class);
+        searchMock = Mockito.mock(Search.class);
+    }
+
+    @Test
+    public void testGetProduct_Success() throws Exception {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        FileInputStream fileInMock = Mockito.mock(FileInputStream.class);
+        JOXBeanInputStream joxInMock = Mockito.mock(JOXBeanInputStream.class);
+        ProductInfo productInfoBeanMock = Mockito.mock(ProductInfo.class);
+        ProductDetails productDetailsMock = Mockito.mock(ProductDetails.class);
+        Accessories accessoriesMock = Mockito.mock(Accessories.class);
+        ArrayList<ProductDetails> accessoryArrayMock = new ArrayList<>();
+        ArrayList<ProductDetails> detailsArrayMock = new ArrayList<>();
+        MiniProduct miniProductMock = Mockito.mock(MiniProduct.class);
+
+        when(fileUtilMock.fetchASINFile(asin, "heavy", offer, page)).thenReturn(fileInMock);
+        when(joxInMock.readObject(ProductInfo.class)).thenReturn(productInfoBeanMock);
+        when(productInfoBeanMock.getDetails()).thenReturn(new ProductDetails[]{productDetailsMock});
+        when(productDetailsMock.getAccessories()).thenReturn(accessoriesMock);
+        when(accessoriesMock.getAccessoryArray()).thenReturn(accessoryArrayMock);
+        when(fileUtilMock.fetchAccessories(asin, accessoryArrayMock)).thenReturn(fileInMock);
+        when(productInfoBeanMock.getProductsArrayList()).thenReturn(detailsArrayMock);
+        when(searchMock.SimilaritesSearch(asin, "1")).thenReturn(productInfoBeanMock);
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNotNull(result);
+        verify(fileUtilMock).fetchASINFile(asin, "heavy", offer, page);
+        verify(joxInMock).readObject(ProductInfo.class);
+        verify(joxInMock).close();
+        verify(fileInMock).close();
+    }
+
+    @Test
+    public void testGetProduct_FileInNull() throws Exception {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        when(fileUtilMock.fetchASINFile(asin, "heavy", offer, page)).thenReturn(null);
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNull(result);
+        verify(fileUtilMock).fetchASINFile(asin, "heavy", offer, page);
+    }
+
+    @Test
+    public void testGetProduct_ProductInfoBeanNull() throws Exception {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        FileInputStream fileInMock = Mockito.mock(FileInputStream.class);
+        JOXBeanInputStream joxInMock = Mockito.mock(JOXBeanInputStream.class);
+
+        when(fileUtilMock.fetchASINFile(asin, "heavy", offer, page)).thenReturn(fileInMock);
+        when(joxInMock.readObject(ProductInfo.class)).thenReturn(null);
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNotNull(result);
+        verify(fileUtilMock).fetchASINFile(asin, "heavy", offer, page);
+        verify(joxInMock).readObject(ProductInfo.class);
+        verify(joxInMock).close();
+        verify(fileInMock).close();
+    }
+
+    @Test
+    public void testGetProduct_Exception() throws Exception {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        when(fileUtilMock.fetchASINFile(asin, "heavy", offer, page)).thenThrow(new Exception("Test Exception"));
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNotNull(result);
+        verify(fileUtilMock).fetchASINFile(asin, "heavy", offer, page);
+    }
+}
+```

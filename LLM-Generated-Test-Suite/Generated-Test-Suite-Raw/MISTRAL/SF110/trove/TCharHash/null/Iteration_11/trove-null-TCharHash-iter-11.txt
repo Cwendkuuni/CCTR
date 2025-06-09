@@ -1,0 +1,160 @@
+```java
+package gnu.trove.impl.hash;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import gnu.trove.procedure.TCharProcedure;
+
+public class TCharHashTest {
+
+    private TCharHash tCharHash;
+
+    @Before
+    public void setUp() {
+        tCharHash = new TCharHash() {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertNotNull(tCharHash);
+        assertEquals(Constants.DEFAULT_CHAR_NO_ENTRY_VALUE, tCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacity() {
+        TCharHash tCharHash = new TCharHash(10) {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+        assertNotNull(tCharHash);
+        assertEquals(Constants.DEFAULT_CHAR_NO_ENTRY_VALUE, tCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacityAndLoadFactor() {
+        TCharHash tCharHash = new TCharHash(10, 0.75f) {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+        assertNotNull(tCharHash);
+        assertEquals(Constants.DEFAULT_CHAR_NO_ENTRY_VALUE, tCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacityLoadFactorAndNoEntryValue() {
+        char noEntryValue = 'x';
+        TCharHash tCharHash = new TCharHash(10, 0.75f, noEntryValue) {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+        assertNotNull(tCharHash);
+        assertEquals(noEntryValue, tCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testGetNoEntryValue() {
+        assertEquals(Constants.DEFAULT_CHAR_NO_ENTRY_VALUE, tCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testSetUp() {
+        int initialCapacity = 10;
+        int capacity = tCharHash.setUp(initialCapacity);
+        assertEquals(initialCapacity, capacity);
+        assertNotNull(tCharHash._set);
+        assertEquals(initialCapacity, tCharHash._set.length);
+    }
+
+    @Test
+    public void testContains() {
+        char val = 'a';
+        tCharHash.insertKey(val);
+        assertTrue(tCharHash.contains(val));
+        assertFalse(tCharHash.contains('b'));
+    }
+
+    @Test
+    public void testForEach() {
+        tCharHash.insertKey('a');
+        tCharHash.insertKey('b');
+        tCharHash.insertKey('c');
+
+        final StringBuilder result = new StringBuilder();
+        TCharProcedure procedure = new TCharProcedure() {
+            @Override
+            public boolean execute(char value) {
+                result.append(value);
+                return true;
+            }
+        };
+
+        assertTrue(tCharHash.forEach(procedure));
+        assertEquals("abc", result.toString());
+    }
+
+    @Test
+    public void testRemoveAt() {
+        char val = 'a';
+        tCharHash.insertKey(val);
+        int index = tCharHash.index(val);
+        tCharHash.removeAt(index);
+        assertFalse(tCharHash.contains(val));
+    }
+
+    @Test
+    public void testIndex() {
+        char val = 'a';
+        tCharHash.insertKey(val);
+        int index = tCharHash.index(val);
+        assertTrue(index >= 0);
+        assertEquals(val, tCharHash._set[index]);
+    }
+
+    @Test
+    public void testIndexRehashed() {
+        char val = 'a';
+        tCharHash.insertKey(val);
+        int index = tCharHash.index(val);
+        int rehashedIndex = tCharHash.indexRehashed(val, index, HashFunctions.hash(val) & Integer.MAX_VALUE, tCharHash._states[index]);
+        assertEquals(index, rehashedIndex);
+    }
+
+    @Test
+    public void testInsertKey() {
+        char val = 'a';
+        int index = tCharHash.insertKey(val);
+        assertTrue(index >= 0);
+        assertEquals(val, tCharHash._set[index]);
+    }
+
+    @Test
+    public void testInsertKeyRehash() {
+        char val = 'a';
+        int index = tCharHash.insertKey(val);
+        int rehashedIndex = tCharHash.insertKeyRehash(val, index, HashFunctions.hash(val) & Integer.MAX_VALUE, tCharHash._states[index]);
+        assertEquals(index, rehashedIndex);
+    }
+
+    @Test
+    public void testInsertKeyAt() {
+        char val = 'a';
+        int index = tCharHash.setUp(10);
+        tCharHash.insertKeyAt(index, val);
+        assertEquals(val, tCharHash._set[index]);
+        assertEquals(1, tCharHash._states[index]);
+    }
+}
+```

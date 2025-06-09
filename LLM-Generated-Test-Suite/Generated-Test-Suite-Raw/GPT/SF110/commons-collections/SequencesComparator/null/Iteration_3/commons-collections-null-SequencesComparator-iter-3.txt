@@ -1,0 +1,100 @@
+Certainly! Below is a JUnit 4 test suite for the `SequencesComparator` class. This test suite aims to cover various scenarios to ensure the correctness of the `getScript` method, which is the primary public method in the class.
+
+```java
+import org.apache.commons.collections4.sequence.EditScript;
+import org.apache.commons.collections4.sequence.SequencesComparator;
+import org.apache.commons.collections4.functors.DefaultEquator;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class SequencesComparatorTest {
+
+    private List<String> sequence1;
+    private List<String> sequence2;
+
+    @Before
+    public void setUp() {
+        sequence1 = Arrays.asList("a", "b", "c", "d");
+        sequence2 = Arrays.asList("a", "x", "c", "d");
+    }
+
+    @Test
+    public void testIdenticalSequences() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence1);
+        EditScript<String> script = comparator.getScript();
+        assertEquals(4, script.getModifications());
+        assertTrue(script.getLCSLength() == 4);
+    }
+
+    @Test
+    public void testDifferentSequences() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2);
+        EditScript<String> script = comparator.getScript();
+        assertEquals(5, script.getModifications());
+        assertTrue(script.getLCSLength() == 3);
+    }
+
+    @Test
+    public void testEmptySequences() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(Collections.emptyList(), Collections.emptyList());
+        EditScript<String> script = comparator.getScript();
+        assertEquals(0, script.getModifications());
+        assertTrue(script.getLCSLength() == 0);
+    }
+
+    @Test
+    public void testOneEmptySequence() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, Collections.emptyList());
+        EditScript<String> script = comparator.getScript();
+        assertEquals(4, script.getModifications());
+        assertTrue(script.getLCSLength() == 0);
+    }
+
+    @Test
+    public void testCustomEquator() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2, new DefaultEquator<String>() {
+            @Override
+            public boolean equate(String o1, String o2) {
+                return o1.equalsIgnoreCase(o2);
+            }
+        });
+        EditScript<String> script = comparator.getScript();
+        assertEquals(5, script.getModifications());
+        assertTrue(script.getLCSLength() == 3);
+    }
+
+    @Test
+    public void testSingleElementSequences() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(Collections.singletonList("a"), Collections.singletonList("b"));
+        EditScript<String> script = comparator.getScript();
+        assertEquals(2, script.getModifications());
+        assertTrue(script.getLCSLength() == 0);
+    }
+
+    @Test
+    public void testSubsequence() {
+        List<String> subsequence = Arrays.asList("b", "c");
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, subsequence);
+        EditScript<String> script = comparator.getScript();
+        assertEquals(4, script.getModifications());
+        assertTrue(script.getLCSLength() == 2);
+    }
+}
+```
+
+### Explanation:
+- **Identical Sequences**: Tests when both sequences are identical.
+- **Different Sequences**: Tests when sequences have some differences.
+- **Empty Sequences**: Tests when both sequences are empty.
+- **One Empty Sequence**: Tests when one sequence is empty.
+- **Custom Equator**: Tests using a custom equator for case-insensitive comparison.
+- **Single Element Sequences**: Tests when sequences contain only one element each.
+- **Subsequence**: Tests when one sequence is a subsequence of the other.
+
+This test suite uses assertions to verify the number of modifications and the length of the longest common subsequence (LCS) in the `EditScript`. Adjust the assertions based on the actual behavior of the `EditScript` class, as this is a hypothetical test suite based on the provided class.

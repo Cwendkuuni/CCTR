@@ -1,0 +1,132 @@
+```java
+import static org.junit.Assert.*;
+import org.jdom2.*;
+import org.jdom2.transform.JDOMResult;
+import org.jdom2.transform.JDOMResult.DocumentBuilder;
+import org.jdom2.transform.JDOMResult.FragmentHandler;
+import org.jdom2.input.sax.DefaultJDOMFactory;
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.SAXException;
+import org.xml.sax.helpers.AttributesImpl;
+
+import java.util.ArrayList;
+import java.util.List;
+
+public class JDOMResultTest {
+
+    private JDOMResult jdomResult;
+    private JDOMFactory factory;
+
+    @Before
+    public void setUp() {
+        jdomResult = new JDOMResult();
+        factory = new DefaultJDOMFactory();
+    }
+
+    @Test
+    public void testSetAndGetResult() {
+        List<Content> contentList = new ArrayList<>();
+        contentList.add(new Element("testElement"));
+
+        jdomResult.setResult(contentList);
+        List<Content> result = jdomResult.getResult();
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("testElement", ((Element) result.get(0)).getName());
+    }
+
+    @Test
+    public void testSetAndGetDocument() {
+        Document document = new Document(new Element("root"));
+        jdomResult.setDocument(document);
+
+        Document resultDoc = jdomResult.getDocument();
+        assertNotNull(resultDoc);
+        assertEquals("root", resultDoc.getRootElement().getName());
+    }
+
+    @Test
+    public void testSetAndGetFactory() {
+        jdomResult.setFactory(factory);
+        JDOMFactory resultFactory = jdomResult.getFactory();
+
+        assertNotNull(resultFactory);
+        assertEquals(factory, resultFactory);
+    }
+
+    @Test
+    public void testGetResultWhenNoResultSet() {
+        List<Content> result = jdomResult.getResult();
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testGetDocumentWhenNoDocumentSet() {
+        Document resultDoc = jdomResult.getDocument();
+        assertNull(resultDoc);
+    }
+
+    @Test
+    public void testFragmentHandlerGetResult() {
+        FragmentHandler fragmentHandler = new FragmentHandler(factory);
+        List<Content> result = fragmentHandler.getResult();
+
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testDocumentBuilderStartDocument() throws SAXException {
+        DocumentBuilder builder = jdomResult.new DocumentBuilder();
+        builder.startDocument();
+
+        List<Content> result = builder.getResult();
+        assertNotNull(result);
+        assertTrue(result.isEmpty());
+    }
+
+    @Test
+    public void testDocumentBuilderStartElement() throws SAXException {
+        DocumentBuilder builder = jdomResult.new DocumentBuilder();
+        builder.startDocument();
+        builder.startElement("", "testElement", "testElement", new AttributesImpl());
+
+        List<Content> result = builder.getResult();
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("testElement", ((Element) result.get(0)).getName());
+    }
+
+    @Test
+    public void testDocumentBuilderCharacters() throws SAXException {
+        DocumentBuilder builder = jdomResult.new DocumentBuilder();
+        builder.startDocument();
+        builder.startElement("", "testElement", "testElement", new AttributesImpl());
+        builder.characters("text".toCharArray(), 0, 4);
+
+        List<Content> result = builder.getResult();
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertEquals("testElement", ((Element) result.get(0)).getName());
+        assertEquals("text", ((Element) result.get(0)).getText());
+    }
+
+    @Test
+    public void testDocumentBuilderComment() throws SAXException {
+        DocumentBuilder builder = jdomResult.new DocumentBuilder();
+        builder.startDocument();
+        builder.comment("comment".toCharArray(), 0, 7);
+
+        List<Content> result = builder.getResult();
+        assertNotNull(result);
+        assertEquals(1, result.size());
+        assertTrue(result.get(0) instanceof Comment);
+        assertEquals("comment", ((Comment) result.get(0)).getText());
+    }
+}
+```
+
+This JUnit 4 test suite covers the main functionalities of the `JDOMResult` class, including setting and getting results, documents, and factories, as well as testing the internal `FragmentHandler` and `DocumentBuilder` classes. Each test method checks the expected behavior and ensures that the class methods work as intended.

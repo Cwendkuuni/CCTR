@@ -1,0 +1,71 @@
+package com.densebrain.rif.server.transport;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import com.densebrain.rif.server.transport.WebServiceDescriptor;
+
+public class WebServiceDescriptorTest {
+
+    private WebServiceDescriptor descriptor;
+    private Class<?> serviceClass;
+    private String targetNamespace;
+    private String typesNamespace;
+
+    @Before
+    public void setUp() {
+        serviceClass = String.class;
+        targetNamespace = "http://example.com/targetNamespace";
+        typesNamespace = "http://example.com/typesNamespace";
+        descriptor = new WebServiceDescriptor(serviceClass, targetNamespace, typesNamespace);
+    }
+
+    @Test
+    public void testConstructorAndGetters() {
+        assertEquals(serviceClass, descriptor.getServiceClazz());
+        assertEquals(targetNamespace, descriptor.getTargetNamespace());
+        assertEquals(typesNamespace, descriptor.getTypesNamespace());
+    }
+
+    @Test
+    public void testSetServiceClazz() {
+        Class<?> newServiceClass = Integer.class;
+        descriptor.setServiceClazz(newServiceClass);
+        assertEquals(newServiceClass, descriptor.getServiceClazz());
+    }
+
+    @Test
+    public void testSetTargetNamespace() {
+        String newTargetNamespace = "http://example.com/newTargetNamespace";
+        descriptor.setTargetNamespace(newTargetNamespace);
+        assertEquals(newTargetNamespace, descriptor.getTargetNamespace());
+    }
+
+    @Test
+    public void testSetTypesNamespace() {
+        String newTypesNamespace = "http://example.com/newTypesNamespace";
+        descriptor.setTypesNamespace(newTypesNamespace);
+        assertEquals(newTypesNamespace, descriptor.getTypesNamespace());
+    }
+
+    @Test
+    public void testHashCode() {
+        WebServiceDescriptor sameDescriptor = new WebServiceDescriptor(serviceClass, targetNamespace, typesNamespace);
+        assertEquals(descriptor.hashCode(), sameDescriptor.hashCode());
+
+        WebServiceDescriptor differentDescriptor = new WebServiceDescriptor(Integer.class, targetNamespace, typesNamespace);
+        assertNotEquals(descriptor.hashCode(), differentDescriptor.hashCode());
+    }
+
+    @Test
+    public void testEquals() {
+        WebServiceDescriptor sameDescriptor = new WebServiceDescriptor(serviceClass, targetNamespace, typesNamespace);
+        assertTrue(descriptor.equals(sameDescriptor));
+        assertTrue(descriptor.equals(descriptor)); // Test reflexivity
+        assertFalse(descriptor.equals(null)); // Test null comparison
+        assertFalse(descriptor.equals(new Object())); // Test different class comparison
+
+        WebServiceDescriptor differentDescriptor = new WebServiceDescriptor(Integer.class, targetNamespace, typesNamespace);
+        assertFalse(descriptor.equals(differentDescriptor));
+    }
+}

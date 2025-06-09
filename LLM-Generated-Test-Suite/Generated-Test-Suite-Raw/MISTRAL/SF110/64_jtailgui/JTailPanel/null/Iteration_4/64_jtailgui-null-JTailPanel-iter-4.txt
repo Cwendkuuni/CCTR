@@ -1,0 +1,110 @@
+```java
+package fr.pingtimeout.jtail.gui.view;
+
+import fr.pingtimeout.jtail.util.*;
+import fr.pingtimeout.jtail.gui.controller.*;
+import fr.pingtimeout.jtail.gui.model.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.util.Observable;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class JTailPanelTest {
+
+    @Mock
+    private JTailModel model;
+
+    @Mock
+    private JTailModelEvent event;
+
+    private JTailPanel jTailPanel;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        jTailPanel = new JTailPanel(model);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(jTailPanel.model);
+        assertNotNull(jTailPanel.scrollPane);
+        assertNotNull(jTailPanel.verticalScrollBar);
+        assertNotNull(jTailPanel.dataTable);
+        assertNotNull(jTailPanel.tableModel);
+        assertTrue(jTailPanel.characterHeight > 0);
+    }
+
+    @Test
+    public void testGetCharacterHeight() {
+        int characterHeight = jTailPanel.getCharacterHeight();
+        assertTrue(characterHeight > 0);
+    }
+
+    @Test
+    public void testGetVerticalScrollBar() {
+        JScrollBar verticalScrollBar = jTailPanel.getVerticalScrollBar();
+        assertNotNull(verticalScrollBar);
+    }
+
+    @Test
+    public void testUpdateResizedEvent() {
+        when(event.type).thenReturn(JTailModelEvent.Type.RESIZED);
+        when(event.minLine).thenReturn(0);
+        when(event.firstLine).thenReturn(0);
+        when(event.nbDisplayedLines).thenReturn(10);
+        when(event.maxLine).thenReturn(10);
+        when(model.getLineNumbers()).thenReturn("1\n2\n3\n4\n5\n6\n7\n8\n9\n10");
+        when(model.getContent()).thenReturn("line1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\nline9\nline10");
+
+        jTailPanel.update(model, event);
+
+        BoundedRangeModel rangeModel = jTailPanel.verticalScrollBar.getModel();
+        assertEquals(0, rangeModel.getMinimum());
+        assertEquals(0, rangeModel.getValue());
+        assertEquals(10, rangeModel.getExtent());
+        assertEquals(10, rangeModel.getMaximum());
+        assertFalse(jTailPanel.verticalScrollBar.isEnabled());
+
+        verify(model).getLineNumbers();
+        verify(model).getContent();
+    }
+
+    @Test
+    public void testUpdateScrolledEvent() {
+        when(event.type).thenReturn(JTailModelEvent.Type.SCROLLED);
+        when(model.getLineNumbers()).thenReturn("1\n2\n3\n4\n5\n6\n7\n8\n9\n10");
+        when(model.getContent()).thenReturn("line1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\nline9\nline10");
+
+        jTailPanel.update(model, event);
+
+        verify(model).getLineNumbers();
+        verify(model).getContent();
+    }
+
+    @Test
+    public void testUpdateDataTable() {
+        String lineNumbers = "1\n2\n3\n4\n5\n6\n7\n8\n9\n10";
+        String lines = "line1\nline2\nline3\nline4\nline5\nline6\nline7\nline8\nline9\nline10";
+
+        jTailPanel.updateDataTable(lineNumbers, lines);
+
+        assertEquals(10, jTailPanel.tableModel.getRowCount());
+        assertEquals("1", jTailPanel.tableModel.getValueAt(0, 0));
+        assertEquals("line1", jTailPanel.tableModel.getValueAt(0, 1));
+        assertEquals("10", jTailPanel.tableModel.getValueAt(9, 0));
+        assertEquals("line10", jTailPanel.tableModel.getValueAt(9, 1));
+    }
+}
+```

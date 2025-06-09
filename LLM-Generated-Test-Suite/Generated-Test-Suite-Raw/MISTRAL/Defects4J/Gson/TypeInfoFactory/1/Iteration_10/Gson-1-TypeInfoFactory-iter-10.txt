@@ -1,0 +1,130 @@
+```java
+package com.google.gson;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class TypeInfoFactoryTest {
+
+    private Field field;
+    private Type typeDefiningF;
+
+    @Before
+    public void setUp() throws NoSuchFieldException {
+        // Example setup for testing
+        field = SampleClass.class.getDeclaredField("list");
+        typeDefiningF = SampleClass.class;
+    }
+
+    @Test
+    public void testGetTypeInfoForArray() {
+        Type arrayType = new TypeToken<String[]>() {}.getType();
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(arrayType);
+        assertNotNull(typeInfoArray);
+        assertEquals(arrayType, typeInfoArray.getType());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArrayWithNonArrayType() {
+        Type nonArrayType = String.class;
+        TypeInfoFactory.getTypeInfoForArray(nonArrayType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField() {
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+        assertNotNull(typeInfo);
+        assertEquals(List.class, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetActualTypeWithClass() {
+        Type actualType = TypeInfoFactory.getActualType(String.class, typeDefiningF, SampleClass.class);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test
+    public void testGetActualTypeWithParameterizedType() {
+        Type parameterizedType = new TypeToken<List<String>>() {}.getType();
+        Type actualType = TypeInfoFactory.getActualType(parameterizedType, typeDefiningF, SampleClass.class);
+        assertTrue(actualType instanceof ParameterizedType);
+        ParameterizedType parameterizedActualType = (ParameterizedType) actualType;
+        assertEquals(List.class, parameterizedActualType.getRawType());
+        assertEquals(String.class, parameterizedActualType.getActualTypeArguments()[0]);
+    }
+
+    @Test
+    public void testGetActualTypeWithGenericArrayType() {
+        Type genericArrayType = new TypeToken<String[]>() {}.getType();
+        Type actualType = TypeInfoFactory.getActualType(genericArrayType, typeDefiningF, SampleClass.class);
+        assertTrue(actualType instanceof GenericArrayType);
+        assertEquals(String.class, ((GenericArrayType) actualType).getGenericComponentType());
+    }
+
+    @Test
+    public void testGetActualTypeWithTypeVariable() {
+        TypeVariable<?> typeVariable = SampleClass.class.getTypeParameters()[0];
+        Type parameterizedType = new TypeToken<SampleClass<String>>() {}.getType();
+        Type actualType = TypeInfoFactory.getActualType(typeVariable, parameterizedType, SampleClass.class);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetActualTypeWithTypeVariableAndNonParameterizedType() {
+        TypeVariable<?> typeVariable = SampleClass.class.getTypeParameters()[0];
+        Type actualType = TypeInfoFactory.getActualType(typeVariable, typeDefiningF, SampleClass.class);
+    }
+
+    @Test
+    public void testGetActualTypeWithWildcardType() {
+        Type wildcardType = new TypeToken<List<?>>() {}.getType();
+        Type actualType = TypeInfoFactory.getActualType(wildcardType, typeDefiningF, SampleClass.class);
+        assertEquals(Object.class, actualType);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetActualTypeWithUnsupportedType() {
+        Type unsupportedType = new TypeToken<SampleClass>() {}.getType();
+        TypeInfoFactory.getActualType(unsupportedType, typeDefiningF, SampleClass.class);
+    }
+
+    @Test
+    public void testExtractRealTypes() {
+        Type[] actualTypeArguments = new Type[]{String.class, Integer.class};
+        Type[] realTypes = TypeInfoFactory.extractRealTypes(actualTypeArguments, typeDefiningF, SampleClass.class);
+        assertArrayEquals(actualTypeArguments, realTypes);
+    }
+
+    @Test
+    public void testGetIndex() {
+        TypeVariable<?>[] typeVariables = SampleClass.class.getTypeParameters();
+        TypeVariable<?> typeVariable = typeVariables[0];
+        int index = TypeInfoFactory.getIndex(typeVariables, typeVariable);
+        assertEquals(0, index);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetIndexWithNonExistentTypeVariable() {
+        TypeVariable<?>[] typeVariables = SampleClass.class.getTypeParameters();
+        TypeVariable<?> typeVariable = new TypeToken<List<String>>() {}.getTypeParameters()[0];
+        TypeInfoFactory.getIndex(typeVariables, typeVariable);
+    }
+
+    // Sample class for testing
+    private static class SampleClass<T> {
+        List<T> list;
+    }
+}
+```

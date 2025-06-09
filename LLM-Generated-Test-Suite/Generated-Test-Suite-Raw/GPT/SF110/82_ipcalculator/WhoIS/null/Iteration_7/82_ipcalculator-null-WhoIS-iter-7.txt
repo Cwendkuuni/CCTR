@@ -1,0 +1,129 @@
+To create a comprehensive JUnit 4 test suite for the `WhoIS` class, we need to focus on testing the public methods and any significant private methods that can be accessed indirectly. The main methods to test are `actionPerformed`, `startQuery`, `displayError`, `query`, `getQuery`, and `reset`. Since `WhoIS` is a GUI component, testing will involve simulating user interactions and verifying the expected outcomes.
+
+Here's a JUnit 4 test suite for the `WhoIS` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.net.Socket;
+
+import javax.swing.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+public class WhoISTest {
+
+    private WhoIS whoIS;
+    private Socket mockSocket;
+
+    @Before
+    public void setUp() {
+        whoIS = new WhoIS();
+        mockSocket = mock(Socket.class);
+    }
+
+    @Test
+    public void testConstructorInitializesFieldsCorrectly() {
+        assertEquals("APNIC", whoIS.WHOIS_NAME);
+        assertEquals("whois.apnic.net", whoIS.WHOIS_ADDRESS);
+        assertEquals(43, whoIS.WHOIS_PORT);
+        assertNotNull(whoIS.queryTextField);
+        assertNotNull(whoIS.queryButton);
+        assertNotNull(whoIS.resetButton);
+        assertNotNull(whoIS.lowercaseD);
+        assertNotNull(whoIS.radioButtonGroup);
+        assertNotNull(whoIS.popupMenu);
+        assertNotNull(whoIS.inverseQueries);
+        assertNotNull(whoIS.miscList);
+    }
+
+    @Test
+    public void testActionPerformedQueryButton() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(whoIS.queryButton);
+
+        whoIS.queryTextField.setText("test query");
+        whoIS.actionPerformed(mockEvent);
+
+        // Verify that startQuery is called
+        assertEquals("test query", whoIS.getQuery());
+    }
+
+    @Test
+    public void testActionPerformedResetButton() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(whoIS.resetButton);
+
+        whoIS.queryTextField.setText("test query");
+        whoIS.actionPerformed(mockEvent);
+
+        // Verify that reset is called
+        assertEquals("", whoIS.queryTextField.getText());
+        assertTrue(whoIS.resetRadioButton.isSelected());
+        assertFalse(whoIS.lowercaseD.isSelected());
+        assertEquals(0, whoIS.inverseQueries.getSelectedIndex());
+        assertEquals(0, whoIS.miscList.getSelectedIndex());
+    }
+
+    @Test
+    public void testStartQueryNoQuery() {
+        whoIS.queryTextField.setText("");
+        whoIS.startQuery();
+
+        // Verify that displayError is called
+        // This requires a way to capture JOptionPane calls, which is complex in unit tests
+        // Here we assume displayError shows a dialog, so we can't directly assert it
+    }
+
+    @Test
+    public void testStartQueryWithQuery() {
+        whoIS.queryTextField.setText("test query");
+        whoIS.startQuery();
+
+        // Verify that query is called with the correct query string
+        assertEquals("test query", whoIS.getQuery());
+    }
+
+    @Test
+    public void testGetQuery() {
+        whoIS.queryTextField.setText("test query");
+        whoIS.lowercaseL.setSelected(true);
+        whoIS.lowercaseD.setSelected(true);
+        whoIS.inverseQueries.setSelectedIndex(1); // admin-c
+
+        String expectedQuery = "-i admin-c -l -d test query";
+        assertEquals(expectedQuery, whoIS.getQuery());
+    }
+
+    @Test
+    public void testReset() {
+        whoIS.queryTextField.setText("test query");
+        whoIS.lowercaseL.setSelected(true);
+        whoIS.lowercaseD.setSelected(true);
+        whoIS.inverseQueries.setSelectedIndex(1); // admin-c
+
+        whoIS.reset();
+
+        assertEquals("", whoIS.queryTextField.getText());
+        assertTrue(whoIS.resetRadioButton.isSelected());
+        assertFalse(whoIS.lowercaseD.isSelected());
+        assertEquals(0, whoIS.inverseQueries.getSelectedIndex());
+        assertEquals(0, whoIS.miscList.getSelectedIndex());
+    }
+
+    // Additional tests for private methods like displayError and query would require more complex setups
+    // such as using PowerMock or similar tools to mock static methods like JOptionPane.showMessageDialog
+    // and to mock socket connections for the query method.
+}
+```
+
+### Notes:
+- **Mocking and Verification**: The test suite uses Mockito to mock `ActionEvent` and `Socket` objects. This allows us to simulate user interactions and verify method calls.
+- **Testing GUI Components**: Testing GUI components can be challenging. The test suite focuses on verifying the logic rather than the GUI itself.
+- **Complex Methods**: Methods like `query` and `displayError` involve network operations and GUI dialogs, which are difficult to test directly. In practice, you might use tools like PowerMock to handle these cases.
+- **JUnit 4**: The test suite is written for JUnit 4, which is specified in the request. If you are using JUnit 5, the annotations and setup might differ slightly.

@@ -1,0 +1,110 @@
+Certainly! Below is a JUnit 4 test suite for the `ReflectionSearch` class. This suite aims to cover the functionality of each method in the class. Note that some methods rely on external classes and behaviors (e.g., `Query`, `WildcardSearch`, `ReflectionShelf`), so the test suite assumes these dependencies are correctly implemented and available.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import net.sourceforge.beanbin.reflect.ReflectionSearch;
+import net.sourceforge.beanbin.search.*;
+import net.sourceforge.beanbin.query.*;
+
+public class ReflectionSearchTest {
+
+    private ReflectionSearch reflectionSearch;
+    private Class<?> testClass;
+
+    @Before
+    public void setUp() {
+        testClass = TestClass.class;
+        reflectionSearch = new ReflectionSearch(testClass);
+    }
+
+    @Test
+    public void testHasAnnotationWithExistingAnnotation() {
+        assertTrue(reflectionSearch.hasAnnotation("@TestAnnotation"));
+    }
+
+    @Test
+    public void testHasAnnotationWithNonExistingAnnotation() {
+        assertFalse(reflectionSearch.hasAnnotation("@NonExistingAnnotation"));
+    }
+
+    @Test
+    public void testHasAnnotationWithWildcard() {
+        assertTrue(reflectionSearch.hasAnnotation("@Test*"));
+    }
+
+    @Test
+    public void testMethodsThatHave() throws BeanBinException {
+        ReflectionSearch result = reflectionSearch.methodsThatHave("testMethod");
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testMethodsThatDontHave() throws BeanBinException {
+        ReflectionSearch result = reflectionSearch.methodsThatDontHave("nonExistingMethod");
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testAnd() {
+        ReflectionSearch result = reflectionSearch.and();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOr() {
+        ReflectionSearch result = reflectionSearch.or();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testGetMethods() throws BeanBinException {
+        List<Method> methods = reflectionSearch.getMethods();
+        assertNotNull(methods);
+    }
+
+    @Test
+    public void testIntersect() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        Method method = Mockito.mock(Method.class);
+        master.add(method);
+        toAdd.add(method);
+
+        reflectionSearch.intersect(master, toAdd);
+        assertEquals(1, master.size());
+    }
+
+    @Test
+    public void testUnion() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        Method method = Mockito.mock(Method.class);
+        toAdd.add(method);
+
+        reflectionSearch.union(master, toAdd);
+        assertEquals(1, master.size());
+    }
+
+    // Test class and annotation for testing purposes
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface TestAnnotation {}
+
+    @TestAnnotation
+    private static class TestClass {
+        public void testMethod() {}
+    }
+}
+```
+
+### Notes:
+- **Mocking**: The test suite uses Mockito to mock `Method` objects for testing `intersect` and `union` methods.
+- **Annotations**: A sample `TestAnnotation` is defined for testing `hasAnnotation`.
+- **Dependencies**: The test suite assumes that classes like `Query`, `WildcardSearch`, `ReflectionShelf`, and `BeanBinException` are available and correctly implemented.
+- **Test Class**: A simple `TestClass` with a `TestAnnotation` and a method is used to test reflection-based functionalities.

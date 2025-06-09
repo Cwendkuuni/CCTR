@@ -1,0 +1,95 @@
+package org.apache.commons.math3.fraction;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.text.*;
+import org.apache.commons.math3.fraction.Fraction;
+import org.apache.commons.math3.fraction.ProperFractionFormat;
+import org.apache.commons.math3.exception.NullArgumentException;
+
+public class ProperFractionFormatTest {
+
+    private ProperFractionFormat defaultFormat;
+    private ProperFractionFormat customFormat;
+    private NumberFormat numberFormat;
+
+    @Before
+    public void setUp() {
+        numberFormat = NumberFormat.getInstance();
+        defaultFormat = new ProperFractionFormat();
+        customFormat = new ProperFractionFormat(numberFormat);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertNotNull(defaultFormat.getWholeFormat());
+        assertNotNull(defaultFormat.getNumeratorFormat());
+        assertNotNull(defaultFormat.getDenominatorFormat());
+    }
+
+    @Test
+    public void testCustomConstructor() {
+        assertEquals(numberFormat, customFormat.getWholeFormat());
+        assertEquals(numberFormat, customFormat.getNumeratorFormat());
+        assertEquals(numberFormat, customFormat.getDenominatorFormat());
+    }
+
+    @Test
+    public void testFormat() {
+        Fraction fraction = new Fraction(7, 2); // 3 1/2
+        StringBuffer buffer = new StringBuffer();
+        FieldPosition pos = new FieldPosition(0);
+        String result = defaultFormat.format(fraction, buffer, pos).toString();
+        assertEquals("3 1 / 2", result);
+    }
+
+    @Test
+    public void testFormatNegativeFraction() {
+        Fraction fraction = new Fraction(-7, 2); // -3 1/2
+        StringBuffer buffer = new StringBuffer();
+        FieldPosition pos = new FieldPosition(0);
+        String result = defaultFormat.format(fraction, buffer, pos).toString();
+        assertEquals("-3 1 / 2", result);
+    }
+
+    @Test
+    public void testParse() throws ParseException {
+        String source = "3 1 / 2";
+        ParsePosition pos = new ParsePosition(0);
+        Fraction fraction = defaultFormat.parse(source, pos);
+        assertNotNull(fraction);
+        assertEquals(7, fraction.getNumerator());
+        assertEquals(2, fraction.getDenominator());
+    }
+
+    @Test
+    public void testParseNegative() throws ParseException {
+        String source = "-3 1 / 2";
+        ParsePosition pos = new ParsePosition(0);
+        Fraction fraction = defaultFormat.parse(source, pos);
+        assertNotNull(fraction);
+        assertEquals(-7, fraction.getNumerator());
+        assertEquals(2, fraction.getDenominator());
+    }
+
+    @Test
+    public void testParseInvalid() {
+        String source = "invalid";
+        ParsePosition pos = new ParsePosition(0);
+        Fraction fraction = defaultFormat.parse(source, pos);
+        assertNull(fraction);
+    }
+
+    @Test
+    public void testSetWholeFormat() {
+        NumberFormat newFormat = NumberFormat.getInstance();
+        defaultFormat.setWholeFormat(newFormat);
+        assertEquals(newFormat, defaultFormat.getWholeFormat());
+    }
+
+    @Test(expected = NullArgumentException.class)
+    public void testSetWholeFormatNull() {
+        defaultFormat.setWholeFormat(null);
+    }
+}

@@ -1,0 +1,142 @@
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.io.IOException;
+
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.ExtendedBufferedReader;
+import org.apache.commons.csv.Token;
+import org.junit.Before;
+import org.junit.Test;
+
+public class LexerTest {
+
+    private Lexer lexer;
+    private CSVFormat format;
+    private ExtendedBufferedReader in;
+
+    @Before
+    public void setUp() {
+        format = mock(CSVFormat.class);
+        in = mock(ExtendedBufferedReader.class);
+        when(format.getDelimiter()).thenReturn(',');
+        when(format.getEscape()).thenReturn('\\');
+        when(format.getQuoteChar()).thenReturn('"');
+        when(format.getCommentStart()).thenReturn('#');
+        when(format.getIgnoreSurroundingSpaces()).thenReturn(true);
+        when(format.getIgnoreEmptyLines()).thenReturn(true);
+
+        lexer = new Lexer(format, in) {
+            @Override
+            Token nextToken(Token reusableToken) throws IOException {
+                return null;
+            }
+        };
+    }
+
+    @Test
+    public void testMapNullToDisabled() {
+        assertEquals('\ufffe', lexer.mapNullToDisabled(null));
+        assertEquals('a', lexer.mapNullToDisabled('a'));
+    }
+
+    @Test
+    public void testGetLineNumber() throws IOException {
+        when(in.getLineNumber()).thenReturn(42L);
+        assertEquals(42L, lexer.getLineNumber());
+    }
+
+    @Test
+    public void testReadEscape() throws IOException {
+        when(in.read()).thenReturn((int) 'n');
+        assertEquals(Constants.LF, lexer.readEscape());
+
+        when(in.read()).thenReturn((int) 'r');
+        assertEquals(Constants.CR, lexer.readEscape());
+
+        when(in.read()).thenReturn((int) 't');
+        assertEquals(Constants.TAB, lexer.readEscape());
+
+        when(in.read()).thenReturn((int) 'b');
+        assertEquals(Constants.BACKSPACE, lexer.readEscape());
+
+        when(in.read()).thenReturn((int) 'f');
+        assertEquals(Constants.FF, lexer.readEscape());
+
+        when(in.read()).thenReturn(Constants.END_OF_STREAM);
+        try {
+            lexer.readEscape();
+            fail("Expected IOException");
+        } catch (IOException e) {
+            assertEquals("EOF whilst processing escape sequence", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testTrimTrailingSpaces() {
+        StringBuilder buffer = new StringBuilder("test   ");
+        lexer.trimTrailingSpaces(buffer);
+        assertEquals("test", buffer.toString());
+
+        buffer = new StringBuilder("test");
+        lexer.trimTrailingSpaces(buffer);
+        assertEquals("test", buffer.toString());
+    }
+
+    @Test
+    public void testReadEndOfLine() throws IOException {
+        when(in.lookAhead()).thenReturn((int) '\n');
+        when(in.read()).thenReturn((int) '\n');
+        assertTrue(lexer.readEndOfLine('\r'));
+
+        assertTrue(lexer.readEndOfLine('\n'));
+        assertTrue(lexer.readEndOfLine('\r'));
+        assertFalse(lexer.readEndOfLine('a'));
+    }
+
+    @Test
+    public void testIsWhitespace() {
+        assertTrue(lexer.isWhitespace(' '));
+        assertFalse(lexer.isWhitespace(','));
+    }
+
+    @Test
+    public void testIsStartOfLine() {
+        assertTrue(lexer.isStartOfLine('\n'));
+        assertTrue(lexer.isStartOfLine('\r'));
+        assertTrue(lexer.isStartOfLine(Constants.UNDEFINED));
+        assertFalse(lexer.isStartOfLine('a'));
+    }
+
+    @Test
+    public void testIsEndOfFile() {
+        assertTrue(lexer.isEndOfFile(Constants.END_OF_STREAM));
+        assertFalse(lexer.isEndOfFile('a'));
+    }
+
+    @Test
+    public void testIsDelimiter() {
+        assertTrue(lexer.isDelimiter(','));
+        assertFalse(lexer.isDelimiter(';'));
+    }
+
+    @Test
+    public void testIsEscape() {
+        assertTrue(lexer.isEscape('\\'));
+        assertFalse(lexer.isEscape('/'));
+    }
+
+    @Test
+    public void testIsQuoteChar() {
+        assertTrue(lexer.isQuoteChar('"'));
+        assertFalse(lexer.isQuoteChar('\''));
+    }
+
+    @Test
+    public void testIsCommentStart() {
+        assertTrue(lexer.isCommentStart('#'));
+        assertFalse(lexer.isCommentStart(';'));
+    }
+}
+```

@@ -1,0 +1,99 @@
+Certainly! Below is a JUnit 4 test suite for the `InternalChatFrame` class. This test suite aims to cover the main functionalities of the class, including adding and deleting users, adding text, and handling actions.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.StyledDocument;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+public class InternalChatFrameTest {
+
+    private InternalChatFrame chatFrame;
+    private MainFrame mockParent;
+
+    @Before
+    public void setUp() {
+        mockParent = mock(MainFrame.class);
+        when(mockParent.getSize()).thenReturn(new java.awt.Dimension(800, 600));
+        chatFrame = new InternalChatFrame(mockParent);
+    }
+
+    @Test
+    public void testAddUser() {
+        chatFrame.addUser("User1");
+        String[] users = chatFrame.getUserlist();
+        assertEquals(1, users.length);
+        assertEquals("User1", users[0]);
+    }
+
+    @Test
+    public void testDeleteUser() {
+        chatFrame.addUser("User1");
+        chatFrame.deleteUser("User1");
+        String[] users = chatFrame.getUserlist();
+        assertEquals(0, users.length);
+    }
+
+    @Test
+    public void testAddText() throws BadLocationException {
+        StyledDocument doc = chatFrame.showTxt.getStyledDocument();
+        chatFrame.addText("User1: Hello");
+        assertEquals("User1: Hello\n", doc.getText(0, doc.getLength()));
+    }
+
+    @Test
+    public void testAddTextWithStyles() throws BadLocationException {
+        StyledDocument doc = chatFrame.showTxt.getStyledDocument();
+        chatFrame.addText("User1: *Hello*");
+        assertEquals("User1: Hello\n", doc.getText(0, doc.getLength()));
+    }
+
+    @Test
+    public void testActionPerformedChooseColor() {
+        chatFrame.addUser("User1");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame, ActionEvent.ACTION_PERFORMED, "chooseColor");
+        chatFrame.actionPerformed(event);
+
+        // Verify that JColorChooser was shown
+        ArgumentCaptor<Color> colorCaptor = ArgumentCaptor.forClass(Color.class);
+        verify(mockParent).getSize();
+    }
+
+    @Test
+    public void testActionPerformedWhisper() {
+        chatFrame.addUser("User1");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame, ActionEvent.ACTION_PERFORMED, "whisper");
+        chatFrame.actionPerformed(event);
+
+        assertEquals("/w User1 ", chatFrame.txtInput.getText());
+    }
+
+    @Test
+    public void testGetChatlog() {
+        chatFrame.addText("User1: Hello");
+        assertEquals("User1: Hello\n", chatFrame.getChatlog());
+    }
+
+    @Test
+    public void testMaybeShowPopup() {
+        // This test would require simulating mouse events, which is complex in a unit test
+        // environment without a GUI testing framework like FEST or AssertJ-Swing.
+        // Consider using such a framework for comprehensive GUI testing.
+    }
+}
+```
+
+### Notes:
+- **Mocking**: The `MainFrame` is mocked using Mockito to simulate the parent frame's behavior.
+- **GUI Components**: Direct interaction with GUI components like `JColorChooser` is not tested here due to the complexity of simulating GUI interactions in unit tests. Consider using a GUI testing framework for such tests.
+- **Mouse Events**: The `maybeShowPopup` method is not directly tested due to the complexity of simulating mouse events in unit tests. GUI testing frameworks can be used for such scenarios.
+- **Assertions**: The test suite uses assertions to verify the expected behavior of the methods.

@@ -1,0 +1,75 @@
+To create a comprehensive JUnit 4 test suite for the `TypeInfoFactory` class, we need to test each public method and any private methods that have complex logic. Since `TypeInfoFactory` is a utility class with static methods, we will focus on testing the static methods `getTypeInfoForArray` and `getTypeInfoForField`, as well as the private method `getActualType` through the public methods.
+
+Below is a JUnit 4 test suite for the `TypeInfoFactory` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import java.lang.reflect.*;
+import com.google.gson.*;
+
+public class TypeInfoFactoryTest {
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArrayWithNonArrayType() {
+        Type nonArrayType = String.class;
+        TypeInfoFactory.getTypeInfoForArray(nonArrayType);
+    }
+
+    @Test
+    public void testGetTypeInfoForArrayWithArrayType() {
+        Type arrayType = String[].class;
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(arrayType);
+        assertNotNull(typeInfoArray);
+        assertEquals(arrayType, typeInfoArray.getType());
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithSimpleField() throws NoSuchFieldException {
+        Field field = SampleClass.class.getDeclaredField("simpleField");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, SampleClass.class);
+        assertNotNull(typeInfo);
+        assertEquals(String.class, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithParameterizedField() throws NoSuchFieldException {
+        Field field = SampleClass.class.getDeclaredField("parameterizedField");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, SampleClass.class);
+        assertNotNull(typeInfo);
+        assertTrue(typeInfo.getType() instanceof ParameterizedType);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetTypeInfoForFieldWithTypeVariableWithoutParameterizedType() throws NoSuchFieldException {
+        Field field = SampleClass.class.getDeclaredField("typeVariableField");
+        TypeInfoFactory.getTypeInfoForField(field, SampleClass.class);
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithTypeVariableWithParameterizedType() throws NoSuchFieldException {
+        Field field = SampleGenericClass.class.getDeclaredField("genericField");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, new TypeToken<SampleGenericClass<Integer>>(){}.getType());
+        assertNotNull(typeInfo);
+        assertEquals(Integer.class, typeInfo.getType());
+    }
+
+    // Sample classes for testing
+    private static class SampleClass {
+        String simpleField;
+        java.util.List<String> parameterizedField;
+        T typeVariableField;
+    }
+
+    private static class SampleGenericClass<T> {
+        T genericField;
+    }
+}
+```
+
+### Explanation:
+- **Test for `getTypeInfoForArray`**: We test both valid and invalid inputs. The invalid input should throw an `IllegalArgumentException`.
+- **Test for `getTypeInfoForField`**: We test fields with simple types, parameterized types, and type variables. We also handle the case where a type variable is used without a parameterized type, which should throw an `UnsupportedOperationException`.
+- **Sample Classes**: `SampleClass` and `SampleGenericClass` are used to provide fields with different types for testing.
+
+This test suite covers the main functionalities of the `TypeInfoFactory` class. Note that some assumptions are made about the behavior of `TypeInfo`, `TypeInfoArray`, and `TypeUtils` classes, as their implementations are not provided. Adjustments may be needed based on their actual implementations.

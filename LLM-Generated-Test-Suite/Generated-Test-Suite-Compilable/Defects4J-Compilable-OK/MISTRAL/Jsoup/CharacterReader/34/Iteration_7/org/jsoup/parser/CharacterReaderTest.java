@@ -1,0 +1,190 @@
+package org.jsoup.parser;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class CharacterReaderTest {
+
+    private CharacterReader reader;
+
+    @Before
+    public void setUp() {
+        reader = new CharacterReader("Hello World!");
+    }
+
+    @Test
+    public void testPos() {
+        assertEquals(0, reader.pos());
+        reader.advance();
+        assertEquals(1, reader.pos());
+    }
+
+    @Test
+    public void testIsEmpty() {
+        assertFalse(reader.isEmpty());
+        reader.consumeToEnd();
+        assertTrue(reader.isEmpty());
+    }
+
+    @Test
+    public void testCurrent() {
+        assertEquals('H', reader.current());
+        reader.consumeToEnd();
+        assertEquals(CharacterReader.EOF, reader.current());
+    }
+
+    @Test
+    public void testConsume() {
+        assertEquals('H', reader.consume());
+        assertEquals('e', reader.consume());
+        reader.consumeToEnd();
+        assertEquals(CharacterReader.EOF, reader.consume());
+    }
+
+    @Test
+    public void testUnconsume() {
+        reader.consume();
+        reader.unconsume();
+        assertEquals('H', reader.current());
+    }
+
+    @Test
+    public void testAdvance() {
+        reader.advance();
+        assertEquals('e', reader.current());
+    }
+
+    @Test
+    public void testMarkAndRewindToMark() {
+        reader.mark();
+        reader.advance();
+        reader.rewindToMark();
+        assertEquals('H', reader.current());
+    }
+
+    @Test
+    public void testConsumeAsString() {
+        assertEquals("H", reader.consumeAsString());
+    }
+
+    @Test
+    public void testNextIndexOfChar() {
+        assertEquals(2, reader.nextIndexOf('l'));
+        assertEquals(-1, reader.nextIndexOf('z'));
+    }
+
+    @Test
+    public void testNextIndexOfCharSequence() {
+        assertEquals(6, reader.nextIndexOf("World"));
+        assertEquals(-1, reader.nextIndexOf("Foo"));
+    }
+
+    @Test
+    public void testConsumeToChar() {
+        assertEquals("Hello ", reader.consumeTo('W'));
+    }
+
+    @Test
+    public void testConsumeToString() {
+        assertEquals("Hello ", reader.consumeTo("World"));
+    }
+
+    @Test
+    public void testConsumeToAny() {
+        assertEquals("Hello ", reader.consumeToAny('W', '!'));
+    }
+
+    @Test
+    public void testConsumeToEnd() {
+        assertEquals("Hello World!", reader.consumeToEnd());
+    }
+
+    @Test
+    public void testConsumeLetterSequence() {
+        assertEquals("Hello", reader.consumeLetterSequence());
+    }
+
+    @Test
+    public void testConsumeLetterThenDigitSequence() {
+        reader = new CharacterReader("Hello123");
+        assertEquals("Hello123", reader.consumeLetterThenDigitSequence());
+    }
+
+    @Test
+    public void testConsumeHexSequence() {
+        reader = new CharacterReader("123abc");
+        assertEquals("123abc", reader.consumeHexSequence());
+    }
+
+    @Test
+    public void testConsumeDigitSequence() {
+        reader = new CharacterReader("123abc");
+        assertEquals("123", reader.consumeDigitSequence());
+    }
+
+    @Test
+    public void testMatchesChar() {
+        assertTrue(reader.matches('H'));
+        reader.consume();
+        assertFalse(reader.matches('H'));
+    }
+
+    @Test
+    public void testMatchesString() {
+        assertTrue(reader.matches("Hello"));
+        assertFalse(reader.matches("World"));
+    }
+
+    @Test
+    public void testMatchesIgnoreCase() {
+        assertTrue(reader.matchesIgnoreCase("hello"));
+        assertFalse(reader.matchesIgnoreCase("world"));
+    }
+
+    @Test
+    public void testMatchesAny() {
+        assertTrue(reader.matchesAny('H', 'W'));
+        assertFalse(reader.matchesAny('z'));
+    }
+
+    @Test
+    public void testMatchesLetter() {
+        assertTrue(reader.matchesLetter());
+        reader.consumeToEnd();
+        assertFalse(reader.matchesLetter());
+    }
+
+    @Test
+    public void testMatchesDigit() {
+        reader = new CharacterReader("123abc");
+        assertTrue(reader.matchesDigit());
+        reader.consumeToEnd();
+        assertFalse(reader.matchesDigit());
+    }
+
+    @Test
+    public void testMatchConsume() {
+        assertTrue(reader.matchConsume("Hello"));
+        assertFalse(reader.matchConsume("World"));
+    }
+
+    @Test
+    public void testMatchConsumeIgnoreCase() {
+        assertTrue(reader.matchConsumeIgnoreCase("hello"));
+        assertFalse(reader.matchConsumeIgnoreCase("world"));
+    }
+
+    @Test
+    public void testContainsIgnoreCase() {
+        assertTrue(reader.containsIgnoreCase("world"));
+        assertFalse(reader.containsIgnoreCase("foo"));
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("Hello World!", reader.toString());
+        reader.consumeToEnd();
+        assertEquals("", reader.toString());
+    }
+}

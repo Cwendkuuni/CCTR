@@ -1,0 +1,222 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import com.google.javascript.jscomp.AbstractCompiler;
+import com.google.javascript.jscomp.CompilerOptions.AliasTransformationHandler;
+import com.google.javascript.jscomp.NodeTraversal;
+import com.google.javascript.jscomp.PreprocessorSymbolTable;
+import com.google.javascript.jscomp.ScopedAliases;
+import com.google.javascript.rhino.Node;
+import com.google.javascript.rhino.Token;
+
+public class ScopedAliasesTest {
+
+    private AbstractCompiler compiler;
+    private PreprocessorSymbolTable preprocessorSymbolTable;
+    private AliasTransformationHandler transformationHandler;
+    private ScopedAliases scopedAliases;
+
+    @Before
+    public void setUp() {
+        compiler = new AbstractCompiler() {
+            @Override
+            public void reportCodeChange() {
+                // Mock implementation
+            }
+
+            @Override
+            public void report(JSError error) {
+                // Mock implementation
+            }
+        };
+        preprocessorSymbolTable = null;
+        transformationHandler = new AliasTransformationHandler() {
+            @Override
+            public AliasTransformation logAliasTransformation(String sourceFileName, SourcePosition<AliasTransformation> sourcePosition) {
+                return new AliasTransformation();
+            }
+        };
+        scopedAliases = new ScopedAliases(compiler, preprocessorSymbolTable, transformationHandler);
+    }
+
+    @Test
+    public void testProcess() {
+        Node externs = new Node(Token.SCRIPT);
+        Node root = new Node(Token.SCRIPT);
+        scopedAliases.process(externs, root);
+        // Add assertions to verify the behavior
+    }
+
+    @Test
+    public void testHotSwapScript() {
+        Node root = new Node(Token.SCRIPT);
+        Node originalRoot = new Node(Token.SCRIPT);
+        scopedAliases.hotSwapScript(root, originalRoot);
+        // Add assertions to verify the behavior
+    }
+
+    @Test
+    public void testTraversal() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        Node root = new Node(Token.SCRIPT);
+        NodeTraversal.traverse(compiler, root, traversal);
+        // Add assertions to verify the behavior
+    }
+
+    @Test
+    public void testAliasedNode() {
+        Node aliasReference = new Node(Token.NAME);
+        Node aliasDefinition = new Node(Token.NAME);
+        ScopedAliases.AliasedNode aliasedNode = scopedAliases.new AliasedNode(aliasReference, aliasDefinition);
+        aliasedNode.applyAlias();
+        // Add assertions to verify the behavior
+    }
+
+    @Test
+    public void testAliasedTypeNode() {
+        Node typeReference = new Node(Token.STRING);
+        Node aliasDefinition = new Node(Token.NAME);
+        String aliasName = "alias";
+        ScopedAliases.AliasedTypeNode aliasedTypeNode = scopedAliases.new AliasedTypeNode(typeReference, aliasDefinition, aliasName);
+        aliasedTypeNode.applyAlias();
+        // Add assertions to verify the behavior
+    }
+
+    @Test
+    public void testGetAliasDefinitionsInOrder() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        Collection<Node> aliasDefinitions = traversal.getAliasDefinitionsInOrder();
+        assertNotNull(aliasDefinitions);
+        assertTrue(aliasDefinitions.isEmpty());
+    }
+
+    @Test
+    public void testGetAliasUsages() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        List<ScopedAliases.AliasUsage> aliasUsages = traversal.getAliasUsages();
+        assertNotNull(aliasUsages);
+        assertTrue(aliasUsages.isEmpty());
+    }
+
+    @Test
+    public void testGetScopeCalls() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        List<Node> scopeCalls = traversal.getScopeCalls();
+        assertNotNull(scopeCalls);
+        assertTrue(scopeCalls.isEmpty());
+    }
+
+    @Test
+    public void testHasErrors() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        assertFalse(traversal.hasErrors());
+    }
+
+    @Test
+    public void testIsCallToScopeMethod() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        Node n = new Node(Token.CALL);
+        n.addChildToFront(new Node(Token.NAME, "goog.scope"));
+        assertTrue(traversal.isCallToScopeMethod(n));
+    }
+
+    @Test
+    public void testEnterScope() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        NodeTraversal t = new NodeTraversal(compiler, null);
+        Node n = new Node(Token.CALL);
+        n.addChildToFront(new Node(Token.NAME, "goog.scope"));
+        t.setCurrentNode(n);
+        traversal.enterScope(t);
+        // Add assertions to verify the behavior
+    }
+
+    @Test
+    public void testExitScope() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        NodeTraversal t = new NodeTraversal(compiler, null);
+        traversal.exitScope(t);
+        // Add assertions to verify the behavior
+    }
+
+    @Test
+    public void testShouldTraverse() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        NodeTraversal t = new NodeTraversal(compiler, null);
+        Node n = new Node(Token.FUNCTION);
+        Node parent = new Node(Token.CALL);
+        parent.addChildToFront(new Node(Token.NAME, "goog.scope"));
+        assertTrue(traversal.shouldTraverse(t, n, parent));
+    }
+
+    @Test
+    public void testGetSourceRegion() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        Node n = new Node(Token.CALL);
+        SourcePosition<ScopedAliases.AliasTransformation> sourceRegion = traversal.getSourceRegion(n);
+        assertNotNull(sourceRegion);
+    }
+
+    @Test
+    public void testReport() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        NodeTraversal t = new NodeTraversal(compiler, null);
+        Node n = new Node(Token.CALL);
+        traversal.report(t, n, ScopedAliases.GOOG_SCOPE_USED_IMPROPERLY);
+        assertTrue(traversal.hasErrors());
+    }
+
+    @Test
+    public void testFindAliases() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        NodeTraversal t = new NodeTraversal(compiler, null);
+        traversal.findAliases(t);
+        // Add assertions to verify the behavior
+    }
+
+    @Test
+    public void testFindNamespaceShadows() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        NodeTraversal t = new NodeTraversal(compiler, null);
+        traversal.findNamespaceShadows(t);
+        // Add assertions to verify the behavior
+    }
+
+    @Test
+    public void testRenameNamespaceShadows() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        NodeTraversal t = new NodeTraversal(compiler, null);
+        traversal.renameNamespaceShadows(t);
+        // Add assertions to verify the behavior
+    }
+
+    @Test
+    public void testValidateScopeCall() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        NodeTraversal t = new NodeTraversal(compiler, null);
+        Node n = new Node(Token.CALL);
+        Node parent = new Node(Token.EXPR_RESULT);
+        traversal.validateScopeCall(t, n, parent);
+        // Add assertions to verify the behavior
+    }
+
+    @Test
+    public void testVisit() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        NodeTraversal t = new NodeTraversal(compiler, null);
+        Node n = new Node(Token.CALL);
+        Node parent = new Node(Token.EXPR_RESULT);
+        traversal.visit(t, n, parent);
+        // Add assertions to verify the behavior
+    }
+
+    @Test
+    public void testFixTypeNode() {
+        ScopedAliases.Traversal traversal = scopedAliases.new Traversal();
+        Node typeNode = new Node(Token.STRING);
+        traversal.fixTypeNode(typeNode);
+        // Add assertions to verify the behavior
+    }
+}
+```

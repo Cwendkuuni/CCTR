@@ -1,0 +1,163 @@
+```java
+package corina.formats;
+
+import corina.ui.*;
+import corina.*;
+import corina.util.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+
+    @Mock
+    private Sample sample;
+
+    @Mock
+    private Range range;
+
+    @Mock
+    private Year year;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        tucsonSimple = new TucsonSimple();
+    }
+
+    @Test
+    public void testToString() {
+        String expected = I18n.getText("format.tucsonsimple");
+        assertEquals(expected, tucsonSimple.toString());
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        assertEquals(".RWL", tucsonSimple.getDefaultExtension());
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        BufferedReader reader = new BufferedReader(new StringReader("test data"));
+        tucsonSimple.load(reader);
+    }
+
+    @Test
+    public void testMake6digitCode() {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "123456789");
+        Sample sample = mock(Sample.class);
+        when(sample.meta).thenReturn(meta);
+
+        assertEquals("123456", tucsonSimple.make6digitCode(sample));
+
+        meta.put("id", "123");
+        assertEquals("123   ", tucsonSimple.make6digitCode(sample));
+
+        meta.clear();
+        assertEquals("000000", tucsonSimple.make6digitCode(sample));
+    }
+
+    @Test
+    public void testSaveRowHeader() throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(stringWriter);
+        Sample sample = mock(Sample.class);
+        Range range = mock(Range.class);
+        Year year = mock(Year.class);
+
+        when(sample.range).thenReturn(range);
+        when(range.getStart()).thenReturn(year);
+        when(year.toString()).thenReturn("2000");
+        when(year.compareTo(any(Year.class))).thenReturn(-1);
+
+        tucsonSimple.saveRowHeader(writer, sample, "123456", 6, year);
+        writer.flush();
+
+        assertEquals("123456 2000", stringWriter.toString());
+    }
+
+    @Test
+    public void testSaveData() throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(stringWriter);
+        Sample sample = mock(Sample.class);
+        Range range = mock(Range.class);
+        Year year = mock(Year.class);
+
+        when(sample.range).thenReturn(range);
+        when(range.getStart()).thenReturn(year);
+        when(year.toString()).thenReturn("2000");
+        when(year.compareTo(any(Year.class))).thenReturn(-1);
+        when(year.column()).thenReturn(0);
+        when(year.add(anyInt())).thenReturn(year);
+        when(year.diff(any(Year.class))).thenReturn(0);
+
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "123456");
+        when(sample.meta).thenReturn(meta);
+
+        Map<Integer, Object> data = new HashMap<>();
+        data.put(0, 123);
+        when(sample.data).thenReturn(data);
+
+        tucsonSimple.saveData(sample, writer);
+        writer.flush();
+
+        assertEquals("123456 2000   123\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testComputeRange() {
+        Sample sample = mock(Sample.class);
+        Range range = mock(Range.class);
+        Year year = mock(Year.class);
+
+        when(sample.range).thenReturn(range);
+        when(range.getStart()).thenReturn(year);
+        when(year.compareTo(any(Year.class))).thenReturn(1);
+
+        assertEquals(range, tucsonSimple.computeRange(sample));
+
+        when(year.compareTo(any(Year.class))).thenReturn(-1);
+        when(year.add(8000)).thenReturn(year);
+        when(range.redateBy(anyInt())).thenReturn(range);
+
+        assertEquals(range, tucsonSimple.computeRange(sample));
+
+        when(year.compareTo(any(Year.class))).thenReturn(-1);
+        when(range.redateStartTo(any(Year.class))).thenReturn(range);
+
+        assertEquals(range, tucsonSimple.computeRange(sample));
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(stringWriter);
+        Sample sample = mock(Sample.class);
+
+        tucsonSimple.save(sample, writer);
+        writer.flush();
+
+        verify(tucsonSimple).saveData(sample, writer);
+    }
+}
+```

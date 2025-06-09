@@ -1,0 +1,126 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `ARFFHandler` class. This suite includes tests for both `loadARFF` methods, checking various scenarios such as valid input, invalid input, and edge cases.
+
+```java
+import net.sf.javaml.tools.data.ARFFHandler;
+import net.sf.javaml.core.Dataset;
+import net.sf.javaml.core.Instance;
+import net.sf.javaml.core.DefaultDataset;
+import net.sf.javaml.core.DenseInstance;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import static org.junit.Assert.*;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.FileNotFoundException;
+
+public class ARFFHandlerTest {
+
+    private File tempFile;
+
+    @Before
+    public void setUp() throws IOException {
+        tempFile = File.createTempFile("test", ".arff");
+    }
+
+    @After
+    public void tearDown() {
+        if (tempFile != null && tempFile.exists()) {
+            tempFile.delete();
+        }
+    }
+
+    @Test
+    public void testLoadARFFWithValidData() throws IOException {
+        String arffContent = "@relation test\n" +
+                             "@attribute attr1 numeric\n" +
+                             "@attribute attr2 numeric\n" +
+                             "@data\n" +
+                             "1.0,2.0\n" +
+                             "3.0,4.0\n";
+
+        writeToFile(tempFile, arffContent);
+
+        Dataset dataset = ARFFHandler.loadARFF(tempFile);
+        assertNotNull(dataset);
+        assertEquals(2, dataset.size());
+
+        Instance instance1 = dataset.instance(0);
+        assertArrayEquals(new double[]{1.0, 2.0}, instance1.toArray(), 0.001);
+
+        Instance instance2 = dataset.instance(1);
+        assertArrayEquals(new double[]{3.0, 4.0}, instance2.toArray(), 0.001);
+    }
+
+    @Test
+    public void testLoadARFFWithClassIndex() throws IOException {
+        String arffContent = "@relation test\n" +
+                             "@attribute attr1 numeric\n" +
+                             "@attribute attr2 numeric\n" +
+                             "@attribute class {A,B}\n" +
+                             "@data\n" +
+                             "1.0,2.0,A\n" +
+                             "3.0,4.0,B\n";
+
+        writeToFile(tempFile, arffContent);
+
+        Dataset dataset = ARFFHandler.loadARFF(tempFile, 2);
+        assertNotNull(dataset);
+        assertEquals(2, dataset.size());
+
+        Instance instance1 = dataset.instance(0);
+        assertArrayEquals(new double[]{1.0, 2.0}, instance1.toArray(), 0.001);
+        assertEquals("A", instance1.classValue());
+
+        Instance instance2 = dataset.instance(1);
+        assertArrayEquals(new double[]{3.0, 4.0}, instance2.toArray(), 0.001);
+        assertEquals("B", instance2.classValue());
+    }
+
+    @Test(expected = FileNotFoundException.class)
+    public void testLoadARFFWithNonExistentFile() throws FileNotFoundException {
+        File nonExistentFile = new File("non_existent_file.arff");
+        ARFFHandler.loadARFF(nonExistentFile);
+    }
+
+    @Test
+    public void testLoadARFFWithInvalidData() throws IOException {
+        String arffContent = "@relation test\n" +
+                             "@attribute attr1 numeric\n" +
+                             "@attribute attr2 numeric\n" +
+                             "@data\n" +
+                             "1.0,abc\n" +
+                             "3.0,4.0\n";
+
+        writeToFile(tempFile, arffContent);
+
+        Dataset dataset = ARFFHandler.loadARFF(tempFile);
+        assertNotNull(dataset);
+        assertEquals(2, dataset.size());
+
+        Instance instance1 = dataset.instance(0);
+        assertTrue(Double.isNaN(instance1.value(1)));
+
+        Instance instance2 = dataset.instance(1);
+        assertArrayEquals(new double[]{3.0, 4.0}, instance2.toArray(), 0.001);
+    }
+
+    private void writeToFile(File file, String content) throws IOException {
+        try (PrintWriter out = new PrintWriter(new FileWriter(file))) {
+            out.print(content);
+        }
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: The `setUp` and `tearDown` methods handle the creation and deletion of a temporary file used for testing.
+- **Test Cases**:
+  - `testLoadARFFWithValidData`: Tests loading a valid ARFF file without a class index.
+  - `testLoadARFFWithClassIndex`: Tests loading a valid ARFF file with a specified class index.
+  - `testLoadARFFWithNonExistentFile`: Tests the behavior when attempting to load a non-existent file.
+  - `testLoadARFFWithInvalidData`: Tests loading an ARFF file with invalid numeric data to ensure it handles `NumberFormatException` correctly.
+- **Utility Method**: `writeToFile` is a helper method to write ARFF content to the temporary file.

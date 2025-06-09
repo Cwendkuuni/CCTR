@@ -1,0 +1,114 @@
+package com.lts.event;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.awt.Component;
+import java.awt.event.KeyEvent;
+
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class SimpleKeyListenerHelperTest {
+
+    @Mock
+    private Component mockComponent;
+
+    @Mock
+    private SimpleKeyListener mockListener;
+
+    private SimpleKeyListenerHelper simpleKeyListenerHelper;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        simpleKeyListenerHelper = new SimpleKeyListenerHelper(mockComponent);
+    }
+
+    @After
+    public void tearDown() {
+        simpleKeyListenerHelper.detach();
+    }
+
+    @Test
+    public void testConstructor() {
+        verify(mockComponent).addKeyListener(simpleKeyListenerHelper);
+    }
+
+    @Test
+    public void testDetach() {
+        simpleKeyListenerHelper.detach();
+        verify(mockComponent).removeKeyListener(simpleKeyListenerHelper);
+    }
+
+    @Test
+    public void testNotifyListenerEnter() {
+        simpleKeyListenerHelper.notifyListener(mockListener, 10, null);
+        verify(mockListener).enter(mockComponent);
+    }
+
+    @Test
+    public void testNotifyListenerInsert() {
+        simpleKeyListenerHelper.notifyListener(mockListener, 155, null);
+        verify(mockListener).insert(mockComponent);
+    }
+
+    @Test
+    public void testNotifyListenerDelete() {
+        simpleKeyListenerHelper.notifyListener(mockListener, 127, null);
+        verify(mockListener).delete(mockComponent);
+    }
+
+    @Test
+    public void testNotifyListenerTab() {
+        simpleKeyListenerHelper.notifyListener(mockListener, 9, null);
+        verify(mockListener).tab(mockComponent);
+    }
+
+    @Test
+    public void testKeyPressedEnter() {
+        KeyEvent event = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, ' ');
+        simpleKeyListenerHelper.keyPressed(event);
+        verify(simpleKeyListenerHelper).fire(KeyEvent.VK_ENTER);
+    }
+
+    @Test
+    public void testKeyPressedInsert() {
+        KeyEvent event = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, 155, ' ');
+        simpleKeyListenerHelper.keyPressed(event);
+        verify(simpleKeyListenerHelper).fire(155);
+    }
+
+    @Test
+    public void testKeyPressedDelete() {
+        KeyEvent event = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_DELETE, ' ');
+        simpleKeyListenerHelper.keyPressed(event);
+        verify(simpleKeyListenerHelper).fire(KeyEvent.VK_DELETE);
+    }
+
+    @Test
+    public void testKeyPressedTab() {
+        KeyEvent event = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_TAB, ' ');
+        simpleKeyListenerHelper.keyPressed(event);
+        verify(simpleKeyListenerHelper).fire(KeyEvent.VK_TAB);
+    }
+
+    @Test
+    public void testKeyReleased() {
+        KeyEvent event = new KeyEvent(mockComponent, KeyEvent.KEY_RELEASED, System.currentTimeMillis(), 0, KeyEvent.VK_A, ' ');
+        simpleKeyListenerHelper.keyReleased(event);
+        // No action expected
+    }
+
+    @Test
+    public void testKeyTyped() {
+        KeyEvent event = new KeyEvent(mockComponent, KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, KeyEvent.VK_UNDEFINED, 'a');
+        simpleKeyListenerHelper.keyTyped(event);
+        // No action expected
+    }
+}

@@ -1,0 +1,164 @@
+package net.sf.javaml.core;
+
+import net.sf.javaml.core.DenseInstance;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.*;
+
+import static org.junit.Assert.*;
+
+public class DenseInstanceTest {
+
+    private DenseInstance instance;
+    private double[] attributes;
+
+    @Before
+    public void setUp() {
+        attributes = new double[]{1.0, 2.0, 3.0};
+        instance = new DenseInstance(attributes);
+    }
+
+    @Test
+    public void testConstructorWithAttributes() {
+        assertArrayEquals(attributes, instance.values().stream().mapToDouble(Double::doubleValue).toArray(), 1e-8);
+    }
+
+    @Test
+    public void testConstructorWithAttributesAndClassValue() {
+        DenseInstance instanceWithClass = new DenseInstance(attributes, "classValue");
+        assertEquals("classValue", instanceWithClass.classValue());
+    }
+
+    @Test
+    public void testConstructorWithSize() {
+        DenseInstance instanceWithSize = new DenseInstance(3);
+        assertEquals(3, instanceWithSize.noAttributes());
+    }
+
+    @Test
+    public void testValue() {
+        assertEquals(2.0, instance.value(1), 1e-8);
+    }
+
+    @Test
+    public void testClear() {
+        instance.clear();
+        assertArrayEquals(new double[]{0.0, 0.0, 0.0}, instance.values().stream().mapToDouble(Double::doubleValue).toArray(), 1e-8);
+    }
+
+    @Test
+    public void testContainsKey() {
+        assertTrue(instance.containsKey(1));
+        assertFalse(instance.containsKey(3));
+        assertFalse(instance.containsKey("notAnInteger"));
+    }
+
+    @Test
+    public void testContainsValue() {
+        assertTrue(instance.containsValue(2.0));
+        assertFalse(instance.containsValue(4.0));
+    }
+
+    @Test
+    public void testEntrySet() {
+        Set<Map.Entry<Integer, Double>> entrySet = instance.entrySet();
+        assertEquals(3, entrySet.size());
+        for (Map.Entry<Integer, Double> entry : entrySet) {
+            assertEquals(attributes[entry.getKey()], entry.getValue(), 1e-8);
+        }
+    }
+
+    @Test
+    public void testGet() {
+        assertEquals(Double.valueOf(1.0), instance.get(0));
+    }
+
+    @Test
+    public void testIsEmpty() {
+        assertFalse(instance.isEmpty());
+    }
+
+    @Test
+    public void testKeySet() {
+        SortedSet<Integer> keys = instance.keySet();
+        assertEquals(new TreeSet<>(Arrays.asList(0, 1, 2)), keys);
+    }
+
+    @Test
+    public void testPut() {
+        Double oldValue = instance.put(1, 5.0);
+        assertEquals(Double.valueOf(2.0), oldValue);
+        assertEquals(Double.valueOf(5.0), instance.get(1));
+    }
+
+    @Test
+    public void testPutAll() {
+        Map<Integer, Double> map = new HashMap<>();
+        map.put(0, 4.0);
+        map.put(2, 6.0);
+        instance.putAll(map);
+        assertEquals(Double.valueOf(4.0), instance.get(0));
+        assertEquals(Double.valueOf(6.0), instance.get(2));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRemove() {
+        instance.remove(0);
+    }
+
+    @Test
+    public void testSize() {
+        assertEquals(3, instance.size());
+    }
+
+    @Test
+    public void testValues() {
+        Collection<Double> values = instance.values();
+        assertArrayEquals(attributes, values.stream().mapToDouble(Double::doubleValue).toArray(), 1e-8);
+    }
+
+    @Test
+    public void testNoAttributes() {
+        assertEquals(3, instance.noAttributes());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("{[1.0, 2.0, 3.0];null}", instance.toString());
+    }
+
+    @Test
+    public void testRemoveAttribute() {
+        instance.removeAttribute(1);
+        assertArrayEquals(new double[]{1.0, 3.0}, instance.values().stream().mapToDouble(Double::doubleValue).toArray(), 1e-8);
+    }
+
+    @Test
+    public void testHashCode() {
+        DenseInstance anotherInstance = new DenseInstance(attributes);
+        assertEquals(instance.hashCode(), anotherInstance.hashCode());
+    }
+
+    @Test
+    public void testEquals() {
+        DenseInstance anotherInstance = new DenseInstance(attributes);
+        assertTrue(instance.equals(anotherInstance));
+        assertFalse(instance.equals(null));
+        assertFalse(instance.equals(new Object()));
+    }
+
+    @Test
+    public void testCopy() {
+        DenseInstance copy = (DenseInstance) instance.copy();
+        assertNotSame(instance, copy);
+        assertEquals(instance, copy);
+    }
+
+    @Test
+    public void testRemoveAttributes() {
+        Set<Integer> indices = new HashSet<>(Arrays.asList(0, 2));
+        instance.removeAttributes(indices);
+        assertArrayEquals(new double[]{2.0}, instance.values().stream().mapToDouble(Double::doubleValue).toArray(), 1e-8);
+    }
+}

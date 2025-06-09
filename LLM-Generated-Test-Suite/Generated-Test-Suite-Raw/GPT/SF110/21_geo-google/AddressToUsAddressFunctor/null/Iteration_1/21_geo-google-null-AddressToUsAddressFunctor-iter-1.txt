@@ -1,0 +1,176 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `AddressToUsAddressFunctor` class. This test suite covers various scenarios, including null checks and different combinations of address components.
+
+```java
+import geo.google.mapping.AddressToUsAddressFunctor;
+import geo.google.datamodel.GeoAddress;
+import geo.google.datamodel.GeoUsAddress;
+import geo.google.datamodel.GeoException;
+import oasis.names.tc.ciq.xsdschema.xal._2.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.Collections;
+
+public class AddressToUsAddressFunctorTest {
+
+    private AddressToUsAddressFunctor functor;
+
+    @Before
+    public void setUp() {
+        functor = AddressToUsAddressFunctor.getInstance();
+    }
+
+    @Test
+    public void testExecuteWithCompleteAddress() {
+        GeoAddress geoAddress = createCompleteGeoAddress();
+        GeoUsAddress usAddress = functor.execute(geoAddress);
+
+        assertEquals("US", usAddress.getCountry());
+        assertEquals("California", usAddress.getState());
+        assertEquals("Los Angeles County", usAddress.getCounty());
+        assertEquals("Los Angeles", usAddress.getCity());
+        assertEquals("90001", usAddress.getPostalCode());
+        assertEquals("123 Main St", usAddress.getAddressLine1());
+        assertEquals("Apt 4", usAddress.getAddressLine2());
+        assertNotNull(usAddress.getCoordinate());
+        assertEquals(5, usAddress.getAccuracy());
+    }
+
+    @Test
+    public void testExecuteWithNullAddress() {
+        GeoUsAddress usAddress = functor.execute(null);
+        assertNull(usAddress);
+    }
+
+    @Test
+    public void testExecuteWithNullCountry() {
+        GeoAddress geoAddress = new GeoAddress();
+        geoAddress.setAddressDetails(new AddressDetails());
+        GeoUsAddress usAddress = functor.execute(geoAddress);
+
+        assertNull(usAddress.getCountry());
+        assertNull(usAddress.getState());
+        assertNull(usAddress.getCounty());
+        assertNull(usAddress.getCity());
+        assertNull(usAddress.getPostalCode());
+        assertNull(usAddress.getAddressLine1());
+        assertNull(usAddress.getAddressLine2());
+        assertNull(usAddress.getCoordinate());
+    }
+
+    @Test
+    public void testExecuteWithPartialAddress() {
+        GeoAddress geoAddress = createPartialGeoAddress();
+        GeoUsAddress usAddress = functor.execute(geoAddress);
+
+        assertEquals("US", usAddress.getCountry());
+        assertEquals("California", usAddress.getState());
+        assertNull(usAddress.getCounty());
+        assertEquals("Los Angeles", usAddress.getCity());
+        assertNull(usAddress.getPostalCode());
+        assertNull(usAddress.getAddressLine1());
+        assertNull(usAddress.getAddressLine2());
+        assertNotNull(usAddress.getCoordinate());
+    }
+
+    private GeoAddress createCompleteGeoAddress() {
+        GeoAddress geoAddress = new GeoAddress();
+        AddressDetails addressDetails = new AddressDetails();
+        AddressDetails.Country country = new AddressDetails.Country();
+        country.getCountryNameCode().add(createCountryNameCode("US"));
+
+        AdministrativeArea adminArea = new AdministrativeArea();
+        adminArea.getAdministrativeAreaName().add(createAdministrativeAreaName("California"));
+
+        AdministrativeArea.SubAdministrativeArea subAdminArea = new AdministrativeArea.SubAdministrativeArea();
+        subAdminArea.getSubAdministrativeAreaName().add(createSubAdministrativeAreaName("Los Angeles County"));
+
+        Locality locality = new Locality();
+        locality.getLocalityName().add(createLocalityName("Los Angeles"));
+
+        PostalCode postalCode = new PostalCode();
+        postalCode.getPostalCodeNumber().add(createPostalCodeNumber("90001"));
+        locality.setPostalCode(postalCode);
+
+        Thoroughfare thoroughfare = new Thoroughfare();
+        thoroughfare.getThoroughfareName().add(createThoroughfareName("123 Main St"));
+        thoroughfare.getThoroughfareName().add(createThoroughfareName("Apt 4"));
+        locality.setThoroughfare(thoroughfare);
+
+        subAdminArea.setLocality(locality);
+        adminArea.setSubAdministrativeArea(subAdminArea);
+        country.setAdministrativeArea(adminArea);
+        addressDetails.setCountry(country);
+        geoAddress.setAddressDetails(addressDetails);
+        geoAddress.setCoordinate(new GeoCoordinate(34.0522, -118.2437));
+        geoAddress.setAccuracy(5);
+
+        return geoAddress;
+    }
+
+    private GeoAddress createPartialGeoAddress() {
+        GeoAddress geoAddress = new GeoAddress();
+        AddressDetails addressDetails = new AddressDetails();
+        AddressDetails.Country country = new AddressDetails.Country();
+        country.getCountryNameCode().add(createCountryNameCode("US"));
+
+        AdministrativeArea adminArea = new AdministrativeArea();
+        adminArea.getAdministrativeAreaName().add(createAdministrativeAreaName("California"));
+
+        Locality locality = new Locality();
+        locality.getLocalityName().add(createLocalityName("Los Angeles"));
+
+        adminArea.setLocality(locality);
+        country.setAdministrativeArea(adminArea);
+        addressDetails.setCountry(country);
+        geoAddress.setAddressDetails(addressDetails);
+        geoAddress.setCoordinate(new GeoCoordinate(34.0522, -118.2437));
+
+        return geoAddress;
+    }
+
+    private AddressDetails.Country.CountryNameCode createCountryNameCode(String content) {
+        AddressDetails.Country.CountryNameCode countryNameCode = new AddressDetails.Country.CountryNameCode();
+        countryNameCode.setContent(content);
+        return countryNameCode;
+    }
+
+    private AdministrativeArea.AdministrativeAreaName createAdministrativeAreaName(String content) {
+        AdministrativeArea.AdministrativeAreaName adminAreaName = new AdministrativeArea.AdministrativeAreaName();
+        adminAreaName.setContent(content);
+        return adminAreaName;
+    }
+
+    private AdministrativeArea.SubAdministrativeArea.SubAdministrativeAreaName createSubAdministrativeAreaName(String content) {
+        AdministrativeArea.SubAdministrativeArea.SubAdministrativeAreaName subAdminAreaName = new AdministrativeArea.SubAdministrativeArea.SubAdministrativeAreaName();
+        subAdminAreaName.setContent(content);
+        return subAdminAreaName;
+    }
+
+    private Locality.LocalityName createLocalityName(String content) {
+        Locality.LocalityName localityName = new Locality.LocalityName();
+        localityName.setContent(content);
+        return localityName;
+    }
+
+    private PostalCode.PostalCodeNumber createPostalCodeNumber(String content) {
+        PostalCode.PostalCodeNumber postalCodeNumber = new PostalCode.PostalCodeNumber();
+        postalCodeNumber.setContent(content);
+        return postalCodeNumber;
+    }
+
+    private ThoroughfareNameType createThoroughfareName(String content) {
+        ThoroughfareNameType thoroughfareName = new ThoroughfareNameType();
+        thoroughfareName.setContent(content);
+        return thoroughfareName;
+    }
+}
+```
+
+This test suite includes:
+
+- A setup method to initialize the `AddressToUsAddressFunctor` instance.
+- Tests for a complete address, a null address, a null country, and a partial address.
+- Helper methods to create instances of the various address components needed for the tests.
+
+Make sure to adjust the package imports and any dependencies according to your project's setup.

@@ -1,0 +1,190 @@
+```java
+package com.google.common.base;
+
+import com.google.common.annotations.GwtCompatible;
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.base.Suppliers.MemoizingSupplier;
+import com.google.common.base.Suppliers.SupplierComposition;
+import com.google.common.base.Suppliers.SupplierOfInstance;
+import com.google.common.base.Suppliers.ThreadSafeSupplier;
+import com.google.common.base.Suppliers.ExpiringMemoizingSupplier;
+import com.google.common.base.Suppliers.SupplierFunctionImpl;
+import com.google.common.base.Suppliers.SupplierFunction;
+import com.google.common.testing.EqualsTester;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.concurrent.TimeUnit;
+
+@GwtCompatible
+public class SuppliersTest {
+
+    @Test
+    public void testCompose() {
+        Function<Integer, String> function = new Function<Integer, String>() {
+            @Override
+            public String apply(Integer input) {
+                return input.toString();
+            }
+        };
+
+        Supplier<Integer> supplier = new Supplier<Integer>() {
+            @Override
+            public Integer get() {
+                return 42;
+            }
+        };
+
+        Supplier<String> composedSupplier = Suppliers.compose(function, supplier);
+        assertEquals("42", composedSupplier.get());
+    }
+
+    @Test
+    public void testMemoize() {
+        Supplier<String> delegate = new Supplier<String>() {
+            @Override
+            public String get() {
+                return "Hello";
+            }
+        };
+
+        Supplier<String> memoizedSupplier = Suppliers.memoize(delegate);
+        assertEquals("Hello", memoizedSupplier.get());
+        assertEquals("Hello", memoizedSupplier.get());
+    }
+
+    @Test
+    public void testMemoizeWithExpiration() {
+        Supplier<String> delegate = new Supplier<String>() {
+            @Override
+            public String get() {
+                return "Hello";
+            }
+        };
+
+        Supplier<String> expiringMemoizedSupplier = Suppliers.memoizeWithExpiration(delegate, 1, TimeUnit.SECONDS);
+        assertEquals("Hello", expiringMemoizedSupplier.get());
+
+        try {
+            Thread.sleep(1100); // Sleep for more than 1 second to expire the memoized value
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals("Hello", expiringMemoizedSupplier.get());
+    }
+
+    @Test
+    public void testOfInstance() {
+        Supplier<String> instanceSupplier = Suppliers.ofInstance("Hello");
+        assertEquals("Hello", instanceSupplier.get());
+    }
+
+    @Test
+    public void testSynchronizedSupplier() {
+        Supplier<String> delegate = new Supplier<String>() {
+            @Override
+            public String get() {
+                return "Hello";
+            }
+        };
+
+        Supplier<String> synchronizedSupplier = Suppliers.synchronizedSupplier(delegate);
+        assertEquals("Hello", synchronizedSupplier.get());
+    }
+
+    @Test
+    public void testSupplierFunction() {
+        Function<Supplier<String>, String> supplierFunction = Suppliers.supplierFunction();
+        Supplier<String> supplier = new Supplier<String>() {
+            @Override
+            public String get() {
+                return "Hello";
+            }
+        };
+
+        assertEquals("Hello", supplierFunction.apply(supplier));
+    }
+
+    @Test
+    public void testSupplierCompositionEquals() {
+        Function<Integer, String> function = new Function<Integer, String>() {
+            @Override
+            public String apply(Integer input) {
+                return input.toString();
+            }
+        };
+
+        Supplier<Integer> supplier = new Supplier<Integer>() {
+            @Override
+            public Integer get() {
+                return 42;
+            }
+        };
+
+        SupplierComposition<Integer, String> composition1 = new SupplierComposition<>(function, supplier);
+        SupplierComposition<Integer, String> composition2 = new SupplierComposition<>(function, supplier);
+
+        new EqualsTester()
+                .addEqualityGroup(composition1, composition2)
+                .testEquals();
+    }
+
+    @Test
+    public void testMemoizingSupplierToString() {
+        Supplier<String> delegate = new Supplier<String>() {
+            @Override
+            public String get() {
+                return "Hello";
+            }
+        };
+
+        MemoizingSupplier<String> memoizingSupplier = new MemoizingSupplier<>(delegate);
+        assertEquals("Suppliers.memoize(" + delegate + ")", memoizingSupplier.toString());
+    }
+
+    @Test
+    public void testExpiringMemoizingSupplierToString() {
+        Supplier<String> delegate = new Supplier<String>() {
+            @Override
+            public String get() {
+                return "Hello";
+            }
+        };
+
+        ExpiringMemoizingSupplier<String> expiringMemoizingSupplier = new ExpiringMemoizingSupplier<>(delegate, 1, TimeUnit.SECONDS);
+        assertEquals("Suppliers.memoizeWithExpiration(" + delegate + ", 1000000000, NANOS)", expiringMemoizingSupplier.toString());
+    }
+
+    @Test
+    public void testSupplierOfInstanceEquals() {
+        SupplierOfInstance<String> instance1 = new SupplierOfInstance<>("Hello");
+        SupplierOfInstance<String> instance2 = new SupplierOfInstance<>("Hello");
+
+        new EqualsTester()
+                .addEqualityGroup(instance1, instance2)
+                .testEquals();
+    }
+
+    @Test
+    public void testThreadSafeSupplierToString() {
+        Supplier<String> delegate = new Supplier<String>() {
+            @Override
+            public String get() {
+                return "Hello";
+            }
+        };
+
+        ThreadSafeSupplier<String> threadSafeSupplier = new ThreadSafeSupplier<>(delegate);
+        assertEquals("Suppliers.synchronizedSupplier(" + delegate + ")", threadSafeSupplier.toString());
+    }
+
+    @Test
+    public void testSupplierFunctionImplToString() {
+        assertEquals("Suppliers.supplierFunction()", SupplierFunctionImpl.INSTANCE.toString());
+    }
+}
+```

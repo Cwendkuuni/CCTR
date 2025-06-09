@@ -1,0 +1,76 @@
+Certainly! Below is a complete JUnit 4 test suite for the `OAuthRequest` class. This suite tests all the public methods and the behavior of the private `checkKey` method indirectly through the `addOAuthParameter` method.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.scribe.model.OAuthRequest;
+import org.scribe.model.Verb;
+
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class OAuthRequestTest {
+
+    private OAuthRequest request;
+
+    @Before
+    public void setUp() {
+        request = new OAuthRequest(Verb.GET, "http://example.com");
+    }
+
+    @Test
+    public void testConstructorInitializesCorrectly() {
+        assertNotNull(request.getOauthParameters());
+        assertTrue(request.getOauthParameters().isEmpty());
+        assertEquals(Verb.GET, request.getVerb());
+        assertEquals("http://example.com", request.getUrl());
+    }
+
+    @Test
+    public void testAddOAuthParameterWithValidKey() {
+        request.addOAuthParameter("oauth_token", "tokenValue");
+        Map<String, String> params = request.getOauthParameters();
+        assertEquals(1, params.size());
+        assertEquals("tokenValue", params.get("oauth_token"));
+    }
+
+    @Test
+    public void testAddOAuthParameterWithScopeKey() {
+        request.addOAuthParameter("scope", "read");
+        Map<String, String> params = request.getOauthParameters();
+        assertEquals(1, params.size());
+        assertEquals("read", params.get("scope"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddOAuthParameterWithInvalidKey() {
+        request.addOAuthParameter("invalid_key", "value");
+    }
+
+    @Test
+    public void testGetOauthParametersReturnsCopy() {
+        request.addOAuthParameter("oauth_token", "tokenValue");
+        Map<String, String> params = request.getOauthParameters();
+        params.put("oauth_consumer_key", "consumerValue");
+        assertEquals(1, request.getOauthParameters().size());
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "@OAuthRequest(GET, http://example.com)";
+        assertEquals(expected, request.toString());
+    }
+}
+```
+
+### Explanation:
+- **setUp Method**: Initializes an `OAuthRequest` object before each test.
+- **testConstructorInitializesCorrectly**: Verifies that the constructor initializes the object correctly.
+- **testAddOAuthParameterWithValidKey**: Tests adding a valid OAuth parameter.
+- **testAddOAuthParameterWithScopeKey**: Tests adding the "scope" parameter, which is valid.
+- **testAddOAuthParameterWithInvalidKey**: Ensures an exception is thrown for invalid keys.
+- **testGetOauthParametersReturnsCopy**: Ensures that the returned map is a copy and not directly modifiable.
+- **testToString**: Verifies the `toString` method's output.
+
+This test suite covers the functionality and expected behavior of the `OAuthRequest` class.

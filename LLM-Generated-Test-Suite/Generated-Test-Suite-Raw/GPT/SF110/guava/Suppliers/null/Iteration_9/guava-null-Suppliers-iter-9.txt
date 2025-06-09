@@ -1,0 +1,110 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the methods in the `Suppliers` class. This suite covers various scenarios, including null checks, memoization, synchronization, and expiration logic.
+
+```java
+import com.google.common.base.Suppliers;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import org.junit.Rule;
+import org.junit.rules.ExpectedException;
+
+import java.util.concurrent.TimeUnit;
+import java.util.function.Function;
+import java.util.function.Supplier;
+
+import static org.junit.Assert.*;
+
+public class SuppliersTest {
+
+    @Rule
+    public ExpectedException thrown = ExpectedException.none();
+
+    private Supplier<String> stringSupplier;
+    private Supplier<Integer> integerSupplier;
+
+    @Before
+    public void setUp() {
+        stringSupplier = () -> "test";
+        integerSupplier = () -> 42;
+    }
+
+    @After
+    public void tearDown() {
+        stringSupplier = null;
+        integerSupplier = null;
+    }
+
+    @Test
+    public void testCompose() {
+        Function<String, Integer> lengthFunction = String::length;
+        Supplier<Integer> composedSupplier = Suppliers.compose(lengthFunction, stringSupplier);
+        assertEquals(Integer.valueOf(4), composedSupplier.get());
+    }
+
+    @Test
+    public void testComposeWithNullFunction() {
+        thrown.expect(NullPointerException.class);
+        Suppliers.compose(null, stringSupplier);
+    }
+
+    @Test
+    public void testComposeWithNullSupplier() {
+        thrown.expect(NullPointerException.class);
+        Suppliers.compose(String::length, null);
+    }
+
+    @Test
+    public void testMemoize() {
+        Supplier<String> memoizedSupplier = Suppliers.memoize(stringSupplier);
+        assertEquals("test", memoizedSupplier.get());
+        assertEquals("test", memoizedSupplier.get());
+    }
+
+    @Test
+    public void testMemoizeWithExpiration() throws InterruptedException {
+        Supplier<String> expiringSupplier = Suppliers.memoizeWithExpiration(stringSupplier, 1, TimeUnit.SECONDS);
+        assertEquals("test", expiringSupplier.get());
+        Thread.sleep(1100);
+        assertEquals("test", expiringSupplier.get());
+    }
+
+    @Test
+    public void testMemoizeWithExpirationZeroDuration() {
+        thrown.expect(IllegalArgumentException.class);
+        Suppliers.memoizeWithExpiration(stringSupplier, 0, TimeUnit.SECONDS);
+    }
+
+    @Test
+    public void testOfInstance() {
+        Supplier<String> instanceSupplier = Suppliers.ofInstance("instance");
+        assertEquals("instance", instanceSupplier.get());
+    }
+
+    @Test
+    public void testOfInstanceWithNull() {
+        Supplier<String> instanceSupplier = Suppliers.ofInstance(null);
+        assertNull(instanceSupplier.get());
+    }
+
+    @Test
+    public void testSynchronizedSupplier() {
+        Supplier<String> synchronizedSupplier = Suppliers.synchronizedSupplier(stringSupplier);
+        assertEquals("test", synchronizedSupplier.get());
+    }
+
+    @Test
+    public void testSupplierFunction() {
+        Function<Supplier<String>, String> supplierFunction = Suppliers.supplierFunction();
+        assertEquals("test", supplierFunction.apply(stringSupplier));
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: The `setUp` and `tearDown` methods initialize and clean up the suppliers used in the tests.
+- **Null Checks**: Tests are included to ensure that methods throw `NullPointerException` when passed null arguments.
+- **Memoization**: Tests verify that memoized suppliers return consistent results and that expiration logic works as expected.
+- **Synchronization**: The `synchronizedSupplier` test ensures that the supplier is thread-safe.
+- **Supplier Function**: The `supplierFunction` test checks that the function correctly retrieves values from suppliers.
+
+This test suite should cover the primary functionalities and edge cases for the `Suppliers` class.

@@ -1,0 +1,102 @@
+Certainly! Below is a complete JUnit 4 test suite for the `IndexedString` class. This suite tests the constructor and the `indexOf` method comprehensively.
+
+```java
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertArrayEquals;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class IndexedStringTest {
+
+    private IndexedString indexedString;
+
+    @Before
+    public void setUp() {
+        indexedString = new IndexedString("hello world");
+    }
+
+    @Test
+    public void testConstructor() {
+        // Test that the constructor initializes the values array correctly
+        char[] expectedValues = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
+        assertArrayEquals(expectedValues, getValues(indexedString));
+
+        // Test that the index array is initialized correctly
+        int[][] index = getIndex(indexedString);
+        assertNotNull(index);
+        assertEquals(256, index.length);
+        assertArrayEquals(new int[]{0}, index['h']);
+        assertArrayEquals(new int[]{1}, index['e']);
+        assertArrayEquals(new int[]{2, 3, 9}, index['l']);
+        assertArrayEquals(new int[]{4, 7}, index['o']);
+        assertArrayEquals(new int[]{5}, index[' ']);
+        assertArrayEquals(new int[]{6}, index['w']);
+        assertArrayEquals(new int[]{8}, index['r']);
+        assertArrayEquals(new int[]{10}, index['d']);
+    }
+
+    @Test
+    public void testIndexOf_Found() {
+        // Test that indexOf returns the correct index when the target is found
+        assertEquals(0, indexedString.indexOf(new char[]{'h'}));
+        assertEquals(2, indexedString.indexOf(new char[]{'l', 'l'}));
+        assertEquals(6, indexedString.indexOf(new char[]{'w', 'o', 'r', 'l', 'd'}));
+    }
+
+    @Test
+    public void testIndexOf_NotFound() {
+        // Test that indexOf returns -1 when the target is not found
+        assertEquals(-1, indexedString.indexOf(new char[]{'x'}));
+        assertEquals(-1, indexedString.indexOf(new char[]{'h', 'e', 'l', 'l', 'o', 'x'}));
+        assertEquals(-1, indexedString.indexOf(new char[]{'w', 'o', 'r', 'l', 'd', 'x'}));
+    }
+
+    @Test
+    public void testIndexOf_EmptyTarget() {
+        // Test that indexOf returns -1 when the target is empty
+        assertEquals(-1, indexedString.indexOf(new char[]{}));
+    }
+
+    @Test
+    public void testIndexOf_SingleCharacter() {
+        // Test that indexOf works correctly for single character targets
+        assertEquals(0, indexedString.indexOf(new char[]{'h'}));
+        assertEquals(1, indexedString.indexOf(new char[]{'e'}));
+        assertEquals(2, indexedString.indexOf(new char[]{'l'}));
+        assertEquals(4, indexedString.indexOf(new char[]{'o'}));
+        assertEquals(5, indexedString.indexOf(new char[]{' '}));
+        assertEquals(6, indexedString.indexOf(new char[]{'w'}));
+        assertEquals(8, indexedString.indexOf(new char[]{'r'}));
+        assertEquals(10, indexedString.indexOf(new char[]{'d'}));
+    }
+
+    // Helper methods to access private fields for testing
+    private char[] getValues(IndexedString indexedString) {
+        try {
+            java.lang.reflect.Field field = IndexedString.class.getDeclaredField("values");
+            field.setAccessible(true);
+            return (char[]) field.get(indexedString);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private int[][] getIndex(IndexedString indexedString) {
+        try {
+            java.lang.reflect.Field field = IndexedString.class.getDeclaredField("index");
+            field.setAccessible(true);
+            return (int[][]) field.get(indexedString);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
+
+This test suite includes tests for:
+- The constructor, ensuring it initializes the `values` and `index` arrays correctly.
+- The `indexOf` method, checking for both found and not found cases, as well as edge cases like empty targets and single-character targets.
+
+Note: The test suite uses reflection to access private fields for validation purposes. This is generally not recommended for production code but can be useful for testing private state in unit tests.

@@ -1,0 +1,79 @@
+package com.imsmart.servlet;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class HTMLFilterTest {
+
+    @Test
+    public void testFilterNullInput() {
+        assertNull(HTMLFilter.filter(null));
+    }
+
+    @Test
+    public void testFilterEmptyString() {
+        assertEquals("", HTMLFilter.filter(""));
+    }
+
+    @Test
+    public void testFilterNoSpecialCharacters() {
+        String input = "This is a test string.";
+        assertEquals(input, HTMLFilter.filter(input));
+    }
+
+    @Test
+    public void testFilterLessThan() {
+        assertEquals("&lt;", HTMLFilter.filter("<"));
+    }
+
+    @Test
+    public void testFilterGreaterThan() {
+        assertEquals("&gt;", HTMLFilter.filter(">"));
+    }
+
+    @Test
+    public void testFilterAmpersand() {
+        assertEquals("&amp;", HTMLFilter.filter("&"));
+    }
+
+    @Test
+    public void testFilterQuote() {
+        assertEquals("&quot;", HTMLFilter.filter("\""));
+    }
+
+    @Test
+    public void testFilterMixedSpecialCharacters() {
+        String input = "<>&\"";
+        String expected = "&lt;&gt;&amp;&quot;";
+        assertEquals(expected, HTMLFilter.filter(input));
+    }
+
+    @Test
+    public void testFilterMixedContent() {
+        String input = "This is a <test> string with & \"special\" characters.";
+        String expected = "This is a &lt;test&gt; string with &amp; &quot;special&quot; characters.";
+        assertEquals(expected, HTMLFilter.filter(input));
+    }
+
+    @Test
+    public void testFilterMultipleSpecialCharacters() {
+        String input = "<<<>>>&&&\"\"\"";
+        String expected = "&lt;&lt;&lt;&gt;&gt;&gt;&amp;&amp;&amp;&quot;&quot;&quot;";
+        assertEquals(expected, HTMLFilter.filter(input));
+    }
+
+    @Test
+    public void testFilterLongString() {
+        StringBuilder input = new StringBuilder();
+        for (int i = 0; i < 1000; i++) {
+            input.append("a");
+        }
+        input.append("<>&\"");
+        StringBuilder expected = new StringBuilder();
+        for (int i = 0; i < 1000; i++) {
+            expected.append("a");
+        }
+        expected.append("&lt;&gt;&amp;&quot;");
+        assertEquals(expected.toString(), HTMLFilter.filter(input.toString()));
+    }
+}

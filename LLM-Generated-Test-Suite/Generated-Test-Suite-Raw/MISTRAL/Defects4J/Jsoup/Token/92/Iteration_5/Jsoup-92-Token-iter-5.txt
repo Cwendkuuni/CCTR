@@ -1,0 +1,250 @@
+```java
+package org.jsoup.parser;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.jsoup.nodes.Attributes;
+
+import static org.junit.Assert.*;
+
+public class TokenTest {
+
+    private Token.Doctype doctype;
+    private Token.StartTag startTag;
+    private Token.EndTag endTag;
+    private Token.Comment comment;
+    private Token.Character character;
+    private Token.CData cdata;
+    private Token.EOF eof;
+
+    @Before
+    public void setUp() {
+        doctype = new Token.Doctype();
+        startTag = new Token.StartTag();
+        endTag = new Token.EndTag();
+        comment = new Token.Comment();
+        character = new Token.Character();
+        cdata = new Token.CData("cdata content");
+        eof = new Token.EOF();
+    }
+
+    @Test
+    public void testTokenType() {
+        assertEquals("Doctype", doctype.tokenType());
+        assertEquals("StartTag", startTag.tokenType());
+        assertEquals("EndTag", endTag.tokenType());
+        assertEquals("Comment", comment.tokenType());
+        assertEquals("Character", character.tokenType());
+        assertEquals("CData", cdata.tokenType());
+        assertEquals("EOF", eof.tokenType());
+    }
+
+    @Test
+    public void testDoctypeReset() {
+        doctype.name.append("html");
+        doctype.publicIdentifier.append("public");
+        doctype.systemIdentifier.append("system");
+        doctype.forceQuirks = true;
+
+        doctype.reset();
+
+        assertEquals("", doctype.name.toString());
+        assertNull(doctype.pubSysKey);
+        assertEquals("", doctype.publicIdentifier.toString());
+        assertEquals("", doctype.systemIdentifier.toString());
+        assertFalse(doctype.forceQuirks);
+    }
+
+    @Test
+    public void testTagReset() {
+        startTag.tagName = "div";
+        startTag.normalName = "div";
+        startTag.pendingAttributeName = "class";
+        startTag.pendingAttributeValue.append("container");
+        startTag.pendingAttributeValueS = "container";
+        startTag.hasEmptyAttributeValue = true;
+        startTag.hasPendingAttributeValue = true;
+        startTag.selfClosing = true;
+        startTag.attributes = new Attributes();
+
+        startTag.reset();
+
+        assertNull(startTag.tagName);
+        assertNull(startTag.normalName);
+        assertNull(startTag.pendingAttributeName);
+        assertEquals("", startTag.pendingAttributeValue.toString());
+        assertNull(startTag.pendingAttributeValueS);
+        assertFalse(startTag.hasEmptyAttributeValue);
+        assertFalse(startTag.hasPendingAttributeValue);
+        assertFalse(startTag.selfClosing);
+        assertNull(startTag.attributes);
+    }
+
+    @Test
+    public void testStartTagReset() {
+        startTag.tagName = "div";
+        startTag.attributes = new Attributes();
+
+        startTag.reset();
+
+        assertNull(startTag.tagName);
+        assertNotNull(startTag.attributes);
+    }
+
+    @Test
+    public void testCommentReset() {
+        comment.data.append("This is a comment");
+        comment.bogus = true;
+
+        comment.reset();
+
+        assertEquals("", comment.data.toString());
+        assertFalse(comment.bogus);
+    }
+
+    @Test
+    public void testCharacterReset() {
+        character.data("Some text");
+
+        character.reset();
+
+        assertNull(character.data);
+    }
+
+    @Test
+    public void testCDataReset() {
+        cdata.data("Some CDATA content");
+
+        cdata.reset();
+
+        assertNull(cdata.data);
+    }
+
+    @Test
+    public void testEOFReset() {
+        eof.reset();
+
+        // EOF reset does nothing, so just ensure it doesn't throw an exception
+    }
+
+    @Test
+    public void testDoctypeGetters() {
+        doctype.name.append("html");
+        doctype.pubSysKey = "key";
+        doctype.publicIdentifier.append("public");
+        doctype.systemIdentifier.append("system");
+        doctype.forceQuirks = true;
+
+        assertEquals("html", doctype.getName());
+        assertEquals("key", doctype.getPubSysKey());
+        assertEquals("public", doctype.getPublicIdentifier());
+        assertEquals("system", doctype.getSystemIdentifier());
+        assertTrue(doctype.isForceQuirks());
+    }
+
+    @Test
+    public void testTagMethods() {
+        startTag.name("div");
+        startTag.appendTagName("span");
+        startTag.appendTagName('a');
+        startTag.appendAttributeName("class");
+        startTag.appendAttributeName('i');
+        startTag.appendAttributeValue("container");
+        startTag.appendAttributeValue('x');
+        startTag.appendAttributeValue(new char[]{'y', 'z'});
+        startTag.appendAttributeValue(new int[]{97, 98}); // 'a', 'b'
+        startTag.setEmptyAttributeValue();
+        startTag.newAttribute();
+        startTag.finaliseTag();
+
+        assertEquals("divspana", startTag.name());
+        assertEquals("divspana", startTag.normalName());
+        assertEquals("classi", startTag.pendingAttributeName);
+        assertEquals("containerxyzab", startTag.pendingAttributeValue.toString());
+        assertTrue(startTag.hasEmptyAttributeValue);
+        assertTrue(startTag.hasPendingAttributeValue);
+        assertNotNull(startTag.attributes);
+    }
+
+    @Test
+    public void testStartTagNameAttr() {
+        Attributes attrs = new Attributes();
+        attrs.put("class", "container");
+
+        startTag.nameAttr("div", attrs);
+
+        assertEquals("div", startTag.name());
+        assertEquals(attrs, startTag.getAttributes());
+    }
+
+    @Test
+    public void testStartTagToString() {
+        Attributes attrs = new Attributes();
+        attrs.put("class", "container");
+
+        startTag.nameAttr("div", attrs);
+
+        assertEquals("<div class=\"container\">", startTag.toString());
+    }
+
+    @Test
+    public void testEndTagToString() {
+        endTag.name("div");
+
+        assertEquals("</div>", endTag.toString());
+    }
+
+    @Test
+    public void testCommentGetData() {
+        comment.data.append("This is a comment");
+
+        assertEquals("This is a comment", comment.getData());
+    }
+
+    @Test
+    public void testCommentToString() {
+        comment.data.append("This is a comment");
+
+        assertEquals("<!--This is a comment-->", comment.toString());
+    }
+
+    @Test
+    public void testCharacterGetData() {
+        character.data("Some text");
+
+        assertEquals("Some text", character.getData());
+    }
+
+    @Test
+    public void testCharacterToString() {
+        character.data("Some text");
+
+        assertEquals("Some text", character.toString());
+    }
+
+    @Test
+    public void testCDataToString() {
+        assertEquals("<![CDATA[cdata content]]>", cdata.toString());
+    }
+
+    @Test
+    public void testIsMethods() {
+        assertTrue(doctype.isDoctype());
+        assertTrue(startTag.isStartTag());
+        assertTrue(endTag.isEndTag());
+        assertTrue(comment.isComment());
+        assertTrue(character.isCharacter());
+        assertTrue(cdata.isCData());
+        assertTrue(eof.isEOF());
+    }
+
+    @Test
+    public void testAsMethods() {
+        assertEquals(doctype, doctype.asDoctype());
+        assertEquals(startTag, startTag.asStartTag());
+        assertEquals(endTag, endTag.asEndTag());
+        assertEquals(comment, comment.asComment());
+        assertEquals(character, character.asCharacter());
+    }
+}
+```

@@ -1,0 +1,109 @@
+```java
+package nu.staldal.lagoon;
+
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import static org.junit.Assert.*;
+import java.io.*;
+import java.util.Properties;
+
+public class LagoonCLITest {
+
+    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+    private final PrintStream originalOut = System.out;
+    private final PrintStream originalErr = System.err;
+
+    @Before
+    public void setUpStreams() {
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+    }
+
+    @After
+    public void restoreStreams() {
+        System.setOut(originalOut);
+        System.setErr(originalErr);
+    }
+
+    @Test
+    public void testMainNoArgs() {
+        LagoonCLI.main(new String[]{});
+        assertEquals("Syntax:\nnu.staldal.lagoon.LagoonCLI <property_file> [<interval>|build|force]\nnu.staldal.lagoon.LagoonCLI <sitemap_file> [<interval>|build|force]\n", outContent.toString());
+    }
+
+    @Test
+    public void testMainInvalidInterval() {
+        LagoonCLI.main(new String[]{"propertyFile", "invalidInterval"});
+        assertEquals("Syntax:\nnu.staldal.lagoon.LagoonCLI <property_file> [<interval>|build|force]\nnu.staldal.lagoon.LagoonCLI <sitemap_file> [<interval>|build|force]\n", outContent.toString());
+    }
+
+    @Test
+    public void testMainBuild() {
+        LagoonCLI.main(new String[]{"propertyFile", "build"});
+        assertTrue(outContent.toString().contains("Building website..."));
+    }
+
+    @Test
+    public void testMainForce() {
+        LagoonCLI.main(new String[]{"propertyFile", "force"});
+        assertTrue(outContent.toString().contains("Force building website..."));
+    }
+
+    @Test
+    public void testMainInterval() {
+        LagoonCLI.main(new String[]{"propertyFile", "10"});
+        assertTrue(outContent.toString().contains("Building website..."));
+    }
+
+    @Test
+    public void testMainSitemapFile() {
+        LagoonCLI.main(new String[]{"sitemapFile.xml"});
+        assertTrue(outContent.toString().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testMainPropertyFile() throws IOException {
+        File propertyFile = new File("testPropertyFile.properties");
+        try (FileOutputStream fos = new FileOutputStream(propertyFile)) {
+            Properties properties = new Properties();
+            properties.setProperty("targetURL", "http://example.com");
+            properties.setProperty("sitemapFile", "sitemapFile.xml");
+            properties.setProperty("sourceDir", "sourceDir");
+            properties.store(fos, null);
+        }
+
+        LagoonCLI.main(new String[]{propertyFile.getAbsolutePath()});
+        assertTrue(outContent.toString().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testGetProperty() throws LagoonException {
+        Properties properties = new Properties();
+        properties.setProperty("testProperty", "testValue");
+        LagoonCLI.properties = properties;
+
+        String value = LagoonCLI.getProperty("testProperty");
+        assertEquals("testValue", value);
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyNotFound() throws LagoonException {
+        Properties properties = new Properties();
+        LagoonCLI.properties = properties;
+
+        LagoonCLI.getProperty("nonExistentProperty");
+    }
+
+    @Test
+    public void testShowTime() {
+        LagoonCLI.showTime(5000);
+        assertEquals("in 5000 ms\n", outContent.toString());
+
+        outContent.reset();
+        LagoonCLI.showTime(15000);
+        assertEquals("in 15 s\n", outContent.toString());
+    }
+}
+```

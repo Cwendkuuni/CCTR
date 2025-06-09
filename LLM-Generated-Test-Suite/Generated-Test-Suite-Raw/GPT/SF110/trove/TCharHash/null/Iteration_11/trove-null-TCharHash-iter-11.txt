@@ -1,0 +1,135 @@
+To create a comprehensive JUnit 4 test suite for the `TCharHash` class, we need to test all the public and protected methods. Since `TCharHash` is an abstract class, we'll need to create a concrete subclass for testing purposes. Below is a complete JUnit 4 test suite for the `TCharHash` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import gnu.trove.impl.hash.TCharHash;
+import gnu.trove.procedure.TCharProcedure;
+import java.util.Arrays;
+
+public class TCharHashTest {
+
+    private TCharHash tCharHash;
+
+    // Concrete subclass for testing
+    private class TCharHashConcrete extends TCharHash {
+        public TCharHashConcrete() {
+            super();
+        }
+
+        public TCharHashConcrete(int initialCapacity) {
+            super(initialCapacity);
+        }
+
+        public TCharHashConcrete(int initialCapacity, float loadFactor) {
+            super(initialCapacity, loadFactor);
+        }
+
+        public TCharHashConcrete(int initialCapacity, float loadFactor, char no_entry_value) {
+            super(initialCapacity, loadFactor, no_entry_value);
+        }
+    }
+
+    @Before
+    public void setUp() {
+        tCharHash = new TCharHashConcrete(10, 0.5f, '\0');
+        tCharHash.setUp(10);
+    }
+
+    @Test
+    public void testGetNoEntryValue() {
+        assertEquals('\0', tCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testContains() {
+        tCharHash.insertKey('a');
+        assertTrue(tCharHash.contains('a'));
+        assertFalse(tCharHash.contains('b'));
+    }
+
+    @Test
+    public void testForEach() {
+        tCharHash.insertKey('a');
+        tCharHash.insertKey('b');
+        tCharHash.insertKey('c');
+
+        TCharProcedure procedure = new TCharProcedure() {
+            @Override
+            public boolean execute(char value) {
+                return value != 'b';
+            }
+        };
+
+        assertFalse(tCharHash.forEach(procedure));
+
+        procedure = new TCharProcedure() {
+            @Override
+            public boolean execute(char value) {
+                return true;
+            }
+        };
+
+        assertTrue(tCharHash.forEach(procedure));
+    }
+
+    @Test
+    public void testRemoveAt() {
+        int index = tCharHash.insertKey('a');
+        assertTrue(tCharHash.contains('a'));
+        tCharHash.removeAt(index);
+        assertFalse(tCharHash.contains('a'));
+    }
+
+    @Test
+    public void testIndex() {
+        tCharHash.insertKey('a');
+        assertTrue(tCharHash.index('a') >= 0);
+        assertEquals(-1, tCharHash.index('b'));
+    }
+
+    @Test
+    public void testIndexRehashed() {
+        tCharHash.insertKey('a');
+        int index = tCharHash.index('a');
+        assertEquals(index, tCharHash.indexRehashed('a', index, HashFunctions.hash('a'), (byte) 1));
+    }
+
+    @Test
+    public void testInsertKey() {
+        int index = tCharHash.insertKey('a');
+        assertTrue(index >= 0);
+        assertEquals(-index - 1, tCharHash.insertKey('a'));
+    }
+
+    @Test
+    public void testInsertKeyRehash() {
+        int index = tCharHash.insertKey('a');
+        assertTrue(index >= 0);
+        assertEquals(-index - 1, tCharHash.insertKeyRehash('a', index, HashFunctions.hash('a'), (byte) 1));
+    }
+
+    @Test
+    public void testInsertKeyAt() {
+        tCharHash.insertKeyAt(0, 'a');
+        assertTrue(tCharHash.contains('a'));
+    }
+}
+```
+
+### Explanation:
+- **Concrete Subclass**: Since `TCharHash` is abstract, we create a `TCharHashConcrete` subclass for testing.
+- **Setup**: The `setUp` method initializes the `TCharHash` instance with a specific capacity and load factor.
+- **Tests**: Each method in `TCharHash` is tested:
+  - `testGetNoEntryValue`: Verifies the `no_entry_value`.
+  - `testContains`: Checks if a character is contained in the hash.
+  - `testForEach`: Tests the `forEach` method with different procedures.
+  - `testRemoveAt`: Ensures `removeAt` correctly removes a character.
+  - `testIndex`: Verifies the index retrieval of a character.
+  - `testIndexRehashed`: Tests the rehashed index retrieval.
+  - `testInsertKey`: Checks the insertion of a key.
+  - `testInsertKeyRehash`: Tests the rehashed key insertion.
+  - `testInsertKeyAt`: Verifies direct insertion at a specific index.
+
+This test suite should cover the functionality of the `TCharHash` class comprehensively.

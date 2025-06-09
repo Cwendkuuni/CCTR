@@ -1,0 +1,140 @@
+To create a comprehensive JUnit 4 test suite for the `FoxHuntFrame` class, we need to focus on testing the public methods and any significant behavior of the class. The primary methods to test are `addPoint()` and `actionPerformed()`. Additionally, we should test the `FoxTableModel` class, which is an inner class of `FoxHuntFrame`.
+
+Below is a JUnit 4 test suite for the `FoxHuntFrame` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame foxHuntFrame;
+
+    @Before
+    public void setUp() {
+        foxHuntFrame = new FoxHuntFrame();
+    }
+
+    @Test
+    public void testAddPoint() {
+        // Set up the input fields
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+
+        // Call the method
+        foxHuntFrame.addPoint();
+
+        // Verify that a point was added
+        assertEquals(1, foxHuntFrame.points.size());
+        assertEquals(0, foxHuntFrame.fox.size());
+
+        // Add another point to test fox calculation
+        foxHuntFrame.theta.setText("90");
+        foxHuntFrame.lat.setText("35.0522");
+        foxHuntFrame.lon.setText("-119.2437");
+        foxHuntFrame.addPoint();
+
+        // Verify that a fox point was calculated
+        assertEquals(2, foxHuntFrame.points.size());
+        assertEquals(1, foxHuntFrame.fox.size());
+    }
+
+    @Test
+    public void testActionPerformed() {
+        // Mock an ActionEvent
+        ActionEvent mockEvent = Mockito.mock(ActionEvent.class);
+
+        // Set up the input fields
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+
+        // Call the method
+        foxHuntFrame.actionPerformed(mockEvent);
+
+        // Verify that a point was added
+        assertEquals(1, foxHuntFrame.points.size());
+    }
+
+    @Test
+    public void testLoadLandmarksFileNotFound() {
+        // Temporarily rename the landmarks file if it exists
+        File landmarksFile = new File("./landmarks.cfg");
+        File tempFile = new File("./landmarks_temp.cfg");
+        if (landmarksFile.exists()) {
+            landmarksFile.renameTo(tempFile);
+        }
+
+        try {
+            foxHuntFrame.loadLandmarks();
+            fail("Expected an error dialog due to missing landmarks file");
+        } catch (Exception e) {
+            // Expected behavior
+        } finally {
+            // Restore the landmarks file
+            if (tempFile.exists()) {
+                tempFile.renameTo(landmarksFile);
+            }
+        }
+    }
+
+    @Test
+    public void testLoadLandmarksIOException() throws IOException {
+        // Create a malformed landmarks file
+        File landmarksFile = new File("./landmarks.cfg");
+        try (FileWriter writer = new FileWriter(landmarksFile)) {
+            writer.write("INVALID DATA");
+        }
+
+        try {
+            foxHuntFrame.loadLandmarks();
+            fail("Expected an error dialog due to malformed landmarks file");
+        } catch (Exception e) {
+            // Expected behavior
+        } finally {
+            // Clean up
+            landmarksFile.delete();
+        }
+    }
+
+    @Test
+    public void testFoxTableModel() {
+        FoxHuntFrame.FoxTableModel model = foxHuntFrame.new FoxTableModel();
+
+        // Initially, there should be no rows
+        assertEquals(0, model.getRowCount());
+
+        // Add a point and verify the table model updates
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+        foxHuntFrame.addPoint();
+
+        foxHuntFrame.theta.setText("90");
+        foxHuntFrame.lat.setText("35.0522");
+        foxHuntFrame.lon.setText("-119.2437");
+        foxHuntFrame.addPoint();
+
+        assertEquals(1, model.getRowCount());
+    }
+}
+```
+
+### Explanation:
+- **setUp Method**: Initializes a new instance of `FoxHuntFrame` before each test.
+- **testAddPoint**: Tests the `addPoint` method by simulating user input and verifying the points and fox vectors.
+- **testActionPerformed**: Tests the `actionPerformed` method to ensure it correctly calls `addPoint`.
+- **testLoadLandmarksFileNotFound**: Tests the behavior when the landmarks file is missing.
+- **testLoadLandmarksIOException**: Tests the behavior when the landmarks file is malformed.
+- **testFoxTableModel**: Tests the `FoxTableModel` to ensure it correctly reflects the state of the `fox` vector.
+
+Note: The tests for file operations assume the presence of a `landmarks.cfg` file in the working directory. Adjust the file paths and handling as necessary for your environment.

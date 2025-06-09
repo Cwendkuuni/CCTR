@@ -1,0 +1,132 @@
+To create a comprehensive JUnit 4 test suite for the `SearchableTextPane` class, we need to test each method in the class. This includes testing the constructor, `getScrollableTracksViewportWidth`, `highlight`, `removeHighlights`, `search`, and any private methods that can be accessed indirectly through public methods. 
+
+Below is a JUnit 4 test suite for the `SearchableTextPane` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.text.*;
+import java.awt.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.logging.Logger;
+
+public class SearchableTextPaneTest {
+
+    private SearchableTextPane textPane;
+    private Font font;
+    private int tabSize;
+
+    @Before
+    public void setUp() {
+        font = new Font("Arial", Font.PLAIN, 12);
+        tabSize = 4;
+        textPane = new SearchableTextPane(font, tabSize);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertEquals(font, textPane.getFont());
+        assertEquals(tabSize, textPane.getTabSize());
+        assertNotNull(textPane.getHighlighter());
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth() {
+        // Mock parent component and UI
+        Component parent = mock(Component.class);
+        ComponentUI ui = mock(ComponentUI.class);
+        when(ui.getPreferredSize(textPane)).thenReturn(new Dimension(100, 100));
+        when(parent.getSize()).thenReturn(new Dimension(100, 100));
+
+        // Set parent and UI
+        textPane.setParent(parent);
+        textPane.setUI(ui);
+
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+
+        when(parent.getSize()).thenReturn(new Dimension(50, 100));
+        assertFalse(textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testHighlight() throws BadLocationException {
+        String content = "This is a test. This test is simple.";
+        textPane.setText(content);
+        String term = "test";
+
+        List<LineResult> results = textPane.highlight(term, 0);
+
+        assertEquals(2, results.size());
+        for (LineResult result : results) {
+            for (WordResult wordResult : result.getWordResults()) {
+                assertEquals(term, content.substring(wordResult.start, wordResult.end));
+            }
+        }
+    }
+
+    @Test
+    public void testRemoveHighlights() throws BadLocationException {
+        String content = "Highlight this text.";
+        textPane.setText(content);
+        textPane.highlight("Highlight", 0);
+
+        assertTrue(textPane.getHighlighter().getHighlights().length > 0);
+
+        textPane.removeHighlights();
+
+        assertEquals(0, textPane.getHighlighter().getHighlights().length);
+    }
+
+    @Test
+    public void testSearch() {
+        String content = "Search this text. Search again.";
+        textPane.setText(content);
+
+        int firstSearch = textPane.search("Search");
+        assertEquals(0, firstSearch);
+
+        int secondSearch = textPane.search("Search");
+        assertEquals(18, secondSearch);
+
+        int noSearch = textPane.search("NotInText");
+        assertEquals(-1, noSearch);
+    }
+
+    @Test
+    public void testSearchWithStartPos() {
+        String content = "Find the word. Find it again.";
+        textPane.setText(content);
+
+        int firstFind = textPane.search("Find", 0);
+        assertEquals(0, firstFind);
+
+        int secondFind = textPane.search("Find", firstFind + 1);
+        assertEquals(15, secondFind);
+
+        int noFind = textPane.search("NotInText", 0);
+        assertEquals(-1, noFind);
+    }
+}
+```
+
+### Explanation:
+
+1. **Constructor Test**: Verifies that the `SearchableTextPane` is initialized with the correct font and tab size, and that the highlighter is not null.
+
+2. **`getScrollableTracksViewportWidth` Test**: Mocks a parent component and UI to test the behavior of the method under different conditions.
+
+3. **`highlight` Test**: Sets text in the pane and highlights a term, then checks that the correct words are highlighted.
+
+4. **`removeHighlights` Test**: Ensures that highlights are removed after calling `removeHighlights`.
+
+5. **`search` Test**: Tests the search functionality by searching for a term multiple times and checking the positions returned.
+
+6. **`searchWithStartPos` Test**: Tests the search functionality with a specified start position.
+
+Note: This test suite assumes the existence of `LineResult` and `WordResult` classes, as well as a `SearchEngine` class with a `search` method. These would need to be mocked or implemented for the tests to run successfully.

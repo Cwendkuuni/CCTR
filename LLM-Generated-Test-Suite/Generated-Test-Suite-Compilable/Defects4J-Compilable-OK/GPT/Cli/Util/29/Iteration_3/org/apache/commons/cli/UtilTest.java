@@ -1,0 +1,62 @@
+package org.apache.commons.cli;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class UtilTest {
+
+    @Test
+    public void testStripLeadingHyphens_NullInput() {
+        assertNull(Util.stripLeadingHyphens(null));
+    }
+
+    @Test
+    public void testStripLeadingHyphens_NoHyphens() {
+        assertEquals("example", Util.stripLeadingHyphens("example"));
+    }
+
+    @Test
+    public void testStripLeadingHyphens_SingleHyphen() {
+        assertEquals("example", Util.stripLeadingHyphens("-example"));
+    }
+
+    @Test
+    public void testStripLeadingHyphens_DoubleHyphen() {
+        assertEquals("example", Util.stripLeadingHyphens("--example"));
+    }
+
+    @Test
+    public void testStripLeadingHyphens_MultipleHyphens() {
+        assertEquals("-example", Util.stripLeadingHyphens("---example"));
+    }
+
+    @Test
+    public void testStripLeadingAndTrailingQuotes_NoQuotes() {
+        assertEquals("example", Util.stripLeadingAndTrailingQuotes("example"));
+    }
+
+    @Test
+    public void testStripLeadingAndTrailingQuotes_LeadingQuote() {
+        assertEquals("example", Util.stripLeadingAndTrailingQuotes("\"example"));
+    }
+
+    @Test
+    public void testStripLeadingAndTrailingQuotes_TrailingQuote() {
+        assertEquals("example", Util.stripLeadingAndTrailingQuotes("example\""));
+    }
+
+    @Test
+    public void testStripLeadingAndTrailingQuotes_LeadingAndTrailingQuotes() {
+        assertEquals("example", Util.stripLeadingAndTrailingQuotes("\"example\""));
+    }
+
+    @Test
+    public void testStripLeadingAndTrailingQuotes_EmptyString() {
+        assertEquals("", Util.stripLeadingAndTrailingQuotes(""));
+    }
+
+    @Test
+    public void testStripLeadingAndTrailingQuotes_OnlyQuotes() {
+        assertEquals("", Util.stripLeadingAndTrailingQuotes("\"\""));
+    }
+}

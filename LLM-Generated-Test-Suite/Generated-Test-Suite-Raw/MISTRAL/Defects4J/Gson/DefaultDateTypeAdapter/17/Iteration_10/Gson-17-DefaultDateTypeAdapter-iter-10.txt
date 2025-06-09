@@ -1,0 +1,112 @@
+```java
+package com.google.gson;
+
+import static org.junit.Assert.*;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import org.junit.Before;
+import org.junit.Test;
+
+public class DefaultDateTypeAdapterTest {
+
+    private DefaultDateTypeAdapter adapter;
+    private DateFormat enUsFormat;
+    private DateFormat localFormat;
+
+    @Before
+    public void setUp() {
+        enUsFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US);
+        localFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT);
+        adapter = new DefaultDateTypeAdapter(Date.class, enUsFormat, localFormat);
+    }
+
+    @Test
+    public void testWriteNullDate() throws IOException {
+        JsonWriter writer = new JsonWriter(new StringBuilder());
+        adapter.write(writer, null);
+        assertEquals("null", writer.toString());
+    }
+
+    @Test
+    public void testWriteDate() throws IOException {
+        Date date = new Date();
+        JsonWriter writer = new JsonWriter(new StringBuilder());
+        adapter.write(writer, date);
+        String expected = enUsFormat.format(date);
+        assertEquals(expected, writer.toString().replace("\"", ""));
+    }
+
+    @Test
+    public void testReadDate() throws IOException {
+        String dateString = "2023-10-01T12:00:00Z";
+        JsonReader reader = new JsonReader(new java.io.StringReader("\"2023-10-01T12:00:00Z\""));
+        Date date = adapter.read(reader);
+        assertEquals(dateString, enUsFormat.format(date));
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testReadNonStringDate() throws IOException {
+        JsonReader reader = new JsonReader(new java.io.StringReader("12345"));
+        adapter.read(reader);
+    }
+
+    @Test
+    public void testReadTimestamp() throws IOException {
+        String dateString = "2023-10-01T12:00:00Z";
+        JsonReader reader = new JsonReader(new java.io.StringReader("\"2023-10-01T12:00:00Z\""));
+        adapter = new DefaultDateTypeAdapter(Timestamp.class, enUsFormat, localFormat);
+        Timestamp timestamp = (Timestamp) adapter.read(reader);
+        assertEquals(dateString, enUsFormat.format(timestamp));
+    }
+
+    @Test
+    public void testReadSqlDate() throws IOException {
+        String dateString = "2023-10-01T12:00:00Z";
+        JsonReader reader = new JsonReader(new java.io.StringReader("\"2023-10-01T12:00:00Z\""));
+        adapter = new DefaultDateTypeAdapter(java.sql.Date.class, enUsFormat, localFormat);
+        java.sql.Date sqlDate = (java.sql.Date) adapter.read(reader);
+        assertEquals(dateString, enUsFormat.format(sqlDate));
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "DefaultDateTypeAdapter(SimpleDateFormat)";
+        assertEquals(expected, adapter.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidDateType() {
+        new DefaultDateTypeAdapter(String.class, enUsFormat, localFormat);
+    }
+
+    @Test
+    public void testConstructorWithDatePattern() {
+        String pattern = "yyyy-MM-dd'T'HH:mm:ssZ";
+        adapter = new DefaultDateTypeAdapter(Date.class, pattern);
+        assertNotNull(adapter);
+    }
+
+    @Test
+    public void testConstructorWithStyle() {
+        int style = DateFormat.SHORT;
+        adapter = new DefaultDateTypeAdapter(Date.class, style);
+        assertNotNull(adapter);
+    }
+
+    @Test
+    public void testConstructorWithDateStyleAndTimeStyle() {
+        int dateStyle = DateFormat.SHORT;
+        int timeStyle = DateFormat.SHORT;
+        adapter = new DefaultDateTypeAdapter(Date.class, dateStyle, timeStyle);
+        assertNotNull(adapter);
+    }
+}
+```

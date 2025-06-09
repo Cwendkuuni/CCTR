@@ -1,0 +1,175 @@
+Certainly! Below is a JUnit 4 test suite for the `ArgumentImpl` class. This test suite aims to cover various methods and scenarios, including edge cases and exceptions.
+
+```java
+import org.apache.commons.cli2.OptionException;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.apache.commons.cli2.validation.Validator;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+import java.util.ListIterator;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ArgumentImplTest {
+
+    private ArgumentImpl argument;
+    private WriteableCommandLine commandLine;
+    private Validator validator;
+
+    @Before
+    public void setUp() {
+        validator = mock(Validator.class);
+        commandLine = mock(WriteableCommandLine.class);
+        argument = new ArgumentImpl("testArg", "Test Argument", 1, 3, ',', ';', validator, "--", Collections.singletonList("default"), 1);
+    }
+
+    @Test
+    public void testGetPreferredName() {
+        assertEquals("testArg", argument.getPreferredName());
+    }
+
+    @Test
+    public void testGetInitialSeparator() {
+        assertEquals(',', argument.getInitialSeparator());
+    }
+
+    @Test
+    public void testGetSubsequentSeparator() {
+        assertEquals(';', argument.getSubsequentSeparator());
+    }
+
+    @Test
+    public void testGetConsumeRemaining() {
+        assertEquals("--", argument.getConsumeRemaining());
+    }
+
+    @Test
+    public void testGetDefaultValues() {
+        assertEquals(Collections.singletonList("default"), argument.getDefaultValues());
+    }
+
+    @Test
+    public void testGetValidator() {
+        assertEquals(validator, argument.getValidator());
+    }
+
+    @Test
+    public void testGetDescription() {
+        assertEquals("Test Argument", argument.getDescription());
+    }
+
+    @Test
+    public void testGetMaximum() {
+        assertEquals(3, argument.getMaximum());
+    }
+
+    @Test
+    public void testGetMinimum() {
+        assertEquals(1, argument.getMinimum());
+    }
+
+    @Test
+    public void testIsRequired() {
+        assertTrue(argument.isRequired());
+    }
+
+    @Test
+    public void testStripBoundaryQuotes() {
+        assertEquals("value", argument.stripBoundaryQuotes("\"value\""));
+        assertEquals("value", argument.stripBoundaryQuotes("value"));
+    }
+
+    @Test
+    public void testProcessValues() throws OptionException {
+        List<String> args = new ArrayList<>();
+        args.add("value1");
+        args.add("value2");
+        ListIterator<String> iterator = args.listIterator();
+
+        argument.processValues(commandLine, iterator, argument);
+
+        verify(commandLine, times(2)).addValue(eq(argument), anyString());
+    }
+
+    @Test(expected = OptionException.class)
+    public void testProcessValuesExceedingMaximum() throws OptionException {
+        List<String> args = new ArrayList<>();
+        args.add("value1");
+        args.add("value2");
+        args.add("value3");
+        args.add("value4");
+        ListIterator<String> iterator = args.listIterator();
+
+        argument.processValues(commandLine, iterator, argument);
+    }
+
+    @Test
+    public void testCanProcess() {
+        assertTrue(argument.canProcess(commandLine, "anyArg"));
+    }
+
+    @Test
+    public void testValidate() throws OptionException {
+        List<String> values = new ArrayList<>();
+        values.add("value1");
+        when(commandLine.getValues(argument)).thenReturn(values);
+
+        argument.validate(commandLine);
+
+        verify(validator).validate(values);
+    }
+
+    @Test(expected = OptionException.class)
+    public void testValidateWithTooFewValues() throws OptionException {
+        List<String> values = new ArrayList<>();
+        when(commandLine.getValues(argument)).thenReturn(values);
+
+        argument.validate(commandLine);
+    }
+
+    @Test(expected = OptionException.class)
+    public void testValidateWithTooManyValues() throws OptionException {
+        List<String> values = new ArrayList<>();
+        values.add("value1");
+        values.add("value2");
+        values.add("value3");
+        values.add("value4");
+        when(commandLine.getValues(argument)).thenReturn(values);
+
+        argument.validate(commandLine);
+    }
+
+    @Test(expected = OptionException.class)
+    public void testValidateWithInvalidValues() throws OptionException {
+        List<String> values = new ArrayList<>();
+        values.add("invalidValue");
+        when(commandLine.getValues(argument)).thenReturn(values);
+        doThrow(new OptionException(argument, "Invalid value")).when(validator).validate(values);
+
+        argument.validate(commandLine);
+    }
+
+    @Test
+    public void testDefaults() {
+        argument.defaults(commandLine);
+        verify(commandLine).setDefaultValues(argument, Collections.singletonList("default"));
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes the necessary objects and mocks.
+- **Tests**: Each method in `ArgumentImpl` is tested, including:
+  - Basic getters like `getPreferredName`, `getInitialSeparator`, etc.
+  - `processValues` to ensure it processes arguments correctly and handles exceptions.
+  - `validate` to check if it correctly validates the number of arguments and uses the validator.
+  - `stripBoundaryQuotes` to ensure it removes quotes correctly.
+  - `defaults` to verify default values are set correctly.
+- **Mocks**: `WriteableCommandLine` and `Validator` are mocked to isolate the tests from dependencies.
+
+This test suite should provide comprehensive coverage for the `ArgumentImpl` class.

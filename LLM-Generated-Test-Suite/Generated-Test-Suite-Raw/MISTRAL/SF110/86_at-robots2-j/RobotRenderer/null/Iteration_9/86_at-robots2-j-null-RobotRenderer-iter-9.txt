@@ -1,0 +1,225 @@
+```java
+package net.virtualinfinity.atrobots.gui.renderers;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.awt.Graphics2D;
+import java.awt.geom.Ellipse2D;
+import java.util.HashSet;
+import java.util.Set;
+import net.virtualinfinity.atrobots.snapshots.RobotSnapshot;
+
+public class RobotRendererTest {
+
+    private RobotRenderer robotRenderer;
+    private RobotSnapshot robotSnapshot;
+    private Graphics2D g2d;
+    private Set<Integer> selectedRobotIds;
+
+    @Before
+    public void setUp() {
+        robotRenderer = new RobotRenderer();
+        robotSnapshot = new RobotSnapshot(); // Assuming a default constructor for RobotSnapshot
+        g2d = new MockGraphics2D(); // Assuming a mock implementation of Graphics2D
+        selectedRobotIds = new HashSet<>();
+    }
+
+    @Test
+    public void testConstructor() {
+        assertTrue(robotRenderer.isShowStatusBars());
+        assertTrue(robotRenderer.isRenderDead());
+        assertTrue(robotRenderer.isShowName());
+        assertTrue(robotRenderer.isFillShield());
+    }
+
+    @Test
+    public void testRenderDead() {
+        robotRenderer.setRenderDead(false);
+        robotSnapshot.setDead(true);
+        robotRenderer.render(g2d, robotSnapshot, selectedRobotIds);
+        // Verify that render method does not paint anything when renderDead is false and robot is dead
+        assertTrue(((MockGraphics2D) g2d).isRenderCalled());
+    }
+
+    @Test
+    public void testRenderAlive() {
+        robotSnapshot.setDead(false);
+        robotRenderer.render(g2d, robotSnapshot, selectedRobotIds);
+        // Verify that render method paints the robot when it is alive
+        assertTrue(((MockGraphics2D) g2d).isRenderCalled());
+    }
+
+    @Test
+    public void testSetRenderDead() {
+        robotRenderer.setRenderDead(false);
+        assertFalse(robotRenderer.isRenderDead());
+        robotRenderer.setRenderDead(true);
+        assertTrue(robotRenderer.isRenderDead());
+    }
+
+    @Test
+    public void testSetShowStatusBars() {
+        robotRenderer.setShowStatusBars(false);
+        assertFalse(robotRenderer.isShowStatusBars());
+        robotRenderer.setShowStatusBars(true);
+        assertTrue(robotRenderer.isShowStatusBars());
+    }
+
+    @Test
+    public void testSetShowName() {
+        robotRenderer.setShowName(false);
+        assertFalse(robotRenderer.isShowName());
+        robotRenderer.setShowName(true);
+        assertTrue(robotRenderer.isShowName());
+    }
+
+    @Test
+    public void testSetFillShield() {
+        robotRenderer.setFillShield(false);
+        assertFalse(robotRenderer.isFillShield());
+        robotRenderer.setFillShield(true);
+        assertTrue(robotRenderer.isFillShield());
+    }
+
+    @Test
+    public void testPaintSelection() {
+        selectedRobotIds.add(robotSnapshot.getId());
+        robotRenderer.render(g2d, robotSnapshot, selectedRobotIds);
+        // Verify that paintSelection method is called
+        assertTrue(((MockGraphics2D) g2d).isPaintSelectionCalled());
+    }
+
+    @Test
+    public void testPaintShield() {
+        robotSnapshot.setActiveShield(true);
+        robotRenderer.render(g2d, robotSnapshot, selectedRobotIds);
+        // Verify that paintShield method is called
+        assertTrue(((MockGraphics2D) g2d).isPaintShieldCalled());
+    }
+
+    @Test
+    public void testPaintName() {
+        robotRenderer.setShowName(true);
+        robotRenderer.render(g2d, robotSnapshot, selectedRobotIds);
+        // Verify that paintName method is called
+        assertTrue(((MockGraphics2D) g2d).isPaintNameCalled());
+    }
+
+    @Test
+    public void testPaintHeat() {
+        robotRenderer.setShowStatusBars(true);
+        robotRenderer.render(g2d, robotSnapshot, selectedRobotIds);
+        // Verify that paintHeat method is called
+        assertTrue(((MockGraphics2D) g2d).isPaintHeatCalled());
+    }
+
+    @Test
+    public void testPaintArmor() {
+        robotRenderer.setShowStatusBars(true);
+        robotRenderer.render(g2d, robotSnapshot, selectedRobotIds);
+        // Verify that paintArmor method is called
+        assertTrue(((MockGraphics2D) g2d).isPaintArmorCalled());
+    }
+
+    @Test
+    public void testPaintTurret() {
+        robotRenderer.render(g2d, robotSnapshot, selectedRobotIds);
+        // Verify that paintTurret method is called
+        assertTrue(((MockGraphics2D) g2d).isPaintTurretCalled());
+    }
+
+    @Test
+    public void testPaintBody() {
+        robotRenderer.render(g2d, robotSnapshot, selectedRobotIds);
+        // Verify that paintBody method is called
+        assertTrue(((MockGraphics2D) g2d).isPaintBodyCalled());
+    }
+
+    // Mock implementation of Graphics2D for testing purposes
+    private static class MockGraphics2D extends Graphics2D {
+        private boolean renderCalled = false;
+        private boolean paintSelectionCalled = false;
+        private boolean paintShieldCalled = false;
+        private boolean paintNameCalled = false;
+        private boolean paintHeatCalled = false;
+        private boolean paintArmorCalled = false;
+        private boolean paintTurretCalled = false;
+        private boolean paintBodyCalled = false;
+
+        @Override
+        public void draw(Ellipse2D s) {
+            paintSelectionCalled = true;
+        }
+
+        @Override
+        public void fill(Ellipse2D s) {
+            paintShieldCalled = true;
+        }
+
+        @Override
+        public void drawString(String str, float x, float y) {
+            paintNameCalled = true;
+        }
+
+        @Override
+        public void fill(Rectangle2D rect) {
+            paintHeatCalled = true;
+        }
+
+        @Override
+        public void draw(Rectangle2D rect) {
+            paintArmorCalled = true;
+        }
+
+        @Override
+        public void draw(Line2D line) {
+            paintTurretCalled = true;
+        }
+
+        @Override
+        public void fill(GeneralPath path) {
+            paintBodyCalled = true;
+        }
+
+        @Override
+        public void draw(GeneralPath path) {
+            paintBodyCalled = true;
+        }
+
+        public boolean isRenderCalled() {
+            return renderCalled;
+        }
+
+        public boolean isPaintSelectionCalled() {
+            return paintSelectionCalled;
+        }
+
+        public boolean isPaintShieldCalled() {
+            return paintShieldCalled;
+        }
+
+        public boolean isPaintNameCalled() {
+            return paintNameCalled;
+        }
+
+        public boolean isPaintHeatCalled() {
+            return paintHeatCalled;
+        }
+
+        public boolean isPaintArmorCalled() {
+            return paintArmorCalled;
+        }
+
+        public boolean isPaintTurretCalled() {
+            return paintTurretCalled;
+        }
+
+        public boolean isPaintBodyCalled() {
+            return paintBodyCalled;
+        }
+
+        // Other methods of Graphics2D can be mocked as needed
+    }
+}
+```

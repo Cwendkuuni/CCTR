@@ -1,0 +1,113 @@
+Certainly! Below is a complete JUnit 4 test suite for the `NumericEntityUnescaper` class. This test suite aims to cover various scenarios for the `translate` method, as well as the `isSet` method.
+
+```java
+import org.apache.commons.lang3.text.translate.NumericEntityUnescaper;
+import org.apache.commons.lang3.text.translate.NumericEntityUnescaper.OPTION;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+
+import static org.junit.Assert.*;
+
+public class NumericEntityUnescaperTest {
+
+    private NumericEntityUnescaper unescaperWithSemiColonRequired;
+    private NumericEntityUnescaper unescaperWithSemiColonOptional;
+    private NumericEntityUnescaper unescaperWithErrorIfNoSemiColon;
+
+    @Before
+    public void setUp() {
+        unescaperWithSemiColonRequired = new NumericEntityUnescaper(OPTION.semiColonRequired);
+        unescaperWithSemiColonOptional = new NumericEntityUnescaper(OPTION.semiColonOptional);
+        unescaperWithErrorIfNoSemiColon = new NumericEntityUnescaper(OPTION.errorIfNoSemiColon);
+    }
+
+    @Test
+    public void testIsSet() {
+        assertTrue(unescaperWithSemiColonRequired.isSet(OPTION.semiColonRequired));
+        assertFalse(unescaperWithSemiColonRequired.isSet(OPTION.semiColonOptional));
+        assertFalse(unescaperWithSemiColonRequired.isSet(OPTION.errorIfNoSemiColon));
+
+        assertTrue(unescaperWithSemiColonOptional.isSet(OPTION.semiColonOptional));
+        assertFalse(unescaperWithSemiColonOptional.isSet(OPTION.semiColonRequired));
+        assertFalse(unescaperWithSemiColonOptional.isSet(OPTION.errorIfNoSemiColon));
+
+        assertTrue(unescaperWithErrorIfNoSemiColon.isSet(OPTION.errorIfNoSemiColon));
+        assertFalse(unescaperWithErrorIfNoSemiColon.isSet(OPTION.semiColonRequired));
+        assertFalse(unescaperWithErrorIfNoSemiColon.isSet(OPTION.semiColonOptional));
+    }
+
+    @Test
+    public void testTranslateDecimalEntityWithSemiColon() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaperWithSemiColonRequired.translate("&#65;", 0, writer);
+        assertEquals(5, result);
+        assertEquals("A", writer.toString());
+    }
+
+    @Test
+    public void testTranslateDecimalEntityWithoutSemiColon() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaperWithSemiColonOptional.translate("&#65", 0, writer);
+        assertEquals(4, result);
+        assertEquals("A", writer.toString());
+    }
+
+    @Test
+    public void testTranslateHexEntityWithSemiColon() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaperWithSemiColonRequired.translate("&#x41;", 0, writer);
+        assertEquals(6, result);
+        assertEquals("A", writer.toString());
+    }
+
+    @Test
+    public void testTranslateHexEntityWithoutSemiColon() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaperWithSemiColonOptional.translate("&#x41", 0, writer);
+        assertEquals(5, result);
+        assertEquals("A", writer.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTranslateEntityWithoutSemiColonError() throws IOException {
+        StringWriter writer = new StringWriter();
+        unescaperWithErrorIfNoSemiColon.translate("&#65", 0, writer);
+    }
+
+    @Test
+    public void testTranslateInvalidEntity() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaperWithSemiColonRequired.translate("&#xyz;", 0, writer);
+        assertEquals(0, result);
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testTranslateNonEntity() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaperWithSemiColonRequired.translate("Hello World", 0, writer);
+        assertEquals(0, result);
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testTranslateEntityWithHighCodePoint() throws IOException {
+        StringWriter writer = new StringWriter();
+        int result = unescaperWithSemiColonRequired.translate("&#128512;", 0, writer);
+        assertEquals(8, result);
+        assertEquals("\uD83D\uDE00", writer.toString()); // Unicode for 😀
+    }
+}
+```
+
+This test suite covers:
+- Different options for handling semicolons.
+- Decimal and hexadecimal numeric entities.
+- Entities with and without semicolons.
+- Invalid entities and non-entity strings.
+- High code point entities (e.g., emojis).
+
+Make sure to include the necessary dependencies for JUnit 4 in your project to run these tests.

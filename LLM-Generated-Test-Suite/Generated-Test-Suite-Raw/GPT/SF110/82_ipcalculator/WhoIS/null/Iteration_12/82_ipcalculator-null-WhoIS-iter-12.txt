@@ -1,0 +1,140 @@
+To create a comprehensive JUnit 4 test suite for the `WhoIS` class, we need to test the main functionalities of the class, including the GUI components and the network interactions. Since the class is heavily reliant on GUI components and network operations, we will focus on testing the logic and interactions that can be reasonably tested in a unit test environment. Note that testing GUI components and network operations might require additional tools or frameworks like Mockito for mocking.
+
+Here's a basic JUnit 4 test suite for the `WhoIS` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.net.Socket;
+import java.net.UnknownHostException;
+
+import javax.swing.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+public class WhoISTest {
+
+    private WhoIS whois;
+    private JTextField queryTextFieldMock;
+    private JComboBox inverseQueriesMock;
+    private JList miscListMock;
+    private JButton queryButtonMock;
+    private JButton resetButtonMock;
+    private JRadioButton lowercaseLMock;
+    private JRadioButton uppercaseLMock;
+    private JRadioButton lowercaseMMock;
+    private JRadioButton uppercaseMMock;
+    private JRadioButton lowercaseXMock;
+    private JCheckBox lowercaseDMock;
+
+    @Before
+    public void setUp() {
+        whois = new WhoIS();
+        
+        // Mocking components
+        queryTextFieldMock = mock(JTextField.class);
+        inverseQueriesMock = mock(JComboBox.class);
+        miscListMock = mock(JList.class);
+        queryButtonMock = mock(JButton.class);
+        resetButtonMock = mock(JButton.class);
+        lowercaseLMock = mock(JRadioButton.class);
+        uppercaseLMock = mock(JRadioButton.class);
+        lowercaseMMock = mock(JRadioButton.class);
+        uppercaseMMock = mock(JRadioButton.class);
+        lowercaseXMock = mock(JRadioButton.class);
+        lowercaseDMock = mock(JCheckBox.class);
+
+        // Injecting mocks into the WhoIS instance
+        whois.queryTextField = queryTextFieldMock;
+        whois.inverseQueries = inverseQueriesMock;
+        whois.miscList = miscListMock;
+        whois.queryButton = queryButtonMock;
+        whois.resetButton = resetButtonMock;
+        whois.lowercaseL = lowercaseLMock;
+        whois.uppercaseL = uppercaseLMock;
+        whois.lowercaseM = lowercaseMMock;
+        whois.uppercaseM = uppercaseMMock;
+        whois.lowercaseX = lowercaseXMock;
+        whois.lowercaseD = lowercaseDMock;
+    }
+
+    @Test
+    public void testGetQueryWithNoOptions() {
+        when(queryTextFieldMock.getText()).thenReturn("testQuery");
+        when(inverseQueriesMock.getSelectedItem()).thenReturn("None");
+        when(miscListMock.getSelectedValues()).thenReturn(new Object[]{"All"});
+
+        String query = whois.getQuery();
+        assertEquals("testQuery", query);
+    }
+
+    @Test
+    public void testGetQueryWithInverseOption() {
+        when(queryTextFieldMock.getText()).thenReturn("testQuery");
+        when(inverseQueriesMock.getSelectedItem()).thenReturn("admin-c");
+        when(miscListMock.getSelectedValues()).thenReturn(new Object[]{"All"});
+
+        String query = whois.getQuery();
+        assertEquals("-i admin-c testQuery", query);
+    }
+
+    @Test
+    public void testGetQueryWithMiscOptions() {
+        when(queryTextFieldMock.getText()).thenReturn("testQuery");
+        when(inverseQueriesMock.getSelectedItem()).thenReturn("None");
+        when(miscListMock.getSelectedValues()).thenReturn(new Object[]{"person", "role"});
+
+        String query = whois.getQuery();
+        assertEquals("-T person,role testQuery", query);
+    }
+
+    @Test
+    public void testGetQueryWithRadioButtonOptions() {
+        when(queryTextFieldMock.getText()).thenReturn("testQuery");
+        when(inverseQueriesMock.getSelectedItem()).thenReturn("None");
+        when(miscListMock.getSelectedValues()).thenReturn(new Object[]{"All"});
+        when(lowercaseLMock.isSelected()).thenReturn(true);
+
+        String query = whois.getQuery();
+        assertEquals("-l testQuery", query);
+    }
+
+    @Test
+    public void testReset() {
+        whois.reset();
+        verify(queryTextFieldMock).setText("");
+        verify(lowercaseDMock).setSelected(false);
+        verify(inverseQueriesMock).setSelectedIndex(0);
+        verify(miscListMock).setSelectedIndex(0);
+    }
+
+    @Test
+    public void testActionPerformedQueryButton() {
+        ActionEvent event = new ActionEvent(queryButtonMock, ActionEvent.ACTION_PERFORMED, "Query");
+        when(event.getSource()).thenReturn(queryButtonMock);
+        whois.actionPerformed(event);
+        // Assuming startQuery() is tested separately
+    }
+
+    @Test
+    public void testActionPerformedResetButton() {
+        ActionEvent event = new ActionEvent(resetButtonMock, ActionEvent.ACTION_PERFORMED, "Reset");
+        when(event.getSource()).thenReturn(resetButtonMock);
+        whois.actionPerformed(event);
+        verify(queryTextFieldMock).setText("");
+    }
+
+    // Additional tests for network operations would require more complex setup and possibly integration tests
+}
+```
+
+### Notes:
+- **Mocking**: We use Mockito to mock GUI components and simulate user interactions.
+- **Network Operations**: Testing network operations like `query()` would typically require integration tests or more advanced mocking techniques to simulate network conditions.
+- **GUI Testing**: GUI testing is limited in unit tests. For comprehensive GUI testing, consider using tools like AssertJ-Swing or FEST.
+- **JUnit 4**: Ensure you have JUnit 4 and Mockito dependencies in your project to run these tests.

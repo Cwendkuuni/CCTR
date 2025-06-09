@@ -1,0 +1,136 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `ReflectionSearch` class. This suite assumes that the necessary classes and methods (like `WildcardSearch`, `Query`, `MethodReflectionCriteria`, `SearchType`, `Conditional`, `ReflectionShelf`, `Criteria`, `ReflectionCriteria`, and `BeanBinException`) are properly defined and available in your testing environment.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ReflectionSearchTest {
+
+    private ReflectionSearch reflectionSearch;
+    private Class<?> testClass;
+
+    @Before
+    public void setUp() {
+        testClass = Mockito.mock(Class.class);
+        reflectionSearch = new ReflectionSearch(testClass);
+    }
+
+    @Test
+    public void testHasAnnotationWithExactMatch() {
+        Annotation annotation = Mockito.mock(Annotation.class);
+        Mockito.when(annotation.annotationType()).thenReturn(TestAnnotation.class);
+        Mockito.when(testClass.getAnnotations()).thenReturn(new Annotation[]{annotation});
+
+        assertTrue(reflectionSearch.hasAnnotation("TestAnnotation"));
+    }
+
+    @Test
+    public void testHasAnnotationWithWildcardMatch() {
+        Annotation annotation = Mockito.mock(Annotation.class);
+        Mockito.when(annotation.annotationType()).thenReturn(TestAnnotation.class);
+        Mockito.when(testClass.getAnnotations()).thenReturn(new Annotation[]{annotation});
+
+        assertTrue(reflectionSearch.hasAnnotation("*Annotation"));
+    }
+
+    @Test
+    public void testHasAnnotationWithNoMatch() {
+        Annotation annotation = Mockito.mock(Annotation.class);
+        Mockito.when(annotation.annotationType()).thenReturn(TestAnnotation.class);
+        Mockito.when(testClass.getAnnotations()).thenReturn(new Annotation[]{annotation});
+
+        assertFalse(reflectionSearch.hasAnnotation("NonExistent"));
+    }
+
+    @Test
+    public void testMethodsThatHave() throws Exception {
+        reflectionSearch.methodsThatHave("testMethod");
+        // Assuming Query and MethodReflectionCriteria are properly mocked and tested separately
+        // Here we just ensure no exceptions are thrown and the method chain works
+    }
+
+    @Test
+    public void testMethodsThatDontHave() throws Exception {
+        reflectionSearch.methodsThatDontHave("testMethod");
+        // Assuming Query and MethodReflectionCriteria are properly mocked and tested separately
+        // Here we just ensure no exceptions are thrown and the method chain works
+    }
+
+    @Test
+    public void testAnd() {
+        ReflectionSearch result = reflectionSearch.and();
+        assertNotNull(result);
+        assertEquals(reflectionSearch, result);
+    }
+
+    @Test
+    public void testOr() {
+        ReflectionSearch result = reflectionSearch.or();
+        assertNotNull(result);
+        assertEquals(reflectionSearch, result);
+    }
+
+    @Test
+    public void testGetMethods() throws Exception {
+        List<Method> mockMethods = new ArrayList<>();
+        Method mockMethod = Mockito.mock(Method.class);
+        mockMethods.add(mockMethod);
+
+        ReflectionShelf shelf = Mockito.mock(ReflectionShelf.class);
+        Mockito.when(shelf.get(Mockito.any())).thenReturn(mockMethods);
+        Mockito.when(ReflectionShelf.getInstance()).thenReturn(shelf);
+
+        List<Method> methods = reflectionSearch.getMethods();
+        assertNotNull(methods);
+        assertEquals(1, methods.size());
+        assertEquals(mockMethod, methods.get(0));
+    }
+
+    @Test
+    public void testIntersect() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        Method method1 = Mockito.mock(Method.class);
+        Method method2 = Mockito.mock(Method.class);
+
+        master.add(method1);
+        toAdd.add(method1);
+        toAdd.add(method2);
+
+        reflectionSearch.intersect(master, toAdd);
+        assertEquals(1, master.size());
+        assertTrue(master.contains(method1));
+    }
+
+    @Test
+    public void testUnion() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        Method method1 = Mockito.mock(Method.class);
+        Method method2 = Mockito.mock(Method.class);
+
+        master.add(method1);
+        toAdd.add(method2);
+
+        reflectionSearch.union(master, toAdd);
+        assertEquals(2, master.size());
+        assertTrue(master.contains(method1));
+        assertTrue(master.contains(method2));
+    }
+
+    // Mock annotation for testing
+    @interface TestAnnotation {}
+}
+```
+
+### Notes:
+- **Mocking**: The test suite uses Mockito to mock dependencies and behaviors that are not the focus of the test, such as annotations and methods.
+- **Assumptions**: The test suite assumes that the `ReflectionShelf`, `Query`, `MethodReflectionCriteria`, and other related classes are correctly implemented and available.
+- **Test Coverage**: The suite covers all public methods and some protected methods (`intersect` and `union`) to ensure they behave as expected.
+- **Annotations**: A mock annotation `TestAnnotation` is used to simulate annotation behavior in tests.

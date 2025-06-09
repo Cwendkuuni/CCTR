@@ -1,0 +1,106 @@
+```java
+package fr.pingtimeout.jtail.gui.view;
+
+import fr.pingtimeout.jtail.util.JTailLogger;
+import fr.pingtimeout.jtail.gui.controller.ScrollBarAdjustmentController;
+import fr.pingtimeout.jtail.gui.controller.JTailSizeController;
+import fr.pingtimeout.jtail.gui.model.JTailModel;
+import fr.pingtimeout.jtail.gui.model.JTailModelEvent;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import javax.swing.table.TableColumn;
+import java.awt.*;
+import java.util.Observable;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class JTailPanelTest {
+
+    private JTailPanel jTailPanel;
+    private JTailModel mockModel;
+
+    @Before
+    public void setUp() {
+        mockModel = mock(JTailModel.class);
+        jTailPanel = new JTailPanel(mockModel);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(jTailPanel.model);
+        assertNotNull(jTailPanel.scrollPane);
+        assertNotNull(jTailPanel.verticalScrollBar);
+        assertNotNull(jTailPanel.dataTable);
+        assertNotNull(jTailPanel.tableModel);
+        assertTrue(jTailPanel.characterHeight > 0);
+        assertTrue(jTailPanel.maxCharacterWidth > 0);
+    }
+
+    @Test
+    public void testGetCharacterHeight() {
+        int characterHeight = jTailPanel.getCharacterHeight();
+        assertTrue(characterHeight > 0);
+    }
+
+    @Test
+    public void testGetVerticalScrollBar() {
+        JScrollBar verticalScrollBar = jTailPanel.getVerticalScrollBar();
+        assertNotNull(verticalScrollBar);
+    }
+
+    @Test
+    public void testUpdateResizedEvent() {
+        JTailModelEvent event = new JTailModelEvent(mockModel, JTailModelEvent.Type.RESIZED, 0, 0, 0, 0);
+        jTailPanel.update(mockModel, event);
+
+        verify(mockModel).getLineNumbers();
+        verify(mockModel).getContent();
+    }
+
+    @Test
+    public void testUpdateScrolledEvent() {
+        JTailModelEvent event = new JTailModelEvent(mockModel, JTailModelEvent.Type.SCROLLED, 0, 0, 0, 0);
+        jTailPanel.update(mockModel, event);
+
+        verify(mockModel).getLineNumbers();
+        verify(mockModel).getContent();
+    }
+
+    @Test
+    public void testUpdateDataTable() {
+        String lineNumbers = "1\n2\n3";
+        String lines = "line1\nline2\nline3";
+
+        jTailPanel.updateDataTable(lineNumbers, lines);
+
+        assertEquals(3, jTailPanel.tableModel.getRowCount());
+        assertEquals("1", jTailPanel.tableModel.getValueAt(0, 0));
+        assertEquals("line1", jTailPanel.tableModel.getValueAt(0, 1));
+        assertEquals("2", jTailPanel.tableModel.getValueAt(1, 0));
+        assertEquals("line2", jTailPanel.tableModel.getValueAt(1, 1));
+        assertEquals("3", jTailPanel.tableModel.getValueAt(2, 0));
+        assertEquals("line3", jTailPanel.tableModel.getValueAt(2, 1));
+    }
+
+    @Test
+    public void testUpdateDataTableEmptyLines() {
+        String lineNumbers = "1\n2\n3";
+        String lines = "";
+
+        jTailPanel.updateDataTable(lineNumbers, lines);
+
+        assertEquals(3, jTailPanel.tableModel.getRowCount());
+        assertEquals("1", jTailPanel.tableModel.getValueAt(0, 0));
+        assertEquals("", jTailPanel.tableModel.getValueAt(0, 1));
+        assertEquals("2", jTailPanel.tableModel.getValueAt(1, 0));
+        assertEquals("", jTailPanel.tableModel.getValueAt(1, 1));
+        assertEquals("3", jTailPanel.tableModel.getValueAt(2, 0));
+        assertEquals("", jTailPanel.tableModel.getValueAt(2, 1));
+    }
+}
+```

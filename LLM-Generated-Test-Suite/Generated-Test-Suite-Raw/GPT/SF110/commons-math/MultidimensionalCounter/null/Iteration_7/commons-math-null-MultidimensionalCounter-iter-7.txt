@@ -1,0 +1,154 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `MultidimensionalCounter` class. This test suite covers various scenarios, including normal operations, boundary conditions, and exception handling.
+
+```java
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
+import org.apache.commons.math3.exception.OutOfRangeException;
+import org.apache.commons.math3.util.MultidimensionalCounter;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.NoSuchElementException;
+
+import static org.junit.Assert.*;
+
+public class MultidimensionalCounterTest {
+
+    private MultidimensionalCounter counter3D;
+    private MultidimensionalCounter counter1D;
+
+    @Before
+    public void setUp() {
+        counter3D = new MultidimensionalCounter(3, 4, 5);
+        counter1D = new MultidimensionalCounter(10);
+    }
+
+    @Test(expected = NotStrictlyPositiveException.class)
+    public void testConstructorWithZeroSize() {
+        new MultidimensionalCounter(3, 0, 5);
+    }
+
+    @Test(expected = NotStrictlyPositiveException.class)
+    public void testConstructorWithNegativeSize() {
+        new MultidimensionalCounter(3, -4, 5);
+    }
+
+    @Test
+    public void testGetDimension() {
+        assertEquals(3, counter3D.getDimension());
+        assertEquals(1, counter1D.getDimension());
+    }
+
+    @Test
+    public void testGetSizes() {
+        assertArrayEquals(new int[]{3, 4, 5}, counter3D.getSizes());
+        assertArrayEquals(new int[]{10}, counter1D.getSizes());
+    }
+
+    @Test
+    public void testGetSize() {
+        assertEquals(60, counter3D.getSize());
+        assertEquals(10, counter1D.getSize());
+    }
+
+    @Test
+    public void testGetCounts() {
+        assertArrayEquals(new int[]{0, 0, 0}, counter3D.getCounts(0));
+        assertArrayEquals(new int[]{2, 3, 4}, counter3D.getCounts(59));
+    }
+
+    @Test(expected = OutOfRangeException.class)
+    public void testGetCountsOutOfRange() {
+        counter3D.getCounts(60);
+    }
+
+    @Test
+    public void testGetCount() {
+        assertEquals(0, counter3D.getCount(0, 0, 0));
+        assertEquals(59, counter3D.getCount(2, 3, 4));
+    }
+
+    @Test(expected = DimensionMismatchException.class)
+    public void testGetCountDimensionMismatch() {
+        counter3D.getCount(1, 2);
+    }
+
+    @Test(expected = OutOfRangeException.class)
+    public void testGetCountOutOfRange() {
+        counter3D.getCount(3, 4, 5);
+    }
+
+    @Test
+    public void testIterator() {
+        MultidimensionalCounter.Iterator iterator = counter3D.iterator();
+        int count = 0;
+        while (iterator.hasNext()) {
+            assertEquals(count, (int) iterator.next());
+            count++;
+        }
+        assertEquals(60, count);
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testIteratorNextOutOfRange() {
+        MultidimensionalCounter.Iterator iterator = counter3D.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+        }
+        iterator.next(); // Should throw NoSuchElementException
+    }
+
+    @Test
+    public void testIteratorGetCount() {
+        MultidimensionalCounter.Iterator iterator = counter3D.iterator();
+        iterator.next();
+        assertEquals(0, iterator.getCount());
+        iterator.next();
+        assertEquals(1, iterator.getCount());
+    }
+
+    @Test
+    public void testIteratorGetCounts() {
+        MultidimensionalCounter.Iterator iterator = counter3D.iterator();
+        iterator.next();
+        assertArrayEquals(new int[]{0, 0, 0}, iterator.getCounts());
+        iterator.next();
+        assertArrayEquals(new int[]{0, 0, 1}, iterator.getCounts());
+    }
+
+    @Test
+    public void testIteratorGetCountWithDim() {
+        MultidimensionalCounter.Iterator iterator = counter3D.iterator();
+        iterator.next();
+        assertEquals(0, iterator.getCount(0));
+        assertEquals(0, iterator.getCount(1));
+        assertEquals(0, iterator.getCount(2));
+        iterator.next();
+        assertEquals(0, iterator.getCount(0));
+        assertEquals(0, iterator.getCount(1));
+        assertEquals(1, iterator.getCount(2));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testIteratorRemove() {
+        MultidimensionalCounter.Iterator iterator = counter3D.iterator();
+        iterator.remove();
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("[0][0][0]", counter3D.toString());
+    }
+}
+```
+
+This test suite covers the following:
+
+- Constructor tests, including exceptions for invalid sizes.
+- Tests for `getDimension`, `getSizes`, and `getSize`.
+- Tests for `getCounts` and `getCount`, including boundary and exception cases.
+- Tests for the `Iterator` class, including `hasNext`, `next`, `getCount`, `getCounts`, and `getCount(int dim)`.
+- Tests for exception handling in the iterator.
+- A test for the `toString` method.
+
+Make sure to include the necessary imports and dependencies for JUnit 4 and Apache Commons Math exceptions in your project to run these tests successfully.

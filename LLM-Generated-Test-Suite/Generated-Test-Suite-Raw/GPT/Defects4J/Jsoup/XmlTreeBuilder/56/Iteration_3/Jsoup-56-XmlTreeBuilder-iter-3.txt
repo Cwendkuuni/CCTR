@@ -1,0 +1,111 @@
+Certainly! Below is a JUnit 4 test suite for the `XmlTreeBuilder` class. This test suite aims to cover the various methods and functionalities provided by the class.
+
+```java
+import org.jsoup.nodes.*;
+import org.jsoup.parser.*;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class XmlTreeBuilderTest {
+
+    private XmlTreeBuilder xmlTreeBuilder;
+    private String baseUri;
+
+    @Before
+    public void setUp() {
+        xmlTreeBuilder = new XmlTreeBuilder();
+        baseUri = "http://example.com";
+    }
+
+    @Test
+    public void testDefaultSettings() {
+        ParseSettings settings = xmlTreeBuilder.defaultSettings();
+        assertEquals(ParseSettings.preserveCase, settings);
+    }
+
+    @Test
+    public void testParse() {
+        String xml = "<root><child>Text</child></root>";
+        Document doc = xmlTreeBuilder.parse(xml, baseUri);
+        assertNotNull(doc);
+        assertEquals("root", doc.child(0).tagName());
+        assertEquals("child", doc.child(0).child(0).tagName());
+        assertEquals("Text", doc.child(0).child(0).text());
+    }
+
+    @Test
+    public void testInitialiseParse() {
+        String xml = "<root></root>";
+        ParseErrorList errors = ParseErrorList.noTracking();
+        ParseSettings settings = ParseSettings.preserveCase;
+        xmlTreeBuilder.initialiseParse(xml, baseUri, errors, settings);
+        assertEquals(Document.OutputSettings.Syntax.xml, xmlTreeBuilder.doc.outputSettings().syntax());
+    }
+
+    @Test
+    public void testProcessStartTag() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.name("root");
+        boolean result = xmlTreeBuilder.process(startTag);
+        assertTrue(result);
+        assertEquals("root", xmlTreeBuilder.stack.get(0).tagName());
+    }
+
+    @Test
+    public void testProcessEndTag() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.name("root");
+        xmlTreeBuilder.process(startTag);
+
+        Token.EndTag endTag = new Token.EndTag();
+        endTag.name("root");
+        boolean result = xmlTreeBuilder.process(endTag);
+        assertTrue(result);
+        assertTrue(xmlTreeBuilder.stack.isEmpty());
+    }
+
+    @Test
+    public void testProcessComment() {
+        Token.Comment commentToken = new Token.Comment();
+        commentToken.data("This is a comment");
+        boolean result = xmlTreeBuilder.process(commentToken);
+        assertTrue(result);
+        assertEquals("This is a comment", ((Comment) xmlTreeBuilder.doc.childNode(0)).getData());
+    }
+
+    @Test
+    public void testProcessCharacter() {
+        Token.Character characterToken = new Token.Character();
+        characterToken.data("Text");
+        boolean result = xmlTreeBuilder.process(characterToken);
+        assertTrue(result);
+        assertEquals("Text", ((TextNode) xmlTreeBuilder.doc.childNode(0)).getWholeText());
+    }
+
+    @Test
+    public void testProcessDoctype() {
+        Token.Doctype doctypeToken = new Token.Doctype();
+        doctypeToken.name("html");
+        boolean result = xmlTreeBuilder.process(doctypeToken);
+        assertTrue(result);
+        assertEquals("html", ((DocumentType) xmlTreeBuilder.doc.childNode(0)).name());
+    }
+
+    @Test
+    public void testParseFragment() {
+        String fragment = "<child>Text</child>";
+        ParseErrorList errors = ParseErrorList.noTracking();
+        ParseSettings settings = ParseSettings.preserveCase;
+        List<Node> nodes = xmlTreeBuilder.parseFragment(fragment, baseUri, errors, settings);
+        assertEquals(1, nodes.size());
+        assertEquals("child", nodes.get(0).nodeName());
+        assertEquals("Text", ((Element) nodes.get(0)).text());
+    }
+}
+```
+
+This test suite covers the main functionalities of the `XmlTreeBuilder` class, including parsing XML, processing different types of tokens, and handling fragments. Each test method is designed to verify the expected behavior of the corresponding method in the `XmlTreeBuilder` class.

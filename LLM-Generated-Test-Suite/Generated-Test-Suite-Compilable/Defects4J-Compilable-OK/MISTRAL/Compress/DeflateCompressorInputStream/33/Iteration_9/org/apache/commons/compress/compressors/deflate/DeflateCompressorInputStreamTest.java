@@ -1,0 +1,111 @@
+package org.apache.commons.compress.compressors.deflate;
+
+import org.apache.commons.compress.compressors.deflate.DeflateCompressorInputStream;
+import org.apache.commons.compress.compressors.deflate.DeflateParameters;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
+
+import static org.junit.Assert.*;
+
+public class DeflateCompressorInputStreamTest {
+
+    private InputStream compressedData;
+    private byte[] originalData;
+
+    @Before
+    public void setUp() throws IOException {
+        originalData = "Test data for compression".getBytes();
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Deflater deflater = new Deflater();
+        DeflaterOutputStream dos = new DeflaterOutputStream(baos, deflater);
+        dos.write(originalData);
+        dos.close();
+        compressedData = new ByteArrayInputStream(baos.toByteArray());
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        if (compressedData != null) {
+            compressedData.close();
+        }
+    }
+
+    @Test
+    public void testRead() throws IOException {
+        DeflateCompressorInputStream dcis = new DeflateCompressorInputStream(compressedData);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int b;
+        while ((b = dcis.read()) != -1) {
+            baos.write(b);
+        }
+        byte[] decompressedData = baos.toByteArray();
+        assertArrayEquals(originalData, decompressedData);
+    }
+
+    @Test
+    public void testReadWithParameters() throws IOException {
+        DeflateParameters parameters = new DeflateParameters();
+        DeflateCompressorInputStream dcis = new DeflateCompressorInputStream(compressedData, parameters);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int b;
+        while ((b = dcis.read()) != -1) {
+            baos.write(b);
+        }
+        byte[] decompressedData = baos.toByteArray();
+        assertArrayEquals(originalData, decompressedData);
+    }
+
+    @Test
+    public void testReadByteArray() throws IOException {
+        DeflateCompressorInputStream dcis = new DeflateCompressorInputStream(compressedData);
+        byte[] buffer = new byte[1024];
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int len;
+        while ((len = dcis.read(buffer)) != -1) {
+            baos.write(buffer, 0, len);
+        }
+        byte[] decompressedData = baos.toByteArray();
+        assertArrayEquals(originalData, decompressedData);
+    }
+
+    @Test
+    public void testSkip() throws IOException {
+        DeflateCompressorInputStream dcis = new DeflateCompressorInputStream(compressedData);
+        long skipped = dcis.skip(5);
+        assertEquals(5, skipped);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        int b;
+        while ((b = dcis.read()) != -1) {
+            baos.write(b);
+        }
+        byte[] decompressedData = baos.toByteArray();
+        byte[] expectedData = new String(originalData).substring(5).getBytes();
+        assertArrayEquals(expectedData, decompressedData);
+    }
+
+    @Test
+    public void testAvailable() throws IOException {
+        DeflateCompressorInputStream dcis = new DeflateCompressorInputStream(compressedData);
+        assertTrue(dcis.available() > 0);
+    }
+
+    @Test
+    public void testClose() throws IOException {
+        DeflateCompressorInputStream dcis = new DeflateCompressorInputStream(compressedData);
+        dcis.close();
+        try {
+            dcis.read();
+            fail("Expected IOException after close");
+        } catch (IOException e) {
+            // expected
+        }
+    }
+}

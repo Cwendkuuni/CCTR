@@ -1,0 +1,94 @@
+```java
+package fr.unice.gfarce.dao;
+
+import fr.unice.gfarce.identity.Identite;
+import fr.unice.gfarce.identity.Candidat;
+import fr.unice.gfarce.identity.RespFormation;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.Calendar;
+import java.util.List;
+
+public class OracleIdentiteDaoTest {
+
+    private OracleIdentiteDao dao;
+    private Identite identite;
+
+    @Before
+    public void setUp() {
+        dao = OracleIdentiteDao.getDAO();
+        identite = new Identite();
+        identite.setId(1L);
+        identite.setNom("Doe");
+        identite.setPrenom("John");
+        identite.setEmail("john.doe@example.com");
+        identite.setSex("M");
+        identite.setType(Identite.TypeIdentite.CANDIDAT);
+    }
+
+    @After
+    public void tearDown() {
+        dao.delete(identite);
+    }
+
+    @Test
+    public void testInsert() {
+        dao.insert(identite, "Form1", Calendar.getInstance());
+        Identite insertedIdentite = dao.find(identite.getNom(), identite.getPrenom(), identite.getSex(), identite.getEmail(), identite.getType()).get(0);
+        assertNotNull(insertedIdentite);
+        assertEquals(identite.getNom(), insertedIdentite.getNom());
+        assertEquals(identite.getPrenom(), insertedIdentite.getPrenom());
+        assertEquals(identite.getEmail(), insertedIdentite.getEmail());
+        assertEquals(identite.getSex(), insertedIdentite.getSex());
+        assertEquals(identite.getType(), insertedIdentite.getType());
+    }
+
+    @Test
+    public void testUpdate() {
+        dao.insert(identite, "Form1", Calendar.getInstance());
+        identite.setEmail("john.updated@example.com");
+        dao.update(identite);
+        Identite updatedIdentite = dao.find(identite.getNom(), identite.getPrenom(), identite.getSex(), identite.getEmail(), identite.getType()).get(0);
+        assertNotNull(updatedIdentite);
+        assertEquals(identite.getEmail(), updatedIdentite.getEmail());
+    }
+
+    @Test
+    public void testDelete() {
+        dao.insert(identite, "Form1", Calendar.getInstance());
+        dao.delete(identite);
+        List<Identite> identites = dao.find(identite.getNom(), identite.getPrenom(), identite.getSex(), identite.getEmail(), identite.getType());
+        assertTrue(identites.isEmpty());
+    }
+
+    @Test
+    public void testFind() {
+        dao.insert(identite, "Form1", Calendar.getInstance());
+        List<Identite> identites = dao.find(identite.getNom(), identite.getPrenom(), identite.getSex(), identite.getEmail(), identite.getType());
+        assertFalse(identites.isEmpty());
+        assertEquals(1, identites.size());
+        assertEquals(identite.getNom(), identites.get(0).getNom());
+    }
+
+    @Test
+    public void testFindCandidat() {
+        dao.insert(identite, "Form1", Calendar.getInstance());
+        Candidat[] candidats = dao.findCandidat(identite.getNom(), identite.getPrenom(), identite.getSex(), identite.getEmail());
+        assertNotNull(candidats);
+        assertEquals(1, candidats.length);
+        assertEquals(identite.getNom(), candidats[0].getNom());
+    }
+
+    @Test
+    public void testFindRespForm() {
+        identite.setType(Identite.TypeIdentite.FORMATEUR);
+        dao.insert(identite, "Form1", Calendar.getInstance());
+        RespFormation[] respFormations = dao.findRespForm(identite.getNom(), identite.getPrenom(), identite.getSex(), identite.getEmail());
+        assertNotNull(respFormations);
+        assertEquals(1, respFormations.length);
+        assertEquals(identite.getNom(), respFormations[0].getNom());
+    }
+}
+```

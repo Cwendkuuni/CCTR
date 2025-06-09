@@ -1,0 +1,102 @@
+Certainly! Below is a JUnit 4 test suite for the `RectangularCholeskyDecomposition` class. This test suite aims to cover the constructor and the methods `getRootMatrix` and `getRank`.
+
+```java
+import static org.junit.Assert.*;
+import org.apache.commons.math3.linear.*;
+import org.apache.commons.math3.exception.NonPositiveDefiniteMatrixException;
+import org.junit.Test;
+
+public class RectangularCholeskyDecompositionTest {
+
+    @Test
+    public void testConstructorAndGetters() {
+        double[][] data = {
+            {4, 12, -16},
+            {12, 37, -43},
+            {-16, -43, 98}
+        };
+        RealMatrix matrix = MatrixUtils.createRealMatrix(data);
+        
+        try {
+            RectangularCholeskyDecomposition decomposition = new RectangularCholeskyDecomposition(matrix);
+            RealMatrix rootMatrix = decomposition.getRootMatrix();
+            int rank = decomposition.getRank();
+            
+            assertNotNull("Root matrix should not be null", rootMatrix);
+            assertEquals("Rank should be 3", 3, rank);
+            
+            // Check if the root matrix is lower triangular
+            for (int i = 0; i < rootMatrix.getRowDimension(); i++) {
+                for (int j = i + 1; j < rootMatrix.getColumnDimension(); j++) {
+                    assertEquals("Root matrix should be lower triangular", 0.0, rootMatrix.getEntry(i, j), 1e-10);
+                }
+            }
+        } catch (NonPositiveDefiniteMatrixException e) {
+            fail("Matrix should be positive definite");
+        }
+    }
+
+    @Test
+    public void testConstructorWithSmallParameter() {
+        double[][] data = {
+            {4, 12, -16},
+            {12, 37, -43},
+            {-16, -43, 98}
+        };
+        RealMatrix matrix = MatrixUtils.createRealMatrix(data);
+        
+        try {
+            RectangularCholeskyDecomposition decomposition = new RectangularCholeskyDecomposition(matrix, 1e-10);
+            RealMatrix rootMatrix = decomposition.getRootMatrix();
+            int rank = decomposition.getRank();
+            
+            assertNotNull("Root matrix should not be null", rootMatrix);
+            assertEquals("Rank should be 3", 3, rank);
+        } catch (NonPositiveDefiniteMatrixException e) {
+            fail("Matrix should be positive definite");
+        }
+    }
+
+    @Test(expected = NonPositiveDefiniteMatrixException.class)
+    public void testNonPositiveDefiniteMatrixException() throws NonPositiveDefiniteMatrixException {
+        double[][] data = {
+            {1, 2, 3},
+            {2, 1, 4},
+            {3, 4, 1}
+        };
+        RealMatrix matrix = MatrixUtils.createRealMatrix(data);
+        
+        // This should throw a NonPositiveDefiniteMatrixException
+        new RectangularCholeskyDecomposition(matrix);
+    }
+
+    @Test
+    public void testRankDeficientMatrix() {
+        double[][] data = {
+            {1, 0, 0},
+            {0, 0, 0},
+            {0, 0, 0}
+        };
+        RealMatrix matrix = MatrixUtils.createRealMatrix(data);
+        
+        try {
+            RectangularCholeskyDecomposition decomposition = new RectangularCholeskyDecomposition(matrix, 1e-10);
+            RealMatrix rootMatrix = decomposition.getRootMatrix();
+            int rank = decomposition.getRank();
+            
+            assertNotNull("Root matrix should not be null", rootMatrix);
+            assertEquals("Rank should be 1", 1, rank);
+        } catch (NonPositiveDefiniteMatrixException e) {
+            fail("Matrix should be positive semi-definite");
+        }
+    }
+}
+```
+
+### Explanation:
+- **Test Constructor and Getters**: This test checks if the constructor initializes the object correctly and verifies the `getRootMatrix` and `getRank` methods.
+- **Test Constructor with Small Parameter**: This test checks the constructor with a small parameter to ensure it behaves correctly.
+- **Test NonPositiveDefiniteMatrixException**: This test ensures that a `NonPositiveDefiniteMatrixException` is thrown for matrices that are not positive definite.
+- **Test Rank Deficient Matrix**: This test checks the behavior of the decomposition on a rank-deficient matrix.
+
+These tests aim to cover the main functionalities and edge cases of the `RectangularCholeskyDecomposition` class.

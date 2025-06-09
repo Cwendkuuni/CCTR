@@ -1,0 +1,121 @@
+```java
+import org.apache.commons.collections4.Equator;
+import org.apache.commons.collections4.functors.DefaultEquator;
+import org.apache.commons.collections4.sequence.EditScript;
+import org.apache.commons.collections4.sequence.SequencesComparator;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class SequencesComparatorTest {
+
+    private List<String> sequence1;
+    private List<String> sequence2;
+    private SequencesComparator<String> comparator;
+
+    @Before
+    public void setUp() {
+        sequence1 = Arrays.asList("a", "b", "c", "d");
+        sequence2 = Arrays.asList("a", "c", "d", "e");
+        comparator = new SequencesComparator<>(sequence1, sequence2);
+    }
+
+    @Test
+    public void testConstructorWithDefaultEquator() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2);
+        assertNotNull(comparator);
+        assertEquals(DefaultEquator.defaultEquator(), comparator.getEquator());
+    }
+
+    @Test
+    public void testConstructorWithCustomEquator() {
+        Equator<String> customEquator = (o1, o2) -> o1.equalsIgnoreCase(o2);
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2, customEquator);
+        assertNotNull(comparator);
+        assertEquals(customEquator, comparator.getEquator());
+    }
+
+    @Test
+    public void testGetScript() {
+        EditScript<String> script = comparator.getScript();
+        assertNotNull(script);
+        assertEquals(5, script.size());
+        assertEquals("a", script.get(0).getObject());
+        assertEquals("b", script.get(1).getObject());
+        assertEquals("c", script.get(2).getObject());
+        assertEquals("d", script.get(3).getObject());
+        assertEquals("e", script.get(4).getObject());
+    }
+
+    @Test
+    public void testGetScriptWithEmptySequences() {
+        List<String> emptySequence1 = Arrays.asList();
+        List<String> emptySequence2 = Arrays.asList();
+        SequencesComparator<String> emptyComparator = new SequencesComparator<>(emptySequence1, emptySequence2);
+        EditScript<String> script = emptyComparator.getScript();
+        assertNotNull(script);
+        assertEquals(0, script.size());
+    }
+
+    @Test
+    public void testGetScriptWithIdenticalSequences() {
+        List<String> identicalSequence1 = Arrays.asList("a", "b", "c");
+        List<String> identicalSequence2 = Arrays.asList("a", "b", "c");
+        SequencesComparator<String> identicalComparator = new SequencesComparator<>(identicalSequence1, identicalSequence2);
+        EditScript<String> script = identicalComparator.getScript();
+        assertNotNull(script);
+        assertEquals(3, script.size());
+        assertEquals("a", script.get(0).getObject());
+        assertEquals("b", script.get(1).getObject());
+        assertEquals("c", script.get(2).getObject());
+    }
+
+    @Test
+    public void testGetScriptWithDifferentSequences() {
+        List<String> differentSequence1 = Arrays.asList("a", "b", "c");
+        List<String> differentSequence2 = Arrays.asList("d", "e", "f");
+        SequencesComparator<String> differentComparator = new SequencesComparator<>(differentSequence1, differentSequence2);
+        EditScript<String> script = differentComparator.getScript();
+        assertNotNull(script);
+        assertEquals(6, script.size());
+        assertEquals("a", script.get(0).getObject());
+        assertEquals("b", script.get(1).getObject());
+        assertEquals("c", script.get(2).getObject());
+        assertEquals("d", script.get(3).getObject());
+        assertEquals("e", script.get(4).getObject());
+        assertEquals("f", script.get(5).getObject());
+    }
+
+    @Test
+    public void testGetScriptWithSubsetSequences() {
+        List<String> subsetSequence1 = Arrays.asList("a", "b", "c", "d");
+        List<String> subsetSequence2 = Arrays.asList("b", "c");
+        SequencesComparator<String> subsetComparator = new SequencesComparator<>(subsetSequence1, subsetSequence2);
+        EditScript<String> script = subsetComparator.getScript();
+        assertNotNull(script);
+        assertEquals(4, script.size());
+        assertEquals("a", script.get(0).getObject());
+        assertEquals("b", script.get(1).getObject());
+        assertEquals("c", script.get(2).getObject());
+        assertEquals("d", script.get(3).getObject());
+    }
+
+    @Test
+    public void testGetScriptWithSupersetSequences() {
+        List<String> supersetSequence1 = Arrays.asList("b", "c");
+        List<String> supersetSequence2 = Arrays.asList("a", "b", "c", "d");
+        SequencesComparator<String> supersetComparator = new SequencesComparator<>(supersetSequence1, supersetSequence2);
+        EditScript<String> script = supersetComparator.getScript();
+        assertNotNull(script);
+        assertEquals(4, script.size());
+        assertEquals("a", script.get(0).getObject());
+        assertEquals("b", script.get(1).getObject());
+        assertEquals("c", script.get(2).getObject());
+        assertEquals("d", script.get(3).getObject());
+    }
+}
+```

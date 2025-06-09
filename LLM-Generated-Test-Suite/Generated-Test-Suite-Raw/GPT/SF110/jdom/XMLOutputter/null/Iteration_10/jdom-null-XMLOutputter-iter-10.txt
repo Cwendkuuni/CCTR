@@ -1,0 +1,169 @@
+To create a comprehensive JUnit 4 test suite for the `XMLOutputter` class, we need to test all public methods, including constructors, getters, setters, and output methods. The test suite will include tests for different scenarios, such as null inputs, valid inputs, and edge cases. Here's a complete JUnit 4 test suite for the `XMLOutputter` class:
+
+```java
+import org.jdom2.*;
+import org.jdom2.output.*;
+import org.jdom2.output.support.*;
+import org.junit.*;
+import java.io.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+
+public class XMLOutputterTest {
+
+    private XMLOutputter xmlOutputter;
+    private Format format;
+    private XMLOutputProcessor processor;
+
+    @Before
+    public void setUp() {
+        format = Format.getPrettyFormat();
+        processor = new AbstractXMLOutputProcessor() {
+            @Override
+            protected void printDeclaration(Writer out, FormatStack fstack) throws IOException {
+                // Custom processor implementation for testing
+            }
+        };
+        xmlOutputter = new XMLOutputter(format, processor);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        XMLOutputter defaultOutputter = new XMLOutputter();
+        assertNotNull(defaultOutputter.getFormat());
+        assertNotNull(defaultOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testConstructorWithFormat() {
+        XMLOutputter outputter = new XMLOutputter(format);
+        assertEquals(format, outputter.getFormat());
+    }
+
+    @Test
+    public void testConstructorWithProcessor() {
+        XMLOutputter outputter = new XMLOutputter(processor);
+        assertEquals(processor, outputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testSetAndGetFormat() {
+        Format newFormat = Format.getCompactFormat();
+        xmlOutputter.setFormat(newFormat);
+        assertEquals(newFormat, xmlOutputter.getFormat());
+    }
+
+    @Test
+    public void testSetAndGetProcessor() {
+        XMLOutputProcessor newProcessor = new AbstractXMLOutputProcessor() {
+            @Override
+            protected void printDeclaration(Writer out, FormatStack fstack) throws IOException {
+                // Another custom processor implementation for testing
+            }
+        };
+        xmlOutputter.setXMLOutputProcessor(newProcessor);
+        assertEquals(newProcessor, xmlOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testOutputDocumentToString() throws IOException {
+        Document doc = new Document(new Element("root"));
+        String output = xmlOutputter.outputString(doc);
+        assertNotNull(output);
+        assertTrue(output.contains("root"));
+    }
+
+    @Test
+    public void testOutputElementToString() throws IOException {
+        Element element = new Element("element");
+        String output = xmlOutputter.outputString(element);
+        assertNotNull(output);
+        assertTrue(output.contains("element"));
+    }
+
+    @Test
+    public void testOutputListToString() throws IOException {
+        List<Content> contentList = new ArrayList<>();
+        contentList.add(new Element("element1"));
+        contentList.add(new Element("element2"));
+        String output = xmlOutputter.outputString(contentList);
+        assertNotNull(output);
+        assertTrue(output.contains("element1"));
+        assertTrue(output.contains("element2"));
+    }
+
+    @Test
+    public void testOutputCDATA() throws IOException {
+        CDATA cdata = new CDATA("cdata content");
+        String output = xmlOutputter.outputString(cdata);
+        assertNotNull(output);
+        assertTrue(output.contains("cdata content"));
+    }
+
+    @Test
+    public void testOutputText() throws IOException {
+        Text text = new Text("text content");
+        String output = xmlOutputter.outputString(text);
+        assertNotNull(output);
+        assertTrue(output.contains("text content"));
+    }
+
+    @Test
+    public void testOutputComment() throws IOException {
+        Comment comment = new Comment("comment content");
+        String output = xmlOutputter.outputString(comment);
+        assertNotNull(output);
+        assertTrue(output.contains("comment content"));
+    }
+
+    @Test
+    public void testOutputProcessingInstruction() throws IOException {
+        ProcessingInstruction pi = new ProcessingInstruction("target", "data");
+        String output = xmlOutputter.outputString(pi);
+        assertNotNull(output);
+        assertTrue(output.contains("target"));
+    }
+
+    @Test
+    public void testOutputEntityRef() throws IOException {
+        EntityRef entityRef = new EntityRef("entity");
+        String output = xmlOutputter.outputString(entityRef);
+        assertNotNull(output);
+        assertTrue(output.contains("entity"));
+    }
+
+    @Test
+    public void testEscapeAttributeEntities() {
+        String input = "attribute & value";
+        String escaped = xmlOutputter.escapeAttributeEntities(input);
+        assertNotNull(escaped);
+        assertTrue(escaped.contains("&amp;"));
+    }
+
+    @Test
+    public void testEscapeElementEntities() {
+        String input = "element < value";
+        String escaped = xmlOutputter.escapeElementEntities(input);
+        assertNotNull(escaped);
+        assertTrue(escaped.contains("&lt;"));
+    }
+
+    @Test
+    public void testClone() {
+        XMLOutputter clonedOutputter = xmlOutputter.clone();
+        assertNotNull(clonedOutputter);
+        assertEquals(xmlOutputter.getFormat(), clonedOutputter.getFormat());
+        assertEquals(xmlOutputter.getXMLOutputProcessor(), clonedOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testToString() {
+        String outputterString = xmlOutputter.toString();
+        assertNotNull(outputterString);
+        assertTrue(outputterString.contains("XMLOutputter"));
+    }
+}
+```
+
+This test suite covers the constructors, getters, setters, and output methods of the `XMLOutputter` class. It uses mock implementations of `XMLOutputProcessor` for testing purposes. The tests ensure that the class behaves as expected under various conditions.

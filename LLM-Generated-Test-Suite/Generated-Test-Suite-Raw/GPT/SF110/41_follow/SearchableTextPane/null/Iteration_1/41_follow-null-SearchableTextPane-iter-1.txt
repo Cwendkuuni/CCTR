@@ -1,0 +1,137 @@
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import ghm.follow.search.SearchableTextPane;
+import ghm.follow.search.LineResult;
+import ghm.follow.search.WordResult;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.Utilities;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class SearchableTextPaneTest {
+
+    private SearchableTextPane textPane;
+    private Font mockFont;
+    private Document mockDocument;
+
+    @Before
+    public void setUp() {
+        mockFont = mock(Font.class);
+        textPane = new SearchableTextPane(mockFont, 4);
+        mockDocument = mock(Document.class);
+        textPane.setDocument(mockDocument);
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth_NoParent() {
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth_WithParent() {
+        Component mockParent = mock(Component.class);
+        ComponentUI mockUI = mock(ComponentUI.class);
+        when(mockUI.getPreferredSize(textPane)).thenReturn(new Dimension(100, 100));
+        when(mockParent.getSize()).thenReturn(new Dimension(100, 100));
+
+        textPane.setUI(mockUI);
+        textPane.setParent(mockParent);
+
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testHighlight_NoTerm() {
+        List<LineResult> results = textPane.highlight(null, 0);
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    public void testHighlight_EmptyTerm() {
+        List<LineResult> results = textPane.highlight("", 0);
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    public void testHighlight_ValidTerm() throws BadLocationException {
+        when(mockDocument.getText(0, 0)).thenReturn("This is a test text.");
+        List<WordResult> mockWordResults = new ArrayList<>();
+        mockWordResults.add(new WordResult(0, 4, null));
+        mockWordResults.add(new WordResult(10, 14, null));
+
+        SearchEngine mockSearchEngine = mock(SearchEngine.class);
+        when(mockSearchEngine.search("test", "This is a test text.")).thenReturn(mockWordResults);
+
+        List<LineResult> results = textPane.highlight("test", 0);
+        assertFalse(results.isEmpty());
+    }
+
+    @Test
+    public void testRemoveHighlights() {
+        textPane.removeHighlights();
+        // No exception should be thrown
+    }
+
+    @Test
+    public void testSearch_NoTerm() {
+        int result = textPane.search(null);
+        assertEquals(-1, result);
+    }
+
+    @Test
+    public void testSearch_EmptyTerm() {
+        int result = textPane.search("");
+        assertEquals(-1, result);
+    }
+
+    @Test
+    public void testSearch_ValidTerm() throws BadLocationException {
+        when(mockDocument.getText(0, 0)).thenReturn("This is a test text.");
+        int result = textPane.search("test");
+        assertEquals(10, result);
+    }
+
+    @Test
+    public void testSearch_ValidTermWithStartPos() throws BadLocationException {
+        when(mockDocument.getText(0, 0)).thenReturn("This is a test text.");
+        int result = textPane.search("test", 5);
+        assertEquals(10, result);
+    }
+
+    @Test
+    public void testConvertWords2Lines() throws BadLocationException {
+        List<WordResult> mockWordResults = new ArrayList<>();
+        mockWordResults.add(new WordResult(0, 4, null));
+        mockWordResults.add(new WordResult(10, 14, null));
+
+        Element mockElement = mock(Element.class);
+        when(mockElement.getStartOffset()).thenReturn(0);
+        when(mockElement.getEndOffset()).thenReturn(20);
+
+        when(Utilities.getParagraphElement(textPane, 0)).thenReturn(mockElement);
+        when(Utilities.getParagraphElement(textPane, 10)).thenReturn(mockElement);
+
+        List<LineResult> results = textPane.convertWords2Lines(mockWordResults);
+        assertEquals(1, results.size());
+    }
+
+    @Test
+    public void testUpdateWordResult() throws BadLocationException {
+        WordResult mockWordResult = new WordResult(0, 4, null);
+        LineResult mockLineResult = new LineResult(0, 0, 20);
+
+        textPane.updateWordResult(mockWordResult, mockLineResult);
+        assertEquals(1, mockWordResult.parent.lineNumber);
+    }
+}
+```
+
+This test suite uses JUnit 4 to test the `SearchableTextPane` class. It includes tests for each method, ensuring that the class behaves as expected under various conditions. Note that some methods, such as `highlight`, rely on external classes like `SearchEngine`, which are mocked in the tests.

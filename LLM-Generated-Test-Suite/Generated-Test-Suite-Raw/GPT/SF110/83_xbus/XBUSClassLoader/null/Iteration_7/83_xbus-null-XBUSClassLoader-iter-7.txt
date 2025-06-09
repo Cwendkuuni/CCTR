@@ -1,0 +1,74 @@
+Certainly! Below is a JUnit 4 test suite for the `XBUSClassLoader` class. This suite will test the methods within the class, focusing on the singleton behavior and URL loading functionality. Note that due to the nature of the class, some methods and behaviors (like `System.exit`) are challenging to test directly without modifying the original class for testability.
+
+```java
+import org.junit.*;
+import static org.junit.Assert.*;
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
+public class XBUSClassLoaderTest {
+
+    private static final String TEST_LIB_DIR = "test/lib";
+    private static final String TEST_JAR_NAME = "test.jar";
+
+    @BeforeClass
+    public static void setUpClass() {
+        // Set up the environment variable for testing
+        System.setProperty("XBUS_HOME", System.getProperty("user.dir"));
+        // Create test directories and files
+        new File(TEST_LIB_DIR).mkdirs();
+        try {
+            new File(TEST_LIB_DIR + "/" + TEST_JAR_NAME).createNewFile();
+        } catch (IOException e) {
+            fail("Failed to set up test environment: " + e.getMessage());
+        }
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+        // Clean up test directories and files
+        new File(TEST_LIB_DIR + "/" + TEST_JAR_NAME).delete();
+        new File(TEST_LIB_DIR).delete();
+    }
+
+    @Test
+    public void testGetInstance() {
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader instance1 = XBUSClassLoader.getInstance(parent);
+        XBUSClassLoader instance2 = XBUSClassLoader.getInstance(parent);
+        assertNotNull("Instance should not be null", instance1);
+        assertSame("Instances should be the same", instance1, instance2);
+    }
+
+    @Test
+    public void testAddUrls() {
+        Vector<URL> urls = new Vector<>();
+        XBUSClassLoader.addUrls(urls, System.getProperty("user.dir") + "/" + TEST_LIB_DIR);
+        assertFalse("URLs should not be empty", urls.isEmpty());
+        assertTrue("URLs should contain the test jar", urls.stream().anyMatch(url -> url.getFile().endsWith(TEST_JAR_NAME)));
+    }
+
+    @Test
+    public void testCreateClassLoader() {
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parent);
+        assertNotNull("ClassLoader should not be null", classLoader);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testCreateClassLoaderWithoutXBUSHome() {
+        System.clearProperty("XBUS_HOME");
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader.getInstance(parent);
+    }
+}
+```
+
+### Notes:
+1. **Environment Setup**: The test suite sets up a mock environment by creating a directory and a dummy JAR file to simulate the presence of libraries.
+2. **Singleton Behavior**: The `testGetInstance` method checks that the `XBUSClassLoader` instance is a singleton.
+3. **URL Addition**: The `testAddUrls` method verifies that URLs are correctly added from the specified directory.
+4. **XBUS_HOME Dependency**: The `testCreateClassLoaderWithoutXBUSHome` method checks the behavior when `XBUS_HOME` is not set, expecting a `NullPointerException` due to the `System.exit` call in the original code. This is a limitation since `System.exit` cannot be directly tested without modifying the original class.
+
+This test suite assumes that the `XBUSClassLoader` class is accessible and that the `addUrls` method is made public or package-private for testing purposes.

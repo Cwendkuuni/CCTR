@@ -1,0 +1,96 @@
+Certainly! Below is a JUnit 4 test suite for the `Memory` class. This suite aims to cover the various methods within the class, including both static and instance methods. Note that some methods, such as `showOutOfMemory`, involve GUI components and side effects like printing to `System.err`, which can be challenging to test directly without additional frameworks or mocking.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import weka.core.Memory;
+
+import static org.junit.Assert.*;
+
+public class MemoryTest {
+
+    private Memory memory;
+
+    @Before
+    public void setUp() {
+        memory = new Memory();
+    }
+
+    @Test
+    public void testIsEnabled() {
+        Memory.setEnabled(true);
+        assertTrue(memory.isEnabled());
+
+        Memory.setEnabled(false);
+        assertFalse(memory.isEnabled());
+    }
+
+    @Test
+    public void testSetEnabled() {
+        memory.setEnabled(true);
+        assertTrue(Memory.m_Enabled);
+
+        memory.setEnabled(false);
+        assertFalse(Memory.m_Enabled);
+    }
+
+    @Test
+    public void testGetUseGUI() {
+        Memory memoryWithGUI = new Memory(true);
+        assertTrue(memoryWithGUI.getUseGUI());
+
+        Memory memoryWithoutGUI = new Memory(false);
+        assertFalse(memoryWithoutGUI.getUseGUI());
+    }
+
+    @Test
+    public void testGetInitial() {
+        assertEquals(Memory.m_Initial, memory.getInitial());
+    }
+
+    @Test
+    public void testGetCurrent() {
+        long currentMemory = memory.getCurrent();
+        assertEquals(Runtime.getRuntime().totalMemory(), currentMemory);
+    }
+
+    @Test
+    public void testGetMax() {
+        assertEquals(Runtime.getRuntime().maxMemory(), memory.getMax());
+    }
+
+    @Test
+    public void testIsOutOfMemory() {
+        Memory.setEnabled(true);
+        Memory.m_Initial = memory.getMax() - 100000L; // Set initial to a high value
+        assertTrue(memory.isOutOfMemory());
+
+        Memory.m_Initial = 0; // Set initial to a low value
+        assertFalse(memory.isOutOfMemory());
+    }
+
+    @Test
+    public void testToMegaByte() {
+        assertEquals(1.0, Memory.toMegaByte(1048576L), 0.0001);
+        assertEquals(0.5, Memory.toMegaByte(524288L), 0.0001);
+    }
+
+    @Test
+    public void testStopThreads() {
+        // This method is difficult to test due to its nature of stopping threads.
+        // We will just ensure it runs without exceptions.
+        memory.stopThreads();
+    }
+
+    @Test
+    public void testGetRevision() {
+        assertNotNull(memory.getRevision());
+    }
+}
+```
+
+### Notes:
+- **`testIsOutOfMemory`**: This test manipulates the `m_Initial` field to simulate different memory conditions. This is a simplification and may not reflect actual memory constraints.
+- **`testStopThreads`**: This method is inherently difficult to test due to its side effects on threads. The test ensures it runs without exceptions.
+- **`showOutOfMemory`**: This method involves GUI operations and printing to `System.err`, which are not directly tested here. Testing such methods typically requires additional setup, such as using mocking frameworks or capturing output streams.
+- **Static Fields**: The test suite manipulates static fields like `m_Enabled` and `m_Initial` directly. This is generally not recommended in production tests due to potential side effects across tests. Consider using dependency injection or refactoring for better testability.

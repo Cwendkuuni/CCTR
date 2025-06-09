@@ -1,0 +1,130 @@
+Certainly! Below is a JUnit 4 test suite for the `IndexFileAction` class. This suite includes tests for the constructor, `actionPerformed`, and `update` methods. Note that this is a basic test suite and assumes the existence of certain mockable components and utilities.
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.ResourceBundle;
+
+import fr.pingtimeout.jtail.gui.action.IndexFileAction;
+import fr.pingtimeout.jtail.gui.controller.JTailMainModel;
+import fr.pingtimeout.jtail.gui.model.OpenFileModel;
+import fr.pingtimeout.jtail.io.index.FileIndexer;
+import fr.pingtimeout.jtail.io.index.FileIndexerWorker;
+import fr.pingtimeout.jtail.io.index.RamFileIndex;
+import fr.pingtimeout.jtail.io.index.RomFileIndex;
+import fr.pingtimeout.jtail.util.JTailLogger;
+import fr.pingtimeout.jtail.gui.message.UIMessage;
+import fr.pingtimeout.jtail.util.InformationHandler;
+import fr.pingtimeout.jtail.util.ExceptionHandler;
+
+@RunWith(MockitoJUnitRunner.class)
+public class IndexFileActionTest {
+
+    @Mock
+    private JTailMainModel jTailMainModel;
+
+    @Mock
+    private OpenFileModel openFileModel;
+
+    @Mock
+    private ActionEvent actionEvent;
+
+    @Mock
+    private File file;
+
+    @InjectMocks
+    private IndexFileAction indexFileAction;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        when(openFileModel.getFile()).thenReturn(file);
+    }
+
+    @Test
+    public void testConstructor() {
+        ResourceBundle bundle = ResourceBundle.getBundle("fr.pingtimeout.jtail.gui.language");
+        IndexFileAction action = new IndexFileAction(jTailMainModel, openFileModel);
+        assertNotNull(action);
+        assertEquals(bundle.getString("action.open.label"), action.getValue(Action.NAME));
+    }
+
+    @Test
+    public void testActionPerformed_noFileSelected() {
+        when(openFileModel.getFile()).thenReturn(null);
+        indexFileAction.actionPerformed(actionEvent);
+        verifyStatic(InformationHandler.class);
+        InformationHandler.handle(true, UIMessage.INFO_NO_FILE_SELECTED, new Object[0]);
+    }
+
+    @Test
+    public void testActionPerformed_memoryBasedIndex() throws FileNotFoundException {
+        when(openFileModel.getIndexType()).thenReturn(OpenFileModel.IndexType.MEMORY_BASED);
+        when(actionEvent.getSource()).thenReturn(mock(JDialog.class));
+
+        indexFileAction.actionPerformed(actionEvent);
+
+        verify(openFileModel).getFile();
+        verify(openFileModel).getIndexType();
+        verifyStatic(JTailLogger.class);
+        JTailLogger.debug("File : {}", file);
+        JTailLogger.debug("Index type : {}", OpenFileModel.IndexType.MEMORY_BASED);
+    }
+
+    @Test
+    public void testActionPerformed_fileNotFound() throws FileNotFoundException {
+        when(openFileModel.getIndexType()).thenReturn(OpenFileModel.IndexType.FILE_BASED);
+        when(actionEvent.getSource()).thenReturn(mock(JDialog.class));
+        doThrow(new FileNotFoundException()).when(openFileModel).getFile();
+
+        indexFileAction.actionPerformed(actionEvent);
+
+        verifyStatic(ExceptionHandler.class);
+        ExceptionHandler.handle(any(FileNotFoundException.class), eq(UIMessage.ERROR_FILE_NOT_FOUND), anyString());
+    }
+
+    @Test
+    public void testUpdate_notificationReceived() {
+        FileIndexer fileIndexer = mock(FileIndexer.class);
+        when(fileIndexer.getFile()).thenReturn(file);
+        when(fileIndexer.getIndex()).thenReturn(mock(RamFileIndex.class));
+
+        indexFileAction.update(fileIndexer, 100);
+
+        verify(fileIndexer).getFile();
+        verify(fileIndexer).getIndex();
+        verify(jTailMainModel).add(any());
+    }
+
+    @Test
+    public void testUpdate_fileNotFound() {
+        FileIndexer fileIndexer = mock(FileIndexer.class);
+        when(fileIndexer.getFile()).thenReturn(file);
+        when(fileIndexer.getIndex()).thenReturn(mock(RamFileIndex.class));
+        doThrow(new FileNotFoundException()).when(fileIndexer).getFile();
+
+        indexFileAction.update(fileIndexer, 100);
+
+        verifyStatic(ExceptionHandler.class);
+        ExceptionHandler.handle(any(FileNotFoundException.class), eq(UIMessage.ERROR_FILE_NOT_FOUND), anyString());
+    }
+}
+```
+
+### Notes:
+- **Mockito** is used for mocking dependencies and verifying interactions.
+- **Static methods** from `InformationHandler`, `ExceptionHandler`, and `JTailLogger` are verified using `verifyStatic`.
+- **ResourceBundle** is assumed to be correctly set up in the environment.
+- **FileIndexerWorker** execution is not directly tested here, as it would require more complex setup or integration testing.
+- **Exception handling** is tested by simulating exceptions and verifying that the appropriate handlers are called.

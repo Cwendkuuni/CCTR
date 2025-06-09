@@ -1,0 +1,332 @@
+package org.apache.commons.math.stat;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.Comparator;
+import java.util.Iterator;
+
+public class FrequencyTest {
+
+    private Frequency frequency;
+
+    @Before
+    public void setUp() {
+        frequency = new Frequency();
+    }
+
+    @Test
+    public void testAddValue() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+        frequency.addValue("test");
+        frequency.addValue("test");
+        frequency.addValue("test");
+
+        assertEquals(1, frequency.getCount(1));
+        assertEquals(2, frequency.getCount(2));
+        assertEquals(3, frequency.getCount("test"));
+    }
+
+    @Test
+    public void testAddValueWithComparator() {
+        Comparator<String> comparator = Comparator.reverseOrder();
+        Frequency frequencyWithComparator = new Frequency(comparator);
+
+        frequencyWithComparator.addValue("a");
+        frequencyWithComparator.addValue("b");
+        frequencyWithComparator.addValue("b");
+
+        assertEquals(1, frequencyWithComparator.getCount("a"));
+        assertEquals(2, frequencyWithComparator.getCount("b"));
+    }
+
+    @Test
+    public void testAddValueDeprecated() {
+        frequency.addValue(new Integer(1));
+        frequency.addValue(new Long(2));
+        frequency.addValue(new Long(2));
+        frequency.addValue(new Character('a'));
+        frequency.addValue(new Character('a'));
+        frequency.addValue(new Character('a'));
+
+        assertEquals(1, frequency.getCount(1));
+        assertEquals(2, frequency.getCount(2));
+        assertEquals(3, frequency.getCount('a'));
+    }
+
+    @Test
+    public void testAddValueInt() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+
+        assertEquals(1, frequency.getCount(1));
+        assertEquals(2, frequency.getCount(2));
+    }
+
+    @Test
+    public void testAddValueInteger() {
+        frequency.addValue(Integer.valueOf(1));
+        frequency.addValue(Integer.valueOf(2));
+        frequency.addValue(Integer.valueOf(2));
+
+        assertEquals(1, frequency.getCount(1));
+        assertEquals(2, frequency.getCount(2));
+    }
+
+    @Test
+    public void testAddValueLong() {
+        frequency.addValue(1L);
+        frequency.addValue(2L);
+        frequency.addValue(2L);
+
+        assertEquals(1, frequency.getCount(1L));
+        assertEquals(2, frequency.getCount(2L));
+    }
+
+    @Test
+    public void testAddValueChar() {
+        frequency.addValue('a');
+        frequency.addValue('b');
+        frequency.addValue('b');
+
+        assertEquals(1, frequency.getCount('a'));
+        assertEquals(2, frequency.getCount('b'));
+    }
+
+    @Test
+    public void testClear() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.clear();
+
+        assertEquals(0, frequency.getSumFreq());
+    }
+
+    @Test
+    public void testValuesIterator() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue("test");
+
+        Iterator iterator = frequency.valuesIterator();
+        assertTrue(iterator.hasNext());
+        assertEquals(1L, iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals(2L, iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals("test", iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testGetSumFreq() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+        frequency.addValue("test");
+        frequency.addValue("test");
+        frequency.addValue("test");
+
+        assertEquals(6, frequency.getSumFreq());
+    }
+
+    @Test
+    public void testGetCount() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+        frequency.addValue("test");
+        frequency.addValue("test");
+        frequency.addValue("test");
+
+        assertEquals(1, frequency.getCount(1));
+        assertEquals(2, frequency.getCount(2));
+        assertEquals(3, frequency.getCount("test"));
+        assertEquals(0, frequency.getCount("nonexistent"));
+    }
+
+    @Test
+    public void testGetCountInt() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+
+        assertEquals(1, frequency.getCount(1));
+        assertEquals(2, frequency.getCount(2));
+    }
+
+    @Test
+    public void testGetCountLong() {
+        frequency.addValue(1L);
+        frequency.addValue(2L);
+        frequency.addValue(2L);
+
+        assertEquals(1, frequency.getCount(1L));
+        assertEquals(2, frequency.getCount(2L));
+    }
+
+    @Test
+    public void testGetCountChar() {
+        frequency.addValue('a');
+        frequency.addValue('b');
+        frequency.addValue('b');
+
+        assertEquals(1, frequency.getCount('a'));
+        assertEquals(2, frequency.getCount('b'));
+    }
+
+    @Test
+    public void testGetPct() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+        frequency.addValue("test");
+        frequency.addValue("test");
+        frequency.addValue("test");
+
+        assertEquals(1.0 / 6.0, frequency.getPct(1), 0.0001);
+        assertEquals(2.0 / 6.0, frequency.getPct(2), 0.0001);
+        assertEquals(3.0 / 6.0, frequency.getPct("test"), 0.0001);
+        assertEquals(Double.NaN, frequency.getPct("nonexistent"), 0.0001);
+    }
+
+    @Test
+    public void testGetPctInt() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+
+        assertEquals(1.0 / 3.0, frequency.getPct(1), 0.0001);
+        assertEquals(2.0 / 3.0, frequency.getPct(2), 0.0001);
+    }
+
+    @Test
+    public void testGetPctLong() {
+        frequency.addValue(1L);
+        frequency.addValue(2L);
+        frequency.addValue(2L);
+
+        assertEquals(1.0 / 3.0, frequency.getPct(1L), 0.0001);
+        assertEquals(2.0 / 3.0, frequency.getPct(2L), 0.0001);
+    }
+
+    @Test
+    public void testGetPctChar() {
+        frequency.addValue('a');
+        frequency.addValue('b');
+        frequency.addValue('b');
+
+        assertEquals(1.0 / 3.0, frequency.getPct('a'), 0.0001);
+        assertEquals(2.0 / 3.0, frequency.getPct('b'), 0.0001);
+    }
+
+    @Test
+    public void testGetCumFreq() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+        frequency.addValue("test");
+        frequency.addValue("test");
+        frequency.addValue("test");
+
+        assertEquals(1, frequency.getCumFreq(1));
+        assertEquals(3, frequency.getCumFreq(2));
+        assertEquals(6, frequency.getCumFreq("test"));
+        assertEquals(0, frequency.getCumFreq("nonexistent"));
+    }
+
+    @Test
+    public void testGetCumFreqInt() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+
+        assertEquals(1, frequency.getCumFreq(1));
+        assertEquals(3, frequency.getCumFreq(2));
+    }
+
+    @Test
+    public void testGetCumFreqLong() {
+        frequency.addValue(1L);
+        frequency.addValue(2L);
+        frequency.addValue(2L);
+
+        assertEquals(1, frequency.getCumFreq(1L));
+        assertEquals(3, frequency.getCumFreq(2L));
+    }
+
+    @Test
+    public void testGetCumFreqChar() {
+        frequency.addValue('a');
+        frequency.addValue('b');
+        frequency.addValue('b');
+
+        assertEquals(1, frequency.getCumFreq('a'));
+        assertEquals(3, frequency.getCumFreq('b'));
+    }
+
+    @Test
+    public void testGetCumPct() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+        frequency.addValue("test");
+        frequency.addValue("test");
+        frequency.addValue("test");
+
+        assertEquals(1.0 / 6.0, frequency.getCumPct(1), 0.0001);
+        assertEquals(3.0 / 6.0, frequency.getCumPct(2), 0.0001);
+        assertEquals(1.0, frequency.getCumPct("test"), 0.0001);
+        assertEquals(Double.NaN, frequency.getCumPct("nonexistent"), 0.0001);
+    }
+
+    @Test
+    public void testGetCumPctInt() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+
+        assertEquals(1.0 / 3.0, frequency.getCumPct(1), 0.0001);
+        assertEquals(1.0, frequency.getCumPct(2), 0.0001);
+    }
+
+    @Test
+    public void testGetCumPctLong() {
+        frequency.addValue(1L);
+        frequency.addValue(2L);
+        frequency.addValue(2L);
+
+        assertEquals(1.0 / 3.0, frequency.getCumPct(1L), 0.0001);
+        assertEquals(1.0, frequency.getCumPct(2L), 0.0001);
+    }
+
+    @Test
+    public void testGetCumPctChar() {
+        frequency.addValue('a');
+        frequency.addValue('b');
+        frequency.addValue('b');
+
+        assertEquals(1.0 / 3.0, frequency.getCumPct('a'), 0.0001);
+        assertEquals(1.0, frequency.getCumPct('b'), 0.0001);
+    }
+
+    @Test
+    public void testToString() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+        frequency.addValue("test");
+        frequency.addValue("test");
+        frequency.addValue("test");
+
+        String result = frequency.toString();
+        assertTrue(result.contains("Value \t Freq. \t Pct. \t Cum Pct."));
+        assertTrue(result.contains("1\t1\t17%\t17%"));
+        assertTrue(result.contains("2\t2\t33%\t50%"));
+        assertTrue(result.contains("test\t3\t50%\t100%"));
+    }
+}

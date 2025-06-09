@@ -1,0 +1,161 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `TypeInfoFactory` class. This test suite includes tests for all public methods and some private methods (indirectly through public methods).
+
+```java
+package com.google.gson;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class TypeInfoFactoryTest {
+
+    private Field field;
+    private Type typeDefiningField;
+
+    @Before
+    public void setUp() throws NoSuchFieldException {
+        // Example setup for a field in a class
+        class ExampleClass<T> {
+            List<T> list;
+        }
+        field = ExampleClass.class.getDeclaredField("list");
+        typeDefiningField = new ExampleClass<String>().getClass().getGenericSuperclass();
+    }
+
+    @Test
+    public void testGetTypeInfoForArray() {
+        Type arrayType = String[].class;
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(arrayType);
+        assertNotNull(typeInfoArray);
+        assertEquals(arrayType, typeInfoArray.getType());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArray_NonArrayType() {
+        Type nonArrayType = String.class;
+        TypeInfoFactory.getTypeInfoForArray(nonArrayType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField() {
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningField);
+        assertNotNull(typeInfo);
+        assertTrue(typeInfo.getType() instanceof ParameterizedType);
+        ParameterizedType parameterizedType = (ParameterizedType) typeInfo.getType();
+        assertEquals(List.class, parameterizedType.getRawType());
+        assertEquals(String.class, parameterizedType.getActualTypeArguments()[0]);
+    }
+
+    @Test
+    public void testGetActualType_Class() {
+        Type actualType = TypeInfoFactory.getActualType(String.class, typeDefiningField, ExampleClass.class);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test
+    public void testGetActualType_ParameterizedType() {
+        ParameterizedType parameterizedType = (ParameterizedType) field.getGenericType();
+        Type actualType = TypeInfoFactory.getActualType(parameterizedType, typeDefiningField, ExampleClass.class);
+        assertTrue(actualType instanceof ParameterizedType);
+        ParameterizedType actualParameterizedType = (ParameterizedType) actualType;
+        assertEquals(List.class, actualParameterizedType.getRawType());
+        assertEquals(String.class, actualParameterizedType.getActualTypeArguments()[0]);
+    }
+
+    @Test
+    public void testGetActualType_GenericArrayType() {
+        Type genericArrayType = new GenericArrayTypeImpl(String.class);
+        Type actualType = TypeInfoFactory.getActualType(genericArrayType, typeDefiningField, ExampleClass.class);
+        assertTrue(actualType instanceof GenericArrayType);
+        assertEquals(String.class, ((GenericArrayType) actualType).getGenericComponentType());
+    }
+
+    @Test
+    public void testGetActualType_TypeVariable() {
+        TypeVariable<?> typeVariable = ExampleClass.class.getTypeParameters()[0];
+        Type actualType = TypeInfoFactory.getActualType(typeVariable, typeDefiningField, ExampleClass.class);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test
+    public void testGetActualType_WildcardType() {
+        Type wildcardType = new WildcardTypeImpl(new Type[]{String.class}, new Type[]{});
+        Type actualType = TypeInfoFactory.getActualType(wildcardType, typeDefiningField, ExampleClass.class);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetActualType_UnsupportedType() {
+        Type unsupportedType = new Type() {};
+        TypeInfoFactory.getActualType(unsupportedType, typeDefiningField, ExampleClass.class);
+    }
+
+    @Test
+    public void testExtractRealTypes() {
+        Type[] actualTypeArguments = {String.class, Integer.class};
+        Type[] realTypes = TypeInfoFactory.extractRealTypes(actualTypeArguments, typeDefiningField, ExampleClass.class);
+        assertArrayEquals(actualTypeArguments, realTypes);
+    }
+
+    @Test
+    public void testGetIndex() {
+        TypeVariable<?>[] typeVariables = ExampleClass.class.getTypeParameters();
+        TypeVariable<?> typeVariable = typeVariables[0];
+        int index = TypeInfoFactory.getIndex(typeVariables, typeVariable);
+        assertEquals(0, index);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetIndex_TypeVariableNotFound() {
+        TypeVariable<?>[] typeVariables = ExampleClass.class.getTypeParameters();
+        TypeVariable<?> typeVariable = new TypeVariable<Class<ExampleClass>>() {};
+        TypeInfoFactory.getIndex(typeVariables, typeVariable);
+    }
+
+    // Helper classes for testing
+    private static class GenericArrayTypeImpl implements GenericArrayType {
+        private final Type componentType;
+
+        public GenericArrayTypeImpl(Type componentType) {
+            this.componentType = componentType;
+        }
+
+        @Override
+        public Type getGenericComponentType() {
+            return componentType;
+        }
+    }
+
+    private static class WildcardTypeImpl implements WildcardType {
+        private final Type[] upperBounds;
+        private final Type[] lowerBounds;
+
+        public WildcardTypeImpl(Type[] upperBounds, Type[] lowerBounds) {
+            this.upperBounds = upperBounds;
+            this.lowerBounds = lowerBounds;
+        }
+
+        @Override
+        public Type[] getUpperBounds() {
+            return upperBounds;
+        }
+
+        @Override
+        public Type[] getLowerBounds() {
+            return lowerBounds;
+        }
+    }
+}
+```
+
+This test suite covers the public methods `getTypeInfoForArray` and `getTypeInfoForField`, as well as the private methods `getActualType`, `extractRealTypes`, and `getIndex` indirectly through the public methods. It includes tests for various types such as `Class`, `ParameterizedType`, `GenericArrayType`, `TypeVariable`, and `WildcardType`. Additionally, it includes tests for edge cases and exceptions.

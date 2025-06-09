@@ -1,0 +1,245 @@
+```java
+package org.apache.commons.math3.optimization.linear;
+
+import org.apache.commons.math3.optimization.*;
+import org.apache.commons.math3.linear.*;
+import org.apache.commons.math3.util.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+import java.util.*;
+
+public class SimplexTableauTest {
+
+    private static final double EPSILON = 1.0E-12;
+    private static final int MAX_ULPS = 10;
+
+    private LinearObjectiveFunction f;
+    private Collection<LinearConstraint> constraints;
+    private GoalType goalType;
+    private boolean restrictToNonNegative;
+
+    @Before
+    public void setUp() {
+        f = new LinearObjectiveFunction(new double[]{1.0, 2.0}, 0.0);
+        constraints = new ArrayList<>();
+        constraints.add(new LinearConstraint(new double[]{1.0, 1.0}, Relationship.LEQ, 1.0));
+        constraints.add(new LinearConstraint(new double[]{1.0, -1.0}, Relationship.GEQ, 0.0));
+        goalType = GoalType.MAXIMIZE;
+        restrictToNonNegative = true;
+    }
+
+    @Test
+    public void testConstructor() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertNotNull(tableau);
+    }
+
+    @Test
+    public void testInitializeColumnLabels() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        tableau.initializeColumnLabels();
+        assertEquals("Z", tableau.columnLabels.get(0));
+        assertEquals("x0", tableau.columnLabels.get(1));
+        assertEquals("x1", tableau.columnLabels.get(2));
+        assertEquals("s0", tableau.columnLabels.get(3));
+        assertEquals("a0", tableau.columnLabels.get(4));
+        assertEquals("RHS", tableau.columnLabels.get(5));
+    }
+
+    @Test
+    public void testCreateTableau() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        RealMatrix matrix = tableau.createTableau(true);
+        assertNotNull(matrix);
+        assertEquals(3, matrix.getRowDimension());
+        assertEquals(7, matrix.getColumnDimension());
+    }
+
+    @Test
+    public void testNormalizeConstraints() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        List<LinearConstraint> normalizedConstraints = tableau.normalizeConstraints(constraints);
+        assertEquals(2, normalizedConstraints.size());
+        assertEquals(1.0, normalizedConstraints.get(0).getValue(), EPSILON);
+        assertEquals(0.0, normalizedConstraints.get(1).getValue(), EPSILON);
+    }
+
+    @Test
+    public void testGetNumObjectiveFunctions() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(1, tableau.getNumObjectiveFunctions());
+    }
+
+    @Test
+    public void testGetConstraintTypeCounts() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(1, tableau.getConstraintTypeCounts(Relationship.LEQ));
+        assertEquals(1, tableau.getConstraintTypeCounts(Relationship.GEQ));
+        assertEquals(0, tableau.getConstraintTypeCounts(Relationship.EQ));
+    }
+
+    @Test
+    public void testGetInvertedCoefficientSum() {
+        RealVector coefficients = new ArrayRealVector(new double[]{1.0, 2.0});
+        double sum = SimplexTableau.getInvertedCoefficientSum(coefficients);
+        assertEquals(-3.0, sum, EPSILON);
+    }
+
+    @Test
+    public void testGetBasicRow() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        Integer row = tableau.getBasicRow(0);
+        assertNull(row);
+    }
+
+    @Test
+    public void testDropPhase1Objective() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        tableau.dropPhase1Objective();
+        assertEquals(1, tableau.getNumObjectiveFunctions());
+    }
+
+    @Test
+    public void testCopyArray() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        double[] src = new double[]{1.0, 2.0};
+        double[] dest = new double[5];
+        tableau.copyArray(src, dest);
+        assertEquals(1.0, dest[1], EPSILON);
+        assertEquals(2.0, dest[2], EPSILON);
+    }
+
+    @Test
+    public void testIsOptimal() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertFalse(tableau.isOptimal());
+    }
+
+    @Test
+    public void testGetSolution() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        PointValuePair solution = tableau.getSolution();
+        assertNotNull(solution);
+    }
+
+    @Test
+    public void testDivideRow() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        tableau.divideRow(0, 2.0);
+        assertEquals(0.5, tableau.getEntry(0, 0), EPSILON);
+    }
+
+    @Test
+    public void testSubtractRow() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        tableau.subtractRow(0, 1, 1.0);
+        assertEquals(0.0, tableau.getEntry(0, 0), EPSILON);
+    }
+
+    @Test
+    public void testGetWidth() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(7, tableau.getWidth());
+    }
+
+    @Test
+    public void testGetHeight() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(3, tableau.getHeight());
+    }
+
+    @Test
+    public void testGetEntry() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(1.0, tableau.getEntry(0, 0), EPSILON);
+    }
+
+    @Test
+    public void testSetEntry() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        tableau.setEntry(0, 0, 2.0);
+        assertEquals(2.0, tableau.getEntry(0, 0), EPSILON);
+    }
+
+    @Test
+    public void testGetSlackVariableOffset() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(3, tableau.getSlackVariableOffset());
+    }
+
+    @Test
+    public void testGetArtificialVariableOffset() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(4, tableau.getArtificialVariableOffset());
+    }
+
+    @Test
+    public void testGetRhsOffset() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(6, tableau.getRhsOffset());
+    }
+
+    @Test
+    public void testGetNumDecisionVariables() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(2, tableau.getNumDecisionVariables());
+    }
+
+    @Test
+    public void testGetOriginalNumDecisionVariables() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(2, tableau.getOriginalNumDecisionVariables());
+    }
+
+    @Test
+    public void testGetNumSlackVariables() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(1, tableau.getNumSlackVariables());
+    }
+
+    @Test
+    public void testGetNumArtificialVariables() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(1, tableau.getNumArtificialVariables());
+    }
+
+    @Test
+    public void testGetData() {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        double[][] data = tableau.getData();
+        assertNotNull(data);
+        assertEquals(3, data.length);
+        assertEquals(7, data[0].length);
+    }
+
+    @Test
+    public void testEquals() {
+        SimplexTableau tableau1 = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        SimplexTableau tableau2 = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertTrue(tableau1.equals(tableau2));
+    }
+
+    @Test
+    public void testHashCode() {
+        SimplexTableau tableau1 = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        SimplexTableau tableau2 = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        assertEquals(tableau1.hashCode(), tableau2.hashCode());
+    }
+
+    @Test
+    public void testSerialization() throws Exception {
+        SimplexTableau tableau = new SimplexTableau(f, constraints, goalType, restrictToNonNegative, EPSILON);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ObjectOutputStream oos = new ObjectOutputStream(baos);
+        oos.writeObject(tableau);
+        oos.close();
+
+        ByteArrayInputStream bais = new ByteArrayInputStream(baos.toByteArray());
+        ObjectInputStream ois = new ObjectInputStream(bais);
+        SimplexTableau deserializedTableau = (SimplexTableau) ois.readObject();
+        ois.close();
+
+        assertEquals(tableau, deserializedTableau);
+    }
+}
+```

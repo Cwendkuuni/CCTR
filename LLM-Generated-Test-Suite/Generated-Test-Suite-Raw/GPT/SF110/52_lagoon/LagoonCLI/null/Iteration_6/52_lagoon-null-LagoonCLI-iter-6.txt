@@ -1,0 +1,128 @@
+To create a comprehensive JUnit 4 test suite for the `LagoonCLI` class, we need to consider testing the `main` method, `getProperty`, and `showTime` methods. Since `main` is a static method and interacts with the system environment (like `System.out`, `System.err`, and `System.exit`), testing it requires some setup to capture these interactions. The `getProperty` and `showTime` methods are more straightforward to test.
+
+Below is a JUnit 4 test suite for the `LagoonCLI` class:
+
+```java
+import nu.staldal.lagoon.LagoonCLI;
+import nu.staldal.lagoon.core.LagoonException;
+import org.junit.*;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
+
+public class LagoonCLITest {
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
+
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+
+    private static final String PROPERTY_FILE = "test.properties";
+
+    @BeforeClass
+    public static void setUpClass() throws IOException {
+        // Create a test properties file
+        Properties properties = new Properties();
+        properties.setProperty("targetURL", "http://example.com");
+        properties.setProperty("sitemapFile", "sitemap.xml");
+        properties.setProperty("sourceDir", ".");
+        FileWriter writer = new FileWriter(PROPERTY_FILE);
+        properties.store(writer, "Test properties");
+        writer.close();
+    }
+
+    @AfterClass
+    public static void tearDownClass() {
+        // Delete the test properties file
+        new File(PROPERTY_FILE).delete();
+    }
+
+    @Test
+    public void testMainWithNoArguments() {
+        LagoonCLI.main(new String[]{});
+        assertTrue(systemOutRule.getLog().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainWithInvalidInterval() {
+        LagoonCLI.main(new String[]{PROPERTY_FILE, "invalid"});
+        assertTrue(systemOutRule.getLog().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainWithValidInterval() {
+        exit.expectSystemExitWithStatus(0);
+        LagoonCLI.main(new String[]{PROPERTY_FILE, "10"});
+        assertTrue(systemOutRule.getLog().contains("Lagoon initialized successfully"));
+    }
+
+    @Test
+    public void testMainWithBuild() {
+        exit.expectSystemExitWithStatus(0);
+        LagoonCLI.main(new String[]{PROPERTY_FILE, "build"});
+        assertTrue(systemOutRule.getLog().contains("Building website..."));
+    }
+
+    @Test
+    public void testMainWithForce() {
+        exit.expectSystemExitWithStatus(0);
+        LagoonCLI.main(new String[]{PROPERTY_FILE, "force"});
+        assertTrue(systemOutRule.getLog().contains("Force building website..."));
+    }
+
+    @Test
+    public void testGetProperty() throws LagoonException {
+        LagoonCLI.main(new String[]{PROPERTY_FILE});
+        String targetURL = LagoonCLI.getProperty("targetURL");
+        assertEquals("http://example.com", targetURL);
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyThrowsException() throws LagoonException {
+        LagoonCLI.main(new String[]{PROPERTY_FILE});
+        LagoonCLI.getProperty("nonExistentProperty");
+    }
+
+    @Test
+    public void testShowTimeInMilliseconds() {
+        LagoonCLI.showTime(5000);
+        assertTrue(systemOutRule.getLog().contains("in 5000 ms"));
+    }
+
+    @Test
+    public void testShowTimeInSeconds() {
+        LagoonCLI.showTime(15000);
+        assertTrue(systemOutRule.getLog().contains("in 15 s"));
+    }
+}
+```
+
+### Explanation:
+
+1. **System Rules**: We use `SystemOutRule` and `SystemErrRule` to capture `System.out` and `System.err` outputs. `ExpectedSystemExit` is used to handle `System.exit` calls.
+
+2. **Test Setup**: A temporary properties file is created before tests and deleted afterward.
+
+3. **Test Cases**:
+   - **testMainWithNoArguments**: Tests the behavior when no arguments are provided.
+   - **testMainWithInvalidInterval**: Tests the behavior with an invalid interval argument.
+   - **testMainWithValidInterval**: Tests the behavior with a valid interval argument.
+   - **testMainWithBuild**: Tests the behavior when "build" is passed as an argument.
+   - **testMainWithForce**: Tests the behavior when "force" is passed as an argument.
+   - **testGetProperty**: Tests the `getProperty` method for a valid property.
+   - **testGetPropertyThrowsException**: Tests the `getProperty` method for a non-existent property.
+   - **testShowTimeInMilliseconds**: Tests the `showTime` method for milliseconds output.
+   - **testShowTimeInSeconds**: Tests the `showTime` method for seconds output.
+
+This test suite covers the main functionalities and edge cases of the `LagoonCLI` class.

@@ -1,0 +1,126 @@
+To create a comprehensive JUnit 4 test suite for the `SearchableTextPane` class, we need to test each public method and ensure that the class behaves as expected. Below is a test suite that covers the methods in the `SearchableTextPane` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import java.awt.*;
+import java.util.List;
+import java.util.ArrayList;
+
+public class SearchableTextPaneTest {
+
+    private SearchableTextPane textPane;
+    private Font font;
+    private Document mockDocument;
+
+    @Before
+    public void setUp() {
+        font = new Font("Arial", Font.PLAIN, 12);
+        textPane = new SearchableTextPane(font, 4);
+        mockDocument = Mockito.mock(Document.class);
+        textPane.setDocument(mockDocument);
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth() {
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testHighlightWithNullTerm() {
+        List<LineResult> results = textPane.highlight(null, 0);
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    public void testHighlightWithEmptyTerm() {
+        List<LineResult> results = textPane.highlight("", 0);
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    public void testHighlightWithValidTerm() throws BadLocationException {
+        String text = "This is a test text for highlighting.";
+        Mockito.when(mockDocument.getText(0, text.length())).thenReturn(text);
+        Mockito.when(mockDocument.getLength()).thenReturn(text.length());
+
+        List<WordResult> wordResults = new ArrayList<>();
+        wordResults.add(new WordResult(0, 4)); // "This"
+        wordResults.add(new WordResult(10, 14)); // "test"
+
+        SearchEngine mockSearchEngine = Mockito.mock(SearchEngine.class);
+        Mockito.when(mockSearchEngine.search("test", text)).thenReturn(wordResults);
+
+        List<LineResult> results = textPane.highlight("test", 0);
+        assertEquals(1, results.size());
+    }
+
+    @Test
+    public void testRemoveHighlights() {
+        textPane.removeHighlights();
+        // No exception should be thrown
+    }
+
+    @Test
+    public void testSearchWithNullTerm() {
+        int result = textPane.search(null);
+        assertEquals(-1, result);
+    }
+
+    @Test
+    public void testSearchWithEmptyTerm() {
+        int result = textPane.search("");
+        assertEquals(-1, result);
+    }
+
+    @Test
+    public void testSearchWithValidTerm() throws BadLocationException {
+        String text = "This is a test text for searching.";
+        Mockito.when(mockDocument.getText(0, text.length())).thenReturn(text);
+        Mockito.when(mockDocument.getLength()).thenReturn(text.length());
+
+        int result = textPane.search("test");
+        assertEquals(10, result);
+    }
+
+    @Test
+    public void testSearchWithStartPos() throws BadLocationException {
+        String text = "This is a test text for searching.";
+        Mockito.when(mockDocument.getText(0, text.length())).thenReturn(text);
+        Mockito.when(mockDocument.getLength()).thenReturn(text.length());
+
+        int result = textPane.search("test", 0);
+        assertEquals(10, result);
+    }
+
+    @Test
+    public void testConvertWords2Lines() throws BadLocationException {
+        List<WordResult> wordResults = new ArrayList<>();
+        wordResults.add(new WordResult(0, 4)); // "This"
+        wordResults.add(new WordResult(10, 14)); // "test"
+
+        List<LineResult> lineResults = textPane.convertWords2Lines(wordResults);
+        assertEquals(2, lineResults.size());
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `SearchableTextPane` instance with a mock `Document` to simulate text content.
+- **Tests**:
+  - `testGetScrollableTracksViewportWidth`: Verifies the behavior of `getScrollableTracksViewportWidth`.
+  - `testHighlightWithNullTerm` and `testHighlightWithEmptyTerm`: Ensure that highlighting with a null or empty term returns an empty list.
+  - `testHighlightWithValidTerm`: Tests highlighting with a valid term using a mocked `SearchEngine`.
+  - `testRemoveHighlights`: Ensures that calling `removeHighlights` does not throw exceptions.
+  - `testSearchWithNullTerm` and `testSearchWithEmptyTerm`: Ensure searching with null or empty terms returns `-1`.
+  - `testSearchWithValidTerm` and `testSearchWithStartPos`: Test searching with valid terms and starting positions.
+  - `testConvertWords2Lines`: Tests the conversion of word results to line results.
+
+### Note:
+- The `SearchEngine`, `WordResult`, and `LineResult` classes are assumed to be part of the codebase, and their behavior is mocked or assumed for testing purposes.
+- The `convertWords2Lines` method is tested directly, assuming it is accessible for testing. If it is private, you may need to adjust the test strategy or use reflection.

@@ -1,0 +1,121 @@
+To create a comprehensive JUnit 4 test suite for the `InternalChatFrame` class, we need to test all public methods and any significant private methods that affect the class's behavior. Below is a test suite that covers the main functionalities of the class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.*;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.StyledDocument;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+
+public class InternalChatFrameTest {
+
+    private InternalChatFrame chatFrame;
+    private MainFrame mockParent;
+    private StyledDocument mockDoc;
+
+    @Before
+    public void setUp() {
+        mockParent = mock(MainFrame.class);
+        when(mockParent.getSize()).thenReturn(new Dimension(800, 600));
+        chatFrame = new InternalChatFrame(mockParent);
+        mockDoc = chatFrame.showTxt.getStyledDocument();
+    }
+
+    @Test
+    public void testAddUser() {
+        chatFrame.addUser("TestUser");
+        assertEquals("TestUser", chatFrame.getUserlist()[0]);
+    }
+
+    @Test
+    public void testDeleteUser() {
+        chatFrame.addUser("TestUser");
+        chatFrame.deleteUser("TestUser");
+        assertEquals(0, chatFrame.getUserlist().length);
+    }
+
+    @Test
+    public void testGetUserlist() {
+        chatFrame.addUser("User1");
+        chatFrame.addUser("User2");
+        String[] userList = chatFrame.getUserlist();
+        assertEquals(2, userList.length);
+        assertEquals("User1", userList[0]);
+        assertEquals("User2", userList[1]);
+    }
+
+    @Test
+    public void testAddText() throws BadLocationException {
+        chatFrame.addText("TestUser: Hello World");
+        verify(mockDoc, times(1)).insertString(anyInt(), eq("TestUser: Hello World\n"), any());
+    }
+
+    @Test
+    public void testAddTextWithFormatting() throws BadLocationException {
+        chatFrame.addText("TestUser: *italic* and _bold_ text");
+        verify(mockDoc, atLeastOnce()).insertString(anyInt(), anyString(), any());
+    }
+
+    @Test
+    public void testActionPerformedChooseColor() {
+        chatFrame.addUser("TestUser");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame.list, ActionEvent.ACTION_PERFORMED, "chooseColor");
+        chatFrame.actionPerformed(event);
+        // Since JColorChooser.showDialog is a blocking call, we cannot test it directly without mocking
+    }
+
+    @Test
+    public void testActionPerformedWhisper() {
+        chatFrame.addUser("TestUser");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame.list, ActionEvent.ACTION_PERFORMED, "whisper");
+        chatFrame.actionPerformed(event);
+        assertEquals("/w TestUser ", chatFrame.txtInput.getText());
+    }
+
+    @Test
+    public void testGetChatlog() {
+        chatFrame.addText("TestUser: Hello World");
+        String chatlog = chatFrame.getChatlog();
+        assertTrue(chatlog.contains("TestUser: Hello World"));
+    }
+
+    @Test
+    public void testMousePressedShowsPopup() {
+        MouseEvent mockEvent = mock(MouseEvent.class);
+        when(mockEvent.isPopupTrigger()).thenReturn(true);
+        when(mockEvent.getSource()).thenReturn(chatFrame.list);
+        chatFrame.mousePressed(mockEvent);
+        verify(mockEvent, times(1)).isPopupTrigger();
+    }
+
+    @Test
+    public void testMouseReleasedShowsPopup() {
+        MouseEvent mockEvent = mock(MouseEvent.class);
+        when(mockEvent.isPopupTrigger()).thenReturn(true);
+        when(mockEvent.getSource()).thenReturn(chatFrame.showTxt);
+        chatFrame.mouseReleased(mockEvent);
+        verify(mockEvent, times(1)).isPopupTrigger();
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock the `MainFrame` and `StyledDocument` to isolate the `InternalChatFrame` for testing.
+- **Setup**: The `setUp` method initializes the `InternalChatFrame` with a mocked `MainFrame`.
+- **Tests**:
+  - `testAddUser`, `testDeleteUser`, `testGetUserlist`: Test user management functionalities.
+  - `testAddText`, `testAddTextWithFormatting`: Test text addition and formatting.
+  - `testActionPerformedChooseColor`, `testActionPerformedWhisper`: Test action events for choosing color and whispering.
+  - `testGetChatlog`: Test retrieval of chat log.
+  - `testMousePressedShowsPopup`, `testMouseReleasedShowsPopup`: Test mouse events for showing popups.
+
+This test suite covers the main functionalities of the `InternalChatFrame` class. Adjustments may be needed based on the actual behavior of the `MainFrame` and other dependencies.

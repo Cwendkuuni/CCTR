@@ -1,0 +1,118 @@
+```java
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertTrue;
+import static org.mockito.Mockito.*;
+
+public class CSVPrinterTest {
+
+    private StringWriter stringWriter;
+    private CSVFormat csvFormat;
+    private CSVPrinter csvPrinter;
+
+    @Before
+    public void setUp() throws IOException {
+        stringWriter = new StringWriter();
+        csvFormat = CSVFormat.DEFAULT;
+        csvPrinter = new CSVPrinter(stringWriter, csvFormat);
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        csvPrinter.close();
+    }
+
+    @Test
+    public void testPrint() throws IOException {
+        csvPrinter.print("value1");
+        csvPrinter.print("value2");
+        csvPrinter.println();
+        assertEquals("value1,value2\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintWithNull() throws IOException {
+        csvPrinter.print(null);
+        csvPrinter.println();
+        assertEquals("\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordIterable() throws IOException {
+        csvPrinter.printRecord(Arrays.asList("value1", "value2"));
+        assertEquals("value1,value2\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordArray() throws IOException {
+        csvPrinter.printRecord("value1", "value2");
+        assertEquals("value1,value2\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordsIterable() throws IOException {
+        csvPrinter.printRecords(Arrays.asList(Arrays.asList("value1", "value2"), Arrays.asList("value3", "value4")));
+        assertEquals("value1,value2\nvalue3,value4\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordsArray() throws IOException {
+        csvPrinter.printRecords(new Object[]{"value1", "value2"}, new Object[]{"value3", "value4"});
+        assertEquals("value1,value2\nvalue3,value4\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintComment() throws IOException {
+        csvPrinter.printComment("This is a comment");
+        assertEquals("# This is a comment\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintCommentWithNewLine() throws IOException {
+        csvPrinter.printComment("This is a comment\nwith a new line");
+        assertEquals("# This is a comment\n# with a new line\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordsResultSet() throws IOException, SQLException {
+        ResultSet resultSet = mock(ResultSet.class);
+        when(resultSet.getMetaData()).thenReturn(mock(java.sql.ResultSetMetaData.class));
+        when(resultSet.getMetaData().getColumnCount()).thenReturn(2);
+        when(resultSet.next()).thenReturn(true, true, false);
+        when(resultSet.getString(1)).thenReturn("value1", "value3");
+        when(resultSet.getString(2)).thenReturn("value2", "value4");
+
+        csvPrinter.printRecords(resultSet);
+        assertEquals("value1,value2\nvalue3,value4\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testGetOut() {
+        assertEquals(stringWriter, csvPrinter.getOut());
+    }
+
+    @Test
+    public void testClose() throws IOException {
+        csvPrinter.close();
+        verify(stringWriter).close();
+    }
+
+    @Test
+    public void testFlush() throws IOException {
+        csvPrinter.flush();
+        verify(stringWriter).flush();
+    }
+}
+```

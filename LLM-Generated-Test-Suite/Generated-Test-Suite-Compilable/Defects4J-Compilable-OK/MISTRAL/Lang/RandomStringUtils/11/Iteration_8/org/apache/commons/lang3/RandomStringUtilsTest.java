@@ -1,0 +1,123 @@
+package org.apache.commons.lang3;
+
+import org.junit.Test;
+import org.junit.Assert;
+import org.apache.commons.lang3.RandomStringUtils;
+
+public class RandomStringUtilsTest {
+
+    @Test
+    public void testRandom() {
+        String randomString = RandomStringUtils.random(10);
+        Assert.assertEquals(10, randomString.length());
+    }
+
+    @Test
+    public void testRandomAscii() {
+        String randomString = RandomStringUtils.randomAscii(10);
+        Assert.assertEquals(10, randomString.length());
+        for (char c : randomString.toCharArray()) {
+            Assert.assertTrue(c >= 32 && c <= 126);
+        }
+    }
+
+    @Test
+    public void testRandomAlphabetic() {
+        String randomString = RandomStringUtils.randomAlphabetic(10);
+        Assert.assertEquals(10, randomString.length());
+        for (char c : randomString.toCharArray()) {
+            Assert.assertTrue(Character.isLetter(c));
+        }
+    }
+
+    @Test
+    public void testRandomAlphanumeric() {
+        String randomString = RandomStringUtils.randomAlphanumeric(10);
+        Assert.assertEquals(10, randomString.length());
+        for (char c : randomString.toCharArray()) {
+            Assert.assertTrue(Character.isLetterOrDigit(c));
+        }
+    }
+
+    @Test
+    public void testRandomNumeric() {
+        String randomString = RandomStringUtils.randomNumeric(10);
+        Assert.assertEquals(10, randomString.length());
+        for (char c : randomString.toCharArray()) {
+            Assert.assertTrue(Character.isDigit(c));
+        }
+    }
+
+    @Test
+    public void testRandomWithLettersAndNumbers() {
+        String randomString = RandomStringUtils.random(10, true, true);
+        Assert.assertEquals(10, randomString.length());
+        for (char c : randomString.toCharArray()) {
+            Assert.assertTrue(Character.isLetterOrDigit(c));
+        }
+    }
+
+    @Test
+    public void testRandomWithStartEndLettersNumbers() {
+        String randomString = RandomStringUtils.random(10, 32, 127, true, true);
+        Assert.assertEquals(10, randomString.length());
+        for (char c : randomString.toCharArray()) {
+            Assert.assertTrue(c >= 32 && c <= 126 && Character.isLetterOrDigit(c));
+        }
+    }
+
+    @Test
+    public void testRandomWithStartEndLettersNumbersChars() {
+        char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
+        String randomString = RandomStringUtils.random(10, 0, chars.length, true, true, chars);
+        Assert.assertEquals(10, randomString.length());
+        for (char c : randomString.toCharArray()) {
+            Assert.assertTrue(Character.isLetterOrDigit(c));
+        }
+    }
+
+    @Test
+    public void testRandomWithStartEndLettersNumbersCharsRandom() {
+        char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
+        String randomString = RandomStringUtils.random(10, 0, chars.length, true, true, chars, new java.util.Random());
+        Assert.assertEquals(10, randomString.length());
+        for (char c : randomString.toCharArray()) {
+            Assert.assertTrue(Character.isLetterOrDigit(c));
+        }
+    }
+
+    @Test
+    public void testRandomWithCharsString() {
+        String chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+        String randomString = RandomStringUtils.random(10, chars);
+        Assert.assertEquals(10, randomString.length());
+        for (char c : randomString.toCharArray()) {
+            Assert.assertTrue(chars.indexOf(c) != -1);
+        }
+    }
+
+    @Test
+    public void testRandomWithCharsArray() {
+        char[] chars = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789".toCharArray();
+        String randomString = RandomStringUtils.random(10, chars);
+        Assert.assertEquals(10, randomString.length());
+        for (char c : randomString.toCharArray()) {
+            Assert.assertTrue(new String(chars).indexOf(c) != -1);
+        }
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRandomWithNegativeCount() {
+        RandomStringUtils.random(-1);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRandomWithEmptyCharsArray() {
+        RandomStringUtils.random(10, new char[0]);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testRandomWithEmptyCharsString() {
+        RandomStringUtils.random(10, "");
+    }
+}

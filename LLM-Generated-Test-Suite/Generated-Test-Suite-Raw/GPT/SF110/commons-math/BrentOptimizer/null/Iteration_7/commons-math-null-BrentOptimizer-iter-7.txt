@@ -1,0 +1,85 @@
+To create a comprehensive JUnit 4 test suite for the `BrentOptimizer` class, we need to test the constructors, the `doOptimize` method, and any edge cases or exceptions that might be thrown. Below is a test suite that covers these aspects:
+
+```java
+import static org.junit.Assert.*;
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
+import org.apache.commons.math3.exception.NumberIsTooSmallException;
+import org.apache.commons.math3.optim.GoalType;
+import org.apache.commons.math3.optim.univariate.BrentOptimizer;
+import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
+import org.apache.commons.math3.optim.ConvergenceChecker;
+import org.junit.Test;
+
+public class BrentOptimizerTest {
+
+    @Test(expected = NumberIsTooSmallException.class)
+    public void testConstructorThrowsNumberIsTooSmallException() {
+        new BrentOptimizer(1e-20, 1e-10);
+    }
+
+    @Test(expected = NotStrictlyPositiveException.class)
+    public void testConstructorThrowsNotStrictlyPositiveException() {
+        new BrentOptimizer(1e-8, 0.0);
+    }
+
+    @Test
+    public void testConstructorWithValidParameters() {
+        BrentOptimizer optimizer = new BrentOptimizer(1e-8, 1e-10);
+        assertNotNull(optimizer);
+    }
+
+    @Test
+    public void testDoOptimizeMinimization() {
+        BrentOptimizer optimizer = new BrentOptimizer(1e-8, 1e-10);
+        optimizer.setGoalType(GoalType.MINIMIZE);
+        optimizer.setMin(0);
+        optimizer.setMax(4);
+        optimizer.setStartValue(2);
+        optimizer.setConvergenceChecker(new SimpleConvergenceChecker());
+
+        UnivariatePointValuePair result = optimizer.doOptimize();
+        assertNotNull(result);
+        assertEquals(0, result.getPoint(), 1e-8);
+    }
+
+    @Test
+    public void testDoOptimizeMaximization() {
+        BrentOptimizer optimizer = new BrentOptimizer(1e-8, 1e-10);
+        optimizer.setGoalType(GoalType.MAXIMIZE);
+        optimizer.setMin(0);
+        optimizer.setMax(4);
+        optimizer.setStartValue(2);
+        optimizer.setConvergenceChecker(new SimpleConvergenceChecker());
+
+        UnivariatePointValuePair result = optimizer.doOptimize();
+        assertNotNull(result);
+        assertEquals(4, result.getPoint(), 1e-8);
+    }
+
+    // A simple convergence checker for testing purposes
+    private static class SimpleConvergenceChecker implements ConvergenceChecker<UnivariatePointValuePair> {
+        @Override
+        public boolean converged(int iteration, UnivariatePointValuePair previous, UnivariatePointValuePair current) {
+            return Math.abs(previous.getValue() - current.getValue()) < 1e-8;
+        }
+    }
+}
+```
+
+### Explanation:
+
+1. **Exception Tests**: 
+   - `testConstructorThrowsNumberIsTooSmallException`: Tests if the constructor throws a `NumberIsTooSmallException` when the relative threshold is below the minimum.
+   - `testConstructorThrowsNotStrictlyPositiveException`: Tests if the constructor throws a `NotStrictlyPositiveException` when the absolute threshold is not strictly positive.
+
+2. **Constructor Test**:
+   - `testConstructorWithValidParameters`: Ensures that the constructor works with valid parameters.
+
+3. **Optimization Tests**:
+   - `testDoOptimizeMinimization`: Tests the `doOptimize` method for a minimization goal.
+   - `testDoOptimizeMaximization`: Tests the `doOptimize` method for a maximization goal.
+
+4. **Convergence Checker**:
+   - A simple convergence checker is implemented to simulate convergence based on the difference in values between iterations.
+
+These tests cover the basic functionality and edge cases of the `BrentOptimizer` class. Adjust the test cases as needed to fit the specific behavior and requirements of your implementation.

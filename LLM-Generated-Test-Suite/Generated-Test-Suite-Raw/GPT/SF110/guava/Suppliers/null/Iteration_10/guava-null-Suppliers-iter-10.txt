@@ -1,0 +1,109 @@
+To create a comprehensive JUnit 4 test suite for the `Suppliers` class, we need to test each public method and ensure that they behave as expected. Below is a JUnit 4 test suite that covers the methods in the `Suppliers` class:
+
+```java
+import com.google.common.base.Suppliers;
+import com.google.common.base.Function;
+import com.google.common.base.Supplier;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class SuppliersTest {
+
+    private Supplier<String> mockSupplier;
+    private Function<String, Integer> mockFunction;
+
+    @Before
+    public void setUp() {
+        mockSupplier = mock(Supplier.class);
+        mockFunction = mock(Function.class);
+    }
+
+    @After
+    public void tearDown() {
+        mockSupplier = null;
+        mockFunction = null;
+    }
+
+    @Test
+    public void testCompose() {
+        when(mockSupplier.get()).thenReturn("123");
+        when(mockFunction.apply("123")).thenReturn(123);
+
+        Supplier<Integer> composedSupplier = Suppliers.compose(mockFunction, mockSupplier);
+        assertEquals(Integer.valueOf(123), composedSupplier.get());
+
+        verify(mockSupplier, times(1)).get();
+        verify(mockFunction, times(1)).apply("123");
+    }
+
+    @Test
+    public void testMemoize() {
+        when(mockSupplier.get()).thenReturn("memoized");
+
+        Supplier<String> memoizedSupplier = Suppliers.memoize(mockSupplier);
+        assertEquals("memoized", memoizedSupplier.get());
+        assertEquals("memoized", memoizedSupplier.get());
+
+        verify(mockSupplier, times(1)).get();
+    }
+
+    @Test
+    public void testMemoizeWithExpiration() throws InterruptedException {
+        when(mockSupplier.get()).thenReturn("expiring");
+
+        Supplier<String> expiringSupplier = Suppliers.memoizeWithExpiration(mockSupplier, 1, TimeUnit.SECONDS);
+        assertEquals("expiring", expiringSupplier.get());
+
+        Thread.sleep(1100); // Wait for expiration
+        assertEquals("expiring", expiringSupplier.get());
+
+        verify(mockSupplier, times(2)).get();
+    }
+
+    @Test
+    public void testOfInstance() {
+        Supplier<String> instanceSupplier = Suppliers.ofInstance("instance");
+        assertEquals("instance", instanceSupplier.get());
+    }
+
+    @Test
+    public void testSynchronizedSupplier() {
+        when(mockSupplier.get()).thenReturn("synchronized");
+
+        Supplier<String> synchronizedSupplier = Suppliers.synchronizedSupplier(mockSupplier);
+        assertEquals("synchronized", synchronizedSupplier.get());
+
+        verify(mockSupplier, times(1)).get();
+    }
+
+    @Test
+    public void testSupplierFunction() {
+        Supplier<String> instanceSupplier = Suppliers.ofInstance("function");
+        Function<Supplier<String>, String> supplierFunction = Suppliers.supplierFunction();
+
+        assertEquals("function", supplierFunction.apply(instanceSupplier));
+    }
+}
+```
+
+### Explanation:
+
+1. **Setup and Teardown**: We use `@Before` and `@After` to initialize and clean up mock objects before and after each test.
+
+2. **Mocking**: We use Mockito to create mock objects for `Supplier` and `Function` to simulate their behavior.
+
+3. **Test Methods**:
+   - **`testCompose`**: Verifies that the `compose` method correctly applies a function to the result of a supplier.
+   - **`testMemoize`**: Ensures that the `memoize` method caches the result of the supplier.
+   - **`testMemoizeWithExpiration`**: Checks that the `memoizeWithExpiration` method caches the result and expires it after the specified duration.
+   - **`testOfInstance`**: Confirms that `ofInstance` returns a supplier that always returns the given instance.
+   - **`testSynchronizedSupplier`**: Tests that `synchronizedSupplier` synchronizes access to the supplier.
+   - **`testSupplierFunction`**: Validates that `supplierFunction` returns a function that retrieves the value from a supplier.
+
+This test suite should cover the basic functionality of each method in the `Suppliers` class.

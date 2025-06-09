@@ -1,0 +1,236 @@
+To create a comprehensive JUnit 4 test suite for the `Profile` class, we need to consider testing each public method. Since the `Profile` class is heavily dependent on other classes like `Controller`, `Frame`, `ThreadDictionary`, and `ClassAllocation`, we will need to mock these dependencies. Below is a basic test suite that uses Mockito to mock dependencies and verify interactions.
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+
+import java.util.*;
+
+public class ProfileTest {
+
+    @Mock
+    private Controller mockController;
+    @Mock
+    private ThreadDictionary mockThreadDictionary;
+    @Mock
+    private Frame mockFrame;
+    @Mock
+    private ClassAllocation mockClassAllocation;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        Profile.init();
+        Profile._controller = mockController;
+        Profile._threadDictionary = mockThreadDictionary;
+        Profile._frameList = new ArrayList<>();
+        Profile._allocList = new HashMap<>();
+        Profile._methodDictionary = new HashMap<>();
+        Profile._threadActiveFrame = new HashMap<>();
+    }
+
+    @Test
+    public void testInitProfiler() {
+        Profile.initProfiler();
+        assertNotNull(Profile._controller);
+    }
+
+    @Test
+    public void testInit() {
+        Profile.init();
+        assertNotNull(Profile._threadActiveFrame);
+        assertNotNull(Profile._threadDictionary);
+        assertNotNull(Profile._methodDictionary);
+        assertNotNull(Profile._frameList);
+        assertNotNull(Profile._allocList);
+    }
+
+    @Test
+    public void testClear() {
+        Profile.clear();
+        assertNotNull(Profile._threadActiveFrame);
+        assertNotNull(Profile._threadDictionary);
+        assertNotNull(Profile._methodDictionary);
+        assertNotNull(Profile._frameList);
+        assertNotNull(Profile._allocList);
+    }
+
+    @Test
+    public void testStart() {
+        Profile.start();
+        verify(mockController).start();
+    }
+
+    @Test
+    public void testStop() {
+        Profile.stop();
+        verify(mockController).stop();
+    }
+
+    @Test
+    public void testSetFileName() {
+        String fileName = "testFile";
+        Profile.setFileName(fileName);
+        verify(mockController).setFileName(fileName);
+    }
+
+    @Test
+    public void testShutdown() {
+        when(mockThreadDictionary.keySet()).thenReturn(new HashSet<>(Arrays.asList(1L)));
+        when(mockThreadDictionary.getMostRecentFrame(1L)).thenReturn(mockFrame);
+        Profile._frameList.add(mockFrame);
+
+        Profile.shutdown();
+
+        verify(mockFrame).close();
+        verify(mockFrame).computeNetTime();
+    }
+
+    @Test
+    public void testThreads() {
+        Iterable<Long> threads = Arrays.asList(1L, 2L);
+        when(mockThreadDictionary.threads()).thenReturn(threads);
+
+        Iterable<Long> result = Profile.threads();
+        assertEquals(threads, result);
+    }
+
+    @Test
+    public void testInteractions() {
+        long threadId = 1L;
+        Iterable<Frame> frames = Arrays.asList(mockFrame);
+        when(mockThreadDictionary.interactions(threadId)).thenReturn(frames);
+
+        Iterable<Frame> result = Profile.interactions(threadId);
+        assertEquals(frames, result);
+    }
+
+    @Test
+    public void testFrameList() {
+        List<Frame> frames = new ArrayList<>();
+        Profile._frameList = frames;
+
+        Iterable<Frame> result = Profile.frameList();
+        assertEquals(frames, result);
+    }
+
+    @Test
+    public void testAllocations() {
+        Map<String, ClassAllocation> allocList = new HashMap<>();
+        Profile._allocList = allocList;
+
+        Iterable<ClassAllocation> result = Profile.allocations();
+        assertEquals(allocList.values(), result);
+    }
+
+    @Test
+    public void testGetThreadTotalTime() {
+        long threadId = 1L;
+        long totalTime = 100L;
+        when(mockThreadDictionary.getThreadTotalTime(threadId)).thenReturn(totalTime);
+
+        long result = Profile.getThreadTotalTime(threadId);
+        assertEquals(totalTime, result);
+    }
+
+    @Test
+    public void testSortFrameList() {
+        Comparator<Frame> comparator = mock(Comparator.class);
+        Profile.sortFrameList(comparator);
+        // Since sort is called within a synchronized block, we can't directly verify it.
+        // We assume it works if no exceptions are thrown.
+    }
+
+    @Test
+    public void testStartMethod() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        Profile.start(className, methodName);
+        // Verify that the method dictionary is updated and frame list is modified
+        assertTrue(Profile._methodDictionary.containsKey(className + "." + methodName));
+    }
+
+    @Test
+    public void testEndMethod() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        Profile._threadActiveFrame.put(Thread.currentThread().getId(), mockFrame);
+        when(mockFrame.getClassName()).thenReturn(className);
+        when(mockFrame.getMethodName()).thenReturn(methodName);
+
+        Profile.end(className, methodName);
+        verify(mockFrame).setEndTime(anyLong());
+    }
+
+    @Test
+    public void testBeginWait() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        Profile._threadActiveFrame.put(Thread.currentThread().getId(), mockFrame);
+        when(mockFrame.getClassName()).thenReturn(className);
+        when(mockFrame.getMethodName()).thenReturn(methodName);
+
+        Profile.beginWait(className, methodName);
+        verify(mockFrame).beginWait(anyLong());
+    }
+
+    @Test
+    public void testEndWait() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        Profile._threadActiveFrame.put(Thread.currentThread().getId(), mockFrame);
+        when(mockFrame.getClassName()).thenReturn(className);
+        when(mockFrame.getMethodName()).thenReturn(methodName);
+
+        Profile.endWait(className, methodName);
+        verify(mockFrame).endWait(anyLong());
+    }
+
+    @Test
+    public void testUnwind() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        String exception = "Exception";
+        Profile._threadActiveFrame.put(Thread.currentThread().getId(), mockFrame);
+        when(mockFrame.getClassName()).thenReturn(className);
+        when(mockFrame.getMethodName()).thenReturn(methodName);
+
+        Profile.unwind(className, methodName, exception);
+        // Verify that the active frame is set correctly
+        assertEquals(mockFrame, Profile._threadActiveFrame.get(Thread.currentThread().getId()));
+    }
+
+    @Test
+    public void testAlloc() {
+        String className = "TestClass";
+        Profile.alloc(className);
+        // Verify that the allocation list is updated
+        assertTrue(Profile._allocList.containsKey(className));
+    }
+
+    @Test
+    public void testRun() {
+        Profile._threadDictionary = mockThreadDictionary;
+        when(mockThreadDictionary.size()).thenReturn(1);
+
+        Profile profile = new Profile();
+        profile.run();
+
+        verify(mockController).close();
+    }
+}
+```
+
+### Explanation:
+- **Mockito** is used to mock dependencies like `Controller`, `ThreadDictionary`, `Frame`, and `ClassAllocation`.
+- Each test method is designed to test a specific method of the `Profile` class.
+- The `setUp` method initializes the mocks and sets up the initial state for the `Profile` class.
+- The test methods verify the behavior of the `Profile` class methods, ensuring they interact correctly with their dependencies.
+- Some methods, like `sortFrameList`, are tested by ensuring no exceptions are thrown, as verifying internal state changes directly is not feasible without exposing internal state or using additional hooks.
+
+This test suite provides a basic structure and can be expanded with more detailed assertions and additional test cases as needed.

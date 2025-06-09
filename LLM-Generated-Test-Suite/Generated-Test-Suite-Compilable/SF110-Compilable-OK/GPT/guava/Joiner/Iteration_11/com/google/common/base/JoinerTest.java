@@ -1,0 +1,196 @@
+package com.google.common.base;
+
+import com.google.common.base.Joiner;
+import com.google.common.base.Joiner.MapJoiner;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class JoinerTest {
+
+    private Joiner joiner;
+    private Joiner joinerWithNulls;
+    private Joiner joinerSkippingNulls;
+    private MapJoiner mapJoiner;
+
+    @Before
+    public void setUp() {
+        joiner = Joiner.on(", ");
+        joinerWithNulls = joiner.useForNull("null");
+        joinerSkippingNulls = joiner.skipNulls();
+        mapJoiner = joiner.withKeyValueSeparator("=");
+    }
+
+    @Test
+    public void testJoinerOnString() {
+        Joiner joiner = Joiner.on(", ");
+        assertNotNull(joiner);
+    }
+
+    @Test
+    public void testJoinerOnChar() {
+        Joiner joiner = Joiner.on(',');
+        assertNotNull(joiner);
+    }
+
+    @Test
+    public void testAppendToAppendableWithIterable() throws IOException {
+        StringWriter writer = new StringWriter();
+        List<String> parts = Arrays.asList("a", "b", "c");
+        joiner.appendTo(writer, parts);
+        assertEquals("a, b, c", writer.toString());
+    }
+
+    @Test
+    public void testAppendToAppendableWithIterator() throws IOException {
+        StringWriter writer = new StringWriter();
+        List<String> parts = Arrays.asList("a", "b", "c");
+        joiner.appendTo(writer, parts.iterator());
+        assertEquals("a, b, c", writer.toString());
+    }
+
+    @Test
+    public void testAppendToAppendableWithArray() throws IOException {
+        StringWriter writer = new StringWriter();
+        String[] parts = {"a", "b", "c"};
+        joiner.appendTo(writer, parts);
+        assertEquals("a, b, c", writer.toString());
+    }
+
+    @Test
+    public void testAppendToAppendableWithVarargs() throws IOException {
+        StringWriter writer = new StringWriter();
+        joiner.appendTo(writer, "a", "b", "c");
+        assertEquals("a, b, c", writer.toString());
+    }
+
+    @Test
+    public void testAppendToStringBuilderWithIterable() {
+        StringBuilder builder = new StringBuilder();
+        List<String> parts = Arrays.asList("a", "b", "c");
+        joiner.appendTo(builder, parts);
+        assertEquals("a, b, c", builder.toString());
+    }
+
+    @Test
+    public void testAppendToStringBuilderWithIterator() {
+        StringBuilder builder = new StringBuilder();
+        List<String> parts = Arrays.asList("a", "b", "c");
+        joiner.appendTo(builder, parts.iterator());
+        assertEquals("a, b, c", builder.toString());
+    }
+
+    @Test
+    public void testAppendToStringBuilderWithArray() {
+        StringBuilder builder = new StringBuilder();
+        String[] parts = {"a", "b", "c"};
+        joiner.appendTo(builder, parts);
+        assertEquals("a, b, c", builder.toString());
+    }
+
+    @Test
+    public void testAppendToStringBuilderWithVarargs() {
+        StringBuilder builder = new StringBuilder();
+        joiner.appendTo(builder, "a", "b", "c");
+        assertEquals("a, b, c", builder.toString());
+    }
+
+    @Test
+    public void testJoinWithIterable() {
+        List<String> parts = Arrays.asList("a", "b", "c");
+        String result = joiner.join(parts);
+        assertEquals("a, b, c", result);
+    }
+
+    @Test
+    public void testJoinWithIterator() {
+        List<String> parts = Arrays.asList("a", "b", "c");
+        String result = joiner.join(parts.iterator());
+        assertEquals("a, b, c", result);
+    }
+
+    @Test
+    public void testJoinWithArray() {
+        String[] parts = {"a", "b", "c"};
+        String result = joiner.join(parts);
+        assertEquals("a, b, c", result);
+    }
+
+    @Test
+    public void testJoinWithVarargs() {
+        String result = joiner.join("a", "b", "c");
+        assertEquals("a, b, c", result);
+    }
+
+    @Test
+    public void testUseForNull() {
+        List<String> parts = Arrays.asList("a", null, "c");
+        String result = joinerWithNulls.join(parts);
+        assertEquals("a, null, c", result);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testUseForNullThrowsException() {
+        joinerWithNulls.useForNull("anotherNull");
+    }
+
+    @Test
+    public void testSkipNulls() {
+        List<String> parts = Arrays.asList("a", null, "c");
+        String result = joinerSkippingNulls.join(parts);
+        assertEquals("a, c", result);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSkipNullsThrowsException() {
+        joinerSkippingNulls.skipNulls();
+    }
+
+    @Test
+    public void testMapJoinerAppendToAppendable() throws IOException {
+        StringWriter writer = new StringWriter();
+        Map<String, String> map = new HashMap<>();
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        mapJoiner.appendTo(writer, map);
+        assertEquals("key1=value1, key2=value2", writer.toString());
+    }
+
+    @Test
+    public void testMapJoinerAppendToStringBuilder() {
+        StringBuilder builder = new StringBuilder();
+        Map<String, String> map = new HashMap<>();
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        mapJoiner.appendTo(builder, map);
+        assertEquals("key1=value1, key2=value2", builder.toString());
+    }
+
+    @Test
+    public void testMapJoinerJoin() {
+        Map<String, String> map = new HashMap<>();
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        String result = mapJoiner.join(map);
+        assertEquals("key1=value1, key2=value2", result);
+    }
+
+    @Test
+    public void testMapJoinerUseForNull() {
+        Map<String, String> map = new HashMap<>();
+        map.put("key1", null);
+        map.put("key2", "value2");
+        MapJoiner mapJoinerWithNulls = mapJoiner.useForNull("null");
+        String result = mapJoinerWithNulls.join(map);
+        assertEquals("key1=null, key2=value2", result);
+    }
+}

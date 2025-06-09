@@ -1,0 +1,207 @@
+package net.sf.javaml.core;
+
+import net.sf.javaml.distance.DistanceMeasure;
+import net.sf.javaml.core.Dataset;
+import net.sf.javaml.core.DefaultDataset;
+import net.sf.javaml.core.Instance;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class FoldTest {
+
+    @Mock
+    private Dataset parentDataset;
+
+    @Mock
+    private Instance mockInstance;
+
+    private Fold fold;
+    private int[] indices;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        indices = new int[]{0, 1, 2};
+        fold = new Fold(parentDataset, indices);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testAdd() {
+        fold.add(mockInstance);
+    }
+
+    @Test
+    public void testClasses() {
+        SortedSet<Object> classes = new TreeSet<>();
+        when(parentDataset.classes()).thenReturn(classes);
+        assertEquals(classes, fold.classes());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testFolds() {
+        fold.folds(1, new Random());
+    }
+
+    @Test
+    public void testInstance() {
+        when(parentDataset.instance(0)).thenReturn(mockInstance);
+        assertEquals(mockInstance, fold.instance(0));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testKNearest() {
+        fold.kNearest(1, mockInstance, mock(DistanceMeasure.class));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testAddWithIndex() {
+        fold.add(0, mockInstance);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testAddAll() {
+        fold.addAll(Collections.singleton(mockInstance));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testAddAllWithIndex() {
+        fold.addAll(0, Collections.singleton(mockInstance));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testClear() {
+        fold.clear();
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testContains() {
+        fold.contains(mockInstance);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testContainsAll() {
+        fold.containsAll(Collections.singleton(mockInstance));
+    }
+
+    @Test
+    public void testGet() {
+        when(parentDataset.instance(0)).thenReturn(mockInstance);
+        assertEquals(mockInstance, fold.get(0));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testIndexOf() {
+        fold.indexOf(mockInstance);
+    }
+
+    @Test
+    public void testIsEmpty() {
+        assertFalse(fold.isEmpty());
+    }
+
+    @Test
+    public void testIterator() {
+        Iterator<Instance> iterator = fold.iterator();
+        assertNotNull(iterator);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testLastIndexOf() {
+        fold.lastIndexOf(mockInstance);
+    }
+
+    @Test
+    public void testListIterator() {
+        ListIterator<Instance> listIterator = fold.listIterator();
+        assertNotNull(listIterator);
+    }
+
+    @Test
+    public void testListIteratorWithIndex() {
+        ListIterator<Instance> listIterator = fold.listIterator(1);
+        assertNotNull(listIterator);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRemove() {
+        fold.remove(mockInstance);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRemoveWithIndex() {
+        fold.remove(0);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRemoveAll() {
+        fold.removeAll(Collections.singleton(mockInstance));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testRetainAll() {
+        fold.retainAll(Collections.singleton(mockInstance));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSet() {
+        fold.set(0, mockInstance);
+    }
+
+    @Test
+    public void testSize() {
+        assertEquals(indices.length, fold.size());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSubList() {
+        fold.subList(0, 1);
+    }
+
+    @Test
+    public void testToArray() {
+        when(parentDataset.instance(0)).thenReturn(mockInstance);
+        Object[] array = fold.toArray();
+        assertEquals(indices.length, array.length);
+    }
+
+    @Test
+    public void testToArrayWithType() {
+        when(parentDataset.instance(0)).thenReturn(mockInstance);
+        Instance[] array = fold.toArray(new Instance[0]);
+        assertEquals(indices.length, array.length);
+    }
+
+    @Test
+    public void testNoAttributes() {
+        when(parentDataset.noAttributes()).thenReturn(5);
+        assertEquals(5, fold.noAttributes());
+    }
+
+    @Test
+    public void testClassIndex() {
+        when(parentDataset.classIndex(mockInstance)).thenReturn(1);
+        assertEquals(1, fold.classIndex(mockInstance));
+    }
+
+    @Test
+    public void testClassValue() {
+        when(parentDataset.classValue(0)).thenReturn(mockInstance);
+        assertEquals(mockInstance, fold.classValue(0));
+    }
+
+    @Test
+    public void testCopy() {
+        Dataset copy = fold.copy();
+        assertNotNull(copy);
+    }
+}

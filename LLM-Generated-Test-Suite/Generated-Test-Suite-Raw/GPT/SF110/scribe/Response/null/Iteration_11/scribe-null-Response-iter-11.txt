@@ -1,0 +1,113 @@
+Certainly! Below is a complete JUnit 4 test suite for the `Response` class. This suite tests the various methods and behaviors of the class, including handling of HTTP connections, parsing of headers, and retrieval of response body and headers.
+
+```java
+import org.junit.*;
+import org.mockito.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ResponseTest {
+
+    @Mock
+    private HttpURLConnection mockConnection;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void testResponseConstructorSuccess() throws Exception {
+        InputStream mockInputStream = new ByteArrayInputStream("response body".getBytes());
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getInputStream()).thenReturn(mockInputStream);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(200, response.getCode());
+        assertEquals("response body", response.getBody());
+        assertEquals("value1", response.getHeader("Header1"));
+    }
+
+    @Test
+    public void testResponseConstructorFailure() throws Exception {
+        InputStream mockErrorStream = new ByteArrayInputStream("error body".getBytes());
+        when(mockConnection.getResponseCode()).thenReturn(404);
+        when(mockConnection.getErrorStream()).thenReturn(mockErrorStream);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("error body", response.getBody());
+        assertEquals("value1", response.getHeader("Header1"));
+    }
+
+    @Test
+    public void testResponseConstructorUnknownHostException() throws Exception {
+        when(mockConnection.connect()).thenThrow(new UnknownHostException());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("", response.getBody());
+    }
+
+    @Test
+    public void testGetBody() throws Exception {
+        InputStream mockInputStream = new ByteArrayInputStream("response body".getBytes());
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getInputStream()).thenReturn(mockInputStream);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals("response body", response.getBody());
+    }
+
+    @Test
+    public void testGetHeaders() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        Map<String, String> headers = response.getHeaders();
+        assertEquals(2, headers.size());
+        assertEquals("value1", headers.get("Header1"));
+        assertEquals("value2", headers.get("Header2"));
+    }
+
+    @Test
+    public void testGetHeader() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals("value1", response.getHeader("Header1"));
+        assertNull(response.getHeader("NonExistentHeader"));
+    }
+
+    private Map<String, List<String>> createMockHeaders() {
+        Map<String, List<String>> headers = new HashMap<>();
+        headers.put("Header1", Collections.singletonList("value1"));
+        headers.put("Header2", Collections.singletonList("value2"));
+        return headers;
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock the `HttpURLConnection` object to simulate different HTTP responses.
+- **Test Cases**:
+  - **Constructor Tests**: We test the constructor for successful and failed HTTP responses, including handling of `UnknownHostException`.
+  - **Method Tests**: We test `getBody`, `getHeaders`, and `getHeader` methods to ensure they return the expected values.
+- **Utility Method**: `createMockHeaders()` is a helper method to create mock HTTP headers for testing.
+
+This test suite should cover the main functionalities of the `Response` class.

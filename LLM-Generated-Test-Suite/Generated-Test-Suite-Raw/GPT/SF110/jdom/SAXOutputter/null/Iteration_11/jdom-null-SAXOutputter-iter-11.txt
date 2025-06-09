@@ -1,0 +1,237 @@
+```java
+import org.jdom2.Document;
+import org.jdom2.Element;
+import org.jdom2.JDOMException;
+import org.jdom2.output.Format;
+import org.jdom2.output.SAXOutputter;
+import org.jdom2.output.SAXOutputProcessor;
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.DTDHandler;
+import org.xml.sax.EntityResolver;
+import org.xml.sax.ErrorHandler;
+import org.xml.sax.SAXNotRecognizedException;
+import org.xml.sax.SAXNotSupportedException;
+import org.xml.sax.ext.DeclHandler;
+import org.xml.sax.ext.LexicalHandler;
+
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class SAXOutputterTest {
+
+    private SAXOutputter saxOutputter;
+    private ContentHandler mockContentHandler;
+    private ErrorHandler mockErrorHandler;
+    private DTDHandler mockDTDHandler;
+    private EntityResolver mockEntityResolver;
+    private LexicalHandler mockLexicalHandler;
+    private DeclHandler mockDeclHandler;
+    private SAXOutputProcessor mockProcessor;
+    private Format mockFormat;
+
+    @Before
+    public void setUp() {
+        mockContentHandler = mock(ContentHandler.class);
+        mockErrorHandler = mock(ErrorHandler.class);
+        mockDTDHandler = mock(DTDHandler.class);
+        mockEntityResolver = mock(EntityResolver.class);
+        mockLexicalHandler = mock(LexicalHandler.class);
+        mockDeclHandler = mock(DeclHandler.class);
+        mockProcessor = mock(SAXOutputProcessor.class);
+        mockFormat = mock(Format.class);
+
+        saxOutputter = new SAXOutputter();
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertNotNull(saxOutputter);
+        assertFalse(saxOutputter.getReportNamespaceDeclarations());
+        assertTrue(saxOutputter.getReportDTDEvents());
+        assertNotNull(saxOutputter.getSAXOutputProcessor());
+        assertNotNull(saxOutputter.getFormat());
+    }
+
+    @Test
+    public void testConstructorWithContentHandler() {
+        SAXOutputter outputter = new SAXOutputter(mockContentHandler);
+        assertEquals(mockContentHandler, outputter.getContentHandler());
+    }
+
+    @Test
+    public void testConstructorWithHandlers() {
+        SAXOutputter outputter = new SAXOutputter(mockContentHandler, mockErrorHandler, mockDTDHandler, mockEntityResolver, mockLexicalHandler);
+        assertEquals(mockContentHandler, outputter.getContentHandler());
+        assertEquals(mockErrorHandler, outputter.getErrorHandler());
+        assertEquals(mockDTDHandler, outputter.getDTDHandler());
+        assertEquals(mockEntityResolver, outputter.getEntityResolver());
+        assertEquals(mockLexicalHandler, outputter.getLexicalHandler());
+    }
+
+    @Test
+    public void testSetAndGetContentHandler() {
+        saxOutputter.setContentHandler(mockContentHandler);
+        assertEquals(mockContentHandler, saxOutputter.getContentHandler());
+    }
+
+    @Test
+    public void testSetAndGetErrorHandler() {
+        saxOutputter.setErrorHandler(mockErrorHandler);
+        assertEquals(mockErrorHandler, saxOutputter.getErrorHandler());
+    }
+
+    @Test
+    public void testSetAndGetDTDHandler() {
+        saxOutputter.setDTDHandler(mockDTDHandler);
+        assertEquals(mockDTDHandler, saxOutputter.getDTDHandler());
+    }
+
+    @Test
+    public void testSetAndGetEntityResolver() {
+        saxOutputter.setEntityResolver(mockEntityResolver);
+        assertEquals(mockEntityResolver, saxOutputter.getEntityResolver());
+    }
+
+    @Test
+    public void testSetAndGetLexicalHandler() {
+        saxOutputter.setLexicalHandler(mockLexicalHandler);
+        assertEquals(mockLexicalHandler, saxOutputter.getLexicalHandler());
+    }
+
+    @Test
+    public void testSetAndGetDeclHandler() {
+        saxOutputter.setDeclHandler(mockDeclHandler);
+        assertEquals(mockDeclHandler, saxOutputter.getDeclHandler());
+    }
+
+    @Test
+    public void testSetAndGetReportNamespaceDeclarations() {
+        saxOutputter.setReportNamespaceDeclarations(true);
+        assertTrue(saxOutputter.getReportNamespaceDeclarations());
+    }
+
+    @Test
+    public void testSetAndGetReportDTDEvents() {
+        saxOutputter.setReportDTDEvents(false);
+        assertFalse(saxOutputter.getReportDTDEvents());
+    }
+
+    @Test
+    public void testSetAndGetFeature() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.setFeature("http://xml.org/sax/features/namespace-prefixes", true);
+        assertTrue(saxOutputter.getFeature("http://xml.org/sax/features/namespace-prefixes"));
+
+        saxOutputter.setFeature("http://xml.org/sax/features/validation", false);
+        assertFalse(saxOutputter.getFeature("http://xml.org/sax/features/validation"));
+    }
+
+    @Test(expected = SAXNotSupportedException.class)
+    public void testSetFeatureNamespacesFalseThrowsException() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.setFeature("http://xml.org/sax/features/namespaces", false);
+    }
+
+    @Test(expected = SAXNotRecognizedException.class)
+    public void testSetFeatureUnrecognizedThrowsException() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.setFeature("unrecognized-feature", true);
+    }
+
+    @Test(expected = SAXNotRecognizedException.class)
+    public void testGetFeatureUnrecognizedThrowsException() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.getFeature("unrecognized-feature");
+    }
+
+    @Test
+    public void testSetAndGetProperty() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.setProperty("http://xml.org/sax/properties/lexical-handler", mockLexicalHandler);
+        assertEquals(mockLexicalHandler, saxOutputter.getProperty("http://xml.org/sax/properties/lexical-handler"));
+
+        saxOutputter.setProperty("http://xml.org/sax/properties/declaration-handler", mockDeclHandler);
+        assertEquals(mockDeclHandler, saxOutputter.getProperty("http://xml.org/sax/properties/declaration-handler"));
+    }
+
+    @Test(expected = SAXNotRecognizedException.class)
+    public void testSetPropertyUnrecognizedThrowsException() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.setProperty("unrecognized-property", new Object());
+    }
+
+    @Test(expected = SAXNotRecognizedException.class)
+    public void testGetPropertyUnrecognizedThrowsException() throws SAXNotRecognizedException, SAXNotSupportedException {
+        saxOutputter.getProperty("unrecognized-property");
+    }
+
+    @Test
+    public void testSetAndGetSAXOutputProcessor() {
+        saxOutputter.setSAXOutputProcessor(mockProcessor);
+        assertEquals(mockProcessor, saxOutputter.getSAXOutputProcessor());
+    }
+
+    @Test
+    public void testSetAndGetFormat() {
+        saxOutputter.setFormat(mockFormat);
+        assertEquals(mockFormat, saxOutputter.getFormat());
+    }
+
+    @Test
+    public void testOutputDocument() throws JDOMException {
+        Document mockDocument = mock(Document.class);
+        saxOutputter.setSAXOutputProcessor(mockProcessor);
+        saxOutputter.output(mockDocument);
+        verify(mockProcessor).process(any(), any(), eq(mockDocument));
+    }
+
+    @Test
+    public void testOutputList() throws JDOMException {
+        List<Element> mockList = Collections.singletonList(mock(Element.class));
+        saxOutputter.setSAXOutputProcessor(mockProcessor);
+        saxOutputter.output(mockList);
+        verify(mockProcessor).processAsDocument(any(), any(), eq(mockList));
+    }
+
+    @Test
+    public void testOutputElement() throws JDOMException {
+        Element mockElement = mock(Element.class);
+        saxOutputter.setSAXOutputProcessor(mockProcessor);
+        saxOutputter.output(mockElement);
+        verify(mockProcessor).processAsDocument(any(), any(), eq(mockElement));
+    }
+
+    @Test
+    public void testOutputFragmentList() throws JDOMException {
+        List<Element> mockList = Collections.singletonList(mock(Element.class));
+        saxOutputter.setSAXOutputProcessor(mockProcessor);
+        saxOutputter.outputFragment(mockList);
+        verify(mockProcessor).process(any(), any(), eq(mockList));
+    }
+
+    @Test
+    public void testOutputFragmentContent() throws JDOMException {
+        Element mockElement = mock(Element.class);
+        when(mockElement.getCType()).thenReturn(Content.CType.Element);
+        saxOutputter.setSAXOutputProcessor(mockProcessor);
+        saxOutputter.outputFragment(mockElement);
+        verify(mockProcessor).process(any(), any(), eq(mockElement));
+    }
+
+    @Test
+    public void testHandleError() {
+        JDOMException exception = new JDOMException("Test Exception");
+        saxOutputter.setErrorHandler(mockErrorHandler);
+        try {
+            saxOutputter.outputFragment(null);
+            fail("Expected JDOMException");
+        } catch (JDOMException e) {
+            assertEquals("Test Exception", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testDeprecatedGetLocator() {
+        assertNull(saxOutputter.getLocator());
+    }
+}
+```

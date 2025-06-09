@@ -1,0 +1,134 @@
+Certainly! Below is a JUnit 4 test suite for the `Game` class. This suite aims to comprehensively test all the methods in the class. Note that this assumes the existence of mock or stub implementations for the `Player`, `UserInterface`, `CardCollection`, `Card`, `Combat`, `Phase`, `UntapPhase`, and `Stack` classes/interfaces, as they are not provided in the original code.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import lotus.core.*;
+import lotus.core.interfaces.*;
+import lotus.core.card.*;
+import lotus.core.phases.*;
+import lotus.core.stack.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.*;
+
+public class GameTest {
+
+    private UserInterface mockUI1;
+    private UserInterface mockUI2;
+    private CardCollection mockDeck1;
+    private CardCollection mockDeck2;
+    private Player mockPlayer1;
+    private Player mockPlayer2;
+    private Card mockCard1;
+    private Card mockCard2;
+    private Stack mockStack;
+
+    @Before
+    public void setUp() {
+        mockUI1 = mock(UserInterface.class);
+        mockUI2 = mock(UserInterface.class);
+        mockDeck1 = mock(CardCollection.class);
+        mockDeck2 = mock(CardCollection.class);
+        mockPlayer1 = mock(Player.class);
+        mockPlayer2 = mock(Player.class);
+        mockCard1 = mock(Card.class);
+        mockCard2 = mock(Card.class);
+        mockStack = mock(Stack.class);
+
+        when(mockDeck1.iterator()).thenReturn(Arrays.asList(mockCard1).iterator());
+        when(mockDeck2.iterator()).thenReturn(Arrays.asList(mockCard2).iterator());
+
+        Game.stack = mockStack;
+    }
+
+    @Test
+    public void testGetPlayingPlayer() {
+        Game.player1 = mockPlayer1;
+        Game.player2 = mockPlayer2;
+        Game.playingPlayer = 1;
+        assertEquals(mockPlayer1, Game.getPlayingPlayer());
+
+        Game.playingPlayer = 2;
+        assertEquals(mockPlayer2, Game.getPlayingPlayer());
+    }
+
+    @Test
+    public void testGetNonPlayingPlayer() {
+        Game.player1 = mockPlayer1;
+        Game.player2 = mockPlayer2;
+        Game.playingPlayer = 1;
+        assertEquals(mockPlayer2, Game.getNonPlayingPlayer());
+
+        Game.playingPlayer = 2;
+        assertEquals(mockPlayer1, Game.getNonPlayingPlayer());
+    }
+
+    @Test
+    public void testGetOtherPlayer() {
+        Game.player1 = mockPlayer1;
+        Game.player2 = mockPlayer2;
+        assertEquals(mockPlayer2, Game.getOtherPlayer(mockPlayer1));
+        assertEquals(mockPlayer1, Game.getOtherPlayer(mockPlayer2));
+    }
+
+    @Test
+    public void testInit() {
+        Game.init(mockUI1, mockUI2, "Player1", "Player2", mockDeck1, mockDeck2);
+
+        assertNotNull(Game.player1);
+        assertNotNull(Game.player2);
+        assertEquals(1, Game.playingPlayer);
+        assertTrue(Game.currentPhase instanceof UntapPhase);
+
+        verify(mockUI1).init(Game.player1);
+        verify(mockUI2).init(Game.player2);
+        assertEquals(Game.player1, mockCard1.owner);
+        assertEquals(Game.player1.library, mockCard1.zone);
+        assertEquals(Game.player2, mockCard2.owner);
+        assertEquals(Game.player2.library, mockCard2.zone);
+    }
+
+    @Test
+    public void testGivePriorityToCurrentPlayer() {
+        Game.player1 = mockPlayer1;
+        Game.player2 = mockPlayer2;
+        Game.playingPlayer = 1;
+
+        when(mockPlayer1.letPlayerSpeak()).thenReturn(false);
+        when(mockPlayer2.letPlayerSpeak()).thenReturn(false);
+        when(mockStack.empty()).thenReturn(true);
+
+        Game.givePriorityToCurrentPlayer();
+
+        verify(mockPlayer1, atLeastOnce()).letPlayerSpeak();
+        verify(mockPlayer2, atLeastOnce()).letPlayerSpeak();
+        verify(mockStack, never()).resolveLast();
+    }
+
+    @Test
+    public void testGivePriorityToCurrentPlayerWithStack() {
+        Game.player1 = mockPlayer1;
+        Game.player2 = mockPlayer2;
+        Game.playingPlayer = 1;
+
+        when(mockPlayer1.letPlayerSpeak()).thenReturn(false);
+        when(mockPlayer2.letPlayerSpeak()).thenReturn(false);
+        when(mockStack.empty()).thenReturn(false, true);
+
+        Game.givePriorityToCurrentPlayer();
+
+        verify(mockStack, atLeastOnce()).resolveLast();
+    }
+}
+```
+
+### Explanation:
+- **Mocks and Stubs**: The test suite uses Mockito to create mock objects for dependencies like `UserInterface`, `CardCollection`, `Player`, `Card`, and `Stack`.
+- **Setup**: The `setUp` method initializes the mock objects and sets up the `Game.stack` with a mock `Stack`.
+- **Test Methods**: Each method in the `Game` class has a corresponding test method that verifies its behavior using assertions and Mockito verifications.
+- **Priority Handling**: The `testGivePriorityToCurrentPlayer` and `testGivePriorityToCurrentPlayerWithStack` methods test the priority handling logic, including scenarios where the stack is not empty.
+
+This test suite should provide a comprehensive check of the `Game` class's functionality, assuming the existence of the necessary classes and interfaces.

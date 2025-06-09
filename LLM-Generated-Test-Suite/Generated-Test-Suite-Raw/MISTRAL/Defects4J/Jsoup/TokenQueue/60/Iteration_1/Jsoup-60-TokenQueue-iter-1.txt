@@ -1,0 +1,219 @@
+```java
+package org.jsoup.parser;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class TokenQueueTest {
+
+    private TokenQueue tokenQueue;
+
+    @Before
+    public void setUp() {
+        tokenQueue = new TokenQueue("test data");
+    }
+
+    @Test
+    public void testIsEmpty() {
+        assertFalse(tokenQueue.isEmpty());
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        assertTrue(tokenQueue.isEmpty());
+    }
+
+    @Test
+    public void testPeek() {
+        assertEquals('t', tokenQueue.peek());
+        tokenQueue.consume();
+        assertEquals('e', tokenQueue.peek());
+    }
+
+    @Test
+    public void testAddFirstCharacter() {
+        tokenQueue.addFirst('a');
+        assertEquals('a', tokenQueue.peek());
+    }
+
+    @Test
+    public void testAddFirstString() {
+        tokenQueue.addFirst("abc");
+        assertEquals('a', tokenQueue.peek());
+        tokenQueue.consume();
+        assertEquals('b', tokenQueue.peek());
+        tokenQueue.consume();
+        assertEquals('c', tokenQueue.peek());
+    }
+
+    @Test
+    public void testMatches() {
+        assertTrue(tokenQueue.matches("test"));
+        assertFalse(tokenQueue.matches("data"));
+    }
+
+    @Test
+    public void testMatchesCS() {
+        assertTrue(tokenQueue.matchesCS("test"));
+        assertFalse(tokenQueue.matchesCS("Test"));
+    }
+
+    @Test
+    public void testMatchesAnyString() {
+        assertTrue(tokenQueue.matchesAny("test", "data"));
+        assertFalse(tokenQueue.matchesAny("foo", "bar"));
+    }
+
+    @Test
+    public void testMatchesAnyChar() {
+        assertTrue(tokenQueue.matchesAny('t', 'd'));
+        assertFalse(tokenQueue.matchesAny('x', 'y'));
+    }
+
+    @Test
+    public void testMatchesStartTag() {
+        tokenQueue = new TokenQueue("<tag");
+        assertTrue(tokenQueue.matchesStartTag());
+        tokenQueue = new TokenQueue("tag");
+        assertFalse(tokenQueue.matchesStartTag());
+    }
+
+    @Test
+    public void testMatchChomp() {
+        assertTrue(tokenQueue.matchChomp("test"));
+        assertFalse(tokenQueue.matchChomp("data"));
+    }
+
+    @Test
+    public void testMatchesWhitespace() {
+        tokenQueue = new TokenQueue(" test data");
+        assertTrue(tokenQueue.matchesWhitespace());
+        tokenQueue = new TokenQueue("test data");
+        assertFalse(tokenQueue.matchesWhitespace());
+    }
+
+    @Test
+    public void testMatchesWord() {
+        assertTrue(tokenQueue.matchesWord());
+        tokenQueue = new TokenQueue("123");
+        assertTrue(tokenQueue.matchesWord());
+        tokenQueue = new TokenQueue(" ");
+        assertFalse(tokenQueue.matchesWord());
+    }
+
+    @Test
+    public void testAdvance() {
+        tokenQueue.advance();
+        assertEquals('e', tokenQueue.peek());
+    }
+
+    @Test
+    public void testConsume() {
+        assertEquals('t', tokenQueue.consume());
+        assertEquals('e', tokenQueue.consume());
+    }
+
+    @Test
+    public void testConsumeString() {
+        tokenQueue.consume("test");
+        assertEquals(' ', tokenQueue.peek());
+    }
+
+    @Test
+    public void testConsumeTo() {
+        assertEquals("test", tokenQueue.consumeTo("data"));
+        assertEquals("data", tokenQueue.remainder());
+    }
+
+    @Test
+    public void testConsumeToIgnoreCase() {
+        assertEquals("test", tokenQueue.consumeToIgnoreCase("DATA"));
+        assertEquals("data", tokenQueue.remainder());
+    }
+
+    @Test
+    public void testConsumeToAny() {
+        assertEquals("test", tokenQueue.consumeToAny("data", "foo"));
+        assertEquals("data", tokenQueue.remainder());
+    }
+
+    @Test
+    public void testChompTo() {
+        assertEquals("test", tokenQueue.chompTo("data"));
+        assertEquals("", tokenQueue.remainder());
+    }
+
+    @Test
+    public void testChompToIgnoreCase() {
+        assertEquals("test", tokenQueue.chompToIgnoreCase("DATA"));
+        assertEquals("", tokenQueue.remainder());
+    }
+
+    @Test
+    public void testChompBalanced() {
+        tokenQueue = new TokenQueue("(one (two) three) four");
+        assertEquals("one (two) three", tokenQueue.chompBalanced('(', ')'));
+        assertEquals(" four", tokenQueue.remainder());
+    }
+
+    @Test
+    public void testUnescape() {
+        assertEquals("test", TokenQueue.unescape("test"));
+        assertEquals("test", TokenQueue.unescape("\\test"));
+    }
+
+    @Test
+    public void testConsumeWhitespace() {
+        tokenQueue = new TokenQueue(" test data");
+        assertTrue(tokenQueue.consumeWhitespace());
+        assertEquals('t', tokenQueue.peek());
+    }
+
+    @Test
+    public void testConsumeWord() {
+        assertEquals("test", tokenQueue.consumeWord());
+        assertEquals(' ', tokenQueue.peek());
+    }
+
+    @Test
+    public void testConsumeTagName() {
+        tokenQueue = new TokenQueue("tag-name");
+        assertEquals("tag-name", tokenQueue.consumeTagName());
+    }
+
+    @Test
+    public void testConsumeElementSelector() {
+        tokenQueue = new TokenQueue("tag|name");
+        assertEquals("tag|name", tokenQueue.consumeElementSelector());
+    }
+
+    @Test
+    public void testConsumeCssIdentifier() {
+        tokenQueue = new TokenQueue("css-identifier");
+        assertEquals("css-identifier", tokenQueue.consumeCssIdentifier());
+    }
+
+    @Test
+    public void testConsumeAttributeKey() {
+        tokenQueue = new TokenQueue("attr-key");
+        assertEquals("attr-key", tokenQueue.consumeAttributeKey());
+    }
+
+    @Test
+    public void testRemainder() {
+        assertEquals("test data", tokenQueue.remainder());
+        assertEquals("", tokenQueue.remainder());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("test data", tokenQueue.toString());
+    }
+}
+```

@@ -1,0 +1,115 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.NameBasedCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.OngoingInjecter;
+import org.mockito.internal.util.MockUtil;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class NameBasedCandidateFilterTest {
+
+    private MockCandidateFilter mockNextFilter;
+    private NameBasedCandidateFilter nameBasedCandidateFilter;
+    private MockUtil mockUtil;
+
+    @Before
+    public void setUp() {
+        mockNextFilter = mock(MockCandidateFilter.class);
+        nameBasedCandidateFilter = new NameBasedCandidateFilter(mockNextFilter);
+        mockUtil = new MockUtil();
+    }
+
+    @Test
+    public void testFilterCandidate_SingleMock() throws NoSuchFieldException {
+        Collection<Object> mocks = new ArrayList<>();
+        Object mock = mock(Object.class);
+        mocks.add(mock);
+
+        Field field = getClass().getDeclaredField("mockNextFilter");
+        OngoingInjecter expectedInjecter = mock(OngoingInjecter.class);
+
+        when(mockNextFilter.filterCandidate(mocks, field, mockNextFilter)).thenReturn(expectedInjecter);
+
+        OngoingInjecter result = nameBasedCandidateFilter.filterCandidate(mocks, field, mockNextFilter);
+
+        assertEquals(expectedInjecter, result);
+        verify(mockNextFilter).filterCandidate(mocks, field, mockNextFilter);
+    }
+
+    @Test
+    public void testFilterCandidate_MultipleMocks_NoNameMatch() throws NoSuchFieldException {
+        Collection<Object> mocks = new ArrayList<>();
+        Object mock1 = mock(Object.class);
+        Object mock2 = mock(Object.class);
+        mocks.add(mock1);
+        mocks.add(mock2);
+
+        Field field = getClass().getDeclaredField("mockNextFilter");
+        OngoingInjecter expectedInjecter = mock(OngoingInjecter.class);
+
+        when(mockNextFilter.filterCandidate(mocks, field, mockNextFilter)).thenReturn(expectedInjecter);
+
+        OngoingInjecter result = nameBasedCandidateFilter.filterCandidate(mocks, field, mockNextFilter);
+
+        assertEquals(expectedInjecter, result);
+        verify(mockNextFilter).filterCandidate(mocks, field, mockNextFilter);
+    }
+
+    @Test
+    public void testFilterCandidate_MultipleMocks_NameMatch() throws NoSuchFieldException {
+        Collection<Object> mocks = new ArrayList<>();
+        Object mock1 = mock(Object.class);
+        Object mock2 = mock(Object.class);
+        mocks.add(mock1);
+        mocks.add(mock2);
+
+        Field field = getClass().getDeclaredField("mockNextFilter");
+        when(mockUtil.getMockName(mock1)).thenReturn("mockNextFilter");
+
+        List<Object> mockNameMatches = new ArrayList<>();
+        mockNameMatches.add(mock1);
+
+        OngoingInjecter expectedInjecter = mock(OngoingInjecter.class);
+        when(mockNextFilter.filterCandidate(mockNameMatches, field, mockNextFilter)).thenReturn(expectedInjecter);
+
+        OngoingInjecter result = nameBasedCandidateFilter.filterCandidate(mocks, field, mockNextFilter);
+
+        assertEquals(expectedInjecter, result);
+        verify(mockNextFilter).filterCandidate(mockNameMatches, field, mockNextFilter);
+    }
+
+    @Test
+    public void testFilterCandidate_MultipleMocks_MultipleNameMatches() throws NoSuchFieldException {
+        Collection<Object> mocks = new ArrayList<>();
+        Object mock1 = mock(Object.class);
+        Object mock2 = mock(Object.class);
+        mocks.add(mock1);
+        mocks.add(mock2);
+
+        Field field = getClass().getDeclaredField("mockNextFilter");
+        when(mockUtil.getMockName(mock1)).thenReturn("mockNextFilter");
+        when(mockUtil.getMockName(mock2)).thenReturn("mockNextFilter");
+
+        List<Object> mockNameMatches = new ArrayList<>();
+        mockNameMatches.add(mock1);
+        mockNameMatches.add(mock2);
+
+        OngoingInjecter expectedInjecter = mock(OngoingInjecter.class);
+        when(mockNextFilter.filterCandidate(mockNameMatches, field, mockNextFilter)).thenReturn(expectedInjecter);
+
+        OngoingInjecter result = nameBasedCandidateFilter.filterCandidate(mocks, field, mockNextFilter);
+
+        assertEquals(expectedInjecter, result);
+        verify(mockNextFilter).filterCandidate(mockNameMatches, field, mockNextFilter);
+    }
+}
+```

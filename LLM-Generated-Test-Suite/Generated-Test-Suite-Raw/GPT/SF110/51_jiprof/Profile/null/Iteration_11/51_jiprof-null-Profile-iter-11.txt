@@ -1,0 +1,197 @@
+To create a comprehensive JUnit 4 test suite for the `Profile` class, we need to consider testing each public method. Since the `Profile` class relies heavily on static methods and fields, we will need to reset the state between tests to ensure isolation. Additionally, some methods interact with other classes like `Controller`, `Frame`, `ThreadDictionary`, and `ClassAllocation`, so we will need to mock these dependencies.
+
+Below is a JUnit 4 test suite for the `Profile` class:
+
+```java
+import static org.mockito.Mockito.*;
+
+import com.mentorgen.tools.profile.runtime.Profile;
+import com.mentorgen.tools.profile.Controller;
+import com.mentorgen.tools.profile.Frame;
+import com.mentorgen.tools.profile.ThreadDictionary;
+import com.mentorgen.tools.profile.ClassAllocation;
+import com.mentorgen.tools.profile.output.ProfileDump;
+
+import org.junit.*;
+import org.mockito.*;
+
+import java.util.*;
+
+public class ProfileTest {
+
+    @Mock
+    private Controller mockController;
+    @Mock
+    private ThreadDictionary mockThreadDictionary;
+    @Mock
+    private Frame mockFrame;
+    @Mock
+    private ClassAllocation mockClassAllocation;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        Profile.init(); // Reset the static state before each test
+        Profile._controller = mockController;
+        Profile._threadDictionary = mockThreadDictionary;
+    }
+
+    @Test
+    public void testInitProfiler() {
+        Profile.initProfiler();
+        Assert.assertNotNull(Profile._controller);
+        verify(mockController, times(1)).start();
+    }
+
+    @Test
+    public void testInit() {
+        Profile.init();
+        Assert.assertNotNull(Profile._threadActiveFrame);
+        Assert.assertNotNull(Profile._threadDictionary);
+        Assert.assertNotNull(Profile._methodDictionary);
+        Assert.assertNotNull(Profile._frameList);
+        Assert.assertNotNull(Profile._lock);
+        Assert.assertNotNull(Profile._allocList);
+    }
+
+    @Test
+    public void testClear() {
+        Profile.clear();
+        Assert.assertNotNull(Profile._threadActiveFrame);
+        Assert.assertNotNull(Profile._threadDictionary);
+        Assert.assertNotNull(Profile._methodDictionary);
+        Assert.assertNotNull(Profile._frameList);
+        Assert.assertNotNull(Profile._lock);
+        Assert.assertNotNull(Profile._allocList);
+    }
+
+    @Test
+    public void testStart() {
+        Profile.start();
+        verify(mockController, times(1)).start();
+    }
+
+    @Test
+    public void testStop() {
+        Profile.stop();
+        verify(mockController, times(1)).stop();
+    }
+
+    @Test
+    public void testSetFileName() {
+        String fileName = "testFileName";
+        Profile.setFileName(fileName);
+        verify(mockController, times(1)).setFileName(fileName);
+    }
+
+    @Test
+    public void testShutdown() {
+        when(mockThreadDictionary.keySet()).thenReturn(new HashSet<Long>());
+        Profile.shutdown();
+        verify(mockThreadDictionary, times(1)).keySet();
+    }
+
+    @Test
+    public void testThreads() {
+        Iterable<Long> threads = Profile.threads();
+        Assert.assertNotNull(threads);
+    }
+
+    @Test
+    public void testInteractions() {
+        long threadId = 1L;
+        when(mockThreadDictionary.interactions(threadId)).thenReturn(new ArrayList<Frame>());
+        Iterable<Frame> interactions = Profile.interactions(threadId);
+        Assert.assertNotNull(interactions);
+    }
+
+    @Test
+    public void testFrameList() {
+        Iterable<Frame> frames = Profile.frameList();
+        Assert.assertNotNull(frames);
+    }
+
+    @Test
+    public void testAllocations() {
+        Iterable<ClassAllocation> allocations = Profile.allocations();
+        Assert.assertNotNull(allocations);
+    }
+
+    @Test
+    public void testGetThreadTotalTime() {
+        long threadId = 1L;
+        when(mockThreadDictionary.getThreadTotalTime(threadId)).thenReturn(100L);
+        long totalTime = Profile.getThreadTotalTime(threadId);
+        Assert.assertEquals(100L, totalTime);
+    }
+
+    @Test
+    public void testSortFrameList() {
+        Comparator<Frame> comparator = mock(Comparator.class);
+        Profile.sortFrameList(comparator);
+        // No exception means success
+    }
+
+    @Test
+    public void testStartMethod() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        Profile.start(className, methodName);
+        // No exception means success
+    }
+
+    @Test
+    public void testEndMethod() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        Profile.end(className, methodName);
+        // No exception means success
+    }
+
+    @Test
+    public void testBeginWait() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        Profile.beginWait(className, methodName);
+        // No exception means success
+    }
+
+    @Test
+    public void testEndWait() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        Profile.endWait(className, methodName);
+        // No exception means success
+    }
+
+    @Test
+    public void testUnwind() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        String exception = "Exception";
+        Profile.unwind(className, methodName, exception);
+        // No exception means success
+    }
+
+    @Test
+    public void testAlloc() {
+        String className = "TestClass";
+        Profile.alloc(className);
+        // No exception means success
+    }
+
+    @Test
+    public void testRun() {
+        Profile profile = new Profile();
+        profile.run();
+        verify(mockController, times(1)).close();
+    }
+}
+```
+
+### Notes:
+- **Mockito** is used to mock dependencies like `Controller`, `ThreadDictionary`, `Frame`, and `ClassAllocation`.
+- The `setUp` method initializes mocks and resets the static state of the `Profile` class before each test.
+- Each test method verifies the behavior of a specific method in the `Profile` class.
+- Some methods are tested for successful execution without exceptions, as they involve complex interactions with other components.
+- The test suite assumes that the `Profile` class and its dependencies are accessible and that the necessary mocking framework (Mockito) is available.

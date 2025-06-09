@@ -1,0 +1,99 @@
+To create a comprehensive JUnit 4 test suite for the `LocalVariablesSorter` class, we need to test each method, especially focusing on the behavior of the `visitVarInsn`, `visitIincInsn`, `visitMaxs`, `visitLocalVariable`, `visitFrame`, `newLocal`, and `remap` methods. We will use mock objects for `MethodVisitor` and `Type` where necessary, as these are external dependencies.
+
+Below is a JUnit 4 test suite for the `LocalVariablesSorter` class:
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.objectweb.asm.jip.MethodVisitor;
+import org.objectweb.asm.jip.Type;
+import org.objectweb.asm.jip.Label;
+import org.objectweb.asm.jip.Opcodes;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class LocalVariablesSorterTest {
+
+    private MethodVisitor mockMethodVisitor;
+    private LocalVariablesSorter localVariablesSorter;
+
+    @Before
+    public void setUp() {
+        mockMethodVisitor = mock(MethodVisitor.class);
+        localVariablesSorter = new LocalVariablesSorter(Opcodes.ACC_PUBLIC, "(I)V", mockMethodVisitor);
+    }
+
+    @Test
+    public void testVisitVarInsn() {
+        localVariablesSorter.visitVarInsn(Opcodes.ILOAD, 1);
+        verify(mockMethodVisitor).visitVarInsn(eq(Opcodes.ILOAD), anyInt());
+    }
+
+    @Test
+    public void testVisitIincInsn() {
+        localVariablesSorter.visitIincInsn(1, 5);
+        verify(mockMethodVisitor).visitIincInsn(anyInt(), eq(5));
+    }
+
+    @Test
+    public void testVisitMaxs() {
+        localVariablesSorter.visitMaxs(10, 10);
+        verify(mockMethodVisitor).visitMaxs(eq(10), anyInt());
+    }
+
+    @Test
+    public void testVisitLocalVariable() {
+        Label start = new Label();
+        Label end = new Label();
+        localVariablesSorter.visitLocalVariable("var", "I", null, start, end, 1);
+        verify(mockMethodVisitor).visitLocalVariable(eq("var"), eq("I"), isNull(), eq(start), eq(end), anyInt());
+    }
+
+    @Test
+    public void testVisitFrame() {
+        Object[] locals = new Object[]{Opcodes.INTEGER};
+        Object[] stack = new Object[]{};
+        localVariablesSorter.visitFrame(-1, 1, locals, 0, stack);
+        verify(mockMethodVisitor).visitFrame(eq(-1), anyInt(), any(Object[].class), eq(0), eq(stack));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testVisitFrameWithInvalidType() {
+        Object[] locals = new Object[]{Opcodes.INTEGER};
+        Object[] stack = new Object[]{};
+        localVariablesSorter.visitFrame(0, 1, locals, 0, stack);
+    }
+
+    @Test
+    public void testNewLocal() {
+        Type intType = Type.INT_TYPE;
+        int localIndex = localVariablesSorter.newLocal(intType);
+        assertTrue(localIndex >= 0);
+    }
+
+    @Test
+    public void testRemap() {
+        Type intType = Type.INT_TYPE;
+        int remappedIndex = localVariablesSorter.remap(1, intType);
+        assertTrue(remappedIndex >= 0);
+    }
+}
+```
+
+### Explanation:
+
+1. **Setup**: We use `Mockito` to create a mock `MethodVisitor` object, which allows us to verify interactions with this object without needing a real implementation.
+
+2. **Test Methods**:
+   - **`testVisitVarInsn`**: Verifies that `visitVarInsn` calls the corresponding method on the `MethodVisitor` with the correct opcode and a remapped variable index.
+   - **`testVisitIincInsn`**: Checks that `visitIincInsn` is called with the correct increment value.
+   - **`testVisitMaxs`**: Ensures `visitMaxs` is called with the correct maximum stack size and a potentially modified local variable count.
+   - **`testVisitLocalVariable`**: Verifies that `visitLocalVariable` is called with the correct parameters, including a remapped index.
+   - **`testVisitFrame`**: Tests the `visitFrame` method with a valid frame type and verifies the call to `MethodVisitor`.
+   - **`testVisitFrameWithInvalidType`**: Ensures that an `IllegalStateException` is thrown when `visitFrame` is called with an invalid frame type.
+   - **`testNewLocal`**: Tests the `newLocal` method to ensure it returns a valid local variable index.
+   - **`testRemap`**: Verifies that `remap` returns a valid remapped index.
+
+This test suite covers the main functionalities of the `LocalVariablesSorter` class, ensuring that each method behaves as expected under typical usage scenarios.

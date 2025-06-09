@@ -1,0 +1,123 @@
+To create a comprehensive JUnit 4 test suite for the `SearchableTextPane` class, we need to test each method thoroughly. This includes testing the constructor, `getScrollableTracksViewportWidth`, `highlight`, `removeHighlights`, `search`, and `convertWords2Lines` methods. We will use mock objects where necessary, especially for the `Document` and `SearchEngine` classes, as they are not defined in the provided code.
+
+Here is the JUnit 4 test suite:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.text.*;
+import java.awt.*;
+import java.util.*;
+import java.util.logging.*;
+
+public class SearchableTextPaneTest {
+
+    private SearchableTextPane textPane;
+    private Font mockFont;
+    private Document mockDocument;
+    private SearchEngine mockSearchEngine;
+
+    @Before
+    public void setUp() {
+        mockFont = mock(Font.class);
+        textPane = new SearchableTextPane(mockFont, 4);
+        mockDocument = mock(Document.class);
+        mockSearchEngine = mock(SearchEngine.class);
+        textPane.setDocument(mockDocument);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(textPane);
+        assertEquals(mockFont, textPane.getFont());
+        assertEquals(4, textPane.getTabSize());
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth() {
+        Component mockParent = mock(Component.class);
+        ComponentUI mockUI = mock(ComponentUI.class);
+
+        when(textPane.getParent()).thenReturn(mockParent);
+        when(textPane.getUI()).thenReturn(mockUI);
+        when(mockUI.getPreferredSize(textPane)).thenReturn(new Dimension(100, 100));
+        when(mockParent.getSize()).thenReturn(new Dimension(100, 100));
+
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+
+        when(mockParent.getSize()).thenReturn(new Dimension(50, 100));
+        assertFalse(textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testHighlight() throws Exception {
+        String term = "test";
+        String text = "This is a test text for testing.";
+        List<WordResult> wordResults = Arrays.asList(new WordResult(10, 14), new WordResult(25, 29));
+        List<LineResult> expectedLineResults = Arrays.asList(new LineResult(0, 0, 30));
+
+        when(mockDocument.getText(0, text.length())).thenReturn(text);
+        when(mockSearchEngine.search(term, text)).thenReturn(wordResults);
+
+        List<LineResult> lineResults = textPane.highlight(term, 0);
+
+        assertEquals(expectedLineResults.size(), lineResults.size());
+        verify(mockDocument).getText(0, text.length());
+    }
+
+    @Test
+    public void testRemoveHighlights() {
+        Highlighter mockHighlighter = mock(Highlighter.class);
+        textPane.setHighlighter(mockHighlighter);
+
+        textPane.removeHighlights();
+
+        verify(mockHighlighter).removeAllHighlights();
+    }
+
+    @Test
+    public void testSearch() throws Exception {
+        String term = "test";
+        String text = "This is a test text for testing.";
+        when(mockDocument.getText(0, text.length())).thenReturn(text);
+
+        int pos = textPane.search(term);
+
+        assertEquals(10, pos);
+    }
+
+    @Test
+    public void testSearchWithStartPos() throws Exception {
+        String term = "test";
+        String text = "This is a test text for testing.";
+        when(mockDocument.getText(0, text.length())).thenReturn(text);
+
+        int pos = textPane.search(term, 15);
+
+        assertEquals(25, pos);
+    }
+
+    @Test
+    public void testConvertWords2Lines() throws Exception {
+        List<WordResult> wordResults = Arrays.asList(new WordResult(10, 14), new WordResult(25, 29));
+        List<LineResult> expectedLineResults = Arrays.asList(new LineResult(0, 0, 30));
+
+        List<LineResult> lineResults = textPane.convertWords2Lines(wordResults);
+
+        assertEquals(expectedLineResults.size(), lineResults.size());
+    }
+}
+```
+
+### Explanation:
+- **Mocks and Stubs**: We use Mockito to create mock objects for `Font`, `Document`, and `SearchEngine` since these are dependencies of `SearchableTextPane`.
+- **Test Methods**: Each method in `SearchableTextPane` has a corresponding test method. We test different scenarios, including edge cases.
+- **Assertions**: We use assertions to verify the expected outcomes of each method.
+- **Setup**: The `setUp` method initializes the test environment before each test.
+
+This test suite provides a comprehensive set of tests for the `SearchableTextPane` class, ensuring that each method behaves as expected under various conditions.

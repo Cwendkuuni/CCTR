@@ -1,0 +1,173 @@
+```java
+package org.jsoup.parser;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.jsoup.nodes.Attributes;
+
+import static org.junit.Assert.*;
+
+public class TokenTest {
+
+    private Token.Doctype doctype;
+    private Token.StartTag startTag;
+    private Token.EndTag endTag;
+    private Token.Comment comment;
+    private Token.Character character;
+    private Token.EOF eof;
+
+    @Before
+    public void setUp() {
+        doctype = new Token.Doctype();
+        startTag = new Token.StartTag();
+        endTag = new Token.EndTag();
+        comment = new Token.Comment();
+        character = new Token.Character();
+        eof = new Token.EOF();
+    }
+
+    @Test
+    public void testTokenType() {
+        assertEquals("Doctype", doctype.tokenType());
+        assertEquals("StartTag", startTag.tokenType());
+        assertEquals("EndTag", endTag.tokenType());
+        assertEquals("Comment", comment.tokenType());
+        assertEquals("Character", character.tokenType());
+        assertEquals("EOF", eof.tokenType());
+    }
+
+    @Test
+    public void testDoctypeReset() {
+        doctype.name.append("html");
+        doctype.publicIdentifier.append("public");
+        doctype.systemIdentifier.append("system");
+        doctype.forceQuirks = true;
+
+        doctype.reset();
+
+        assertEquals("", doctype.getName());
+        assertEquals("", doctype.getPublicIdentifier());
+        assertEquals("", doctype.getSystemIdentifier());
+        assertFalse(doctype.isForceQuirks());
+    }
+
+    @Test
+    public void testStartTagReset() {
+        startTag.tagName = "div";
+        startTag.normalName = "div";
+        startTag.selfClosing = true;
+        startTag.attributes = new Attributes();
+
+        startTag.reset();
+
+        assertNull(startTag.tagName);
+        assertNull(startTag.normalName);
+        assertFalse(startTag.selfClosing);
+        assertNotNull(startTag.attributes);
+    }
+
+    @Test
+    public void testEndTagReset() {
+        endTag.tagName = "div";
+        endTag.normalName = "div";
+
+        endTag.reset();
+
+        assertNull(endTag.tagName);
+        assertNull(endTag.normalName);
+    }
+
+    @Test
+    public void testCommentReset() {
+        comment.data.append("comment");
+        comment.bogus = true;
+
+        comment.reset();
+
+        assertEquals("", comment.getData());
+        assertFalse(comment.bogus);
+    }
+
+    @Test
+    public void testCharacterReset() {
+        character.data = "character";
+
+        character.reset();
+
+        assertNull(character.getData());
+    }
+
+    @Test
+    public void testEOFReset() {
+        eof.reset();
+        // EOF reset does nothing, so just ensure it doesn't throw an exception
+    }
+
+    @Test
+    public void testDoctypeGetters() {
+        doctype.name.append("html");
+        doctype.publicIdentifier.append("public");
+        doctype.systemIdentifier.append("system");
+        doctype.forceQuirks = true;
+
+        assertEquals("html", doctype.getName());
+        assertEquals("public", doctype.getPublicIdentifier());
+        assertEquals("system", doctype.getSystemIdentifier());
+        assertTrue(doctype.isForceQuirks());
+    }
+
+    @Test
+    public void testStartTagMethods() {
+        startTag.name("div");
+        startTag.selfClosing = true;
+        startTag.attributes = new Attributes();
+        startTag.attributes.put("id", "1");
+
+        assertEquals("div", startTag.name());
+        assertEquals("div", startTag.normalName());
+        assertTrue(startTag.isSelfClosing());
+        assertEquals(1, startTag.getAttributes().size());
+        assertEquals("1", startTag.getAttributes().get("id"));
+    }
+
+    @Test
+    public void testEndTagMethods() {
+        endTag.name("div");
+
+        assertEquals("div", endTag.name());
+        assertEquals("div", endTag.normalName());
+    }
+
+    @Test
+    public void testCommentMethods() {
+        comment.data.append("comment");
+        comment.bogus = true;
+
+        assertEquals("comment", comment.getData());
+        assertTrue(comment.bogus);
+    }
+
+    @Test
+    public void testCharacterMethods() {
+        character.data = "character";
+
+        assertEquals("character", character.getData());
+    }
+
+    @Test
+    public void testTokenTypeChecks() {
+        assertTrue(doctype.isDoctype());
+        assertTrue(startTag.isStartTag());
+        assertTrue(endTag.isEndTag());
+        assertTrue(comment.isComment());
+        assertTrue(character.isCharacter());
+        assertTrue(eof.isEOF());
+
+        assertSame(doctype, doctype.asDoctype());
+        assertSame(startTag, startTag.asStartTag());
+        assertSame(endTag, endTag.asEndTag());
+        assertSame(comment, comment.asComment());
+        assertSame(character, character.asCharacter());
+    }
+}
+```

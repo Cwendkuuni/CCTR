@@ -1,0 +1,100 @@
+To create a comprehensive JUnit 4 test suite for the `SequencesComparator` class, we need to test the public methods and ensure that the internal logic is functioning correctly. The primary method to test is `getScript()`, which relies on the internal methods `buildSnake`, `getMiddleSnake`, and `buildScript`. We will create test cases to cover various scenarios, including empty sequences, identical sequences, completely different sequences, and sequences with some common elements.
+
+Here's a JUnit 4 test suite for the `SequencesComparator` class:
+
+```java
+import org.apache.commons.collections4.sequence.EditScript;
+import org.apache.commons.collections4.sequence.SequencesComparator;
+import org.apache.commons.collections4.functors.DefaultEquator;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+public class SequencesComparatorTest {
+
+    private SequencesComparator<String> comparator;
+
+    @Before
+    public void setUp() {
+        // This method will be called before each test
+    }
+
+    @Test
+    public void testEmptySequences() {
+        List<String> seq1 = Collections.emptyList();
+        List<String> seq2 = Collections.emptyList();
+        comparator = new SequencesComparator<>(seq1, seq2);
+        EditScript<String> script = comparator.getScript();
+        Assert.assertTrue(script.getModifications() == 0);
+    }
+
+    @Test
+    public void testIdenticalSequences() {
+        List<String> seq1 = Arrays.asList("a", "b", "c");
+        List<String> seq2 = Arrays.asList("a", "b", "c");
+        comparator = new SequencesComparator<>(seq1, seq2);
+        EditScript<String> script = comparator.getScript();
+        Assert.assertTrue(script.getModifications() == 0);
+    }
+
+    @Test
+    public void testCompletelyDifferentSequences() {
+        List<String> seq1 = Arrays.asList("a", "b", "c");
+        List<String> seq2 = Arrays.asList("x", "y", "z");
+        comparator = new SequencesComparator<>(seq1, seq2);
+        EditScript<String> script = comparator.getScript();
+        Assert.assertTrue(script.getModifications() == 6); // 3 deletes and 3 inserts
+    }
+
+    @Test
+    public void testPartialOverlapSequences() {
+        List<String> seq1 = Arrays.asList("a", "b", "c", "d");
+        List<String> seq2 = Arrays.asList("b", "c", "e");
+        comparator = new SequencesComparator<>(seq1, seq2);
+        EditScript<String> script = comparator.getScript();
+        Assert.assertTrue(script.getModifications() == 3); // 1 delete, 1 insert, 2 keeps
+    }
+
+    @Test
+    public void testSingleElementSequences() {
+        List<String> seq1 = Arrays.asList("a");
+        List<String> seq2 = Arrays.asList("a");
+        comparator = new SequencesComparator<>(seq1, seq2);
+        EditScript<String> script = comparator.getScript();
+        Assert.assertTrue(script.getModifications() == 0);
+    }
+
+    @Test
+    public void testSingleElementDifferentSequences() {
+        List<String> seq1 = Arrays.asList("a");
+        List<String> seq2 = Arrays.asList("b");
+        comparator = new SequencesComparator<>(seq1, seq2);
+        EditScript<String> script = comparator.getScript();
+        Assert.assertTrue(script.getModifications() == 2); // 1 delete, 1 insert
+    }
+
+    @Test
+    public void testCustomEquator() {
+        List<String> seq1 = Arrays.asList("a", "b", "c");
+        List<String> seq2 = Arrays.asList("A", "B", "C");
+        comparator = new SequencesComparator<>(seq1, seq2, (s1, s2) -> s1.equalsIgnoreCase(s2));
+        EditScript<String> script = comparator.getScript();
+        Assert.assertTrue(script.getModifications() == 0);
+    }
+}
+```
+
+### Explanation:
+
+- **Empty Sequences**: Tests that two empty sequences result in no modifications.
+- **Identical Sequences**: Tests that identical sequences result in no modifications.
+- **Completely Different Sequences**: Tests that completely different sequences result in modifications equal to the sum of their lengths.
+- **Partial Overlap Sequences**: Tests sequences with some common elements to ensure correct modification count.
+- **Single Element Sequences**: Tests single-element sequences for both identical and different elements.
+- **Custom Equator**: Tests using a custom equator to handle case-insensitive comparisons.
+
+This test suite covers a variety of scenarios to ensure the `SequencesComparator` class functions as expected.

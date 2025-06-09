@@ -1,0 +1,202 @@
+To create a comprehensive JUnit 4 test suite for the `Profile` class, we need to consider testing each public method. Given the complexity and dependencies of the `Profile` class, we will need to mock some of its dependencies. Below is a basic test suite that covers the main functionalities of the `Profile` class. Note that this is a starting point, and further tests may be needed to cover edge cases and additional scenarios.
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.After;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import java.util.Comparator;
+
+@RunWith(MockitoJUnitRunner.class)
+public class ProfileTest {
+
+    @Mock
+    private Controller mockController;
+    
+    @Mock
+    private ThreadDictionary mockThreadDictionary;
+    
+    @Mock
+    private Frame mockFrame;
+    
+    @Mock
+    private Comparator<Frame> mockComparator;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        Profile.init();
+        Profile._controller = mockController;
+        Profile._threadDictionary = mockThreadDictionary;
+    }
+
+    @After
+    public void tearDown() {
+        Profile.clear();
+    }
+
+    @Test
+    public void testInitProfiler() {
+        Profile.initProfiler();
+        assertNotNull(Profile._controller);
+    }
+
+    @Test
+    public void testInit() {
+        Profile.init();
+        assertNotNull(Profile._threadActiveFrame);
+        assertNotNull(Profile._threadDictionary);
+        assertNotNull(Profile._methodDictionary);
+        assertNotNull(Profile._frameList);
+        assertNotNull(Profile._lock);
+        assertNotNull(Profile._allocList);
+    }
+
+    @Test
+    public void testClear() {
+        Profile.clear();
+        assertNotNull(Profile._threadActiveFrame);
+        assertNotNull(Profile._threadDictionary);
+        assertNotNull(Profile._methodDictionary);
+        assertNotNull(Profile._frameList);
+        assertNotNull(Profile._lock);
+        assertNotNull(Profile._allocList);
+    }
+
+    @Test
+    public void testStart() {
+        Profile.start();
+        verify(mockController).start();
+    }
+
+    @Test
+    public void testStop() {
+        Profile.stop();
+        verify(mockController).stop();
+    }
+
+    @Test
+    public void testSetFileName() {
+        String fileName = "testFile";
+        Profile.setFileName(fileName);
+        verify(mockController).setFileName(fileName);
+    }
+
+    @Test
+    public void testShutdown() {
+        when(mockThreadDictionary.keySet()).thenReturn(new HashSet<Long>());
+        Profile.shutdown();
+        verify(mockThreadDictionary).keySet();
+    }
+
+    @Test
+    public void testThreads() {
+        when(mockThreadDictionary.threads()).thenReturn(new ArrayList<Long>());
+        Iterable<Long> threads = Profile.threads();
+        assertNotNull(threads);
+    }
+
+    @Test
+    public void testInteractions() {
+        long threadId = 1L;
+        when(mockThreadDictionary.interactions(threadId)).thenReturn(new ArrayList<Frame>());
+        Iterable<Frame> interactions = Profile.interactions(threadId);
+        assertNotNull(interactions);
+    }
+
+    @Test
+    public void testFrameList() {
+        Iterable<Frame> frames = Profile.frameList();
+        assertNotNull(frames);
+    }
+
+    @Test
+    public void testAllocations() {
+        Iterable<ClassAllocation> allocations = Profile.allocations();
+        assertNotNull(allocations);
+    }
+
+    @Test
+    public void testGetThreadTotalTime() {
+        long threadId = 1L;
+        when(mockThreadDictionary.getThreadTotalTime(threadId)).thenReturn(100L);
+        long totalTime = Profile.getThreadTotalTime(threadId);
+        assertEquals(100L, totalTime);
+    }
+
+    @Test
+    public void testSortFrameList() {
+        Profile.sortFrameList(mockComparator);
+        verify(mockComparator, atLeastOnce()).compare(any(Frame.class), any(Frame.class));
+    }
+
+    @Test
+    public void testStartMethod() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        Profile.start(className, methodName);
+        // Additional assertions can be added based on the expected state changes
+    }
+
+    @Test
+    public void testEndMethod() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        Profile.end(className, methodName);
+        // Additional assertions can be added based on the expected state changes
+    }
+
+    @Test
+    public void testBeginWait() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        Profile.beginWait(className, methodName);
+        // Additional assertions can be added based on the expected state changes
+    }
+
+    @Test
+    public void testEndWait() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        Profile.endWait(className, methodName);
+        // Additional assertions can be added based on the expected state changes
+    }
+
+    @Test
+    public void testUnwind() {
+        String className = "TestClass";
+        String methodName = "testMethod";
+        String exception = "Exception";
+        Profile.unwind(className, methodName, exception);
+        // Additional assertions can be added based on the expected state changes
+    }
+
+    @Test
+    public void testAlloc() {
+        String className = "TestClass";
+        Profile.alloc(className);
+        // Additional assertions can be added based on the expected state changes
+    }
+
+    @Test
+    public void testRun() {
+        Profile profile = new Profile();
+        profile.run();
+        verify(mockController).close();
+    }
+}
+```
+
+### Notes:
+- This test suite uses Mockito to mock dependencies such as `Controller` and `ThreadDictionary`.
+- The test suite initializes the `Profile` class and verifies the behavior of its methods.
+- Some methods, like `start`, `end`, `beginWait`, `endWait`, `unwind`, and `alloc`, are tested with basic calls. More detailed tests would require setting up specific conditions and verifying state changes.
+- The `run` method is tested by creating an instance of `Profile` and calling `run`, then verifying interactions with the mocked `Controller`.
+- This suite assumes that the `Profile` class and its dependencies are correctly imported and accessible.

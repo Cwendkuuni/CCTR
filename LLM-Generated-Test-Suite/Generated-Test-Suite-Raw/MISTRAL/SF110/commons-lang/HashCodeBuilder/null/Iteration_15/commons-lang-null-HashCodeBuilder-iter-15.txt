@@ -1,0 +1,285 @@
+```java
+package org.apache.commons.lang3.builder;
+
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+
+public class HashCodeBuilderTest {
+
+    private HashCodeBuilder builder;
+
+    @Before
+    public void setUp() {
+        builder = new HashCodeBuilder();
+    }
+
+    @After
+    public void tearDown() {
+        builder = null;
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertEquals(17, builder.toHashCode());
+    }
+
+    @Test
+    public void testConstructorWithParameters() {
+        HashCodeBuilder builder = new HashCodeBuilder(19, 31);
+        assertEquals(19, builder.toHashCode());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithEvenInitialValue() {
+        new HashCodeBuilder(20, 31);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithEvenMultiplier() {
+        new HashCodeBuilder(19, 32);
+    }
+
+    @Test
+    public void testAppendBoolean() {
+        builder.append(true);
+        assertEquals(38, builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendBooleanArray() {
+        builder.append(new boolean[]{true, false});
+        assertEquals(17 * 37 * 37 + 1, builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendByte() {
+        builder.append((byte) 1);
+        assertEquals(17 * 37 + 1, builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendByteArray() {
+        builder.append(new byte[]{1, 2});
+        assertEquals(17 * 37 * 37 + 2, builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendChar() {
+        builder.append('a');
+        assertEquals(17 * 37 + 'a', builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendCharArray() {
+        builder.append(new char[]{'a', 'b'});
+        assertEquals(17 * 37 * 37 + 'b', builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendDouble() {
+        builder.append(1.0);
+        assertEquals(17 * 37 + Double.doubleToLongBits(1.0), builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendDoubleArray() {
+        builder.append(new double[]{1.0, 2.0});
+        assertEquals(17 * 37 * 37 + Double.doubleToLongBits(2.0), builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendFloat() {
+        builder.append(1.0f);
+        assertEquals(17 * 37 + Float.floatToIntBits(1.0f), builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendFloatArray() {
+        builder.append(new float[]{1.0f, 2.0f});
+        assertEquals(17 * 37 * 37 + Float.floatToIntBits(2.0f), builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendInt() {
+        builder.append(1);
+        assertEquals(17 * 37 + 1, builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendIntArray() {
+        builder.append(new int[]{1, 2});
+        assertEquals(17 * 37 * 37 + 2, builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendLong() {
+        builder.append(1L);
+        assertEquals(17 * 37 + (int)(1L ^ 1L >> 32), builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendLongArray() {
+        builder.append(new long[]{1L, 2L});
+        assertEquals(17 * 37 * 37 + (int)(2L ^ 2L >> 32), builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendObject() {
+        builder.append("test");
+        assertEquals(17 * 37 + "test".hashCode(), builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendObjectArray() {
+        builder.append(new Object[]{"test", "test2"});
+        assertEquals(17 * 37 * 37 + "test2".hashCode(), builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendShort() {
+        builder.append((short) 1);
+        assertEquals(17 * 37 + 1, builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendShortArray() {
+        builder.append(new short[]{1, 2});
+        assertEquals(17 * 37 * 37 + 2, builder.toHashCode());
+    }
+
+    @Test
+    public void testAppendSuper() {
+        builder.appendSuper(1);
+        assertEquals(17 * 37 + 1, builder.toHashCode());
+    }
+
+    @Test
+    public void testToHashCode() {
+        assertEquals(17, builder.toHashCode());
+    }
+
+    @Test
+    public void testBuild() {
+        assertEquals(17, builder.build().intValue());
+    }
+
+    @Test
+    public void testHashCode() {
+        assertEquals(17, builder.hashCode());
+    }
+
+    @Test
+    public void testReflectionHashCode() {
+        assertEquals(17 * 37 + "test".hashCode(), HashCodeBuilder.reflectionHashCode(17, 37, "test"));
+    }
+
+    @Test
+    public void testReflectionHashCodeWithTransients() {
+        assertEquals(17 * 37 + "test".hashCode(), HashCodeBuilder.reflectionHashCode(17, 37, "test", true));
+    }
+
+    @Test
+    public void testReflectionHashCodeWithExcludeFields() {
+        assertEquals(17 * 37 + "test".hashCode(), HashCodeBuilder.reflectionHashCode(17, 37, "test", false, null, "excludeField"));
+    }
+
+    @Test
+    public void testReflectionHashCodeWithCollectionExcludeFields() {
+        Collection<String> excludeFields = new HashSet<>(Arrays.asList("excludeField"));
+        assertEquals(17 * 37 + "test".hashCode(), HashCodeBuilder.reflectionHashCode("test", excludeFields));
+    }
+
+    @Test
+    public void testReflectionHashCodeWithStringExcludeFields() {
+        assertEquals(17 * 37 + "test".hashCode(), HashCodeBuilder.reflectionHashCode("test", "excludeField"));
+    }
+
+    @Test
+    public void testReflectionHashCodeWithNullObject() {
+        try {
+            HashCodeBuilder.reflectionHashCode(17, 37, null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The object to build a hash code for must not be null", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testReflectionHashCodeWithNullObjectAndTransients() {
+        try {
+            HashCodeBuilder.reflectionHashCode(17, 37, null, true);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The object to build a hash code for must not be null", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testReflectionHashCodeWithNullObjectAndExcludeFields() {
+        try {
+            HashCodeBuilder.reflectionHashCode(17, 37, null, false, null, "excludeField");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The object to build a hash code for must not be null", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testReflectionHashCodeWithNullObjectAndCollectionExcludeFields() {
+        Collection<String> excludeFields = new HashSet<>(Arrays.asList("excludeField"));
+        try {
+            HashCodeBuilder.reflectionHashCode(null, excludeFields);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The object to build a hash code for must not be null", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testReflectionHashCodeWithNullObjectAndStringExcludeFields() {
+        try {
+            HashCodeBuilder.reflectionHashCode(null, "excludeField");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The object to build a hash code for must not be null", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testReflectionHashCodeWithNullObjectAndTransientsAndExcludeFields() {
+        try {
+            HashCodeBuilder.reflectionHashCode(17, 37, null, true, null, "excludeField");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The object to build a hash code for must not be null", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testReflectionHashCodeWithNullObjectAndTransientsAndCollectionExcludeFields() {
+        Collection<String> excludeFields = new HashSet<>(Arrays.asList("excludeField"));
+        try {
+            HashCodeBuilder.reflectionHashCode(17, 37, null, true, null, excludeFields);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The object to build a hash code for must not be null", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testReflectionHashCodeWithNullObjectAndTransientsAndStringExcludeFields() {
+        try {
+            HashCodeBuilder.reflectionHashCode(17, 37, null, true, null, "excludeField");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The object to build a hash code for must not be null", e.getMessage());
+        }
+    }
+}
+```

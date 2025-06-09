@@ -1,0 +1,78 @@
+package com.google.common.base;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class Utf8Test {
+
+    @Test
+    public void testEncodedLength() {
+        // Test with ASCII characters
+        assertEquals(5, Utf8.encodedLength("Hello"));
+
+        // Test with non-ASCII characters
+        assertEquals(8, Utf8.encodedLength("Hello世界"));
+
+        // Test with surrogate pairs
+        assertEquals(8, Utf8.encodedLength("𝌆𝌆"));
+
+        // Test with empty string
+        assertEquals(0, Utf8.encodedLength(""));
+
+        // Test with string that causes overflow
+        try {
+            Utf8.encodedLength(new String(new char[Integer.MAX_VALUE]));
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testIsWellFormed() {
+        // Test with well-formed UTF-8 bytes
+        byte[] wellFormedBytes = {(byte) 0x48, (byte) 0x65, (byte) 0x6c, (byte) 0x6c, (byte) 0x6f};
+        assertTrue(Utf8.isWellFormed(wellFormedBytes));
+
+        // Test with malformed UTF-8 bytes
+        byte[] malformedBytes = {(byte) 0x48, (byte) 0x65, (byte) 0x6c, (byte) 0x6c, (byte) 0xff};
+        assertFalse(Utf8.isWellFormed(malformedBytes));
+
+        // Test with empty byte array
+        assertTrue(Utf8.isWellFormed(new byte[0]));
+
+        // Test with byte array containing only ASCII characters
+        byte[] asciiBytes = {(byte) 0x48, (byte) 0x65, (byte) 0x6c, (byte) 0x6c, (byte) 0x6f};
+        assertTrue(Utf8.isWellFormed(asciiBytes));
+
+        // Test with byte array containing non-ASCII characters
+        byte[] nonAsciiBytes = {(byte) 0x48, (byte) 0x65, (byte) 0x6c, (byte) 0x6c, (byte) 0x6f, (byte) 0xe4, (byte) 0xb8, (byte) 0x96};
+        assertTrue(Utf8.isWellFormed(nonAsciiBytes));
+    }
+
+    @Test
+    public void testIsWellFormedWithOffsetAndLength() {
+        // Test with well-formed UTF-8 bytes and offset/length
+        byte[] wellFormedBytes = {(byte) 0x48, (byte) 0x65, (byte) 0x6c, (byte) 0x6c, (byte) 0x6f};
+        assertTrue(Utf8.isWellFormed(wellFormedBytes, 0, 5));
+        assertTrue(Utf8.isWellFormed(wellFormedBytes, 2, 3));
+
+        // Test with malformed UTF-8 bytes and offset/length
+        byte[] malformedBytes = {(byte) 0x48, (byte) 0x65, (byte) 0x6c, (byte) 0x6c, (byte) 0xff};
+        assertFalse(Utf8.isWellFormed(malformedBytes, 0, 5));
+        assertFalse(Utf8.isWellFormed(malformedBytes, 4, 1));
+
+        // Test with empty byte array and offset/length
+        assertTrue(Utf8.isWellFormed(new byte[0], 0, 0));
+
+        // Test with byte array containing only ASCII characters and offset/length
+        byte[] asciiBytes = {(byte) 0x48, (byte) 0x65, (byte) 0x6c, (byte) 0x6c, (byte) 0x6f};
+        assertTrue(Utf8.isWellFormed(asciiBytes, 0, 5));
+        assertTrue(Utf8.isWellFormed(asciiBytes, 2, 3));
+
+        // Test with byte array containing non-ASCII characters and offset/length
+        byte[] nonAsciiBytes = {(byte) 0x48, (byte) 0x65, (byte) 0x6c, (byte) 0x6c, (byte) 0x6f, (byte) 0xe4, (byte) 0xb8, (byte) 0x96};
+        assertTrue(Utf8.isWellFormed(nonAsciiBytes, 0, 8));
+        assertTrue(Utf8.isWellFormed(nonAsciiBytes, 5, 3));
+    }
+}

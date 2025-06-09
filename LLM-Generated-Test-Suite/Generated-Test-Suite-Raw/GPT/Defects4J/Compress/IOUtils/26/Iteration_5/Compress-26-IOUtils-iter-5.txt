@@ -1,0 +1,148 @@
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import org.apache.commons.compress.utils.IOUtils;
+import org.junit.Test;
+
+public class IOUtilsTest {
+
+    @Test
+    public void testCopyWithDefaultBufferSize() throws IOException {
+        byte[] data = "Test data".getBytes();
+        InputStream input = new ByteArrayInputStream(data);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+
+        long bytesCopied = IOUtils.copy(input, output);
+
+        assertEquals(data.length, bytesCopied);
+        assertArrayEquals(data, output.toByteArray());
+    }
+
+    @Test
+    public void testCopyWithCustomBufferSize() throws IOException {
+        byte[] data = "Test data".getBytes();
+        InputStream input = new ByteArrayInputStream(data);
+        ByteArrayOutputStream output = new ByteArrayOutputStream();
+        int bufferSize = 4;
+
+        long bytesCopied = IOUtils.copy(input, output, bufferSize);
+
+        assertEquals(data.length, bytesCopied);
+        assertArrayEquals(data, output.toByteArray());
+    }
+
+    @Test
+    public void testSkip() throws IOException {
+        byte[] data = "Test data".getBytes();
+        InputStream input = new ByteArrayInputStream(data);
+        long bytesSkipped = IOUtils.skip(input, 5);
+
+        assertEquals(5, bytesSkipped);
+        assertEquals('d', input.read());
+    }
+
+    @Test
+    public void testSkipBeyondEnd() throws IOException {
+        byte[] data = "Test data".getBytes();
+        InputStream input = new ByteArrayInputStream(data);
+        long bytesSkipped = IOUtils.skip(input, 20);
+
+        assertEquals(data.length, bytesSkipped);
+        assertEquals(-1, input.read());
+    }
+
+    @Test
+    public void testReadFully() throws IOException {
+        byte[] data = "Test data".getBytes();
+        InputStream input = new ByteArrayInputStream(data);
+        byte[] buffer = new byte[data.length];
+
+        int bytesRead = IOUtils.readFully(input, buffer);
+
+        assertEquals(data.length, bytesRead);
+        assertArrayEquals(data, buffer);
+    }
+
+    @Test
+    public void testReadFullyWithOffsetAndLength() throws IOException {
+        byte[] data = "Test data".getBytes();
+        InputStream input = new ByteArrayInputStream(data);
+        byte[] buffer = new byte[data.length];
+        int offset = 2;
+        int length = 5;
+
+        int bytesRead = IOUtils.readFully(input, buffer, offset, length);
+
+        assertEquals(length, bytesRead);
+        assertArrayEquals("st da".getBytes(), new byte[]{buffer[2], buffer[3], buffer[4], buffer[5], buffer[6]});
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testReadFullyWithInvalidOffsetAndLength() throws IOException {
+        byte[] data = "Test data".getBytes();
+        InputStream input = new ByteArrayInputStream(data);
+        byte[] buffer = new byte[data.length];
+
+        IOUtils.readFully(input, buffer, -1, 5);
+    }
+
+    @Test
+    public void testToByteArray() throws IOException {
+        byte[] data = "Test data".getBytes();
+        InputStream input = new ByteArrayInputStream(data);
+
+        byte[] result = IOUtils.toByteArray(input);
+
+        assertArrayEquals(data, result);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testToByteArrayWithNullInput() throws IOException {
+        IOUtils.toByteArray(null);
+    }
+
+    @Test
+    public void testCloseQuietly() {
+        Closeable closeable = mock(Closeable.class);
+
+        IOUtils.closeQuietly(closeable);
+
+        try {
+            verify(closeable, times(1)).close();
+        } catch (IOException e) {
+            fail("IOException should not be thrown");
+        }
+    }
+
+    @Test
+    public void testCloseQuietlyWithIOException() {
+        Closeable closeable = mock(Closeable.class);
+        try {
+            doThrow(new IOException()).when(closeable).close();
+        } catch (IOException e) {
+            fail("IOException should not be thrown");
+        }
+
+        IOUtils.closeQuietly(closeable);
+
+        try {
+            verify(closeable, times(1)).close();
+        } catch (IOException e) {
+            fail("IOException should not be thrown");
+        }
+    }
+
+    @Test
+    public void testCloseQuietlyWithNull() {
+        IOUtils.closeQuietly(null);
+        // No exception should be thrown
+    }
+}
+```

@@ -1,0 +1,32 @@
+package org.scribe.model;
+
+import org.junit.Test;
+import org.junit.Before;
+import static org.junit.Assert.*;
+
+public class VerifierTest {
+
+    private Verifier verifier;
+    private static final String VALID_VALUE = "validValue";
+
+    @Before
+    public void setUp() {
+        verifier = new Verifier(VALID_VALUE);
+    }
+
+    @Test
+    public void testConstructorWithValidValue() {
+        assertNotNull(verifier);
+        assertEquals(VALID_VALUE, verifier.getValue());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithNullValue() {
+        new Verifier(null);
+    }
+
+    @Test
+    public void testGetValue() {
+        assertEquals(VALID_VALUE, verifier.getValue());
+    }
+}

@@ -1,0 +1,234 @@
+```java
+package org.jsoup.parser;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class XmlTreeBuilderTest {
+
+    private XmlTreeBuilder xmlTreeBuilder;
+
+    @Mock
+    private Token token;
+
+    @Mock
+    private Token.StartTag startTag;
+
+    @Mock
+    private Token.EndTag endTag;
+
+    @Mock
+    private Token.Comment commentToken;
+
+    @Mock
+    private Token.Character characterToken;
+
+    @Mock
+    private Token.Doctype doctypeToken;
+
+    @Mock
+    private ParseErrorList errors;
+
+    @Mock
+    private Document doc;
+
+    @Mock
+    private Element element;
+
+    @Mock
+    private Comment comment;
+
+    @Mock
+    private TextNode textNode;
+
+    @Mock
+    private DocumentType documentType;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        xmlTreeBuilder = new XmlTreeBuilder();
+        xmlTreeBuilder.doc = doc;
+        xmlTreeBuilder.stack = new ElementStack();
+        xmlTreeBuilder.baseUri = "http://example.com";
+    }
+
+    @Test
+    public void testInitialiseParse() {
+        String input = "<xml></xml>";
+        String baseUri = "http://example.com";
+
+        xmlTreeBuilder.initialiseParse(input, baseUri, errors);
+
+        assertEquals(Document.OutputSettings.Syntax.xml, xmlTreeBuilder.doc.outputSettings().syntax());
+        assertTrue(xmlTreeBuilder.stack.contains(doc));
+    }
+
+    @Test
+    public void testProcessStartTag() {
+        when(token.type).thenReturn(Token.TokenType.StartTag);
+        when(token.asStartTag()).thenReturn(startTag);
+        when(startTag.name()).thenReturn("tag");
+        when(startTag.attributes()).thenReturn(new Attributes());
+        when(startTag.isSelfClosing()).thenReturn(false);
+
+        assertTrue(xmlTreeBuilder.process(token));
+
+        verify(startTag, times(1)).name();
+        verify(startTag, times(1)).attributes();
+        verify(startTag, times(1)).isSelfClosing();
+    }
+
+    @Test
+    public void testProcessEndTag() {
+        when(token.type).thenReturn(Token.TokenType.EndTag);
+        when(token.asEndTag()).thenReturn(endTag);
+        when(endTag.name()).thenReturn("tag");
+
+        assertTrue(xmlTreeBuilder.process(token));
+
+        verify(endTag, times(1)).name();
+    }
+
+    @Test
+    public void testProcessComment() {
+        when(token.type).thenReturn(Token.TokenType.Comment);
+        when(token.asComment()).thenReturn(commentToken);
+        when(commentToken.getData()).thenReturn("comment");
+        when(commentToken.bogus).thenReturn(false);
+
+        assertTrue(xmlTreeBuilder.process(token));
+
+        verify(commentToken, times(1)).getData();
+        verify(commentToken, times(1)).bogus;
+    }
+
+    @Test
+    public void testProcessCharacter() {
+        when(token.type).thenReturn(Token.TokenType.Character);
+        when(token.asCharacter()).thenReturn(characterToken);
+        when(characterToken.getData()).thenReturn("text");
+
+        assertTrue(xmlTreeBuilder.process(token));
+
+        verify(characterToken, times(1)).getData();
+    }
+
+    @Test
+    public void testProcessDoctype() {
+        when(token.type).thenReturn(Token.TokenType.Doctype);
+        when(token.asDoctype()).thenReturn(doctypeToken);
+        when(doctypeToken.getName()).thenReturn("doctype");
+        when(doctypeToken.getPublicIdentifier()).thenReturn("public");
+        when(doctypeToken.getSystemIdentifier()).thenReturn("system");
+
+        assertTrue(xmlTreeBuilder.process(token));
+
+        verify(doctypeToken, times(1)).getName();
+        verify(doctypeToken, times(1)).getPublicIdentifier();
+        verify(doctypeToken, times(1)).getSystemIdentifier();
+    }
+
+    @Test
+    public void testProcessEOF() {
+        when(token.type).thenReturn(Token.TokenType.EOF);
+
+        assertTrue(xmlTreeBuilder.process(token));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testProcessUnexpectedToken() {
+        when(token.type).thenReturn(Token.TokenType.EOF);
+
+        xmlTreeBuilder.process(token);
+    }
+
+    @Test
+    public void testInsertNode() {
+        xmlTreeBuilder.insertNode(element);
+
+        verify(element, times(1)).appendChild(any(Node.class));
+    }
+
+    @Test
+    public void testInsertStartTag() {
+        when(startTag.name()).thenReturn("tag");
+        when(startTag.attributes()).thenReturn(new Attributes());
+        when(startTag.isSelfClosing()).thenReturn(false);
+
+        Element el = xmlTreeBuilder.insert(startTag);
+
+        assertNotNull(el);
+        verify(startTag, times(1)).name();
+        verify(startTag, times(1)).attributes();
+        verify(startTag, times(1)).isSelfClosing();
+    }
+
+    @Test
+    public void testInsertComment() {
+        when(commentToken.getData()).thenReturn("comment");
+        when(commentToken.bogus).thenReturn(false);
+
+        xmlTreeBuilder.insert(commentToken);
+
+        verify(commentToken, times(1)).getData();
+        verify(commentToken, times(1)).bogus;
+    }
+
+    @Test
+    public void testInsertCharacter() {
+        when(characterToken.getData()).thenReturn("text");
+
+        xmlTreeBuilder.insert(characterToken);
+
+        verify(characterToken, times(1)).getData();
+    }
+
+    @Test
+    public void testInsertDoctype() {
+        when(doctypeToken.getName()).thenReturn("doctype");
+        when(doctypeToken.getPublicIdentifier()).thenReturn("public");
+        when(doctypeToken.getSystemIdentifier()).thenReturn("system");
+
+        xmlTreeBuilder.insert(doctypeToken);
+
+        verify(doctypeToken, times(1)).getName();
+        verify(doctypeToken, times(1)).getPublicIdentifier();
+        verify(doctypeToken, times(1)).getSystemIdentifier();
+    }
+
+    @Test
+    public void testPopStackToClose() {
+        when(endTag.name()).thenReturn("tag");
+        Element el = new Element(Tag.valueOf("tag"), "http://example.com");
+        xmlTreeBuilder.stack.add(el);
+
+        xmlTreeBuilder.popStackToClose(endTag);
+
+        assertTrue(xmlTreeBuilder.stack.isEmpty());
+    }
+
+    @Test
+    public void testParseFragment() {
+        String inputFragment = "<xml></xml>";
+        String baseUri = "http://example.com";
+
+        List<Node> nodes = xmlTreeBuilder.parseFragment(inputFragment, baseUri, errors);
+
+        assertNotNull(nodes);
+        assertEquals(1, nodes.size());
+    }
+}
+```

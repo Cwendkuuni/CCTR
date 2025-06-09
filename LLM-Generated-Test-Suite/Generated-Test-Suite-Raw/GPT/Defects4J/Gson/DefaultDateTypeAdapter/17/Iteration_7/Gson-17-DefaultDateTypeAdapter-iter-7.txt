@@ -1,0 +1,111 @@
+```java
+import com.google.gson.DefaultDateTypeAdapter;
+import com.google.gson.JsonParseException;
+import com.google.gson.JsonSyntaxException;
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+import static org.junit.Assert.*;
+
+public class DefaultDateTypeAdapterTest {
+
+    private DefaultDateTypeAdapter dateAdapter;
+    private DefaultDateTypeAdapter timestampAdapter;
+    private DefaultDateTypeAdapter sqlDateAdapter;
+    private DateFormat dateFormat;
+
+    @Before
+    public void setUp() {
+        dateAdapter = new DefaultDateTypeAdapter(Date.class);
+        timestampAdapter = new DefaultDateTypeAdapter(Timestamp.class);
+        sqlDateAdapter = new DefaultDateTypeAdapter(java.sql.Date.class);
+        dateFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US);
+    }
+
+    @Test
+    public void testWriteNullDate() throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        JsonWriter jsonWriter = new JsonWriter(stringWriter);
+        dateAdapter.write(jsonWriter, null);
+        assertEquals("null", stringWriter.toString());
+    }
+
+    @Test
+    public void testWriteDate() throws IOException {
+        Date date = new Date();
+        StringWriter stringWriter = new StringWriter();
+        JsonWriter jsonWriter = new JsonWriter(stringWriter);
+        dateAdapter.write(jsonWriter, date);
+        assertEquals(dateFormat.format(date), stringWriter.toString().replace("\"", ""));
+    }
+
+    @Test
+    public void testReadDate() throws IOException {
+        Date date = new Date();
+        String dateString = dateFormat.format(date);
+        JsonReader jsonReader = new JsonReader(new StringReader("\"" + dateString + "\""));
+        Date parsedDate = dateAdapter.read(jsonReader);
+        assertEquals(dateString, dateFormat.format(parsedDate));
+    }
+
+    @Test
+    public void testReadTimestamp() throws IOException {
+        Date date = new Date();
+        String dateString = dateFormat.format(date);
+        JsonReader jsonReader = new JsonReader(new StringReader("\"" + dateString + "\""));
+        Timestamp parsedTimestamp = (Timestamp) timestampAdapter.read(jsonReader);
+        assertEquals(dateString, dateFormat.format(parsedTimestamp));
+    }
+
+    @Test
+    public void testReadSqlDate() throws IOException {
+        Date date = new Date();
+        String dateString = dateFormat.format(date);
+        JsonReader jsonReader = new JsonReader(new StringReader("\"" + dateString + "\""));
+        java.sql.Date parsedSqlDate = (java.sql.Date) sqlDateAdapter.read(jsonReader);
+        assertEquals(dateString, dateFormat.format(parsedSqlDate));
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testReadInvalidDate() throws IOException {
+        JsonReader jsonReader = new JsonReader(new StringReader("12345"));
+        dateAdapter.read(jsonReader);
+    }
+
+    @Test(expected = JsonSyntaxException.class)
+    public void testDeserializeToDateInvalidFormat() {
+        String invalidDate = "invalid-date";
+        dateAdapter.deserializeToDate(invalidDate);
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "DefaultDateTypeAdapter(SimpleDateFormat)";
+        assertEquals(expected, dateAdapter.toString());
+    }
+}
+```
+
+This test suite covers the following scenarios:
+
+1. Writing a `null` date to JSON.
+2. Writing a `Date` object to JSON.
+3. Reading a `Date` from a JSON string.
+4. Reading a `Timestamp` from a JSON string.
+5. Reading a `java.sql.Date` from a JSON string.
+6. Handling invalid JSON input that is not a string.
+7. Handling invalid date formats during deserialization.
+8. Verifying the `toString` method of the `DefaultDateTypeAdapter`.
+
+Each test is designed to ensure that the `DefaultDateTypeAdapter` behaves as expected under various conditions.

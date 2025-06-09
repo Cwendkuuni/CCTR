@@ -1,0 +1,207 @@
+```java
+package com.mentorgen.tools.profile.runtime;
+
+import com.mentorgen.tools.profile.*;
+import com.mentorgen.tools.profile.output.ProfileDump;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.IOException;
+import java.util.*;
+
+import static org.junit.Assert.*;
+
+public class ProfileTest {
+
+    @Before
+    public void setUp() {
+        Profile.init();
+    }
+
+    @After
+    public void tearDown() {
+        Profile.clear();
+    }
+
+    @Test
+    public void testInitProfiler() {
+        Profile.initProfiler();
+        assertNotNull(Profile._controller);
+        if (Controller._remote) {
+            assertNotNull(Profile._controllerThread);
+        }
+    }
+
+    @Test
+    public void testInit() {
+        Profile.init();
+        assertNotNull(Profile._threadActiveFrame);
+        assertNotNull(Profile._threadDictionary);
+        assertNotNull(Profile._methodDictionary);
+        assertNotNull(Profile._frameList);
+        assertNotNull(Profile._lock);
+        assertNotNull(Profile._allocList);
+    }
+
+    @Test
+    public void testClear() {
+        Profile.clear();
+        assertTrue(Profile._threadActiveFrame.isEmpty());
+        assertTrue(Profile._threadDictionary.isEmpty());
+        assertTrue(Profile._methodDictionary.isEmpty());
+        assertTrue(Profile._frameList.isEmpty());
+        assertTrue(Profile._allocList.isEmpty());
+    }
+
+    @Test
+    public void testStart() {
+        Profile.initProfiler();
+        Profile.start();
+        assertTrue(Controller._profile);
+    }
+
+    @Test
+    public void testStop() {
+        Profile.initProfiler();
+        Profile.start();
+        Profile.stop();
+        assertFalse(Controller._profile);
+    }
+
+    @Test
+    public void testSetFileName() {
+        String fileName = "testFile.txt";
+        Profile.setFileName(fileName);
+        assertEquals(fileName, Profile._controller.getFileName());
+    }
+
+    @Test
+    public void testShutdown() {
+        Profile.initProfiler();
+        Profile.start();
+        Profile.shutdown();
+        assertFalse(Controller._profile);
+    }
+
+    @Test
+    public void testThreads() {
+        Profile.initProfiler();
+        Iterable<Long> threads = Profile.threads();
+        assertNotNull(threads);
+    }
+
+    @Test
+    public void testInteractions() {
+        long threadId = Thread.currentThread().getId();
+        Profile.initProfiler();
+        Profile.start("ProfileTest", "testInteractions");
+        Iterable<Frame> interactions = Profile.interactions(threadId);
+        assertNotNull(interactions);
+    }
+
+    @Test
+    public void testFrameList() {
+        Profile.initProfiler();
+        Iterable<Frame> frameList = Profile.frameList();
+        assertNotNull(frameList);
+    }
+
+    @Test
+    public void testAllocations() {
+        Profile.initProfiler();
+        Iterable<ClassAllocation> allocations = Profile.allocations();
+        assertNotNull(allocations);
+    }
+
+    @Test
+    public void testGetThreadTotalTime() {
+        long threadId = Thread.currentThread().getId();
+        Profile.initProfiler();
+        Profile.start("ProfileTest", "testGetThreadTotalTime");
+        long totalTime = Profile.getThreadTotalTime(threadId);
+        assertTrue(totalTime >= 0);
+    }
+
+    @Test
+    public void testSortFrameList() {
+        Profile.initProfiler();
+        Comparator<Frame> comparator = (f1, f2) -> Long.compare(f1.getBeginTime(), f2.getBeginTime());
+        Profile.sortFrameList(comparator);
+        List<Frame> frameList = new ArrayList<>(Profile._frameList);
+        for (int i = 0; i < frameList.size() - 1; i++) {
+            assertTrue(frameList.get(i).getBeginTime() <= frameList.get(i + 1).getBeginTime());
+        }
+    }
+
+    @Test
+    public void testStartMethod() {
+        Profile.initProfiler();
+        Profile.start("ProfileTest", "testStartMethod");
+        long threadId = Thread.currentThread().getId();
+        Frame frame = Profile._threadActiveFrame.get(threadId);
+        assertNotNull(frame);
+        assertEquals("ProfileTest", frame.getClassName());
+        assertEquals("testStartMethod", frame.getMethodName());
+    }
+
+    @Test
+    public void testEndMethod() {
+        Profile.initProfiler();
+        Profile.start("ProfileTest", "testEndMethod");
+        Profile.end("ProfileTest", "testEndMethod");
+        long threadId = Thread.currentThread().getId();
+        Frame frame = Profile._threadActiveFrame.get(threadId);
+        assertNull(frame);
+    }
+
+    @Test
+    public void testBeginWait() {
+        Profile.initProfiler();
+        Profile.start("ProfileTest", "testBeginWait");
+        Profile.beginWait("ProfileTest", "testBeginWait");
+        long threadId = Thread.currentThread().getId();
+        Frame frame = Profile._threadActiveFrame.get(threadId);
+        assertNotNull(frame);
+        assertTrue(frame.getWaitTime() > 0);
+    }
+
+    @Test
+    public void testEndWait() {
+        Profile.initProfiler();
+        Profile.start("ProfileTest", "testEndWait");
+        Profile.beginWait("ProfileTest", "testEndWait");
+        Profile.endWait("ProfileTest", "testEndWait");
+        long threadId = Thread.currentThread().getId();
+        Frame frame = Profile._threadActiveFrame.get(threadId);
+        assertNotNull(frame);
+        assertTrue(frame.getWaitTime() > 0);
+    }
+
+    @Test
+    public void testUnwind() {
+        Profile.initProfiler();
+        Profile.start("ProfileTest", "testUnwind");
+        Profile.unwind("ProfileTest", "testUnwind", "TestException");
+        long threadId = Thread.currentThread().getId();
+        Frame frame = Profile._threadActiveFrame.get(threadId);
+        assertNotNull(frame);
+    }
+
+    @Test
+    public void testAlloc() {
+        Profile.initProfiler();
+        Profile.alloc("ProfileTest");
+        ClassAllocation ca = Profile._allocList.get("ProfileTest");
+        assertNotNull(ca);
+        assertTrue(ca.getAllocCount() > 0);
+    }
+
+    @Test
+    public void testRun() {
+        Profile.initProfiler();
+        Profile profile = new Profile();
+        profile.run();
+        assertFalse(Controller._profile);
+    }
+}
+```

@@ -1,0 +1,98 @@
+To create a comprehensive JUnit 4 test suite for the `TypeInfoFactory` class, we need to test each public method and any private methods that have complex logic. Since `TypeInfoFactory` is a utility class with static methods, we will focus on testing the static methods `getTypeInfoForArray` and `getTypeInfoForField`, as well as the private method `getActualType` indirectly through the public methods.
+
+Below is a JUnit 4 test suite for the `TypeInfoFactory` class:
+
+```java
+import com.google.gson.*;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class TypeInfoFactoryTest {
+
+    private Field field;
+    private Type genericType;
+    private Type parameterizedType;
+    private TypeVariable<?> typeVariable;
+
+    @Before
+    public void setUp() throws NoSuchFieldException {
+        // Set up a sample class with various field types for testing
+        class Sample<T> {
+            T genericField;
+            String[] arrayField;
+            java.util.List<String> parameterizedField;
+        }
+
+        field = Sample.class.getDeclaredField("genericField");
+        genericType = field.getGenericType();
+
+        field = Sample.class.getDeclaredField("arrayField");
+        parameterizedType = Sample.class.getDeclaredField("parameterizedField").getGenericType();
+
+        typeVariable = (TypeVariable<?>) genericType;
+    }
+
+    @Test
+    public void testGetTypeInfoForArray() {
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(parameterizedType);
+        assertNotNull(typeInfoArray);
+        assertEquals(parameterizedType, typeInfoArray.getType());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArrayWithNonArrayType() {
+        TypeInfoFactory.getTypeInfoForArray(genericType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField() {
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, Sample.class);
+        assertNotNull(typeInfo);
+        assertEquals(genericType, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetActualTypeWithParameterizedType() {
+        Type actualType = TypeInfoFactory.getTypeInfoForField(field, Sample.class).getType();
+        assertTrue(actualType instanceof TypeVariable);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetActualTypeWithUnsupportedType() {
+        class UnsupportedType {
+            Object unsupportedField;
+        }
+        Field unsupportedField = UnsupportedType.class.getDeclaredField("unsupportedField");
+        TypeInfoFactory.getTypeInfoForField(unsupportedField, UnsupportedType.class);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetActualTypeWithInvalidType() {
+        TypeInfoFactory.getTypeInfoForField(field, String.class);
+    }
+}
+```
+
+### Explanation:
+
+1. **Setup**: We create a `Sample` class with fields of different types to test the methods. This includes a generic field, an array field, and a parameterized field.
+
+2. **Test Methods**:
+   - `testGetTypeInfoForArray`: Tests the `getTypeInfoForArray` method with a valid array type.
+   - `testGetTypeInfoForArrayWithNonArrayType`: Ensures that an `IllegalArgumentException` is thrown when a non-array type is passed.
+   - `testGetTypeInfoForField`: Tests the `getTypeInfoForField` method with a valid field.
+   - `testGetActualTypeWithParameterizedType`: Tests the `getActualType` indirectly through `getTypeInfoForField` with a parameterized type.
+   - `testGetActualTypeWithUnsupportedType`: Ensures that an `UnsupportedOperationException` is thrown for unsupported types.
+   - `testGetActualTypeWithInvalidType`: Ensures that an `IllegalArgumentException` is thrown for invalid types.
+
+This test suite covers the main functionalities and edge cases of the `TypeInfoFactory` class.

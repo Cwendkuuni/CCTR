@@ -1,0 +1,152 @@
+package org.apache.commons.cli;
+
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.TypeHandler;
+import org.apache.commons.cli.PatternOptionBuilder;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.io.File;
+import java.net.URL;
+
+public class TypeHandlerTest {
+
+    @Test
+    public void testCreateValueString() throws ParseException {
+        String input = "testString";
+        Object result = TypeHandler.createValue(input, PatternOptionBuilder.STRING_VALUE);
+        assertEquals(input, result);
+    }
+
+    @Test
+    public void testCreateValueObject() throws ParseException {
+        String input = "java.lang.String";
+        Object result = TypeHandler.createValue(input, PatternOptionBuilder.OBJECT_VALUE);
+        assertTrue(result instanceof String);
+    }
+
+    @Test
+    public void testCreateValueNumber() throws ParseException {
+        String input = "123";
+        Object result = TypeHandler.createValue(input, PatternOptionBuilder.NUMBER_VALUE);
+        assertTrue(result instanceof Long);
+        assertEquals(123L, result);
+
+        input = "123.45";
+        result = TypeHandler.createValue(input, PatternOptionBuilder.NUMBER_VALUE);
+        assertTrue(result instanceof Double);
+        assertEquals(123.45, result);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testCreateValueDate() throws ParseException {
+        String input = "2023-10-01";
+        TypeHandler.createValue(input, PatternOptionBuilder.DATE_VALUE);
+    }
+
+    @Test
+    public void testCreateValueClass() throws ParseException {
+        String input = "java.lang.String";
+        Object result = TypeHandler.createValue(input, PatternOptionBuilder.CLASS_VALUE);
+        assertEquals(String.class, result);
+    }
+
+    @Test
+    public void testCreateValueFile() throws ParseException {
+        String input = "test.txt";
+        Object result = TypeHandler.createValue(input, PatternOptionBuilder.FILE_VALUE);
+        assertTrue(result instanceof File);
+        assertEquals(new File(input), result);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testCreateValueFiles() throws ParseException {
+        String input = "file1.txt,file2.txt";
+        TypeHandler.createValue(input, PatternOptionBuilder.FILES_VALUE);
+    }
+
+    @Test
+    public void testCreateValueURL() throws ParseException {
+        String input = "http://www.example.com";
+        Object result = TypeHandler.createValue(input, PatternOptionBuilder.URL_VALUE);
+        assertTrue(result instanceof URL);
+        assertEquals("http://www.example.com", result.toString());
+    }
+
+    @Test
+    public void testCreateObject() throws ParseException {
+        String input = "java.lang.String";
+        Object result = TypeHandler.createObject(input);
+        assertTrue(result instanceof String);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testCreateObjectClassNotFound() throws ParseException {
+        String input = "non.existent.Class";
+        TypeHandler.createObject(input);
+    }
+
+    @Test
+    public void testCreateNumber() throws ParseException {
+        String input = "123";
+        Number result = TypeHandler.createNumber(input);
+        assertTrue(result instanceof Long);
+        assertEquals(123L, result);
+
+        input = "123.45";
+        result = TypeHandler.createNumber(input);
+        assertTrue(result instanceof Double);
+        assertEquals(123.45, result);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testCreateNumberInvalid() throws ParseException {
+        String input = "abc";
+        TypeHandler.createNumber(input);
+    }
+
+    @Test
+    public void testCreateClass() throws ParseException {
+        String input = "java.lang.String";
+        Class<?> result = TypeHandler.createClass(input);
+        assertEquals(String.class, result);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testCreateClassNotFound() throws ParseException {
+        String input = "non.existent.Class";
+        TypeHandler.createClass(input);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testCreateDate() {
+        String input = "2023-10-01";
+        TypeHandler.createDate(input);
+    }
+
+    @Test
+    public void testCreateURL() throws ParseException {
+        String input = "http://www.example.com";
+        URL result = TypeHandler.createURL(input);
+        assertEquals("http://www.example.com", result.toString());
+    }
+
+    @Test(expected = ParseException.class)
+    public void testCreateURLMalformed() throws ParseException {
+        String input = "htp://www.example.com";
+        TypeHandler.createURL(input);
+    }
+
+    @Test
+    public void testCreateFile() {
+        String input = "test.txt";
+        File result = TypeHandler.createFile(input);
+        assertEquals(new File(input), result);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testCreateFiles() {
+        String input = "file1.txt,file2.txt";
+        TypeHandler.createFiles(input);
+    }
+}

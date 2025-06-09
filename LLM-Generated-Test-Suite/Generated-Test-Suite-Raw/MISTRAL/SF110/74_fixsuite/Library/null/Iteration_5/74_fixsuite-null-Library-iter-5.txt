@@ -1,0 +1,160 @@
+```java
+package org.fixsuite.message;
+
+import org.fixsuite.message.info.DictionaryInfo;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class LibraryTest {
+
+    private Library library;
+    private static final Logger logger = LoggerFactory.getLogger(LibraryTest.class);
+
+    @Before
+    public void setUp() {
+        library = new Library();
+    }
+
+    @Test
+    public void testLoadFromDirectory() {
+        String libraryPath = "test/path";
+        File mockDirectory = mock(File.class);
+        File[] mockFiles = new File[0];
+
+        when(mockDirectory.isDirectory()).thenReturn(true);
+        when(mockDirectory.listFiles()).thenReturn(mockFiles);
+
+        Library spyLibrary = spy(library);
+        doNothing().when(spyLibrary).loadDirectory(anyList(), anyString());
+
+        boolean result = spyLibrary.loadFromDirectory(libraryPath);
+
+        assertTrue(result);
+        verify(spyLibrary, times(1)).loadDirectory(anyList(), anyString());
+    }
+
+    @Test
+    public void testLoadFromDirectoryEmpty() {
+        String libraryPath = "test/path";
+        File mockDirectory = mock(File.class);
+
+        when(mockDirectory.isDirectory()).thenReturn(true);
+        when(mockDirectory.listFiles()).thenReturn(new File[0]);
+
+        boolean result = library.loadFromDirectory(libraryPath);
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testLoadFromDirectoryNotADirectory() {
+        String libraryPath = "test/path";
+        File mockDirectory = mock(File.class);
+
+        when(mockDirectory.isDirectory()).thenReturn(false);
+
+        boolean result = library.loadFromDirectory(libraryPath);
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testGetDictionaries() {
+        DictionaryInfo mockDictionary = mock(DictionaryInfo.class);
+        library.dictionaries.put("1.0", mockDictionary);
+
+        List<DictionaryInfo> dictionaries = library.getDictionaries();
+
+        assertEquals(1, dictionaries.size());
+        assertEquals(mockDictionary, dictionaries.get(0));
+    }
+
+    @Test
+    public void testGetDictionary() {
+        DictionaryInfo mockDictionary = mock(DictionaryInfo.class);
+        library.dictionaries.put("1.0", mockDictionary);
+
+        DictionaryInfo dictionary = library.getDictionary("1.0");
+
+        assertEquals(mockDictionary, dictionary);
+    }
+
+    @Test
+    public void testGetDictionaryNotFound() {
+        DictionaryInfo dictionary = library.getDictionary("1.0");
+
+        assertNull(dictionary);
+    }
+
+    @Test
+    public void testLoadDirectory() {
+        DictionaryInfo mockDictionary = mock(DictionaryInfo.class);
+        when(mockDictionary.isLoaded()).thenReturn(true);
+        when(mockDictionary.getVersion()).thenReturn("1.0");
+
+        File mockFile = mock(File.class);
+        List<File> files = new ArrayList<>();
+        files.add(mockFile);
+
+        library.loadDirectory(files, "1.0");
+
+        assertEquals(1, library.dictionaries.size());
+        assertEquals(mockDictionary, library.dictionaries.get("1.0"));
+    }
+
+    @Test
+    public void testLoadDirectoryNotLoaded() {
+        DictionaryInfo mockDictionary = mock(DictionaryInfo.class);
+        when(mockDictionary.isLoaded()).thenReturn(false);
+
+        File mockFile = mock(File.class);
+        List<File> files = new ArrayList<>();
+        files.add(mockFile);
+
+        library.loadDirectory(files, "1.0");
+
+        assertEquals(0, library.dictionaries.size());
+    }
+
+    @Test
+    public void testArrangeFiles() {
+        File fieldsFile = mock(File.class);
+        when(fieldsFile.getName()).thenReturn("Fields.xml");
+
+        File enumsFile = mock(File.class);
+        when(enumsFile.getName()).thenReturn("Enums.xml");
+
+        File componentsFile = mock(File.class);
+        when(componentsFile.getName()).thenReturn("Components.xml");
+
+        File msgTypeFile = mock(File.class);
+        when(msgTypeFile.getName()).thenReturn("MsgType.xml");
+
+        File msgContentsFile = mock(File.class);
+        when(msgContentsFile.getName()).thenReturn("MsgContents.xml");
+
+        File[] files = {fieldsFile, enumsFile, componentsFile, msgTypeFile, msgContentsFile};
+
+        List<File> arrangedFiles = library.arrangeFiles(files);
+
+        assertEquals(5, arrangedFiles.size());
+        assertEquals(fieldsFile, arrangedFiles.get(0));
+        assertEquals(enumsFile, arrangedFiles.get(1));
+        assertEquals(componentsFile, arrangedFiles.get(2));
+        assertEquals(msgTypeFile, arrangedFiles.get(3));
+        assertEquals(msgContentsFile, arrangedFiles.get(4));
+    }
+}
+```

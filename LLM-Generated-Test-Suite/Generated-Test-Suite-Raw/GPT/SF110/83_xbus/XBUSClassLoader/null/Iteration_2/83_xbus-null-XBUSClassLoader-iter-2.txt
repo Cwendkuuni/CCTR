@@ -1,0 +1,108 @@
+To create a comprehensive JUnit 4 test suite for the `XBUSClassLoader` class, we need to test the public methods and any static methods that influence the behavior of the class. The primary focus will be on the `getInstance` and `createClassLoader` methods, as well as the `addUrls` method indirectly through its effects on the class loader instance.
+
+Here's a test suite that covers these aspects:
+
+```java
+import net.sf.xbus.base.core.reflection.XBUSClassLoader;
+import net.sf.xbus.base.core.Constants;
+import net.sf.xbus.base.core.trace.Trace;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.After;
+
+import java.io.File;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.net.MalformedURLException;
+import java.util.Vector;
+
+import static org.junit.Assert.*;
+
+public class XBUSClassLoaderTest {
+
+    private static final String TEST_LIB_DIR = "test/lib";
+    private ClassLoader parentClassLoader;
+
+    @Before
+    public void setUp() {
+        // Set up a mock Constants.XBUS_HOME for testing
+        Constants.XBUS_HOME = System.getProperty("user.dir") + "/mockXBUSHome";
+        File testLibDir = new File(Constants.XBUS_HOME + "/" + TEST_LIB_DIR);
+        testLibDir.mkdirs();
+        
+        // Create a dummy jar file in the test lib directory
+        try {
+            new File(testLibDir, "dummy.jar").createNewFile();
+        } catch (Exception e) {
+            fail("Failed to set up test environment: " + e.getMessage());
+        }
+
+        // Set up a parent class loader
+        parentClassLoader = new URLClassLoader(new URL[0]);
+    }
+
+    @After
+    public void tearDown() {
+        // Clean up the mock XBUS_HOME directory
+        File testLibDir = new File(Constants.XBUS_HOME + "/" + TEST_LIB_DIR);
+        for (File file : testLibDir.listFiles()) {
+            file.delete();
+        }
+        testLibDir.delete();
+        new File(Constants.XBUS_HOME).delete();
+    }
+
+    @Test
+    public void testGetInstance() {
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parentClassLoader);
+        assertNotNull("ClassLoader instance should not be null", classLoader);
+        assertEquals("ClassLoader should be a singleton", classLoader, XBUSClassLoader.getInstance(parentClassLoader));
+    }
+
+    @Test
+    public void testCreateClassLoader() {
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parentClassLoader);
+        assertNotNull("ClassLoader instance should not be null", classLoader);
+        assertTrue("ClassLoader should be an instance of URLClassLoader", classLoader instanceof URLClassLoader);
+    }
+
+    @Test
+    public void testAddUrls() {
+        Vector<URL> urls = new Vector<>();
+        XBUSClassLoader.addUrls(urls, Constants.XBUS_HOME + "/" + TEST_LIB_DIR);
+        assertFalse("URLs vector should not be empty", urls.isEmpty());
+        assertTrue("URLs vector should contain a URL ending with 'dummy.jar'", 
+                   urls.stream().anyMatch(url -> url.toString().endsWith("dummy.jar")));
+    }
+
+    @Test(expected = MalformedURLException.class)
+    public void testAddUrlsWithMalformedUrl() throws MalformedURLException {
+        Vector<URL> urls = new Vector<>();
+        File invalidFile = new File(Constants.XBUS_HOME + "/" + TEST_LIB_DIR, "invalid.txt");
+        try {
+            invalidFile.createNewFile();
+            XBUSClassLoader.addUrls(urls, Constants.XBUS_HOME + "/" + TEST_LIB_DIR);
+        } catch (Exception e) {
+            fail("Unexpected exception: " + e.getMessage());
+        } finally {
+            invalidFile.delete();
+        }
+    }
+}
+```
+
+### Explanation:
+
+1. **Setup and Teardown**: 
+   - The `setUp` method creates a mock directory structure and a dummy jar file to simulate the environment expected by `XBUSClassLoader`.
+   - The `tearDown` method cleans up the created files and directories after each test.
+
+2. **Test Methods**:
+   - `testGetInstance`: Verifies that `getInstance` returns a non-null singleton instance.
+   - `testCreateClassLoader`: Checks that the class loader is correctly instantiated as a `URLClassLoader`.
+   - `testAddUrls`: Ensures that `addUrls` correctly adds URLs to the vector when valid jar files are present.
+   - `testAddUrlsWithMalformedUrl`: Tests the behavior when a non-jar/zip file is present, expecting a `MalformedURLException`.
+
+3. **Assumptions**:
+   - The `Constants.XBUS_HOME` is set to a mock directory for testing purposes.
+   - The `Trace.error` method and `System.exit` calls are not directly testable without additional mocking or changes to the class design.

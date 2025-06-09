@@ -1,0 +1,155 @@
+```java
+package org.apache.commons.math3.util;
+
+import org.apache.commons.math3.exception.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.Iterator;
+
+public class MultidimensionalCounterTest {
+
+    private MultidimensionalCounter counter;
+
+    @Before
+    public void setUp() throws NotStrictlyPositiveException {
+        counter = new MultidimensionalCounter(2, 3, 4);
+    }
+
+    @Test
+    public void testConstructor() {
+        try {
+            new MultidimensionalCounter(0, 1, 2);
+            fail("Expected NotStrictlyPositiveException");
+        } catch (NotStrictlyPositiveException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testGetDimension() {
+        assertEquals(3, counter.getDimension());
+    }
+
+    @Test
+    public void testGetCounts() {
+        try {
+            int[] counts = counter.getCounts(10);
+            assertArrayEquals(new int[]{1, 1, 2}, counts);
+        } catch (OutOfRangeException e) {
+            fail("Unexpected OutOfRangeException");
+        }
+
+        try {
+            counter.getCounts(-1);
+            fail("Expected OutOfRangeException");
+        } catch (OutOfRangeException e) {
+            // Expected
+        }
+
+        try {
+            counter.getCounts(24);
+            fail("Expected OutOfRangeException");
+        } catch (OutOfRangeException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testGetCount() {
+        try {
+            int count = counter.getCount(1, 1, 2);
+            assertEquals(10, count);
+        } catch (OutOfRangeException | DimensionMismatchException e) {
+            fail("Unexpected exception");
+        }
+
+        try {
+            counter.getCount(1, 1, 4);
+            fail("Expected OutOfRangeException");
+        } catch (OutOfRangeException e) {
+            // Expected
+        }
+
+        try {
+            counter.getCount(1, 1);
+            fail("Expected DimensionMismatchException");
+        } catch (DimensionMismatchException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testGetSize() {
+        assertEquals(24, counter.getSize());
+    }
+
+    @Test
+    public void testGetSizes() {
+        assertArrayEquals(new int[]{2, 3, 4}, counter.getSizes());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("[0][0][0]", counter.toString());
+    }
+
+    @Test
+    public void testIterator() {
+        Iterator<Integer> iterator = counter.iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals(Integer.valueOf(0), iterator.next());
+        assertEquals(Integer.valueOf(1), iterator.next());
+
+        for (int i = 2; i < 24; i++) {
+            assertTrue(iterator.hasNext());
+            assertEquals(Integer.valueOf(i), iterator.next());
+        }
+
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testIteratorGetCount() {
+        Iterator<Integer> iterator = counter.iterator();
+        iterator.next();
+        assertEquals(0, iterator.getCount());
+        iterator.next();
+        assertEquals(1, iterator.getCount());
+    }
+
+    @Test
+    public void testIteratorGetCounts() {
+        Iterator<Integer> iterator = counter.iterator();
+        iterator.next();
+        assertArrayEquals(new int[]{0, 0, 0}, iterator.getCounts());
+        iterator.next();
+        assertArrayEquals(new int[]{0, 0, 1}, iterator.getCounts());
+    }
+
+    @Test
+    public void testIteratorGetCountDim() {
+        Iterator<Integer> iterator = counter.iterator();
+        iterator.next();
+        assertEquals(0, iterator.getCount(0));
+        assertEquals(0, iterator.getCount(1));
+        assertEquals(0, iterator.getCount(2));
+        iterator.next();
+        assertEquals(0, iterator.getCount(0));
+        assertEquals(0, iterator.getCount(1));
+        assertEquals(1, iterator.getCount(2));
+    }
+
+    @Test
+    public void testIteratorRemove() {
+        Iterator<Integer> iterator = counter.iterator();
+        try {
+            iterator.remove();
+            fail("Expected UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // Expected
+        }
+    }
+}
+```

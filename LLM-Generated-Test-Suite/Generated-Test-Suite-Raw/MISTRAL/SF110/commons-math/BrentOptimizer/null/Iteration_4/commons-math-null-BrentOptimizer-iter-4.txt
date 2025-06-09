@@ -1,0 +1,75 @@
+```java
+package org.apache.commons.math3.optim.univariate;
+
+import org.apache.commons.math3.optim.*;
+import org.apache.commons.math3.exception.*;
+import org.apache.commons.math3.optim.nonlinear.scalar.*;
+import org.apache.commons.math3.util.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+
+public class BrentOptimizerTest {
+
+    @Test(expected = NumberIsTooSmallException.class)
+    public void testConstructorRelativeThresholdTooSmall() {
+        new BrentOptimizer(BrentOptimizer.MIN_RELATIVE_TOLERANCE - 1e-10, 1e-10, null);
+    }
+
+    @Test(expected = NotStrictlyPositiveException.class)
+    public void testConstructorAbsoluteThresholdNonPositive() {
+        new BrentOptimizer(1e-10, 0.0, null);
+    }
+
+    @Test
+    public void testConstructorValidParameters() {
+        BrentOptimizer optimizer = new BrentOptimizer(1e-10, 1e-10, null);
+        assertNotNull(optimizer);
+    }
+
+    @Test
+    public void testDoOptimize() {
+        BrentOptimizer optimizer = new BrentOptimizer(1e-10, 1e-10, null);
+        optimizer.setMin(0.0);
+        optimizer.setMax(1.0);
+        optimizer.setStartValue(0.5);
+        optimizer.setGoalType(GoalType.MINIMIZE);
+        optimizer.setObjectiveFunction(new UnivariateFunction() {
+            @Override
+            public double value(double x) {
+                return x * x; // Simple quadratic function
+            }
+        });
+
+        UnivariatePointValuePair result = optimizer.doOptimize();
+        assertNotNull(result);
+        assertEquals(0.0, result.getPoint(), 1e-5);
+        assertEquals(0.0, result.getValue(), 1e-5);
+    }
+
+    @Test
+    public void testBest() {
+        BrentOptimizer optimizer = new BrentOptimizer(1e-10, 1e-10, null);
+        UnivariatePointValuePair a = new UnivariatePointValuePair(1.0, 1.0);
+        UnivariatePointValuePair b = new UnivariatePointValuePair(2.0, 2.0);
+
+        UnivariatePointValuePair best = optimizer.best(a, b, true);
+        assertEquals(a, best);
+
+        best = optimizer.best(a, b, false);
+        assertEquals(b, best);
+    }
+
+    @Test
+    public void testBestWithNullValues() {
+        BrentOptimizer optimizer = new BrentOptimizer(1e-10, 1e-10, null);
+        UnivariatePointValuePair a = new UnivariatePointValuePair(1.0, 1.0);
+        UnivariatePointValuePair b = null;
+
+        UnivariatePointValuePair best = optimizer.best(a, b, true);
+        assertEquals(a, best);
+
+        best = optimizer.best(b, a, true);
+        assertEquals(a, best);
+    }
+}
+```

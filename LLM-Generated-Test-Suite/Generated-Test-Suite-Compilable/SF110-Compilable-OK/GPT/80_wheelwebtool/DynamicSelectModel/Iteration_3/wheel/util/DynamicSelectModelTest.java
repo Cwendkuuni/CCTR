@@ -1,0 +1,196 @@
+package wheel.util;
+
+import org.junit.Before;
+import org.junit.Test;
+import wheel.util.DynamicSelectModel;
+import wheel.components.ElExpression;
+import wheel.components.Component;
+import wheel.components.StandaloneComponent;
+import wheel.WheelException;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class DynamicSelectModelTest {
+
+    private DynamicSelectModel model;
+    private ElExpression mockCollection;
+    private ElExpression mockLabel;
+    private ElExpression mockValue;
+    private ElExpression mockTranslator;
+    private Component mockComponent;
+    private StandaloneComponent mockTopLevelComponent;
+
+    @Before
+    public void setUp() {
+        mockCollection = mock(ElExpression.class);
+        mockLabel = mock(ElExpression.class);
+        mockValue = mock(ElExpression.class);
+        mockTranslator = mock(ElExpression.class);
+        mockComponent = mock(Component.class);
+        mockTopLevelComponent = mock(StandaloneComponent.class);
+
+        model = new DynamicSelectModel(mockCollection, mockLabel, mockValue);
+        model.setComponent(mockComponent);
+        model.setTopLevelComponent(mockTopLevelComponent);
+    }
+
+    @Test
+    public void testConstructorWithParameters() {
+        assertNotNull(model);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        DynamicSelectModel defaultModel = new DynamicSelectModel();
+        assertNotNull(defaultModel);
+    }
+
+    @Test
+    public void testCollection() {
+        model.collection("collection");
+        assertEquals("collection", model.collection("collection").collection.getExpression());
+    }
+
+    @Test
+    public void testLabel() {
+        model.label("label");
+        assertEquals("label", model.label("label").label.getExpression());
+    }
+
+    @Test
+    public void testValue() {
+        model.value("value");
+        assertEquals("value", model.value("value").value.getExpression());
+    }
+
+    @Test
+    public void testEnumeration() {
+        model.enumeration("enum");
+        assertEquals("enum.values()", model.collection.getExpression());
+        assertEquals("toString()", model.label.getExpression());
+        assertEquals("ordinal()", model.value.getExpression());
+    }
+
+    @Test
+    public void testTranslator() {
+        model.translator("translator");
+        assertEquals("translator", model.translator("translator").translator.getExpression());
+    }
+
+    @Test
+    public void testEmpty() {
+        Object emptyObject = new Object();
+        model.empty(emptyObject);
+        assertEquals(emptyObject, model.empty(emptyObject).emptyObject);
+    }
+
+    @Test
+    public void testGetOptionCount() {
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(Arrays.asList("one", "two", "three"));
+        assertEquals(3, model.getOptionCount());
+    }
+
+    @Test
+    public void testGetLabel() {
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(Arrays.asList("one", "two", "three"));
+        when(mockLabel.eval(any(), eq(mockComponent))).thenReturn("label");
+        assertEquals("label", model.getLabel(0));
+    }
+
+    @Test
+    public void testGetValue() {
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(Arrays.asList("one", "two", "three"));
+        when(mockValue.eval(any(), eq(mockComponent))).thenReturn("value");
+        assertEquals("value", model.getValue(0));
+    }
+
+    @Test
+    public void testTranslateValue() {
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(Arrays.asList("one", "two", "three"));
+        when(mockValue.eval(any(), eq(mockComponent))).thenReturn("value");
+        assertEquals("one", model.translateValue("value"));
+    }
+
+    @Test
+    public void testTranslateValueWithTranslator() {
+        model.translator = mockTranslator;
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(Arrays.asList("one", "two", "three"));
+        when(mockValue.eval(any(), eq(mockComponent))).thenReturn("value");
+        when(mockTranslator.eval(any(), eq(mockComponent))).thenReturn("translated");
+        assertEquals("translated", model.translateValue("value"));
+    }
+
+    @Test
+    public void testGetObjects() {
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(Arrays.asList("one", "two", "three"));
+        Collection objects = model.getObjects();
+        assertEquals(3, objects.size());
+    }
+
+    @Test(expected = WheelException.class)
+    public void testGetObjectsThrowsExceptionWhenNull() {
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(null);
+        model.getObjects();
+    }
+
+    @Test(expected = WheelException.class)
+    public void testGetObjectsThrowsExceptionWhenNotCollectionOrArray() {
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(new Object());
+        model.getObjects();
+    }
+
+    @Test
+    public void testGetComponent() {
+        assertEquals(mockComponent, model.getComponent());
+    }
+
+    @Test
+    public void testSetComponent() {
+        Component newComponent = mock(Component.class);
+        model.setComponent(newComponent);
+        assertEquals(newComponent, model.getComponent());
+    }
+
+    @Test
+    public void testGetTopLevelComponent() {
+        assertEquals(mockTopLevelComponent, model.getTopLevelComponent());
+    }
+
+    @Test
+    public void testSetTopLevelComponent() {
+        StandaloneComponent newTopLevelComponent = mock(StandaloneComponent.class);
+        model.setTopLevelComponent(newTopLevelComponent);
+        assertEquals(newTopLevelComponent, model.getTopLevelComponent());
+    }
+
+    @Test(expected = WheelException.class)
+    public void testValidateThrowsExceptionWhenCollectionIsNull() {
+        DynamicSelectModel invalidModel = new DynamicSelectModel(null, mockLabel, mockValue);
+        invalidModel.validate();
+    }
+
+    @Test(expected = WheelException.class)
+    public void testValidateThrowsExceptionWhenLabelIsNull() {
+        DynamicSelectModel invalidModel = new DynamicSelectModel(mockCollection, null, mockValue);
+        invalidModel.validate();
+    }
+
+    @Test(expected = WheelException.class)
+    public void testValidateThrowsExceptionWhenValueIsNull() {
+        DynamicSelectModel invalidModel = new DynamicSelectModel(mockCollection, mockLabel, null);
+        invalidModel.validate();
+    }
+
+    @Test
+    public void testReset() {
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(Arrays.asList("one", "two", "three"));
+        model.getObjects();
+        model.reset();
+        assertNull(model.objects);
+    }
+}

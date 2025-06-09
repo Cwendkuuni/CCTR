@@ -1,0 +1,123 @@
+To create a comprehensive JUnit 4 test suite for the `ExtendedMessageFormat` class, we need to test all public methods, including constructors, `applyPattern`, `toPattern`, `equals`, and `hashCode`. We'll also test the behavior of unsupported operations. Here's a complete test suite:
+
+```java
+import org.apache.commons.lang3.text.ExtendedMessageFormat;
+import org.apache.commons.lang3.text.FormatFactory;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.text.Format;
+import java.text.ParseException;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class ExtendedMessageFormatTest {
+
+    private ExtendedMessageFormat emf;
+    private Map<String, FormatFactory> registry;
+
+    @Before
+    public void setUp() {
+        registry = new HashMap<>();
+        emf = new ExtendedMessageFormat("", Locale.US, registry);
+    }
+
+    @Test
+    public void testConstructorWithPattern() {
+        ExtendedMessageFormat format = new ExtendedMessageFormat("Pattern");
+        assertEquals("Pattern", format.toPattern());
+    }
+
+    @Test
+    public void testConstructorWithPatternAndLocale() {
+        ExtendedMessageFormat format = new ExtendedMessageFormat("Pattern", Locale.FRANCE);
+        assertEquals("Pattern", format.toPattern());
+        assertEquals(Locale.FRANCE, format.getLocale());
+    }
+
+    @Test
+    public void testConstructorWithPatternAndRegistry() {
+        ExtendedMessageFormat format = new ExtendedMessageFormat("Pattern", registry);
+        assertEquals("Pattern", format.toPattern());
+    }
+
+    @Test
+    public void testConstructorWithPatternLocaleAndRegistry() {
+        ExtendedMessageFormat format = new ExtendedMessageFormat("Pattern", Locale.GERMANY, registry);
+        assertEquals("Pattern", format.toPattern());
+        assertEquals(Locale.GERMANY, format.getLocale());
+    }
+
+    @Test
+    public void testApplyPattern() {
+        emf.applyPattern("Hello {0}");
+        assertEquals("Hello {0}", emf.toPattern());
+    }
+
+    @Test
+    public void testApplyPatternWithCustomFormat() {
+        registry.put("upper", (name, args, locale) -> new Format() {
+            @Override
+            public StringBuffer format(Object obj, StringBuffer toAppendTo, java.text.FieldPosition pos) {
+                return toAppendTo.append(obj.toString().toUpperCase());
+            }
+
+            @Override
+            public Object parseObject(String source, java.text.ParsePosition pos) {
+                return source.toLowerCase();
+            }
+        });
+
+        emf.applyPattern("Hello {0,upper}");
+        assertEquals("Hello {0,upper}", emf.toPattern());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testApplyPatternWithInvalidFormat() {
+        emf.applyPattern("Hello {0,invalid}");
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        ExtendedMessageFormat format1 = new ExtendedMessageFormat("Pattern", Locale.US, registry);
+        ExtendedMessageFormat format2 = new ExtendedMessageFormat("Pattern", Locale.US, registry);
+        ExtendedMessageFormat format3 = new ExtendedMessageFormat("Different", Locale.US, registry);
+
+        assertTrue(format1.equals(format2));
+        assertFalse(format1.equals(format3));
+        assertEquals(format1.hashCode(), format2.hashCode());
+        assertNotEquals(format1.hashCode(), format3.hashCode());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormat() {
+        emf.setFormat(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatByArgumentIndex() {
+        emf.setFormatByArgumentIndex(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormats() {
+        emf.setFormats(new Format[0]);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatsByArgumentIndex() {
+        emf.setFormatsByArgumentIndex(new Format[0]);
+    }
+}
+```
+
+### Explanation:
+- **Constructors**: We test all four constructors to ensure they initialize the object correctly with different combinations of parameters.
+- **applyPattern**: We test `applyPattern` with a simple pattern, a pattern with a custom format, and an invalid format to ensure it behaves as expected.
+- **equals and hashCode**: We test the `equals` and `hashCode` methods to ensure they work correctly for equal and unequal objects.
+- **Unsupported Operations**: We test that the unsupported operations throw `UnsupportedOperationException` as expected.
+
+This test suite should cover the main functionalities of the `ExtendedMessageFormat` class.

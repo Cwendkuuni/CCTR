@@ -1,0 +1,130 @@
+To create a comprehensive JUnit 4 test suite for the `WhoIS` class, we need to focus on testing the functionality of its methods, particularly those that involve user interaction and network operations. Below is a test suite that covers the main functionalities of the `WhoIS` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.net.Socket;
+import javax.swing.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+public class WhoISTest {
+
+    private WhoIS whoIS;
+
+    @Before
+    public void setUp() {
+        whoIS = new WhoIS();
+    }
+
+    @Test
+    public void testInitialValues() {
+        assertEquals("APNIC", whoIS.WHOIS_NAME);
+        assertEquals("whois.apnic.net", whoIS.WHOIS_ADDRESS);
+        assertEquals(43, whoIS.WHOIS_PORT);
+    }
+
+    @Test
+    public void testReset() {
+        whoIS.queryTextField.setText("Test Query");
+        whoIS.lowercaseD.setSelected(true);
+        whoIS.inverseQueries.setSelectedIndex(1);
+        whoIS.miscList.setSelectedIndex(1);
+
+        whoIS.reset();
+
+        assertEquals("", whoIS.queryTextField.getText());
+        assertTrue(whoIS.resetRadioButton.isSelected());
+        assertFalse(whoIS.lowercaseD.isSelected());
+        assertEquals(0, whoIS.inverseQueries.getSelectedIndex());
+        assertEquals(0, whoIS.miscList.getSelectedIndex());
+    }
+
+    @Test
+    public void testGetQuery() {
+        whoIS.queryTextField.setText("Test Query");
+        whoIS.lowercaseL.setSelected(true);
+        whoIS.inverseQueries.setSelectedIndex(1); // Assuming "admin-c" is at index 1
+
+        String expectedQuery = "-i admin-c -l Test Query";
+        assertEquals(expectedQuery, whoIS.getQuery());
+    }
+
+    @Test
+    public void testStartQueryWithEmptyQuery() {
+        whoIS.queryTextField.setText("");
+        whoIS.startQuery();
+
+        // Verify that an error dialog is shown
+        // This requires a mock or spy on JOptionPane
+        JOptionPane mockPane = mock(JOptionPane.class);
+        doNothing().when(mockPane).showMessageDialog(any(), anyString(), anyString(), anyInt());
+        whoIS.displayError("No Query Detected");
+        verify(mockPane).showMessageDialog(any(), eq("No Query Detected"), eq("Error"), eq(JOptionPane.ERROR_MESSAGE));
+    }
+
+    @Test
+    public void testStartQueryWithValidQuery() {
+        whoIS.queryTextField.setText("Test Query");
+        whoIS.lowercaseL.setSelected(true);
+
+        // Mock the network interaction
+        try {
+            Socket mockSocket = mock(Socket.class);
+            whenNew(Socket.class).withArguments(whoIS.WHOIS_ADDRESS, whoIS.WHOIS_PORT).thenReturn(mockSocket);
+
+            whoIS.startQuery();
+
+            // Verify that the query method is called
+            verify(mockSocket).getOutputStream();
+            verify(mockSocket).getInputStream();
+        } catch (Exception e) {
+            fail("Exception should not be thrown");
+        }
+    }
+
+    @Test
+    public void testActionPerformedQueryButton() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(whoIS.queryButton);
+
+        whoIS.actionPerformed(mockEvent);
+
+        // Verify that startQuery is called
+        // This requires a spy on the whoIS object
+        WhoIS spyWhoIS = Mockito.spy(whoIS);
+        spyWhoIS.actionPerformed(mockEvent);
+        verify(spyWhoIS).startQuery();
+    }
+
+    @Test
+    public void testActionPerformedResetButton() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(whoIS.resetButton);
+
+        whoIS.actionPerformed(mockEvent);
+
+        // Verify that reset is called
+        WhoIS spyWhoIS = Mockito.spy(whoIS);
+        spyWhoIS.actionPerformed(mockEvent);
+        verify(spyWhoIS).reset();
+    }
+}
+```
+
+### Explanation:
+- **Initial Values Test**: Verifies that the initial values of the `WhoIS` object are set correctly.
+- **Reset Test**: Ensures that the `reset` method clears the input fields and resets selections.
+- **Get Query Test**: Checks if the `getQuery` method constructs the query string correctly based on user selections.
+- **Start Query Tests**: 
+  - One test checks if an error dialog is shown when the query is empty.
+  - Another test mocks network interactions to verify that the query is sent correctly.
+- **Action Performed Tests**: 
+  - Verifies that the correct methods are called when the query and reset buttons are pressed.
+
+Note: The test suite uses Mockito for mocking and spying on objects. Some parts of the test suite, such as network interactions, may require additional setup or libraries like PowerMockito to mock constructors or static methods.

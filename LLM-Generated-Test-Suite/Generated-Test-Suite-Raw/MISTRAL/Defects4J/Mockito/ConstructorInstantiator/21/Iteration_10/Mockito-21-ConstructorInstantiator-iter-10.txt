@@ -1,0 +1,72 @@
+```java
+package org.mockito.internal.creation.instance;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.internal.creation.instance.InstantationException;
+
+import static org.junit.Assert.*;
+
+public class ConstructorInstantiatorTest {
+
+    private ConstructorInstantiator constructorInstantiator;
+    private ConstructorInstantiator constructorInstantiatorWithOuterClass;
+    private OuterClass outerClassInstance;
+
+    @Before
+    public void setUp() {
+        constructorInstantiator = new ConstructorInstantiator(null);
+        outerClassInstance = new OuterClass();
+        constructorInstantiatorWithOuterClass = new ConstructorInstantiator(outerClassInstance);
+    }
+
+    @Test
+    public void testNewInstanceWithNoArgConstructor() {
+        ClassWithNoArgConstructor instance = constructorInstantiator.newInstance(ClassWithNoArgConstructor.class);
+        assertNotNull(instance);
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNewInstanceWithNoArgConstructorThrowsException() {
+        constructorInstantiator.newInstance(ClassWithNoNoArgConstructor.class);
+    }
+
+    @Test
+    public void testNewInstanceWithOuterClass() {
+        ClassWithOuterClass instance = constructorInstantiatorWithOuterClass.newInstance(ClassWithOuterClass.class);
+        assertNotNull(instance);
+        assertEquals(outerClassInstance, instance.getOuterClass());
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNewInstanceWithOuterClassThrowsException() {
+        constructorInstantiatorWithOuterClass.newInstance(ClassWithNoOuterClassConstructor.class);
+    }
+
+    public static class ClassWithNoArgConstructor {
+        public ClassWithNoArgConstructor() {}
+    }
+
+    public static class ClassWithNoNoArgConstructor {
+        public ClassWithNoNoArgConstructor(String arg) {}
+    }
+
+    public static class OuterClass {}
+
+    public static class ClassWithOuterClass {
+        private final OuterClass outerClass;
+
+        public ClassWithOuterClass(OuterClass outerClass) {
+            this.outerClass = outerClass;
+        }
+
+        public OuterClass getOuterClass() {
+            return outerClass;
+        }
+    }
+
+    public static class ClassWithNoOuterClassConstructor {
+        public ClassWithNoOuterClassConstructor() {}
+    }
+}
+```

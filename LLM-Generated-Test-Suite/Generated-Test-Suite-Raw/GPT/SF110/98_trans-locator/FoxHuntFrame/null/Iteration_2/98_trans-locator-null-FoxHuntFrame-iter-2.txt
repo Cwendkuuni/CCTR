@@ -1,0 +1,127 @@
+To create a comprehensive JUnit 4 test suite for the `FoxHuntFrame` class, we need to focus on testing the public methods and any significant interactions within the class. The main methods to test are `addPoint()` and `actionPerformed()`, as well as ensuring that the GUI components are initialized correctly. Since the class heavily relies on GUI components and interactions, we will use a mocking framework like Mockito to simulate user interactions and verify method calls.
+
+Below is a JUnit 4 test suite for the `FoxHuntFrame` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame foxHuntFrame;
+    private JTextField thetaMock;
+    private JTextField latMock;
+    private JTextField lonMock;
+    private HuntDisplay displayMock;
+    private FoxTableModel posModelMock;
+
+    @Before
+    public void setUp() {
+        foxHuntFrame = new FoxHuntFrame();
+
+        // Mocking components
+        thetaMock = mock(JTextField.class);
+        latMock = mock(JTextField.class);
+        lonMock = mock(JTextField.class);
+        displayMock = mock(HuntDisplay.class);
+        posModelMock = mock(FoxHuntFrame.FoxTableModel.class);
+
+        // Injecting mocks
+        foxHuntFrame.theta = thetaMock;
+        foxHuntFrame.lat = latMock;
+        foxHuntFrame.lon = lonMock;
+        foxHuntFrame.display = displayMock;
+        foxHuntFrame.posModel = posModelMock;
+    }
+
+    @Test
+    public void testAddPoint() {
+        when(thetaMock.getText()).thenReturn("45");
+        when(latMock.getText()).thenReturn("34.0522");
+        when(lonMock.getText()).thenReturn("-118.2437");
+
+        foxHuntFrame.addPoint();
+
+        ArgumentCaptor<TrigPoint> pointCaptor = ArgumentCaptor.forClass(TrigPoint.class);
+        verify(displayMock, times(1)).addPoint(pointCaptor.capture());
+
+        TrigPoint capturedPoint = pointCaptor.getValue();
+        assertEquals(34.0522, capturedPoint.getY(), 0.0001);
+        assertEquals(-118.2437, capturedPoint.getX(), 0.0001);
+        assertEquals(45, capturedPoint.getAngle());
+    }
+
+    @Test
+    public void testActionPerformed() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        foxHuntFrame.actionPerformed(mockEvent);
+
+        verify(thetaMock, times(1)).getText();
+        verify(latMock, times(1)).getText();
+        verify(lonMock, times(1)).getText();
+    }
+
+    @Test
+    public void testLoadLandmarks_FileNotFound() {
+        // Ensure the file does not exist
+        File file = new File("./landmarks.cfg");
+        if (file.exists()) {
+            file.delete();
+        }
+
+        // Capture the error dialog
+        foxHuntFrame.loadLandmarks();
+
+        // Verify that the error method was called
+        // Note: This requires refactoring the error method to be testable
+    }
+
+    @Test
+    public void testLoadLandmarks_FileExists() throws IOException {
+        // Create a temporary landmarks.cfg file
+        File file = new File("./landmarks.cfg");
+        FileWriter writer = new FileWriter(file);
+        writer.write("NUM4\n");
+        writer.write("FILEicon1.png\n");
+        writer.write("LAT34.0522\n");
+        writer.write("LON-118.2437\n");
+        writer.close();
+
+        foxHuntFrame.loadLandmarks();
+
+        // Verify that landmarks were added
+        verify(displayMock, times(1)).addLandMark(any(Landmark.class));
+
+        // Clean up
+        file.delete();
+    }
+
+    @Test
+    public void testFoxTableModel() {
+        FoxHuntFrame.FoxTableModel model = foxHuntFrame.new FoxTableModel();
+
+        assertEquals(2, model.getColumnCount());
+        assertEquals("Lattitude", model.getColumnName(0));
+        assertEquals("Longitude", model.getColumnName(1));
+    }
+}
+```
+
+### Key Points:
+- **Mocking**: We use Mockito to mock GUI components and simulate user interactions.
+- **Testing `addPoint()`**: We verify that the method correctly parses input and interacts with other components.
+- **Testing `actionPerformed()`**: We ensure that it triggers the `addPoint()` method.
+- **Testing `loadLandmarks()`**: We handle both the presence and absence of the configuration file.
+- **Testing `FoxTableModel`**: We verify the table model's behavior and column names.
+
+This test suite provides a foundation for testing the `FoxHuntFrame` class. Note that some methods, like `error()`, may require refactoring to be fully testable.

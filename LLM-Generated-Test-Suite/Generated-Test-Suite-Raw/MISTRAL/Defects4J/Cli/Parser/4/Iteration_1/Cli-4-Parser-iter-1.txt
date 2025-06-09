@@ -1,0 +1,104 @@
+```java
+import org.apache.commons.cli.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.Properties;
+
+public class ParserTest {
+
+    private Parser parser;
+    private Options options;
+
+    @Before
+    public void setUp() {
+        parser = new Parser() {
+            @Override
+            protected String[] flatten(Options opts, String[] arguments, boolean stopAtNonOption) {
+                return arguments;
+            }
+        };
+        options = new Options();
+    }
+
+    @Test
+    public void testParse() throws ParseException {
+        options.addOption("a", false, "Option a");
+        String[] args = {"-a"};
+        CommandLine cmd = parser.parse(options, args);
+        assertTrue(cmd.hasOption("a"));
+    }
+
+    @Test
+    public void testParseWithProperties() throws ParseException {
+        options.addOption("a", false, "Option a");
+        Properties properties = new Properties();
+        properties.setProperty("a", "true");
+        String[] args = {};
+        CommandLine cmd = parser.parse(options, args, properties);
+        assertTrue(cmd.hasOption("a"));
+    }
+
+    @Test
+    public void testParseWithStopAtNonOption() throws ParseException {
+        options.addOption("a", false, "Option a");
+        String[] args = {"-a", "arg1"};
+        CommandLine cmd = parser.parse(options, args, true);
+        assertTrue(cmd.hasOption("a"));
+        assertEquals(1, cmd.getArgList().size());
+        assertEquals("arg1", cmd.getArgList().get(0));
+    }
+
+    @Test
+    public void testParseWithPropertiesAndStopAtNonOption() throws ParseException {
+        options.addOption("a", false, "Option a");
+        Properties properties = new Properties();
+        properties.setProperty("a", "true");
+        String[] args = {"arg1"};
+        CommandLine cmd = parser.parse(options, args, properties, true);
+        assertTrue(cmd.hasOption("a"));
+        assertEquals(1, cmd.getArgList().size());
+        assertEquals("arg1", cmd.getArgList().get(0));
+    }
+
+    @Test(expected = MissingOptionException.class)
+    public void testCheckRequiredOptions() throws ParseException {
+        options.addOption(Option.builder("a").required().build());
+        String[] args = {};
+        parser.parse(options, args);
+    }
+
+    @Test(expected = UnrecognizedOptionException.class)
+    public void testProcessOptionWithUnrecognizedOption() throws ParseException {
+        String[] args = {"-b"};
+        parser.parse(options, args);
+    }
+
+    @Test(expected = MissingArgumentException.class)
+    public void testProcessArgsWithMissingArgument() throws ParseException {
+        options.addOption(Option.builder("a").hasArg().build());
+        String[] args = {"-a"};
+        parser.parse(options, args);
+    }
+
+    @Test
+    public void testProcessProperties() throws ParseException {
+        options.addOption("a", false, "Option a");
+        Properties properties = new Properties();
+        properties.setProperty("a", "true");
+        String[] args = {};
+        CommandLine cmd = parser.parse(options, args, properties);
+        assertTrue(cmd.hasOption("a"));
+    }
+
+    @Test
+    public void testProcessPropertiesWithInvalidValue() throws ParseException {
+        options.addOption("a", false, "Option a");
+        Properties properties = new Properties();
+        properties.setProperty("a", "invalid");
+        String[] args = {};
+        CommandLine cmd = parser.parse(options, args, properties);
+        assertFalse(cmd.hasOption("a"));
+    }
+}
+```

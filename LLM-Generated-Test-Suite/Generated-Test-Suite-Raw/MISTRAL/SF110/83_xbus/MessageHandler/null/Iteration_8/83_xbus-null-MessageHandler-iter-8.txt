@@ -1,0 +1,112 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `MessageHandler` class. This test suite covers the main methods and edge cases.
+
+```java
+package net.sf.xbus.base.core;
+
+import net.sf.xbus.base.core.trace.Trace;
+import net.sf.xbus.base.core.strings.XStringSupport;
+import net.sf.xbus.base.core.config.Constants;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+
+public class MessageHandlerTest {
+
+    private MessageHandler messageHandler;
+    private static final String BASENAME = "testMessages";
+    private static final String TEST_DIR = "test/resources/";
+
+    @Before
+    public void setUp() {
+        // Ensure the test directory exists and contains the necessary properties files
+        File testDir = new File(TEST_DIR);
+        if (!testDir.exists()) {
+            testDir.mkdirs();
+        }
+
+        // Create a test properties file
+        File testFile = new File(TEST_DIR + BASENAME + "_en_US.properties");
+        if (!testFile.exists()) {
+            try (FileInputStream fis = new FileInputStream(testFile)) {
+                Properties props = new Properties();
+                props.setProperty("testKey", "This is a test message with $1$ and $2$");
+                props.store(new java.io.FileOutputStream(testFile), null);
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+        }
+
+        messageHandler = MessageHandler.getInstance(BASENAME);
+    }
+
+    @Test
+    public void testGetMessage() {
+        List<String> params = Arrays.asList("param1", "param2");
+        String result = messageHandler.getMessage("testKey", params);
+        assertEquals("This is a test message with param1 and param2", result);
+    }
+
+    @Test
+    public void testGetMessageOptional() {
+        List<String> params = Arrays.asList("param1", "param2");
+        String result = messageHandler.getMessageOptional("testKey", params);
+        assertEquals("This is a test message with param1 and param2", result);
+    }
+
+    @Test
+    public void testGetMessageOptionalNullParams() {
+        String result = messageHandler.getMessageOptional("testKey", null);
+        assertEquals("This is a test message with $1$ and $2$", result);
+    }
+
+    @Test
+    public void testGetMessageOptionalKeyNotFound() {
+        String result = messageHandler.getMessageOptional("nonExistentKey", null);
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetMessageKeyNotFound() {
+        String result = messageHandler.getMessage("nonExistentKey", null);
+        assertEquals("Key: nonExistentKey not found in message file", result);
+    }
+
+    @Test
+    public void testGetInstance() {
+        MessageHandler instance1 = MessageHandler.getInstance(BASENAME);
+        MessageHandler instance2 = MessageHandler.getInstance(BASENAME);
+        assertSame(instance1, instance2);
+    }
+
+    @Test
+    public void testAddMessages() {
+        // This test assumes the addMessages method is indirectly tested through getMessage and getMessageOptional
+        // since addMessages is private and called during instance creation.
+        List<String> params = Arrays.asList("param1", "param2");
+        String result = messageHandler.getMessage("testKey", params);
+        assertEquals("This is a test message with param1 and param2", result);
+    }
+
+    @Test
+    public void testMessagesFilter() {
+        MessageHandler.MessagesFilter filter = new MessageHandler.MessagesFilter(BASENAME, "_en_US.properties");
+        assertTrue(filter.accept(new File(TEST_DIR), BASENAME + "_en_US.properties"));
+        assertFalse(filter.accept(new File(TEST_DIR), "wrongPrefix_en_US.properties"));
+        assertFalse(filter.accept(new File(TEST_DIR), BASENAME + "_wrongPostfix.properties"));
+    }
+}
+```
+
+This test suite includes:
+- Setup method to initialize the `MessageHandler` instance and create necessary test files.
+- Tests for `getMessage` and `getMessageOptional` methods, including cases with and without parameters.
+- Tests for handling non-existent keys.
+- Test to ensure the singleton pattern is correctly implemented.
+- Indirect test for the `addMessages` method through other methods.
+- Test for the `MessagesFilter` inner class.
+
+Ensure that the test directory (`test/resources/`) and the properties file (`testMessages_en_US.properties`) are correctly set up in your test environment for these tests to run successfully.

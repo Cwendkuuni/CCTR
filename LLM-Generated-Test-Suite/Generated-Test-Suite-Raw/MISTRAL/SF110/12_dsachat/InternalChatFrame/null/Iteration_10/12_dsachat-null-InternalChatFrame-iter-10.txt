@@ -1,0 +1,148 @@
+```java
+package dsachat.client.gui;
+
+import org.junit.Before;
+import org.junit.Test;
+import javax.swing.*;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.StyledDocument;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+import static org.junit.Assert.*;
+
+public class InternalChatFrameTest {
+
+    private InternalChatFrame internalChatFrame;
+    private MainFrame mockParent;
+
+    @Before
+    public void setUp() {
+        mockParent = new MainFrame(); // Assuming MainFrame has a default constructor
+        internalChatFrame = new InternalChatFrame(mockParent);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(internalChatFrame);
+        assertEquals("Chat", internalChatFrame.getTitle());
+        assertTrue(internalChatFrame.isClosable());
+        assertTrue(internalChatFrame.isResizable());
+        assertTrue(internalChatFrame.isIconifiable());
+        assertTrue(internalChatFrame.isMaximizable());
+    }
+
+    @Test
+    public void testCreateGUI() {
+        assertNotNull(internalChatFrame.list);
+        assertNotNull(internalChatFrame.listModel);
+        assertNotNull(internalChatFrame.showTxt);
+        assertNotNull(internalChatFrame.txtInput);
+        assertNotNull(internalChatFrame.listPop);
+        assertNotNull(internalChatFrame.txtPop);
+    }
+
+    @Test
+    public void testAddText() {
+        internalChatFrame.addText("System Message");
+        String chatLog = internalChatFrame.getChatlog();
+        assertTrue(chatLog.contains("System Message"));
+
+        internalChatFrame.addText("User: Message");
+        chatLog = internalChatFrame.getChatlog();
+        assertTrue(chatLog.contains("User: Message"));
+    }
+
+    @Test
+    public void testAddStylesToDocument() {
+        StyledDocument doc = internalChatFrame.showTxt.getStyledDocument();
+        internalChatFrame.addStylesToDocument(doc);
+
+        assertNotNull(doc.getStyle("regular"));
+        assertNotNull(doc.getStyle("italic"));
+        assertNotNull(doc.getStyle("bold"));
+        assertNotNull(doc.getStyle("bold-italic"));
+        assertNotNull(doc.getStyle("name"));
+        assertNotNull(doc.getStyle("system"));
+        assertNotNull(doc.getStyle("small"));
+        assertNotNull(doc.getStyle("large"));
+    }
+
+    @Test
+    public void testChangeStyle() {
+        internalChatFrame.addStylesToDocument(internalChatFrame.showTxt.getStyledDocument());
+        internalChatFrame.changeStyle(12, Color.RED, true, true, "testStyle");
+
+        Style style = internalChatFrame.showTxt.getStyledDocument().getStyle("testStyle");
+        assertEquals(Color.RED, StyleConstants.getForeground(style));
+        assertTrue(StyleConstants.isBold(style));
+        assertTrue(StyleConstants.isItalic(style));
+    }
+
+    @Test
+    public void testAddUser() {
+        internalChatFrame.addUser("TestUser");
+        assertEquals("TestUser", internalChatFrame.listModel.getElementAt(0));
+    }
+
+    @Test
+    public void testDeleteUser() {
+        internalChatFrame.addUser("TestUser");
+        internalChatFrame.deleteUser("TestUser");
+        assertEquals(0, internalChatFrame.listModel.getSize());
+    }
+
+    @Test
+    public void testGetUserlist() {
+        internalChatFrame.addUser("User1");
+        internalChatFrame.addUser("User2");
+
+        String[] userList = internalChatFrame.getUserlist();
+        assertEquals(2, userList.length);
+        assertEquals("User1", userList[0]);
+        assertEquals("User2", userList[1]);
+    }
+
+    @Test
+    public void testActionPerformed() {
+        internalChatFrame.addUser("TestUser");
+        internalChatFrame.list.setSelectedValue("TestUser", true);
+
+        ActionEvent chooseColorEvent = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "chooseColor");
+        internalChatFrame.actionPerformed(chooseColorEvent);
+
+        ActionEvent bgColorEvent = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "bgColor");
+        internalChatFrame.actionPerformed(bgColorEvent);
+
+        ActionEvent whisperEvent = new ActionEvent(this, ActionEvent.ACTION_PERFORMED, "whisper");
+        internalChatFrame.actionPerformed(whisperEvent);
+
+        assertEquals("/w TestUser ", internalChatFrame.txtInput.getText());
+    }
+
+    @Test
+    public void testMouseEvents() {
+        MouseEvent mouseEvent = new MouseEvent(internalChatFrame.list, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0, 10, 10, 1, false);
+        internalChatFrame.mousePressed(mouseEvent);
+
+        mouseEvent = new MouseEvent(internalChatFrame.showTxt, MouseEvent.MOUSE_RELEASED, System.currentTimeMillis(), 0, 10, 10, 1, false);
+        internalChatFrame.mouseReleased(mouseEvent);
+    }
+
+    @Test
+    public void testMaybeShowPopup() {
+        MouseEvent mouseEvent = new MouseEvent(internalChatFrame.list, MouseEvent.MOUSE_PRESSED, System.currentTimeMillis(), 0, 10, 10, 1, false, MouseEvent.BUTTON3);
+        internalChatFrame.maybeShowPopup(mouseEvent);
+
+        mouseEvent = new MouseEvent(internalChatFrame.showTxt, MouseEvent.MOUSE_RELEASED, System.currentTimeMillis(), 0, 10, 10, 1, false, MouseEvent.BUTTON3);
+        internalChatFrame.maybeShowPopup(mouseEvent);
+    }
+
+    @Test
+    public void testGetChatlog() {
+        internalChatFrame.addText("Test Message");
+        String chatLog = internalChatFrame.getChatlog();
+        assertTrue(chatLog.contains("Test Message"));
+    }
+}
+```

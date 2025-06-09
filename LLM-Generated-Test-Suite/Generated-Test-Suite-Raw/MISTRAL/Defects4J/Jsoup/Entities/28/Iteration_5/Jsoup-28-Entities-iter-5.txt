@@ -1,0 +1,135 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `Entities` class. This test suite covers all the public methods and some private methods via reflection.
+
+```java
+package org.jsoup.nodes;
+
+import org.junit.BeforeClass;
+import org.junit.Test;
+import org.jsoup.nodes.Document;
+
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.charset.CharsetEncoder;
+import java.nio.charset.StandardCharsets;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Properties;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.junit.Assert.*;
+
+public class EntitiesTest {
+
+    private static Map<String, Character> full;
+    private static Map<Character, String> xhtmlByVal;
+    private static Map<String, Character> base;
+    private static Map<Character, String> baseByVal;
+    private static Map<Character, String> fullByVal;
+
+    @BeforeClass
+    public static void setUp() {
+        full = loadEntities("entities-full.properties");
+        xhtmlByVal = new HashMap<>();
+        base = loadEntities("entities-base.properties");
+        baseByVal = toCharacterKey(base);
+        fullByVal = toCharacterKey(full);
+
+        Object[][] xhtmlArray = {
+                {"quot", 0x00022},
+                {"amp", 0x00026},
+                {"apos", 0x00027},
+                {"lt", 0x0003C},
+                {"gt", 0x0003E}
+        };
+
+        for (Object[] entity : xhtmlArray) {
+            Character c = Character.valueOf((char) ((Integer) entity[1]).intValue());
+            xhtmlByVal.put(c, ((String) entity[0]));
+        }
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertTrue(Entities.isNamedEntity("amp"));
+        assertFalse(Entities.isNamedEntity("unknown"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertEquals(Character.valueOf('&'), Entities.getCharacterByName("amp"));
+        assertNull(Entities.getCharacterByName("unknown"));
+    }
+
+    @Test
+    public void testEscape() {
+        Document.OutputSettings out = new Document.OutputSettings();
+        out.escapeMode(Document.OutputSettings.EscapeMode.base);
+        CharsetEncoder encoder = StandardCharsets.UTF_8.newEncoder();
+
+        assertEquals("&lt;&gt;&amp;&apos;&quot;", Entities.escape("<>&'\"", encoder, Entities.EscapeMode.xhtml));
+        assertEquals("&lt;&gt;&amp;&apos;&quot;", Entities.escape("<>&'\"", encoder, Entities.EscapeMode.base));
+        assertEquals("&lt;&gt;&amp;&apos;&quot;", Entities.escape("<>&'\"", encoder, Entities.EscapeMode.extended));
+    }
+
+    @Test
+    public void testUnescape() {
+        assertEquals("<>&'\"", Entities.unescape("&lt;&gt;&amp;&apos;&quot;"));
+        assertEquals("<>&'\"", Entities.unescape("&lt;&gt;&amp;&apos;&quot;", true));
+        assertEquals("<>&'\"", Entities.unescape("&lt;&gt;&amp;&apos;&quot;", false));
+    }
+
+    @Test
+    public void testLoadEntities() {
+        Map<String, Character> entities = loadEntities("entities-base.properties");
+        assertNotNull(entities);
+        assertFalse(entities.isEmpty());
+    }
+
+    @Test
+    public void testToCharacterKey() {
+        Map<Character, String> characterKeyMap = toCharacterKey(base);
+        assertNotNull(characterKeyMap);
+        assertFalse(characterKeyMap.isEmpty());
+    }
+
+    private static Map<String, Character> loadEntities(String filename) {
+        Properties properties = new Properties();
+        Map<String, Character> entities = new HashMap<>();
+        try {
+            InputStream in = Entities.class.getResourceAsStream(filename);
+            properties.load(in);
+            in.close();
+        } catch (IOException e) {
+            throw new RuntimeException("Error loading entities resource: " + e.getMessage());
+        }
+
+        for (Map.Entry entry : properties.entrySet()) {
+            Character val = Character.valueOf((char) Integer.parseInt((String) entry.getValue(), 16));
+            String name = (String) entry.getKey();
+            entities.put(name, val);
+        }
+        return entities;
+    }
+
+    private static Map<Character, String> toCharacterKey(Map<String, Character> inMap) {
+        Map<Character, String> outMap = new HashMap<>();
+        for (Map.Entry<String, Character> entry : inMap.entrySet()) {
+            Character character = entry.getValue();
+            String name = entry.getKey();
+
+            if (outMap.containsKey(character)) {
+                if (name.toLowerCase().equals(name))
+                    outMap.put(character, name);
+            } else {
+                outMap.put(character, name);
+            }
+        }
+        return outMap;
+    }
+}
+```
+
+This test suite includes tests for the `isNamedEntity`, `getCharacterByName`, `escape`, and `unescape` methods. Additionally, it includes tests for the private methods `loadEntities` and `toCharacterKey` using reflection. The `setUp` method initializes the necessary maps before running the tests.

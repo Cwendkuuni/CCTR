@@ -1,0 +1,103 @@
+```java
+import org.apache.commons.collections4.Equator;
+import org.apache.commons.collections4.functors.DefaultEquator;
+import org.apache.commons.collections4.sequence.EditScript;
+import org.apache.commons.collections4.sequence.SequencesComparator;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class SequencesComparatorTest {
+
+    private List<String> sequence1;
+    private List<String> sequence2;
+    private SequencesComparator<String> comparator;
+
+    @Before
+    public void setUp() {
+        sequence1 = Arrays.asList("a", "b", "c", "d");
+        sequence2 = Arrays.asList("a", "c", "d", "e");
+        comparator = new SequencesComparator<>(sequence1, sequence2);
+    }
+
+    @Test
+    public void testConstructorWithDefaultEquator() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2);
+        assertNotNull(comparator);
+        assertEquals(DefaultEquator.defaultEquator(), comparator.getEquator());
+    }
+
+    @Test
+    public void testConstructorWithCustomEquator() {
+        Equator<String> customEquator = new Equator<String>() {
+            @Override
+            public boolean equate(String o1, String o2) {
+                return o1.equalsIgnoreCase(o2);
+            }
+
+            @Override
+            public int hash(String o) {
+                return o.hashCode();
+            }
+        };
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2, customEquator);
+        assertNotNull(comparator);
+        assertEquals(customEquator, comparator.getEquator());
+    }
+
+    @Test
+    public void testGetScript() {
+        EditScript<String> script = comparator.getScript();
+        assertNotNull(script);
+        assertEquals(5, script.size());
+        assertEquals("a", script.get(0).getObject());
+        assertEquals("b", script.get(1).getObject());
+        assertEquals("c", script.get(2).getObject());
+        assertEquals("d", script.get(3).getObject());
+        assertEquals("e", script.get(4).getObject());
+    }
+
+    @Test
+    public void testBuildSnake() {
+        SequencesComparator<String>.Snake snake = comparator.buildSnake(0, 0, 4, 4);
+        assertNotNull(snake);
+        assertEquals(0, snake.getStart());
+        assertEquals(1, snake.getEnd());
+        assertEquals(0, snake.getDiag());
+    }
+
+    @Test
+    public void testGetMiddleSnake() {
+        SequencesComparator<String>.Snake snake = comparator.getMiddleSnake(0, 4, 0, 4);
+        assertNotNull(snake);
+        assertEquals(0, snake.getStart());
+        assertEquals(1, snake.getEnd());
+        assertEquals(0, snake.getDiag());
+    }
+
+    @Test
+    public void testBuildScript() {
+        EditScript<String> script = new EditScript<>();
+        comparator.buildScript(0, 4, 0, 4, script);
+        assertNotNull(script);
+        assertEquals(5, script.size());
+        assertEquals("a", script.get(0).getObject());
+        assertEquals("b", script.get(1).getObject());
+        assertEquals("c", script.get(2).getObject());
+        assertEquals("d", script.get(3).getObject());
+        assertEquals("e", script.get(4).getObject());
+    }
+
+    @Test
+    public void testSnakeClass() {
+        SequencesComparator<String>.Snake snake = new SequencesComparator<String>.Snake(0, 1, 0);
+        assertEquals(0, snake.getStart());
+        assertEquals(1, snake.getEnd());
+        assertEquals(0, snake.getDiag());
+    }
+}
+```

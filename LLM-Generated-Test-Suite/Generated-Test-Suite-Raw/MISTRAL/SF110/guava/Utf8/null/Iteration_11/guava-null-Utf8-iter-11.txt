@@ -1,0 +1,58 @@
+```java
+package com.google.common.base;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+public class Utf8Test {
+
+    @Test
+    public void testEncodedLength() {
+        assertEquals(5, Utf8.encodedLength("hello"));
+        assertEquals(7, Utf8.encodedLength("世界"));
+        assertEquals(1, Utf8.encodedLength("a"));
+        assertEquals(2, Utf8.encodedLength("€"));
+
+        try {
+            Utf8.encodedLength("𝌆"); // This is a surrogate pair
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Unpaired surrogate"));
+        }
+
+        try {
+            Utf8.encodedLength(new StringBuilder().appendCodePoint(0x10FFFF).appendCodePoint(0x10FFFF).toString());
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("UTF-8 length does not fit in int"));
+        }
+    }
+
+    @Test
+    public void testIsWellFormed() {
+        byte[] wellFormedBytes = "hello".getBytes();
+        assertTrue(Utf8.isWellFormed(wellFormedBytes));
+
+        byte[] wellFormedBytesWithOffset = "hello world".getBytes();
+        assertTrue(Utf8.isWellFormed(wellFormedBytesWithOffset, 6, 5));
+
+        byte[] malformedBytes = {(byte) 0xC0, (byte) 0x80}; // Overlong encoding
+        assertFalse(Utf8.isWellFormed(malformedBytes));
+
+        byte[] malformedBytesWithOffset = {(byte) 0x48, (byte) 0x65, (byte) 0x6C, (byte) 0x6C, (byte) 0x6F, (byte) 0xC0, (byte) 0x80};
+        assertFalse(Utf8.isWellFormed(malformedBytesWithOffset, 5, 2));
+    }
+
+    @Test
+    public void testIsWellFormedSlowPath() {
+        byte[] wellFormedBytes = "hello".getBytes();
+        assertTrue(Utf8.isWellFormedSlowPath(wellFormedBytes, 0, wellFormedBytes.length));
+
+        byte[] malformedBytes = {(byte) 0xC0, (byte) 0x80}; // Overlong encoding
+        assertFalse(Utf8.isWellFormedSlowPath(malformedBytes, 0, malformedBytes.length));
+
+        byte[] malformedBytesWithOffset = {(byte) 0x48, (byte) 0x65, (byte) 0x6C, (byte) 0x6C, (byte) 0x6F, (byte) 0xC0, (byte) 0x80};
+        assertFalse(Utf8.isWellFormedSlowPath(malformedBytesWithOffset, 5, 2));
+    }
+}
+```

@@ -1,0 +1,110 @@
+To create a comprehensive JUnit 4 test suite for the `Menu` class, we need to test all public methods and constructors. Since the `Menu` class interacts with a `GUI` object and performs file operations, we'll need to mock these dependencies. We'll use the Mockito framework for mocking.
+
+Below is the JUnit 4 test suite for the `Menu` class:
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class MenuTest {
+
+    @Mock
+    private GUI mockGUI;
+
+    @Mock
+    private File mockFile;
+
+    @Mock
+    private BufferedReader mockBufferedReader;
+
+    @Mock
+    private BufferedWriter mockBufferedWriter;
+
+    @Mock
+    private Process mockProcess;
+
+    @InjectMocks
+    private Menu menu;
+
+    @Before
+    public void setUp() {
+        when(mockGUI.strOutputDir).thenReturn("outputDir");
+        when(mockGUI.txtTextFile).thenReturn(mockFile);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        Menu menu = new Menu();
+        assertNotNull(menu);
+    }
+
+    @Test
+    public void testConstructorWithParameters() {
+        Menu menu = new Menu("Title", "TextFilePath", true, mockGUI);
+        assertNotNull(menu);
+    }
+
+    @Test
+    public void testConstructorWithAllParameters() {
+        Menu menu = new Menu("Title", "PicPath", "AudioPath", "TextFilePath", true, mockGUI);
+        assertNotNull(menu);
+    }
+
+    @Test
+    public void testInit() throws InterruptedException {
+        when(mockGUI.ErrorCheck(anyString())).thenReturn(false);
+        assertFalse(menu.init());
+    }
+
+    @Test
+    public void testRun() {
+        menu.run();
+        // Since run() calls DVDMainMenu(), we can verify interactions within DVDMainMenu
+        verify(mockGUI, atLeastOnce()).lblAuthor.setEnabled(true);
+    }
+
+    @Test
+    public void testDVDMainMenu() throws Exception {
+        when(mockFile.exists()).thenReturn(true);
+        when(mockFile.isDirectory()).thenReturn(true);
+        when(mockFile.list(any(FilenameFilter.class))).thenReturn(new String[]{"video1.vob", "video2.vob"});
+        when(mockBufferedReader.readLine()).thenReturn("Title1", "Title2", "DONE", null);
+        when(mockProcess.waitFor()).thenReturn(0);
+
+        menu.DVDMainMenu();
+
+        verify(mockGUI, atLeastOnce()).lblAuthor.setEnabled(true);
+        verify(mockGUI, atLeastOnce()).MessageBox(anyString(), anyInt());
+    }
+
+    @Test
+    public void testCreateXML() throws IOException {
+        when(mockFile.list(any(FilenameFilter.class))).thenReturn(new String[]{"video1.vob", "video2.vob"});
+        when(mockBufferedWriter.write(anyString())).thenReturn(null);
+
+        boolean result = menu.createXML();
+
+        assertFalse(result);
+        verify(mockBufferedWriter, atLeastOnce()).write(anyString());
+    }
+}
+```
+
+### Explanation:
+- **Mockito** is used to mock the `GUI` class and other dependencies like `File`, `BufferedReader`, `BufferedWriter`, and `Process`.
+- **setUp()**: Initializes the mock objects and sets up common behavior.
+- **Test Constructors**: Ensures that the constructors can be called without exceptions.
+- **testInit()**: Tests the `init()` method, verifying that it returns the expected result.
+- **testRun()**: Tests the `run()` method, which internally calls `DVDMainMenu()`.
+- **testDVDMainMenu()**: Tests the `DVDMainMenu()` method, verifying interactions and behavior.
+- **testCreateXML()**: Tests the `createXML()` method, ensuring it writes the expected XML structure.
+
+This test suite covers the basic functionality of the `Menu` class. Note that file operations and process executions are mocked to avoid actual file system and process interactions.

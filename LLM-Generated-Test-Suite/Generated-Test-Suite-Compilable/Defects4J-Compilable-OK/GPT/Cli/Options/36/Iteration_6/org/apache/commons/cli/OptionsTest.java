@@ -1,0 +1,161 @@
+package org.apache.commons.cli;
+
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.OptionGroup;
+import org.apache.commons.cli.Options;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Collection;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class OptionsTest {
+
+    private Options options;
+
+    @Before
+    public void setUp() {
+        options = new Options();
+    }
+
+    @Test
+    public void testAddOptionGroup() {
+        OptionGroup group = new OptionGroup();
+        Option option1 = new Option("a", "alpha", false, "Alpha option");
+        Option option2 = new Option("b", "beta", false, "Beta option");
+        group.addOption(option1);
+        group.addOption(option2);
+        group.setRequired(true);
+
+        options.addOptionGroup(group);
+
+        assertTrue(options.getOptionGroups().contains(group));
+        assertTrue(options.hasOption("a"));
+        assertTrue(options.hasOption("b"));
+        assertEquals(group, options.getOptionGroup(option1));
+        assertEquals(group, options.getOptionGroup(option2));
+    }
+
+    @Test
+    public void testAddOptionWithShortName() {
+        options.addOption("a", "Alpha option");
+
+        assertTrue(options.hasOption("a"));
+        assertFalse(options.hasLongOption("alpha"));
+        assertEquals("Alpha option", options.getOption("a").getDescription());
+    }
+
+    @Test
+    public void testAddOptionWithShortNameAndArgument() {
+        options.addOption("b", true, "Beta option");
+
+        assertTrue(options.hasOption("b"));
+        assertTrue(options.getOption("b").hasArg());
+        assertEquals("Beta option", options.getOption("b").getDescription());
+    }
+
+    @Test
+    public void testAddOptionWithShortAndLongName() {
+        options.addOption("c", "charlie", false, "Charlie option");
+
+        assertTrue(options.hasOption("c"));
+        assertTrue(options.hasLongOption("charlie"));
+        assertEquals("Charlie option", options.getOption("c").getDescription());
+    }
+
+    @Test
+    public void testGetOptions() {
+        Option option1 = new Option("a", "alpha", false, "Alpha option");
+        Option option2 = new Option("b", "beta", false, "Beta option");
+        options.addOption(option1);
+        options.addOption(option2);
+
+        Collection<Option> opts = options.getOptions();
+
+        assertTrue(opts.contains(option1));
+        assertTrue(opts.contains(option2));
+    }
+
+    @Test
+    public void testGetRequiredOptions() {
+        Option option1 = new Option("a", "alpha", false, "Alpha option");
+        option1.setRequired(true);
+        Option option2 = new Option("b", "beta", false, "Beta option");
+        options.addOption(option1);
+        options.addOption(option2);
+
+        List requiredOpts = options.getRequiredOptions();
+
+        assertTrue(requiredOpts.contains("a"));
+        assertFalse(requiredOpts.contains("b"));
+    }
+
+    @Test
+    public void testGetOption() {
+        Option option = new Option("a", "alpha", false, "Alpha option");
+        options.addOption(option);
+
+        assertEquals(option, options.getOption("a"));
+        assertEquals(option, options.getOption("alpha"));
+    }
+
+    @Test
+    public void testGetMatchingOptions() {
+        options.addOption("a", "alpha", false, "Alpha option");
+        options.addOption("b", "beta", false, "Beta option");
+        options.addOption("g", "gamma", false, "Gamma option");
+
+        List<String> matches = options.getMatchingOptions("a");
+
+        assertTrue(matches.contains("alpha"));
+        assertFalse(matches.contains("beta"));
+    }
+
+    @Test
+    public void testHasOption() {
+        options.addOption("a", "alpha", false, "Alpha option");
+
+        assertTrue(options.hasOption("a"));
+        assertTrue(options.hasOption("alpha"));
+        assertFalse(options.hasOption("b"));
+    }
+
+    @Test
+    public void testHasLongOption() {
+        options.addOption("a", "alpha", false, "Alpha option");
+
+        assertTrue(options.hasLongOption("alpha"));
+        assertFalse(options.hasLongOption("beta"));
+    }
+
+    @Test
+    public void testHasShortOption() {
+        options.addOption("a", "alpha", false, "Alpha option");
+
+        assertTrue(options.hasShortOption("a"));
+        assertFalse(options.hasShortOption("b"));
+    }
+
+    @Test
+    public void testGetOptionGroup() {
+        OptionGroup group = new OptionGroup();
+        Option option1 = new Option("a", "alpha", false, "Alpha option");
+        group.addOption(option1);
+        options.addOptionGroup(group);
+
+        assertEquals(group, options.getOptionGroup(option1));
+    }
+
+    @Test
+    public void testToString() {
+        options.addOption("a", "alpha", false, "Alpha option");
+        options.addOption("b", "beta", false, "Beta option");
+
+        String optionsString = options.toString();
+
+        assertTrue(optionsString.contains("short {a=Option[a, alpha, false, Alpha option]}"));
+        assertTrue(optionsString.contains("long {alpha=Option[a, alpha, false, Alpha option]}"));
+    }
+}

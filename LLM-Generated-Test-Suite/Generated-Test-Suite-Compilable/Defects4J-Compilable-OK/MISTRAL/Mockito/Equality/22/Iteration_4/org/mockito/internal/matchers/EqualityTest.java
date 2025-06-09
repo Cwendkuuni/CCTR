@@ -1,0 +1,74 @@
+package org.mockito.internal.matchers;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class EqualityTest {
+
+    @Test
+    public void testAreEqual_Nulls() {
+        assertTrue(Equality.areEqual(null, null));
+        assertFalse(Equality.areEqual(null, "test"));
+        assertFalse(Equality.areEqual("test", null));
+    }
+
+    @Test
+    public void testAreEqual_Objects() {
+        assertTrue(Equality.areEqual("test", "test"));
+        assertFalse(Equality.areEqual("test", "different"));
+    }
+
+    @Test
+    public void testAreEqual_Arrays() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {1, 2, 3};
+        int[] array3 = {1, 2, 4};
+
+        assertTrue(Equality.areEqual(array1, array2));
+        assertFalse(Equality.areEqual(array1, array3));
+    }
+
+    @Test
+    public void testAreEqual_DifferentTypes() {
+        assertFalse(Equality.areEqual("test", new int[]{1, 2, 3}));
+    }
+
+    @Test
+    public void testAreArraysEqual() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {1, 2, 3};
+        int[] array3 = {1, 2, 4};
+
+        assertTrue(Equality.areArraysEqual(array1, array2));
+        assertFalse(Equality.areArraysEqual(array1, array3));
+    }
+
+    @Test
+    public void testAreArrayLengthsEqual() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {1, 2, 3};
+        int[] array3 = {1, 2};
+
+        assertTrue(Equality.areArrayLengthsEqual(array1, array2));
+        assertFalse(Equality.areArrayLengthsEqual(array1, array3));
+    }
+
+    @Test
+    public void testAreArrayElementsEqual() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {1, 2, 3};
+        int[] array3 = {1, 2, 4};
+
+        assertTrue(Equality.areArrayElementsEqual(array1, array2));
+        assertFalse(Equality.areArrayElementsEqual(array1, array3));
+    }
+
+    @Test
+    public void testIsArray() {
+        int[] array = {1, 2, 3};
+        String str = "test";
+
+        assertTrue(Equality.isArray(array));
+        assertFalse(Equality.isArray(str));
+    }
+}

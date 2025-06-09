@@ -1,0 +1,116 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.NameBasedCandidateFilter;
+import org.mockito.internal.util.MockUtil;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class NameBasedCandidateFilterTest {
+
+    @Mock
+    private MockCandidateFilter nextFilter;
+
+    @Mock
+    private Field field;
+
+    @Mock
+    private Object fieldInstance;
+
+    private NameBasedCandidateFilter nameBasedCandidateFilter;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        nameBasedCandidateFilter = new NameBasedCandidateFilter(nextFilter);
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMock() throws Exception {
+        Collection<Object> mocks = new ArrayList<>();
+        Object mock = mock(Object.class);
+        mocks.add(mock);
+
+        when(field.getName()).thenReturn("mockName");
+        when(nextFilter.filterCandidate(mocks, field, fieldInstance)).thenReturn(mock(OngoingInjecter.class));
+
+        OngoingInjecter result = nameBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        assertNotNull(result);
+        verify(nextFilter).filterCandidate(mocks, field, fieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidateWithMultipleMocksNoNameMatch() throws Exception {
+        Collection<Object> mocks = new ArrayList<>();
+        Object mock1 = mock(Object.class);
+        Object mock2 = mock(Object.class);
+        mocks.add(mock1);
+        mocks.add(mock2);
+
+        when(field.getName()).thenReturn("mockName");
+        when(nextFilter.filterCandidate(mocks, field, fieldInstance)).thenReturn(mock(OngoingInjecter.class));
+
+        OngoingInjecter result = nameBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        assertNotNull(result);
+        verify(nextFilter).filterCandidate(mocks, field, fieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidateWithMultipleMocksNameMatch() throws Exception {
+        Collection<Object> mocks = new ArrayList<>();
+        Object mock1 = mock(Object.class);
+        Object mock2 = mock(Object.class);
+        mocks.add(mock1);
+        mocks.add(mock2);
+
+        when(field.getName()).thenReturn("mockName");
+        when(new MockUtil().getMockName(mock1)).thenReturn("mockName");
+        when(new MockUtil().getMockName(mock2)).thenReturn("otherMockName");
+
+        List<Object> mockNameMatches = new ArrayList<>();
+        mockNameMatches.add(mock1);
+
+        when(nextFilter.filterCandidate(mockNameMatches, field, fieldInstance)).thenReturn(mock(OngoingInjecter.class));
+
+        OngoingInjecter result = nameBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        assertNotNull(result);
+        verify(nextFilter).filterCandidate(mockNameMatches, field, fieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidateWithMultipleMocksAllNameMatch() throws Exception {
+        Collection<Object> mocks = new ArrayList<>();
+        Object mock1 = mock(Object.class);
+        Object mock2 = mock(Object.class);
+        mocks.add(mock1);
+        mocks.add(mock2);
+
+        when(field.getName()).thenReturn("mockName");
+        when(new MockUtil().getMockName(mock1)).thenReturn("mockName");
+        when(new MockUtil().getMockName(mock2)).thenReturn("mockName");
+
+        List<Object> mockNameMatches = new ArrayList<>();
+        mockNameMatches.add(mock1);
+        mockNameMatches.add(mock2);
+
+        when(nextFilter.filterCandidate(mockNameMatches, field, fieldInstance)).thenReturn(mock(OngoingInjecter.class));
+
+        OngoingInjecter result = nameBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        assertNotNull(result);
+        verify(nextFilter).filterCandidate(mockNameMatches, field, fieldInstance);
+    }
+}
+```

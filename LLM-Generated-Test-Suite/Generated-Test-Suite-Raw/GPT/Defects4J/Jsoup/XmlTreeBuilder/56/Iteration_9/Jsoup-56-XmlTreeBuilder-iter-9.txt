@@ -1,0 +1,115 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `XmlTreeBuilder` class. This suite includes tests for each method, ensuring that the class behaves as expected under various conditions.
+
+```java
+import org.jsoup.nodes.*;
+import org.jsoup.parser.*;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class XmlTreeBuilderTest {
+
+    private XmlTreeBuilder xmlTreeBuilder;
+    private String baseUri;
+
+    @Before
+    public void setUp() {
+        xmlTreeBuilder = new XmlTreeBuilder();
+        baseUri = "http://example.com";
+    }
+
+    @Test
+    public void testDefaultSettings() {
+        ParseSettings settings = xmlTreeBuilder.defaultSettings();
+        assertEquals(ParseSettings.preserveCase, settings);
+    }
+
+    @Test
+    public void testParse() {
+        String xml = "<root><child>Text</child></root>";
+        Document doc = xmlTreeBuilder.parse(xml, baseUri);
+        assertNotNull(doc);
+        assertEquals("root", doc.child(0).tagName());
+        assertEquals("child", doc.child(0).child(0).tagName());
+        assertEquals("Text", doc.child(0).child(0).text());
+    }
+
+    @Test
+    public void testInitialiseParse() {
+        String xml = "<root></root>";
+        ParseErrorList errors = ParseErrorList.noTracking();
+        ParseSettings settings = ParseSettings.preserveCase;
+        xmlTreeBuilder.initialiseParse(xml, baseUri, errors, settings);
+        assertEquals(Document.OutputSettings.Syntax.xml, xmlTreeBuilder.doc.outputSettings().syntax());
+    }
+
+    @Test
+    public void testProcessStartTag() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.name("root");
+        xmlTreeBuilder.initialiseParse("", baseUri, ParseErrorList.noTracking(), ParseSettings.preserveCase);
+        assertTrue(xmlTreeBuilder.process(startTag));
+        assertEquals("root", xmlTreeBuilder.currentElement().tagName());
+    }
+
+    @Test
+    public void testProcessEndTag() {
+        Token.StartTag startTag = new Token.StartTag();
+        startTag.name("root");
+        Token.EndTag endTag = new Token.EndTag();
+        endTag.name("root");
+        xmlTreeBuilder.initialiseParse("", baseUri, ParseErrorList.noTracking(), ParseSettings.preserveCase);
+        xmlTreeBuilder.process(startTag);
+        assertTrue(xmlTreeBuilder.process(endTag));
+        assertTrue(xmlTreeBuilder.stack.isEmpty());
+    }
+
+    @Test
+    public void testProcessComment() {
+        Token.Comment commentToken = new Token.Comment();
+        commentToken.data("This is a comment");
+        xmlTreeBuilder.initialiseParse("", baseUri, ParseErrorList.noTracking(), ParseSettings.preserveCase);
+        assertTrue(xmlTreeBuilder.process(commentToken));
+        assertEquals("This is a comment", ((Comment) xmlTreeBuilder.doc.childNode(0)).getData());
+    }
+
+    @Test
+    public void testProcessCharacter() {
+        Token.Character characterToken = new Token.Character();
+        characterToken.data("Text");
+        xmlTreeBuilder.initialiseParse("", baseUri, ParseErrorList.noTracking(), ParseSettings.preserveCase);
+        assertTrue(xmlTreeBuilder.process(characterToken));
+        assertEquals("Text", ((TextNode) xmlTreeBuilder.doc.childNode(0)).text());
+    }
+
+    @Test
+    public void testProcessDoctype() {
+        Token.Doctype doctypeToken = new Token.Doctype();
+        doctypeToken.name("html");
+        xmlTreeBuilder.initialiseParse("", baseUri, ParseErrorList.noTracking(), ParseSettings.preserveCase);
+        assertTrue(xmlTreeBuilder.process(doctypeToken));
+        assertEquals("html", ((DocumentType) xmlTreeBuilder.doc.childNode(0)).name());
+    }
+
+    @Test
+    public void testParseFragment() {
+        String fragment = "<child>Text</child>";
+        List<Node> nodes = xmlTreeBuilder.parseFragment(fragment, baseUri, ParseErrorList.noTracking(), ParseSettings.preserveCase);
+        assertEquals(1, nodes.size());
+        assertEquals("child", ((Element) nodes.get(0)).tagName());
+        assertEquals("Text", ((Element) nodes.get(0)).text());
+    }
+}
+```
+
+This test suite covers the following methods:
+- `defaultSettings()`
+- `parse(String, String)`
+- `initialiseParse(String, String, ParseErrorList, ParseSettings)`
+- `process(Token)`
+- `parseFragment(String, String, ParseErrorList, ParseSettings)`
+
+Each test case is designed to verify the expected behavior of the `XmlTreeBuilder` class methods. Adjustments may be necessary based on the actual implementation details of the `Token` class and other dependencies.

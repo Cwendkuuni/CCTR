@@ -1,0 +1,200 @@
+```java
+package geo.google.mapping;
+
+import geo.google.datamodel.*;
+import geo.google.*;
+import org.apache.commons.collections.*;
+import oasis.names.tc.ciq.xsdschema.xal._2.*;
+import java.util.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+
+public class AddressToUsAddressFunctorTest {
+
+    private AddressToUsAddressFunctor functor;
+
+    @Before
+    public void setUp() {
+        functor = AddressToUsAddressFunctor.getInstance();
+    }
+
+    @Test
+    public void testGetInstance() {
+        assertNotNull(functor);
+    }
+
+    @Test
+    public void testExecuteWithNullAddress() {
+        GeoUsAddress result = functor.execute(null);
+        assertNotNull(result);
+        assertNull(result.getCountry());
+        assertNull(result.getState());
+        assertNull(result.getCounty());
+        assertNull(result.getCity());
+        assertNull(result.getPostalCode());
+        assertNull(result.getAddressLine1());
+        assertNull(result.getAddressLine2());
+        assertNull(result.getCoordinate());
+        assertNull(result.getAccuracy());
+    }
+
+    @Test
+    public void testExecuteWithEmptyAddress() {
+        GeoAddress addr = new GeoAddress();
+        GeoUsAddress result = functor.execute(addr);
+        assertNotNull(result);
+        assertNull(result.getCountry());
+        assertNull(result.getState());
+        assertNull(result.getCounty());
+        assertNull(result.getCity());
+        assertNull(result.getPostalCode());
+        assertNull(result.getAddressLine1());
+        assertNull(result.getAddressLine2());
+        assertNull(result.getCoordinate());
+        assertNull(result.getAccuracy());
+    }
+
+    @Test
+    public void testExecuteWithFullAddress() {
+        GeoAddress addr = createFullGeoAddress();
+        GeoUsAddress result = functor.execute(addr);
+        assertNotNull(result);
+        assertEquals("USA", result.getCountry());
+        assertEquals("California", result.getState());
+        assertEquals("Santa Clara", result.getCounty());
+        assertEquals("Mountain View", result.getCity());
+        assertEquals("94043", result.getPostalCode());
+        assertEquals("1600 Amphitheatre Parkway", result.getAddressLine1());
+        assertEquals("Suite 1", result.getAddressLine2());
+        assertEquals(new Coordinate(37.4224764, -122.0842499), result.getCoordinate());
+        assertEquals("high", result.getAccuracy());
+    }
+
+    @Test
+    public void testExecuteWithPartialAddress() {
+        GeoAddress addr = createPartialGeoAddress();
+        GeoUsAddress result = functor.execute(addr);
+        assertNotNull(result);
+        assertEquals("USA", result.getCountry());
+        assertEquals("California", result.getState());
+        assertNull(result.getCounty());
+        assertEquals("Mountain View", result.getCity());
+        assertEquals("94043", result.getPostalCode());
+        assertEquals("1600 Amphitheatre Parkway", result.getAddressLine1());
+        assertNull(result.getAddressLine2());
+        assertNull(result.getCoordinate());
+        assertNull(result.getAccuracy());
+    }
+
+    private GeoAddress createFullGeoAddress() {
+        GeoAddress addr = new GeoAddress();
+        AddressDetails addressDetails = new AddressDetails();
+        AddressDetails.Country country = new AddressDetails.Country();
+        List<AddressDetails.Country.CountryNameCode> countryNames = new ArrayList<>();
+        AddressDetails.Country.CountryNameCode countryNameCode = new AddressDetails.Country.CountryNameCode();
+        countryNameCode.setContent("USA");
+        countryNames.add(countryNameCode);
+        country.setCountryNameCode(countryNames);
+
+        AdministrativeArea adminArea = new AdministrativeArea();
+        List<AdministrativeArea.AdministrativeAreaName> adminNames = new ArrayList<>();
+        AdministrativeArea.AdministrativeAreaName adminName = new AdministrativeArea.AdministrativeAreaName();
+        adminName.setContent("California");
+        adminNames.add(adminName);
+        adminArea.setAdministrativeAreaName(adminNames);
+
+        AdministrativeArea.SubAdministrativeArea subAdminArea = new AdministrativeArea.SubAdministrativeArea();
+        List<AdministrativeArea.SubAdministrativeArea.SubAdministrativeAreaName> subAdminNames = new ArrayList<>();
+        AdministrativeArea.SubAdministrativeArea.SubAdministrativeAreaName subAdminName = new AdministrativeArea.SubAdministrativeArea.SubAdministrativeAreaName();
+        subAdminName.setContent("Santa Clara");
+        subAdminNames.add(subAdminName);
+        subAdminArea.setSubAdministrativeAreaName(subAdminNames);
+
+        Locality locality = new Locality();
+        List<Locality.LocalityName> localNames = new ArrayList<>();
+        Locality.LocalityName localName = new Locality.LocalityName();
+        localName.setContent("Mountain View");
+        localNames.add(localName);
+        locality.setLocalityName(localNames);
+
+        PostalCode postalCode = new PostalCode();
+        List<PostalCode.PostalCodeNumber> postalCodeNumbers = new ArrayList<>();
+        PostalCode.PostalCodeNumber postalCodeNumber = new PostalCode.PostalCodeNumber();
+        postalCodeNumber.setContent("94043");
+        postalCodeNumbers.add(postalCodeNumber);
+        postalCode.setPostalCodeNumber(postalCodeNumbers);
+        locality.setPostalCode(postalCode);
+
+        Thoroughfare thoroughfare = new Thoroughfare();
+        List<ThoroughfareNameType> thoroughfareNames = new ArrayList<>();
+        ThoroughfareNameType thoroughfareName1 = new ThoroughfareNameType();
+        thoroughfareName1.setContent("1600 Amphitheatre Parkway");
+        ThoroughfareNameType thoroughfareName2 = new ThoroughfareNameType();
+        thoroughfareName2.setContent("Suite 1");
+        thoroughfareNames.add(thoroughfareName1);
+        thoroughfareNames.add(thoroughfareName2);
+        thoroughfare.setThoroughfareName(thoroughfareNames);
+        locality.setThoroughfare(thoroughfare);
+
+        subAdminArea.setLocality(locality);
+        adminArea.setSubAdministrativeArea(subAdminArea);
+        country.setAdministrativeArea(adminArea);
+        addressDetails.setCountry(country);
+        addr.setAddressDetails(addressDetails);
+
+        Coordinate coordinate = new Coordinate(37.4224764, -122.0842499);
+        addr.setCoordinate(coordinate);
+        addr.setAccuracy("high");
+
+        return addr;
+    }
+
+    private GeoAddress createPartialGeoAddress() {
+        GeoAddress addr = new GeoAddress();
+        AddressDetails addressDetails = new AddressDetails();
+        AddressDetails.Country country = new AddressDetails.Country();
+        List<AddressDetails.Country.CountryNameCode> countryNames = new ArrayList<>();
+        AddressDetails.Country.CountryNameCode countryNameCode = new AddressDetails.Country.CountryNameCode();
+        countryNameCode.setContent("USA");
+        countryNames.add(countryNameCode);
+        country.setCountryNameCode(countryNames);
+
+        AdministrativeArea adminArea = new AdministrativeArea();
+        List<AdministrativeArea.AdministrativeAreaName> adminNames = new ArrayList<>();
+        AdministrativeArea.AdministrativeAreaName adminName = new AdministrativeArea.AdministrativeAreaName();
+        adminName.setContent("California");
+        adminNames.add(adminName);
+        adminArea.setAdministrativeAreaName(adminNames);
+
+        Locality locality = new Locality();
+        List<Locality.LocalityName> localNames = new ArrayList<>();
+        Locality.LocalityName localName = new Locality.LocalityName();
+        localName.setContent("Mountain View");
+        localNames.add(localName);
+        locality.setLocalityName(localNames);
+
+        PostalCode postalCode = new PostalCode();
+        List<PostalCode.PostalCodeNumber> postalCodeNumbers = new ArrayList<>();
+        PostalCode.PostalCodeNumber postalCodeNumber = new PostalCode.PostalCodeNumber();
+        postalCodeNumber.setContent("94043");
+        postalCodeNumbers.add(postalCodeNumber);
+        postalCode.setPostalCodeNumber(postalCodeNumbers);
+        locality.setPostalCode(postalCode);
+
+        Thoroughfare thoroughfare = new Thoroughfare();
+        List<ThoroughfareNameType> thoroughfareNames = new ArrayList<>();
+        ThoroughfareNameType thoroughfareName1 = new ThoroughfareNameType();
+        thoroughfareName1.setContent("1600 Amphitheatre Parkway");
+        thoroughfareNames.add(thoroughfareName1);
+        thoroughfare.setThoroughfareName(thoroughfareNames);
+        locality.setThoroughfare(thoroughfare);
+
+        adminArea.setLocality(locality);
+        country.setAdministrativeArea(adminArea);
+        addressDetails.setCountry(country);
+        addr.setAddressDetails(addressDetails);
+
+        return addr;
+    }
+}
+```

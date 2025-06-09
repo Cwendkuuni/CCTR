@@ -1,0 +1,232 @@
+package org.apache.commons.lang3.time;
+
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import static org.junit.Assert.*;
+
+import java.util.*;
+import java.text.*;
+
+public class FastDateFormatTest {
+
+    private FastDateFormat fastDateFormat;
+
+    @Before
+    public void setUp() {
+        fastDateFormat = FastDateFormat.getInstance();
+    }
+
+    @After
+    public void tearDown() {
+        fastDateFormat = null;
+    }
+
+    @Test
+    public void testGetInstance() {
+        assertNotNull(FastDateFormat.getInstance());
+    }
+
+    @Test
+    public void testGetInstanceWithPattern() {
+        assertNotNull(FastDateFormat.getInstance("yyyy-MM-dd"));
+    }
+
+    @Test
+    public void testGetInstanceWithPatternAndTimeZone() {
+        assertNotNull(FastDateFormat.getInstance("yyyy-MM-dd", TimeZone.getTimeZone("UTC")));
+    }
+
+    @Test
+    public void testGetInstanceWithPatternAndLocale() {
+        assertNotNull(FastDateFormat.getInstance("yyyy-MM-dd", Locale.US));
+    }
+
+    @Test
+    public void testGetInstanceWithPatternTimeZoneAndLocale() {
+        assertNotNull(FastDateFormat.getInstance("yyyy-MM-dd", TimeZone.getTimeZone("UTC"), Locale.US));
+    }
+
+    @Test
+    public void testGetDateInstance() {
+        assertNotNull(FastDateFormat.getDateInstance(FastDateFormat.FULL));
+    }
+
+    @Test
+    public void testGetDateInstanceWithLocale() {
+        assertNotNull(FastDateFormat.getDateInstance(FastDateFormat.FULL, Locale.US));
+    }
+
+    @Test
+    public void testGetDateInstanceWithTimeZone() {
+        assertNotNull(FastDateFormat.getDateInstance(FastDateFormat.FULL, TimeZone.getTimeZone("UTC")));
+    }
+
+    @Test
+    public void testGetDateInstanceWithTimeZoneAndLocale() {
+        assertNotNull(FastDateFormat.getDateInstance(FastDateFormat.FULL, TimeZone.getTimeZone("UTC"), Locale.US));
+    }
+
+    @Test
+    public void testGetTimeInstance() {
+        assertNotNull(FastDateFormat.getTimeInstance(FastDateFormat.FULL));
+    }
+
+    @Test
+    public void testGetTimeInstanceWithLocale() {
+        assertNotNull(FastDateFormat.getTimeInstance(FastDateFormat.FULL, Locale.US));
+    }
+
+    @Test
+    public void testGetTimeInstanceWithTimeZone() {
+        assertNotNull(FastDateFormat.getTimeInstance(FastDateFormat.FULL, TimeZone.getTimeZone("UTC")));
+    }
+
+    @Test
+    public void testGetTimeInstanceWithTimeZoneAndLocale() {
+        assertNotNull(FastDateFormat.getTimeInstance(FastDateFormat.FULL, TimeZone.getTimeZone("UTC"), Locale.US));
+    }
+
+    @Test
+    public void testGetDateTimeInstance() {
+        assertNotNull(FastDateFormat.getDateTimeInstance(FastDateFormat.FULL, FastDateFormat.FULL));
+    }
+
+    @Test
+    public void testGetDateTimeInstanceWithLocale() {
+        assertNotNull(FastDateFormat.getDateTimeInstance(FastDateFormat.FULL, FastDateFormat.FULL, Locale.US));
+    }
+
+    @Test
+    public void testGetDateTimeInstanceWithTimeZone() {
+        assertNotNull(FastDateFormat.getDateTimeInstance(FastDateFormat.FULL, FastDateFormat.FULL, TimeZone.getTimeZone("UTC")));
+    }
+
+    @Test
+    public void testGetDateTimeInstanceWithTimeZoneAndLocale() {
+        assertNotNull(FastDateFormat.getDateTimeInstance(FastDateFormat.FULL, FastDateFormat.FULL, TimeZone.getTimeZone("UTC"), Locale.US));
+    }
+
+    @Test
+    public void testFormatObject() {
+        Date date = new Date();
+        StringBuffer buffer = new StringBuffer();
+        FieldPosition pos = new FieldPosition(0);
+        assertNotNull(fastDateFormat.format(date, buffer, pos));
+    }
+
+    @Test
+    public void testFormatMillis() {
+        long millis = System.currentTimeMillis();
+        assertNotNull(fastDateFormat.format(millis));
+    }
+
+    @Test
+    public void testFormatDate() {
+        Date date = new Date();
+        assertNotNull(fastDateFormat.format(date));
+    }
+
+    @Test
+    public void testFormatCalendar() {
+        Calendar calendar = Calendar.getInstance();
+        assertNotNull(fastDateFormat.format(calendar));
+    }
+
+    @Test
+    public void testFormatMillisStringBuffer() {
+        long millis = System.currentTimeMillis();
+        StringBuffer buffer = new StringBuffer();
+        assertNotNull(fastDateFormat.format(millis, buffer));
+    }
+
+    @Test
+    public void testFormatDateStringBuffer() {
+        Date date = new Date();
+        StringBuffer buffer = new StringBuffer();
+        assertNotNull(fastDateFormat.format(date, buffer));
+    }
+
+    @Test
+    public void testFormatCalendarStringBuffer() {
+        Calendar calendar = Calendar.getInstance();
+        StringBuffer buffer = new StringBuffer();
+        assertNotNull(fastDateFormat.format(calendar, buffer));
+    }
+
+    @Test
+    public void testParse() throws ParseException {
+        String dateStr = "2023-10-01";
+        FastDateFormat fdf = FastDateFormat.getInstance("yyyy-MM-dd");
+        assertNotNull(fdf.parse(dateStr));
+    }
+
+    @Test
+    public void testParseWithParsePosition() {
+        String dateStr = "2023-10-01";
+        FastDateFormat fdf = FastDateFormat.getInstance("yyyy-MM-dd");
+        ParsePosition pos = new ParsePosition(0);
+        assertNotNull(fdf.parse(dateStr, pos));
+    }
+
+    @Test
+    public void testParseObject() {
+        String dateStr = "2023-10-01";
+        FastDateFormat fdf = FastDateFormat.getInstance("yyyy-MM-dd");
+        ParsePosition pos = new ParsePosition(0);
+        assertNotNull(fdf.parseObject(dateStr, pos));
+    }
+
+    @Test
+    public void testGetPattern() {
+        FastDateFormat fdf = FastDateFormat.getInstance("yyyy-MM-dd");
+        assertEquals("yyyy-MM-dd", fdf.getPattern());
+    }
+
+    @Test
+    public void testGetTimeZone() {
+        FastDateFormat fdf = FastDateFormat.getInstance("yyyy-MM-dd", TimeZone.getTimeZone("UTC"));
+        assertEquals(TimeZone.getTimeZone("UTC"), fdf.getTimeZone());
+    }
+
+    @Test
+    public void testGetLocale() {
+        FastDateFormat fdf = FastDateFormat.getInstance("yyyy-MM-dd", Locale.US);
+        assertEquals(Locale.US, fdf.getLocale());
+    }
+
+    @Test
+    public void testGetMaxLengthEstimate() {
+        FastDateFormat fdf = FastDateFormat.getInstance("yyyy-MM-dd");
+        assertTrue(fdf.getMaxLengthEstimate() > 0);
+    }
+
+    @Test
+    public void testEquals() {
+        FastDateFormat fdf1 = FastDateFormat.getInstance("yyyy-MM-dd");
+        FastDateFormat fdf2 = FastDateFormat.getInstance("yyyy-MM-dd");
+        assertTrue(fdf1.equals(fdf2));
+    }
+
+    @Test
+    public void testHashCode() {
+        FastDateFormat fdf1 = FastDateFormat.getInstance("yyyy-MM-dd");
+        FastDateFormat fdf2 = FastDateFormat.getInstance("yyyy-MM-dd");
+        assertEquals(fdf1.hashCode(), fdf2.hashCode());
+    }
+
+    @Test
+    public void testToString() {
+        FastDateFormat fdf = FastDateFormat.getInstance("yyyy-MM-dd", TimeZone.getTimeZone("UTC"), Locale.US);
+        String expected = "FastDateFormat[yyyy-MM-dd,en_US,UTC]";
+        assertEquals(expected, fdf.toString());
+    }
+
+    @Test
+    public void testApplyRules() {
+        FastDateFormat fdf = FastDateFormat.getInstance("yyyy-MM-dd");
+        Calendar calendar = Calendar.getInstance();
+        StringBuffer buffer = new StringBuffer();
+        assertNotNull(fdf.applyRules(calendar, buffer));
+    }
+}

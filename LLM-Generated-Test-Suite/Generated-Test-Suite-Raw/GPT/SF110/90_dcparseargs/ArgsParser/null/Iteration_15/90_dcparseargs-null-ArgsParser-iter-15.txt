@@ -1,0 +1,141 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `ArgsParser` class. This suite covers various scenarios for each method in the class.
+
+```java
+import de.devcity.parseargs.ArgsParser;
+import de.devcity.parseargs.arguments.SwitchArgument;
+import de.devcity.parseargs.arguments.ParameterArgument;
+import de.devcity.parseargs.arguments.StringArgument;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class ArgsParserTest {
+
+    private ArgsParser argsParser;
+
+    @Before
+    public void setUp() {
+        argsParser = new ArgsParser();
+    }
+
+    @Test
+    public void testConstructorWithArgs() {
+        String[] args = {"--key", "value", "-a", "b"};
+        ArgsParser parser = new ArgsParser(args);
+        assertArrayEquals(args, parser.getArgs());
+    }
+
+    @Test
+    public void testSetArgs() {
+        String[] args = {"--key", "value"};
+        argsParser.setArgs(args);
+        assertArrayEquals(args, argsParser.getArgs());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSetArgsWithNull() {
+        argsParser.setArgs(null);
+    }
+
+    @Test
+    public void testGetArgsCount() {
+        String[] args = {"--key", "value"};
+        argsParser.setArgs(args);
+        assertEquals(2, argsParser.getArgsCount());
+    }
+
+    @Test
+    public void testGetArgsLeftCount() {
+        String[] args = {"--key", "value"};
+        argsParser.setArgs(args);
+        assertEquals(2, argsParser.getArgsLeftCount());
+    }
+
+    @Test
+    public void testParseSwitchArgumentWithLongKey() {
+        String[] args = {"--key"};
+        argsParser.setArgs(args);
+        SwitchArgument result = argsParser.parseSwitchArgument("key");
+        assertTrue(result.isPresent());
+        assertEquals("key", result.getKey());
+    }
+
+    @Test
+    public void testParseSwitchArgumentWithShortKey() {
+        String[] args = {"-abc"};
+        argsParser.setArgs(args);
+        SwitchArgument result = argsParser.parseSwitchArgument("b");
+        assertTrue(result.isPresent());
+        assertEquals("b", result.getKey());
+    }
+
+    @Test
+    public void testParseSwitchArgumentNotFound() {
+        String[] args = {"--key"};
+        argsParser.setArgs(args);
+        SwitchArgument result = argsParser.parseSwitchArgument("notfound");
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void testParseParameterArgumentWithLongKey() {
+        String[] args = {"--key", "value"};
+        argsParser.setArgs(args);
+        ParameterArgument result = argsParser.parseParameterArgument("key");
+        assertNotNull(result);
+        assertEquals("key", result.getKey());
+        assertEquals("value", result.getValue());
+    }
+
+    @Test
+    public void testParseParameterArgumentWithShortKey() {
+        String[] args = {"-kvalue"};
+        argsParser.setArgs(args);
+        ParameterArgument result = argsParser.parseParameterArgument("k");
+        assertNotNull(result);
+        assertEquals("k", result.getKey());
+        assertEquals("value", result.getValue());
+    }
+
+    @Test
+    public void testParseParameterArgumentNotFound() {
+        String[] args = {"--key", "value"};
+        argsParser.setArgs(args);
+        ParameterArgument result = argsParser.parseParameterArgument("notfound");
+        assertNull(result);
+    }
+
+    @Test
+    public void testParseStringArgument() {
+        String[] args = {"arg1", "arg2"};
+        argsParser.setArgs(args);
+        List<StringArgument> result = argsParser.parseStringArgument();
+        assertEquals(2, result.size());
+        assertEquals("arg1", result.get(0).getValue());
+        assertEquals("arg2", result.get(1).getValue());
+    }
+
+    @Test
+    public void testParseStringArgumentWithNoArgs() {
+        String[] args = {};
+        argsParser.setArgs(args);
+        List<StringArgument> result = argsParser.parseStringArgument();
+        assertTrue(result.isEmpty());
+    }
+}
+```
+
+This test suite includes tests for:
+
+- Constructor behavior with and without arguments.
+- Setting arguments and handling null input.
+- Counting arguments and remaining arguments.
+- Parsing switch arguments with both short and long keys.
+- Parsing parameter arguments with both short and long keys.
+- Parsing string arguments.
+- Handling cases where arguments are not found.
+
+Make sure to have the necessary classes (`SwitchArgument`, `ParameterArgument`, `StringArgument`) and their methods (`isPresent`, `getKey`, `getValue`) implemented for these tests to work correctly.

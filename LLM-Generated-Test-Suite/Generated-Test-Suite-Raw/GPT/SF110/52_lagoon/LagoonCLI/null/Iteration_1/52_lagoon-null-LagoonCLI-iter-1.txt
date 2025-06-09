@@ -1,0 +1,112 @@
+To create a comprehensive JUnit 4 test suite for the `LagoonCLI` class, we need to consider testing the main method and the private static methods `getProperty` and `showTime`. Since `main` is a static method and interacts with the system environment (e.g., `System.out`, `System.err`, `System.exit`), we will use some techniques to capture output and handle system exits. For private methods, we can use reflection to test them.
+
+Here's a complete JUnit 4 test suite for the `LagoonCLI` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.*;
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.Properties;
+
+public class LagoonCLITest {
+
+    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+    private final PrintStream originalOut = System.out;
+    private final PrintStream originalErr = System.err;
+
+    @Before
+    public void setUpStreams() {
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+    }
+
+    @After
+    public void restoreStreams() {
+        System.setOut(originalOut);
+        System.setErr(originalErr);
+    }
+
+    @Test
+    public void testMainNoArgs() {
+        LagoonCLI.main(new String[]{});
+        assertTrue(outContent.toString().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainInvalidInterval() {
+        LagoonCLI.main(new String[]{"test.properties", "invalid"});
+        assertTrue(outContent.toString().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainNegativeInterval() {
+        LagoonCLI.main(new String[]{"test.properties", "-1"});
+        assertTrue(outContent.toString().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainBuild() {
+        // This test assumes that the necessary files and properties are set up correctly.
+        LagoonCLI.main(new String[]{"test.properties", "build"});
+        assertTrue(outContent.toString().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testMainForce() {
+        // This test assumes that the necessary files and properties are set up correctly.
+        LagoonCLI.main(new String[]{"test.properties", "force"});
+        assertTrue(outContent.toString().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testGetProperty() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("testKey", "testValue");
+        LagoonCLI.properties = props;
+
+        Method method = LagoonCLI.class.getDeclaredMethod("getProperty", String.class);
+        method.setAccessible(true);
+        String result = (String) method.invoke(null, "testKey");
+        assertEquals("testValue", result);
+    }
+
+    @Test(expected = Exception.class)
+    public void testGetPropertyException() throws Exception {
+        Properties props = new Properties();
+        LagoonCLI.properties = props;
+
+        Method method = LagoonCLI.class.getDeclaredMethod("getProperty", String.class);
+        method.setAccessible(true);
+        method.invoke(null, "missingKey");
+    }
+
+    @Test
+    public void testShowTime() throws Exception {
+        Method method = LagoonCLI.class.getDeclaredMethod("showTime", long.class);
+        method.setAccessible(true);
+
+        method.invoke(null, 5000L);
+        assertTrue(outContent.toString().contains("in 5000 ms"));
+
+        outContent.reset();
+
+        method.invoke(null, 15000L);
+        assertTrue(outContent.toString().contains("in 15 s"));
+    }
+}
+```
+
+### Explanation:
+- **Stream Redirection**: We redirect `System.out` and `System.err` to capture printed output for assertions.
+- **Reflection**: We use reflection to access and test private methods `getProperty` and `showTime`.
+- **Test Cases**:
+  - `testMainNoArgs`: Tests the behavior when no arguments are provided.
+  - `testMainInvalidInterval`: Tests the behavior when an invalid interval is provided.
+  - `testMainNegativeInterval`: Tests the behavior when a negative interval is provided.
+  - `testMainBuild` and `testMainForce`: Tests the behavior when "build" or "force" is provided as an argument. These tests assume that the necessary files and properties are set up correctly.
+  - `testGetProperty` and `testGetPropertyException`: Tests the `getProperty` method for normal and exceptional cases.
+  - `testShowTime`: Tests the `showTime` method for different time values.
+
+Note: The `testMainBuild` and `testMainForce` tests assume that the necessary files and properties are set up correctly in your environment. You may need to adjust these tests based on your specific setup.

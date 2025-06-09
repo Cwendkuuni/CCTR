@@ -1,0 +1,113 @@
+To create a comprehensive JUnit 4 test suite for the `JTailPanel` class, we need to test its public methods and the behavior of the `update` method when it receives different types of events. Below is a test suite that covers these aspects:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.*;
+import javax.swing.table.DefaultTableModel;
+import java.awt.*;
+import java.util.Observable;
+
+public class JTailPanelTest {
+
+    private JTailModel mockModel;
+    private JTailPanel jTailPanel;
+    private FontMetrics mockFontMetrics;
+
+    @Before
+    public void setUp() {
+        mockModel = mock(JTailModel.class);
+        mockFontMetrics = mock(FontMetrics.class);
+        when(mockFontMetrics.getHeight()).thenReturn(12);
+        when(mockFontMetrics.stringWidth(anyString())).thenReturn(8);
+
+        jTailPanel = new JTailPanel(mockModel) {
+            @Override
+            public FontMetrics getFontMetrics(Font font) {
+                return mockFontMetrics;
+            }
+        };
+    }
+
+    @Test
+    public void testGetCharacterHeight() {
+        assertEquals(11, jTailPanel.getCharacterHeight());
+    }
+
+    @Test
+    public void testGetVerticalScrollBar() {
+        assertNotNull(jTailPanel.getVerticalScrollBar());
+    }
+
+    @Test
+    public void testUpdateWithResizedEvent() {
+        JTailModelEvent mockEvent = mock(JTailModelEvent.class);
+        mockEvent.type = JTailModelEvent.Type.RESIZED;
+        mockEvent.minLine = 0;
+        mockEvent.firstLine = 0;
+        mockEvent.nbDisplayedLines = 10;
+        mockEvent.maxLine = 100;
+
+        when(mockModel.getLineNumbers()).thenReturn("1\n2\n3\n4\n5\n6\n7\n8\n9\n10");
+        when(mockModel.getContent()).thenReturn("Line1\nLine2\nLine3\nLine4\nLine5\nLine6\nLine7\nLine8\nLine9\nLine10");
+
+        jTailPanel.update(mockModel, mockEvent);
+
+        BoundedRangeModel rangeModel = jTailPanel.getVerticalScrollBar().getModel();
+        assertEquals(0, rangeModel.getMinimum());
+        assertEquals(0, rangeModel.getValue());
+        assertEquals(10, rangeModel.getExtent());
+        assertEquals(100, rangeModel.getMaximum());
+        assertTrue(jTailPanel.getVerticalScrollBar().isEnabled());
+
+        DefaultTableModel tableModel = (DefaultTableModel) jTailPanel.dataTable.getModel();
+        assertEquals(10, tableModel.getRowCount());
+        assertEquals("1", tableModel.getValueAt(0, 0));
+        assertEquals("Line1", tableModel.getValueAt(0, 1));
+    }
+
+    @Test
+    public void testUpdateWithScrolledEvent() {
+        JTailModelEvent mockEvent = mock(JTailModelEvent.class);
+        mockEvent.type = JTailModelEvent.Type.SCROLLED;
+
+        when(mockModel.getLineNumbers()).thenReturn("1\n2\n3");
+        when(mockModel.getContent()).thenReturn("Line1\nLine2\nLine3");
+
+        jTailPanel.update(mockModel, mockEvent);
+
+        DefaultTableModel tableModel = (DefaultTableModel) jTailPanel.dataTable.getModel();
+        assertEquals(3, tableModel.getRowCount());
+        assertEquals("1", tableModel.getValueAt(0, 0));
+        assertEquals("Line1", tableModel.getValueAt(0, 1));
+    }
+
+    @Test
+    public void testUpdateWithUnknownEvent() {
+        Observable unknownObservable = mock(Observable.class);
+        Object unknownEvent = new Object();
+
+        jTailPanel.update(unknownObservable, unknownEvent);
+
+        // No exception should be thrown and no changes should be made
+        DefaultTableModel tableModel = (DefaultTableModel) jTailPanel.dataTable.getModel();
+        assertEquals(0, tableModel.getRowCount());
+    }
+}
+```
+
+### Explanation:
+- **Setup**: We use Mockito to create mock objects for `JTailModel` and `FontMetrics`. This allows us to control their behavior and test the `JTailPanel` in isolation.
+- **Test Methods**:
+  - `testGetCharacterHeight`: Verifies that the `getCharacterHeight` method returns the correct value.
+  - `testGetVerticalScrollBar`: Ensures that the vertical scroll bar is initialized and not null.
+  - `testUpdateWithResizedEvent`: Simulates a `RESIZED` event and checks that the table model and scroll bar are updated correctly.
+  - `testUpdateWithScrolledEvent`: Simulates a `SCROLLED` event and verifies that the table model is updated with the correct data.
+  - `testUpdateWithUnknownEvent`: Tests that an unknown event does not alter the state of the `JTailPanel`.
+
+This test suite covers the main functionalities and behaviors of the `JTailPanel` class.

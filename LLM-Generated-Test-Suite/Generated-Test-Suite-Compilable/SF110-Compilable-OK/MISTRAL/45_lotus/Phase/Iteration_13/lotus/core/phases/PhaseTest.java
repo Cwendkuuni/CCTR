@@ -1,0 +1,121 @@
+package lotus.core.phases;
+
+import lotus.core.*;
+import lotus.core.effect.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class PhaseTest {
+
+    private Phase phase;
+    private Game game;
+
+    @Before
+    public void setUp() {
+        game = mock(Game.class);
+        Game.currentPhase = mock(UntapPhase.class);
+        Game.playingPlayer = 1;
+    }
+
+    @Test
+    public void testNextPhaseFromUntapToUpkeep() {
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof UpkeepPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromUpkeepToDraw() {
+        Game.currentPhase = mock(UpkeepPhase.class);
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof DrawPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromDrawToMain1() {
+        Game.currentPhase = mock(DrawPhase.class);
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof Main1Phase);
+    }
+
+    @Test
+    public void testNextPhaseFromMain1ToCombatBeginning() {
+        Game.currentPhase = mock(Main1Phase.class);
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof CombatBeginningPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromCombatBeginningToDeclareAttackers() {
+        Game.currentPhase = mock(CombatBeginningPhase.class);
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof DeclareAttackersPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromDeclareAttackersToDeclareBlockers() {
+        Game.currentPhase = mock(DeclareAttackersPhase.class);
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof DeclareBlockersPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromDeclareBlockersToCombatDamage() {
+        Game.currentPhase = mock(DeclareBlockersPhase.class);
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof CombatDamagePhase);
+    }
+
+    @Test
+    public void testNextPhaseFromCombatDamageToCombatEnd() {
+        Game.currentPhase = mock(CombatDamagePhase.class);
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof CombatEndPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromCombatEndToMain2() {
+        Game.currentPhase = mock(CombatEndPhase.class);
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof Main2Phase);
+    }
+
+    @Test
+    public void testNextPhaseFromMain2ToEndOfTurn() {
+        Game.currentPhase = mock(Main2Phase.class);
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof EndOfTurnPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromEndOfTurnToCleanup() {
+        Game.currentPhase = mock(EndOfTurnPhase.class);
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof CleanupPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromCleanupToPlayerChange() {
+        Game.currentPhase = mock(CleanupPhase.class);
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof PlayerChangePhase);
+    }
+
+    @Test
+    public void testNextPhaseFromPlayerChangeToUntap() {
+        Game.currentPhase = mock(PlayerChangePhase.class);
+        Phase.nextPhase();
+        assertEquals(2, Game.playingPlayer);
+        assertTrue(Game.currentPhase instanceof UntapPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromPlayerChangeToUntapPlayer1() {
+        Game.currentPhase = mock(PlayerChangePhase.class);
+        Game.playingPlayer = 2;
+        Phase.nextPhase();
+        assertEquals(1, Game.playingPlayer);
+        assertTrue(Game.currentPhase instanceof UntapPhase);
+    }
+}

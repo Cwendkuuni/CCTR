@@ -1,0 +1,93 @@
+```java
+package com.puppycrawl.tools.checkstyle.api;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import org.mockito.Mockito;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(JUnit4.class)
+public class AbstractLoaderTest {
+
+    private AbstractLoader abstractLoader;
+    private Map<String, String> publicIdToResourceNameMap;
+
+    @Before
+    public void setUp() throws SAXException, ParserConfigurationException {
+        publicIdToResourceNameMap = new HashMap<>();
+        publicIdToResourceNameMap.put("-//Puppy Crawl//DTD Check Configuration 1.3//EN", "config.dtd");
+        abstractLoader = new AbstractLoader(publicIdToResourceNameMap) {};
+    }
+
+    @Test
+    public void testConstructorWithMap() throws SAXException, ParserConfigurationException {
+        assertNotNull(abstractLoader);
+    }
+
+    @Test
+    public void testConstructorWithPublicIdAndResourceName() throws SAXException, ParserConfigurationException {
+        AbstractLoader loader = new AbstractLoader("-//Puppy Crawl//DTD Check Configuration 1.3//EN", "config.dtd") {};
+        assertNotNull(loader);
+    }
+
+    @Test
+    public void testParseInputSource() throws IOException, SAXException {
+        InputSource inputSource = mock(InputSource.class);
+        try {
+            abstractLoader.parseInputSource(inputSource);
+        } catch (Exception e) {
+            fail("Parsing should not throw an exception");
+        }
+    }
+
+    @Test
+    public void testResolveEntityWithKnownPublicId() throws IOException, SAXException {
+        String publicId = "-//Puppy Crawl//DTD Check Configuration 1.3//EN";
+        String systemId = "systemId";
+        InputSource result = abstractLoader.resolveEntity(publicId, systemId);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testResolveEntityWithUnknownPublicId() throws IOException, SAXException {
+        String publicId = "unknownPublicId";
+        String systemId = "systemId";
+        InputSource result = abstractLoader.resolveEntity(publicId, systemId);
+        assertNull(result.getByteStream());
+    }
+
+    @Test(expected = SAXException.class)
+    public void testError() throws SAXException {
+        SAXParseException exception = mock(SAXParseException.class);
+        abstractLoader.error(exception);
+    }
+
+    @Test(expected = SAXException.class)
+    public void testFatalError() throws SAXException {
+        SAXParseException exception = mock(SAXParseException.class);
+        abstractLoader.fatalError(exception);
+    }
+}
+```
+
+This JUnit 4 test suite covers the following:
+
+1. **Constructor Tests**: Verifies that the constructors initialize the `AbstractLoader` object correctly.
+2. **`parseInputSource` Method Test**: Ensures that parsing an `InputSource` does not throw unexpected exceptions.
+3. **`resolveEntity` Method Tests**: Checks the behavior when resolving entities with known and unknown public IDs.
+4. **Error Handling Tests**: Confirms that `error` and `fatalError` methods throw `SAXException` as expected.
+
+Note: The `AbstractLoader` class is abstract, so the test suite uses an anonymous subclass to instantiate it for testing purposes.

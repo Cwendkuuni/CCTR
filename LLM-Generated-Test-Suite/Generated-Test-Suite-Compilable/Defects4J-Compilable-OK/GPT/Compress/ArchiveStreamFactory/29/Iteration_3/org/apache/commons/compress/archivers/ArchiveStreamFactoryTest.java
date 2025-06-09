@@ -1,0 +1,179 @@
+package org.apache.commons.compress.archivers;
+
+import static org.junit.Assert.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.StreamingNotSupportedException;
+import org.junit.Test;
+
+public class ArchiveStreamFactoryTest {
+
+    @Test
+    public void testCreateArchiveInputStreamWithValidArchiverName() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream in = new ByteArrayInputStream(new byte[0]);
+
+        ArchiveInputStream ais = factory.createArchiveInputStream(ArchiveStreamFactory.AR, in);
+        assertNotNull(ais);
+        assertTrue(ais instanceof org.apache.commons.compress.archivers.ar.ArArchiveInputStream);
+
+        ais = factory.createArchiveInputStream(ArchiveStreamFactory.ARJ, in);
+        assertNotNull(ais);
+        assertTrue(ais instanceof org.apache.commons.compress.archivers.arj.ArjArchiveInputStream);
+
+        ais = factory.createArchiveInputStream(ArchiveStreamFactory.ZIP, in);
+        assertNotNull(ais);
+        assertTrue(ais instanceof org.apache.commons.compress.archivers.zip.ZipArchiveInputStream);
+
+        ais = factory.createArchiveInputStream(ArchiveStreamFactory.TAR, in);
+        assertNotNull(ais);
+        assertTrue(ais instanceof org.apache.commons.compress.archivers.tar.TarArchiveInputStream);
+
+        ais = factory.createArchiveInputStream(ArchiveStreamFactory.JAR, in);
+        assertNotNull(ais);
+        assertTrue(ais instanceof org.apache.commons.compress.archivers.jar.JarArchiveInputStream);
+
+        ais = factory.createArchiveInputStream(ArchiveStreamFactory.CPIO, in);
+        assertNotNull(ais);
+        assertTrue(ais instanceof org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream);
+
+        ais = factory.createArchiveInputStream(ArchiveStreamFactory.DUMP, in);
+        assertNotNull(ais);
+        assertTrue(ais instanceof org.apache.commons.compress.archivers.dump.DumpArchiveInputStream);
+    }
+
+    @Test(expected = StreamingNotSupportedException.class)
+    public void testCreateArchiveInputStreamWithSevenZ() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream in = new ByteArrayInputStream(new byte[0]);
+        factory.createArchiveInputStream(ArchiveStreamFactory.SEVEN_Z, in);
+    }
+
+    @Test(expected = ArchiveException.class)
+    public void testCreateArchiveInputStreamWithUnknownArchiverName() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream in = new ByteArrayInputStream(new byte[0]);
+        factory.createArchiveInputStream("unknown", in);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveInputStreamWithNullArchiverName() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream in = new ByteArrayInputStream(new byte[0]);
+        factory.createArchiveInputStream(null, in);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveInputStreamWithNullInputStream() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        factory.createArchiveInputStream(ArchiveStreamFactory.ZIP, null);
+    }
+
+    @Test
+    public void testCreateArchiveOutputStreamWithValidArchiverName() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        OutputStream out = new ByteArrayOutputStream();
+
+        ArchiveOutputStream aos = factory.createArchiveOutputStream(ArchiveStreamFactory.AR, out);
+        assertNotNull(aos);
+        assertTrue(aos instanceof org.apache.commons.compress.archivers.ar.ArArchiveOutputStream);
+
+        aos = factory.createArchiveOutputStream(ArchiveStreamFactory.ZIP, out);
+        assertNotNull(aos);
+        assertTrue(aos instanceof org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream);
+
+        aos = factory.createArchiveOutputStream(ArchiveStreamFactory.TAR, out);
+        assertNotNull(aos);
+        assertTrue(aos instanceof org.apache.commons.compress.archivers.tar.TarArchiveOutputStream);
+
+        aos = factory.createArchiveOutputStream(ArchiveStreamFactory.JAR, out);
+        assertNotNull(aos);
+        assertTrue(aos instanceof org.apache.commons.compress.archivers.jar.JarArchiveOutputStream);
+
+        aos = factory.createArchiveOutputStream(ArchiveStreamFactory.CPIO, out);
+        assertNotNull(aos);
+        assertTrue(aos instanceof org.apache.commons.compress.archivers.cpio.CpioArchiveOutputStream);
+    }
+
+    @Test(expected = StreamingNotSupportedException.class)
+    public void testCreateArchiveOutputStreamWithSevenZ() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        OutputStream out = new ByteArrayOutputStream();
+        factory.createArchiveOutputStream(ArchiveStreamFactory.SEVEN_Z, out);
+    }
+
+    @Test(expected = ArchiveException.class)
+    public void testCreateArchiveOutputStreamWithUnknownArchiverName() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        OutputStream out = new ByteArrayOutputStream();
+        factory.createArchiveOutputStream("unknown", out);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveOutputStreamWithNullArchiverName() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        OutputStream out = new ByteArrayOutputStream();
+        factory.createArchiveOutputStream(null, out);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveOutputStreamWithNullOutputStream() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        factory.createArchiveOutputStream(ArchiveStreamFactory.ZIP, null);
+    }
+
+    @Test
+    public void testGetEntryEncoding() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory("UTF-8");
+        assertEquals("UTF-8", factory.getEntryEncoding());
+
+        factory = new ArchiveStreamFactory();
+        assertNull(factory.getEntryEncoding());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testSetEntryEncodingThrowsException() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory("UTF-8");
+        factory.setEntryEncoding("ISO-8859-1");
+    }
+
+    @Test
+    public void testSetEntryEncoding() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        factory.setEntryEncoding("ISO-8859-1");
+        assertEquals("ISO-8859-1", factory.getEntryEncoding());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveInputStreamWithNullStream() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        factory.createArchiveInputStream(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCreateArchiveInputStreamWithNonMarkSupportedStream() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream in = new ByteArrayInputStream(new byte[0]) {
+            @Override
+            public boolean markSupported() {
+                return false;
+            }
+        };
+        factory.createArchiveInputStream(in);
+    }
+
+    @Test(expected = ArchiveException.class)
+    public void testCreateArchiveInputStreamWithUnknownSignature() throws Exception {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream in = new ByteArrayInputStream(new byte[0]);
+        factory.createArchiveInputStream(in);
+    }
+}

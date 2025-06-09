@@ -1,0 +1,122 @@
+```java
+package org.jdom2.util;
+
+import org.jdom2.Element;
+import org.jdom2.Attribute;
+import org.jdom2.Namespace;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class NamespaceStackTest {
+
+    private NamespaceStack namespaceStack;
+    private Namespace ns1;
+    private Namespace ns2;
+    private Namespace ns3;
+    private Element element;
+    private Attribute attribute;
+
+    @Before
+    public void setUp() {
+        namespaceStack = new NamespaceStack();
+        ns1 = Namespace.getNamespace("prefix1", "uri1");
+        ns2 = Namespace.getNamespace("prefix2", "uri2");
+        ns3 = Namespace.getNamespace("prefix3", "uri3");
+        element = new Element("root", ns1);
+        attribute = new Attribute("attr", "value", ns2);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(namespaceStack);
+        assertEquals(0, namespaceStack.getScope().length);
+    }
+
+    @Test
+    public void testPushElement() {
+        namespaceStack.push(element);
+        assertTrue(namespaceStack.isInScope(ns1));
+        assertEquals(1, namespaceStack.getScope().length);
+    }
+
+    @Test
+    public void testPushAttribute() {
+        namespaceStack.push(attribute);
+        assertTrue(namespaceStack.isInScope(ns2));
+        assertEquals(1, namespaceStack.getScope().length);
+    }
+
+    @Test
+    public void testPushPop() {
+        namespaceStack.push(element);
+        namespaceStack.push(attribute);
+        namespaceStack.pop();
+        assertTrue(namespaceStack.isInScope(ns1));
+        assertFalse(namespaceStack.isInScope(ns2));
+        assertEquals(1, namespaceStack.getScope().length);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testPopEmptyStack() {
+        namespaceStack.pop();
+    }
+
+    @Test
+    public void testAddedForward() {
+        namespaceStack.push(element);
+        Iterable<Namespace> addedForward = namespaceStack.addedForward();
+        assertNotNull(addedForward);
+        assertTrue(addedForward.iterator().hasNext());
+    }
+
+    @Test
+    public void testAddedReverse() {
+        namespaceStack.push(element);
+        Iterable<Namespace> addedReverse = namespaceStack.addedReverse();
+        assertNotNull(addedReverse);
+        assertTrue(addedReverse.iterator().hasNext());
+    }
+
+    @Test
+    public void testIterator() {
+        namespaceStack.push(element);
+        Iterator<Namespace> iterator = namespaceStack.iterator();
+        assertNotNull(iterator);
+        assertTrue(iterator.hasNext());
+        assertEquals(ns1, iterator.next());
+    }
+
+    @Test
+    public void testGetScope() {
+        namespaceStack.push(element);
+        Namespace[] scope = namespaceStack.getScope();
+        assertNotNull(scope);
+        assertEquals(1, scope.length);
+        assertEquals(ns1, scope[0]);
+    }
+
+    @Test
+    public void testIsInScope() {
+        namespaceStack.push(element);
+        assertTrue(namespaceStack.isInScope(ns1));
+        assertFalse(namespaceStack.isInScope(ns2));
+    }
+
+    @Test
+    public void testBinarySearch() {
+        Namespace[] data = {ns1, ns2, ns3};
+        int index = NamespaceStack.binarySearch(data, 0, data.length, ns2);
+        assertEquals(1, index);
+    }
+
+    @Test
+    public void testCheckNamespace() {
+        Namespace[] scope = {ns1};
+        Namespace[] newScope = NamespaceStack.checkNamespace(new ArrayList<>(), ns2, scope);
+        assertEquals(2, newScope.length);
+        assertEquals(ns2, newScope[0]);
+        assertEquals(ns1, newScope[1]);
+    }
+}
+```

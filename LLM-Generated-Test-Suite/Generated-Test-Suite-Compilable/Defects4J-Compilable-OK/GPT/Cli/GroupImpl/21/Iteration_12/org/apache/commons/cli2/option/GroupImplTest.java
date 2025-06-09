@@ -1,0 +1,137 @@
+package org.apache.commons.cli2.option;
+
+import org.apache.commons.cli2.DisplaySetting;
+import org.apache.commons.cli2.Option;
+import org.apache.commons.cli2.OptionException;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class GroupImplTest {
+
+    private GroupImpl group;
+    private List<Option> options;
+    private List<Option> anonymousOptions;
+    private WriteableCommandLine commandLine;
+
+    @Before
+    public void setUp() {
+        options = new ArrayList<>();
+        anonymousOptions = new ArrayList<>();
+        commandLine = mock(WriteableCommandLine.class);
+
+        Option mockOption = mock(Option.class);
+        when(mockOption.getTriggers()).thenReturn(new HashSet<>(Arrays.asList("--mock")));
+        when(mockOption.getPrefixes()).thenReturn(new HashSet<>(Arrays.asList("-")));
+        options.add(mockOption);
+
+        group = new GroupImpl(options, "testGroup", "A test group", 1, 2, true);
+    }
+
+    @Test
+    public void testCanProcess() {
+        when(commandLine.looksLikeOption("--mock")).thenReturn(true);
+        assertTrue(group.canProcess(commandLine, "--mock"));
+        assertFalse(group.canProcess(commandLine, "--unknown"));
+    }
+
+    @Test
+    public void testGetPrefixes() {
+        Set<String> prefixes = group.getPrefixes();
+        assertTrue(prefixes.contains("-"));
+    }
+
+    @Test
+    public void testGetTriggers() {
+        Set<String> triggers = group.getTriggers();
+        assertTrue(triggers.contains("--mock"));
+    }
+
+    @Test
+    public void testProcess() throws OptionException {
+        List<String> args = new ArrayList<>(Arrays.asList("--mock"));
+        ListIterator<String> iterator = args.listIterator();
+        group.process(commandLine, iterator);
+        verify(options.get(0), times(1)).process(commandLine, iterator);
+    }
+
+    @Test
+    public void testValidate() throws OptionException {
+        when(commandLine.hasOption(options.get(0))).thenReturn(true);
+        group.validate(commandLine);
+    }
+
+    @Test(expected = OptionException.class)
+    public void testValidateThrowsExceptionForTooManyOptions() throws OptionException {
+        when(commandLine.hasOption(options.get(0))).thenReturn(true);
+        group = new GroupImpl(options, "testGroup", "A test group", 1, 1, true);
+        group.validate(commandLine);
+    }
+
+    @Test
+    public void testGetPreferredName() {
+        assertEquals("testGroup", group.getPreferredName());
+    }
+
+    @Test
+    public void testGetDescription() {
+        assertEquals("A test group", group.getDescription());
+    }
+
+    @Test
+    public void testAppendUsage() {
+        StringBuffer buffer = new StringBuffer();
+        group.appendUsage(buffer, new HashSet<>(Collections.singletonList(DisplaySetting.DISPLAY_OPTIONAL)), null);
+        assertTrue(buffer.toString().contains("testGroup"));
+    }
+
+    @Test
+    public void testHelpLines() {
+        List helpLines = group.helpLines(0, new HashSet<>(Collections.singletonList(DisplaySetting.DISPLAY_GROUP_NAME)), null);
+        assertFalse(helpLines.isEmpty());
+    }
+
+    @Test
+    public void testGetOptions() {
+        List<Option> opts = group.getOptions();
+        assertEquals(1, opts.size());
+    }
+
+    @Test
+    public void testGetAnonymous() {
+        List<Option> anon = group.getAnonymous();
+        assertTrue(anon.isEmpty());
+    }
+
+    @Test
+    public void testFindOption() {
+        Option found = group.findOption("--mock");
+        assertNotNull(found);
+    }
+
+    @Test
+    public void testGetMinimum() {
+        assertEquals(1, group.getMinimum());
+    }
+
+    @Test
+    public void testGetMaximum() {
+        assertEquals(2, group.getMaximum());
+    }
+
+    @Test
+    public void testIsRequired() {
+        assertTrue(group.isRequired());
+    }
+
+    @Test
+    public void testDefaults() {
+        group.defaults(commandLine);
+        verify(options.get(0), times(1)).defaults(commandLine);
+    }
+}

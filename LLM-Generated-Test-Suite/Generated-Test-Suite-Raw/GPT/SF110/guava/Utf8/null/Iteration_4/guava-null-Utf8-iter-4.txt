@@ -1,0 +1,87 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the methods in the `Utf8` class. This suite includes tests for both `encodedLength` and `isWellFormed` methods, covering various edge cases and typical scenarios.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import com.google.common.base.Utf8;
+
+public class Utf8Test {
+
+    @Test
+    public void testEncodedLengthBasicAscii() {
+        assertEquals(5, Utf8.encodedLength("Hello"));
+    }
+
+    @Test
+    public void testEncodedLengthExtendedAscii() {
+        assertEquals(6, Utf8.encodedLength("Héllo"));
+    }
+
+    @Test
+    public void testEncodedLengthNonLatin() {
+        assertEquals(9, Utf8.encodedLength("こんにちは"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testEncodedLengthUnpairedSurrogate() {
+        Utf8.encodedLength("\uD800");
+    }
+
+    @Test
+    public void testEncodedLengthSurrogatePair() {
+        assertEquals(4, Utf8.encodedLength("\uD83D\uDE00")); // 😀
+    }
+
+    @Test
+    public void testIsWellFormedBasicAscii() {
+        assertTrue(Utf8.isWellFormed("Hello".getBytes()));
+    }
+
+    @Test
+    public void testIsWellFormedExtendedAscii() {
+        assertTrue(Utf8.isWellFormed("Héllo".getBytes()));
+    }
+
+    @Test
+    public void testIsWellFormedNonLatin() {
+        assertTrue(Utf8.isWellFormed("こんにちは".getBytes()));
+    }
+
+    @Test
+    public void testIsWellFormedInvalidUtf8() {
+        byte[] invalidUtf8 = {(byte) 0xC3, (byte) 0x28};
+        assertFalse(Utf8.isWellFormed(invalidUtf8));
+    }
+
+    @Test
+    public void testIsWellFormedValidUtf8() {
+        byte[] validUtf8 = {(byte) 0xE2, (byte) 0x82, (byte) 0xAC}; // €
+        assertTrue(Utf8.isWellFormed(validUtf8));
+    }
+
+    @Test
+    public void testIsWellFormedWithOffsetAndLength() {
+        byte[] bytes = "Hello, 世界".getBytes();
+        assertTrue(Utf8.isWellFormed(bytes, 0, bytes.length));
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testIsWellFormedWithInvalidOffset() {
+        byte[] bytes = "Hello".getBytes();
+        Utf8.isWellFormed(bytes, -1, bytes.length);
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testIsWellFormedWithInvalidLength() {
+        byte[] bytes = "Hello".getBytes();
+        Utf8.isWellFormed(bytes, 0, bytes.length + 1);
+    }
+}
+```
+
+### Explanation:
+- **Encoded Length Tests**: These tests cover basic ASCII, extended ASCII, non-Latin characters, surrogate pairs, and unpaired surrogates.
+- **Is Well Formed Tests**: These tests cover basic ASCII, extended ASCII, non-Latin characters, valid and invalid UTF-8 sequences, and boundary conditions for offset and length.
+- **Exception Tests**: Tests are included to ensure that exceptions are thrown for invalid inputs, such as unpaired surrogates and out-of-bounds offsets/lengths.
+
+This suite should provide a comprehensive check of the `Utf8` class's functionality.

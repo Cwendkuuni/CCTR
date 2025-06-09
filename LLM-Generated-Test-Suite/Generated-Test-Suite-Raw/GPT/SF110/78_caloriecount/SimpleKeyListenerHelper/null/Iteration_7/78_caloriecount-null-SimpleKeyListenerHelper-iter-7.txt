@@ -1,0 +1,118 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `SimpleKeyListenerHelper` class. This test suite covers the constructor, the `detach` method, and the `keyPressed` method, as well as the `notifyListener` method. 
+
+```java
+import static org.mockito.Mockito.*;
+
+import java.awt.Component;
+import java.awt.event.KeyEvent;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+public class SimpleKeyListenerHelperTest {
+
+    private Component mockComponent;
+    private SimpleKeyListenerHelper helper;
+    private SimpleKeyListener mockListener;
+
+    @Before
+    public void setUp() {
+        mockComponent = mock(Component.class);
+        mockListener = mock(SimpleKeyListener.class);
+        helper = new SimpleKeyListenerHelper(mockComponent);
+    }
+
+    @Test
+    public void testConstructorAddsKeyListener() {
+        verify(mockComponent).addKeyListener(helper);
+    }
+
+    @Test
+    public void testDetachRemovesKeyListener() {
+        helper.detach();
+        verify(mockComponent).removeKeyListener(helper);
+    }
+
+    @Test
+    public void testDetachSetsComponentToNull() {
+        helper.detach();
+        // Use reflection to check if the component is set to null
+        try {
+            java.lang.reflect.Field componentField = SimpleKeyListenerHelper.class.getDeclaredField("component");
+            componentField.setAccessible(true);
+            assertNull(componentField.get(helper));
+        } catch (Exception e) {
+            fail("Reflection failed: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotifyListenerEnter() {
+        helper.notifyListener(mockListener, 10, null);
+        verify(mockListener).enter(mockComponent);
+    }
+
+    @Test
+    public void testNotifyListenerInsert() {
+        helper.notifyListener(mockListener, 155, null);
+        verify(mockListener).insert(mockComponent);
+    }
+
+    @Test
+    public void testNotifyListenerDelete() {
+        helper.notifyListener(mockListener, 127, null);
+        verify(mockListener).delete(mockComponent);
+    }
+
+    @Test
+    public void testNotifyListenerTab() {
+        helper.notifyListener(mockListener, 9, null);
+        verify(mockListener).tab(mockComponent);
+    }
+
+    @Test
+    public void testKeyPressedEnter() {
+        KeyEvent enterEvent = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED);
+        helper.keyPressed(enterEvent);
+        verify(helper).fire(KeyEvent.VK_ENTER);
+    }
+
+    @Test
+    public void testKeyPressedInsert() {
+        KeyEvent insertEvent = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, 155, KeyEvent.CHAR_UNDEFINED);
+        helper.keyPressed(insertEvent);
+        verify(helper).fire(155);
+    }
+
+    @Test
+    public void testKeyPressedDelete() {
+        KeyEvent deleteEvent = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_DELETE, KeyEvent.CHAR_UNDEFINED);
+        helper.keyPressed(deleteEvent);
+        verify(helper).fire(KeyEvent.VK_DELETE);
+    }
+
+    @Test
+    public void testKeyPressedTab() {
+        KeyEvent tabEvent = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_TAB, KeyEvent.CHAR_UNDEFINED);
+        helper.keyPressed(tabEvent);
+        verify(helper).fire(KeyEvent.VK_TAB);
+    }
+
+    @Test
+    public void testKeyPressedOtherKey() {
+        KeyEvent otherEvent = new KeyEvent(mockComponent, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_A, KeyEvent.CHAR_UNDEFINED);
+        helper.keyPressed(otherEvent);
+        verify(helper, never()).fire(anyInt());
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: We use Mockito to create mock objects for `Component` and `SimpleKeyListener`.
+- **Constructor Test**: Verifies that the `SimpleKeyListenerHelper` constructor adds itself as a key listener to the component.
+- **Detach Method Tests**: Ensures that the `detach` method removes the key listener and sets the component to `null`.
+- **NotifyListener Method Tests**: Verifies that the correct method on `SimpleKeyListener` is called based on the event type.
+- **KeyPressed Method Tests**: Checks that the `fire` method is called with the correct key code for specific keys and not called for other keys.
+
+This test suite uses Mockito for mocking and verifying interactions, and reflection to check private fields.

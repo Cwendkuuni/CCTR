@@ -1,0 +1,106 @@
+```java
+package org.fixsuite.message;
+
+import org.fixsuite.message.info.DictionaryInfo;
+import org.junit.Before;
+import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.TreeMap;
+
+import static org.junit.Assert.*;
+
+public class LibraryTest {
+
+    private Library library;
+    private static final Logger logger = LoggerFactory.getLogger(LibraryTest.class);
+
+    @Before
+    public void setUp() {
+        library = new Library();
+    }
+
+    @Test
+    public void testLoadFromDirectory() {
+        String testPath = "test/resources/library";
+        boolean result = library.loadFromDirectory(testPath);
+        assertTrue("Loading from directory should succeed", result);
+        assertFalse("Dictionaries should not be empty", library.getDictionaries().isEmpty());
+    }
+
+    @Test
+    public void testLoadFromDirectoryNonExistentPath() {
+        String testPath = "non/existent/path";
+        boolean result = library.loadFromDirectory(testPath);
+        assertFalse("Loading from non-existent directory should fail", result);
+    }
+
+    @Test
+    public void testLoadFromDirectoryEmptyDirectory() {
+        String testPath = "test/resources/empty";
+        boolean result = library.loadFromDirectory(testPath);
+        assertFalse("Loading from empty directory should fail", result);
+    }
+
+    @Test
+    public void testGetDictionaries() {
+        String testPath = "test/resources/library";
+        library.loadFromDirectory(testPath);
+        List<DictionaryInfo> dictionaries = library.getDictionaries();
+        assertNotNull("Dictionaries should not be null", dictionaries);
+        assertFalse("Dictionaries should not be empty", dictionaries.isEmpty());
+    }
+
+    @Test
+    public void testGetDictionary() {
+        String testPath = "test/resources/library";
+        library.loadFromDirectory(testPath);
+        DictionaryInfo dictionary = library.getDictionary("1.0");
+        assertNotNull("Dictionary should not be null", dictionary);
+    }
+
+    @Test
+    public void testGetDictionaryNonExistentVersion() {
+        String testPath = "test/resources/library";
+        library.loadFromDirectory(testPath);
+        DictionaryInfo dictionary = library.getDictionary("999.999");
+        assertNull("Dictionary for non-existent version should be null", dictionary);
+    }
+
+    @Test
+    public void testArrangeFiles() {
+        File[] files = {
+            new File("Fields.xml"),
+            new File("Enums.xml"),
+            new File("Components.xml"),
+            new File("MsgType.xml"),
+            new File("MsgContents.xml")
+        };
+        List<File> arrangedFiles = library.arrangeFiles(files);
+        assertEquals("Fields.xml", arrangedFiles.get(0).getName());
+        assertEquals("Enums.xml", arrangedFiles.get(1).getName());
+        assertEquals("Components.xml", arrangedFiles.get(2).getName());
+        assertEquals("MsgType.xml", arrangedFiles.get(3).getName());
+        assertEquals("MsgContents.xml", arrangedFiles.get(4).getName());
+    }
+
+    @Test
+    public void testArrangeFilesWithMissingFiles() {
+        File[] files = {
+            new File("Fields.xml"),
+            new File("Components.xml"),
+            new File("MsgContents.xml")
+        };
+        List<File> arrangedFiles = library.arrangeFiles(files);
+        assertEquals("Fields.xml", arrangedFiles.get(0).getName());
+        assertEquals("Components.xml", arrangedFiles.get(1).getName());
+        assertEquals("MsgContents.xml", arrangedFiles.get(2).getName());
+        assertEquals(3, arrangedFiles.size());
+    }
+}
+```

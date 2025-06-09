@@ -1,0 +1,118 @@
+To create a comprehensive JUnit 4 test suite for the `LagoonGUI` class, we need to test the public methods and any significant private methods that can be accessed indirectly. Since `LagoonGUI` is a GUI application, testing it involves simulating user interactions and verifying the outcomes. Note that GUI testing can be complex and might require additional libraries such as AssertJ-Swing or FEST for more advanced GUI testing capabilities. However, for simplicity, I'll provide a basic test suite using JUnit 4 and mock objects where necessary.
+
+```java
+import nu.staldal.lagoon.LagoonGUI;
+import nu.staldal.lagoon.core.LagoonProcessor;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.awt.*;
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class LagoonGUITest {
+
+    private LagoonGUI lagoonGUI;
+    private LagoonProcessor mockProcessor;
+
+    @Before
+    public void setUp() {
+        lagoonGUI = new LagoonGUI();
+        mockProcessor = mock(LagoonProcessor.class);
+        lagoonGUI.processor = mockProcessor;
+    }
+
+    @Test
+    public void testWindowClosing() {
+        WindowEvent windowEvent = new WindowEvent(lagoonGUI, WindowEvent.WINDOW_CLOSING);
+        lagoonGUI.windowClosing(windowEvent);
+        // Since exit() calls System.exit(0), we can't directly test it without a security manager.
+        // Instead, we can verify that processor.destroy() is called.
+        try {
+            verify(mockProcessor, times(1)).destroy();
+        } catch (IOException e) {
+            fail("IOException should not be thrown");
+        }
+    }
+
+    @Test
+    public void testBuildWithoutForce() {
+        lagoonGUI.build(false);
+        try {
+            verify(mockProcessor, times(1)).build(false);
+        } catch (IOException e) {
+            fail("IOException should not be thrown");
+        }
+    }
+
+    @Test
+    public void testBuildWithForce() {
+        lagoonGUI.build(true);
+        try {
+            verify(mockProcessor, times(1)).build(true);
+        } catch (IOException e) {
+            fail("IOException should not be thrown");
+        }
+    }
+
+    @Test
+    public void testLoadProperties() {
+        File testFile = new File("test.properties");
+        lagoonGUI.loadProperties(testFile);
+        // Verify that properties are loaded correctly
+        // This requires the properties file to be set up correctly for the test
+        // Here we assume the properties file is correctly set up for the test
+        assertEquals("Expected sitemap file value", lagoonGUI.sitemapFile.getValue());
+        assertEquals("Expected source directory value", lagoonGUI.sourceDir.getValue());
+        assertEquals("Expected target URL value", lagoonGUI.targetURL.getValue());
+    }
+
+    @Test
+    public void testSaveProperties() {
+        // This test would require interaction with the file system
+        // and possibly user interaction for saving the password
+        // It is complex to test without a proper mock of file dialogs
+        // and user interaction, so we will not implement it here
+    }
+
+    @Test
+    public void testInit() {
+        lagoonGUI.init();
+        // Verify that processor is initialized
+        assertNotNull(lagoonGUI.processor);
+    }
+
+    @Test
+    public void testGetProperty() {
+        // Test the static method getProperty
+        Properties props = new Properties();
+        props.setProperty("testKey", "testValue");
+        try {
+            String value = LagoonGUI.getProperty(props, "testKey");
+            assertEquals("testValue", value);
+        } catch (Exception e) {
+            fail("Exception should not be thrown");
+        }
+    }
+
+    @Test
+    public void testShowTime() {
+        // Test the static method showTime
+        assertEquals("in 500 ms", LagoonGUI.showTime(500));
+        assertEquals("in 5 s", LagoonGUI.showTime(5000));
+    }
+}
+```
+
+### Notes:
+- **GUI Testing**: This test suite is basic and does not cover GUI interactions extensively. For more comprehensive GUI testing, consider using libraries like AssertJ-Swing or FEST.
+- **System.exit(0)**: The `exit()` method calls `System.exit(0)`, which is difficult to test directly. You might need to use a security manager to intercept the exit call if you want to test it.
+- **File Dialogs**: Testing methods that involve file dialogs (`loadPropertyFile`, `savePropertyFile`) is complex without a proper mock framework for GUI components.
+- **Mocking**: The `LagoonProcessor` is mocked to test interactions without performing actual processing.
+
+This test suite provides a starting point and can be expanded with more detailed tests as needed.

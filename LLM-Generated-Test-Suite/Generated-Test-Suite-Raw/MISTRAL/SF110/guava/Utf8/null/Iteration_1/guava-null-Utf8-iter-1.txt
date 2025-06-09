@@ -1,0 +1,60 @@
+```java
+package com.google.common.base;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+public class Utf8Test {
+
+    @Test
+    public void testEncodedLength() {
+        assertEquals(5, Utf8.encodedLength("hello"));
+        assertEquals(5, Utf8.encodedLength("world"));
+        assertEquals(10, Utf8.encodedLength("hello world"));
+        assertEquals(2, Utf8.encodedLength("€")); // Euro sign is a 3-byte UTF-8 character
+        assertEquals(3, Utf8.encodedLength("😊")); // Smiling face is a 4-byte UTF-8 character
+
+        // Test with surrogate pairs
+        String surrogatePair = "\uD83D\uDE0A"; // Smiling face with smiling eyes
+        assertEquals(4, Utf8.encodedLength(surrogatePair));
+
+        // Test with invalid surrogate pair
+        try {
+            Utf8.encodedLength("\uD83D"); // Unpaired surrogate
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertTrue(e.getMessage().contains("Unpaired surrogate"));
+        }
+    }
+
+    @Test
+    public void testIsWellFormed() {
+        byte[] validUtf8 = "hello".getBytes();
+        assertTrue(Utf8.isWellFormed(validUtf8));
+
+        byte[] invalidUtf8 = {(byte) 0xC0, (byte) 0x80}; // Overlong encoding
+        assertFalse(Utf8.isWellFormed(invalidUtf8));
+
+        byte[] validUtf8WithOffset = "hello world".getBytes();
+        assertTrue(Utf8.isWellFormed(validUtf8WithOffset, 6, 5)); // "world"
+
+        byte[] invalidUtf8WithOffset = {(byte) 0xE2, (byte) 0x82, (byte) 0x28, (byte) 0xC0, (byte) 0x80}; // "€" followed by overlong encoding
+        assertFalse(Utf8.isWellFormed(invalidUtf8WithOffset, 3, 2)); // Overlong encoding part
+    }
+
+    @Test
+    public void testIsWellFormedSlowPath() {
+        byte[] validUtf8 = "€".getBytes(); // Euro sign is a 3-byte UTF-8 character
+        assertTrue(Utf8.isWellFormedSlowPath(validUtf8, 0, validUtf8.length));
+
+        byte[] invalidUtf8 = {(byte) 0xC0, (byte) 0x80}; // Overlong encoding
+        assertFalse(Utf8.isWellFormedSlowPath(invalidUtf8, 0, invalidUtf8.length));
+
+        byte[] validUtf8WithOffset = "hello €".getBytes();
+        assertTrue(Utf8.isWellFormedSlowPath(validUtf8WithOffset, 6, 3)); // "€"
+
+        byte[] invalidUtf8WithOffset = {(byte) 0xE2, (byte) 0x82, (byte) 0x28, (byte) 0xC0, (byte) 0x80}; // "€" followed by overlong encoding
+        assertFalse(Utf8.isWellFormedSlowPath(invalidUtf8WithOffset, 3, 2)); // Overlong encoding part
+    }
+}
+```

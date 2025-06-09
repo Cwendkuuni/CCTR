@@ -1,0 +1,209 @@
+package org.jsoup.parser;
+
+import org.jsoup.parser.TokenQueue;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class TokenQueueTest {
+
+    private TokenQueue queue;
+
+    @Before
+    public void setUp() {
+        queue = new TokenQueue("testQueue");
+    }
+
+    @Test
+    public void testIsEmpty() {
+        assertFalse(queue.isEmpty());
+        queue.consume("testQueue");
+        assertTrue(queue.isEmpty());
+    }
+
+    @Test
+    public void testPeek() {
+        assertEquals('t', queue.peek());
+        queue.consume();
+        assertEquals('e', queue.peek());
+    }
+
+    @Test
+    public void testAddFirstCharacter() {
+        queue.addFirst('X');
+        assertEquals('X', queue.peek());
+    }
+
+    @Test
+    public void testAddFirstString() {
+        queue.addFirst("XYZ");
+        assertEquals('X', queue.peek());
+        queue.consume();
+        assertEquals('Y', queue.peek());
+    }
+
+    @Test
+    public void testMatches() {
+        assertTrue(queue.matches("test"));
+        assertFalse(queue.matches("Test"));
+    }
+
+    @Test
+    public void testMatchesCS() {
+        assertTrue(queue.matchesCS("test"));
+        assertFalse(queue.matchesCS("Test"));
+    }
+
+    @Test
+    public void testMatchesAnyString() {
+        assertTrue(queue.matchesAny("test", "queue"));
+        assertFalse(queue.matchesAny("Test", "Queue"));
+    }
+
+    @Test
+    public void testMatchesAnyChar() {
+        assertTrue(queue.matchesAny('t', 'q'));
+        assertFalse(queue.matchesAny('T', 'Q'));
+    }
+
+    @Test
+    public void testMatchesStartTag() {
+        TokenQueue tagQueue = new TokenQueue("<tag>");
+        assertTrue(tagQueue.matchesStartTag());
+        tagQueue.consume();
+        assertFalse(tagQueue.matchesStartTag());
+    }
+
+    @Test
+    public void testMatchChomp() {
+        assertTrue(queue.matchChomp("test"));
+        assertFalse(queue.matchChomp("Queue"));
+    }
+
+    @Test
+    public void testMatchesWhitespace() {
+        TokenQueue whitespaceQueue = new TokenQueue(" test");
+        assertFalse(whitespaceQueue.matchesWhitespace());
+        whitespaceQueue.consume();
+        assertTrue(whitespaceQueue.matchesWhitespace());
+    }
+
+    @Test
+    public void testMatchesWord() {
+        assertTrue(queue.matchesWord());
+        queue.consume();
+        assertTrue(queue.matchesWord());
+    }
+
+    @Test
+    public void testAdvance() {
+        queue.advance();
+        assertEquals('e', queue.peek());
+    }
+
+    @Test
+    public void testConsumeChar() {
+        assertEquals('t', queue.consume());
+        assertEquals('e', queue.peek());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testConsumeString() {
+        queue.consume("test");
+        assertEquals('Q', queue.peek());
+        queue.consume("invalid");
+    }
+
+    @Test
+    public void testConsumeTo() {
+        assertEquals("test", queue.consumeTo("Queue"));
+        assertEquals('Q', queue.peek());
+    }
+
+    @Test
+    public void testConsumeToIgnoreCase() {
+        assertEquals("test", queue.consumeToIgnoreCase("QUEUE"));
+        assertEquals('Q', queue.peek());
+    }
+
+    @Test
+    public void testConsumeToAny() {
+        assertEquals("test", queue.consumeToAny("Queue", "ueue"));
+        assertEquals('Q', queue.peek());
+    }
+
+    @Test
+    public void testChompTo() {
+        assertEquals("test", queue.chompTo("Queue"));
+        assertEquals('Q', queue.peek());
+    }
+
+    @Test
+    public void testChompToIgnoreCase() {
+        assertEquals("test", queue.chompToIgnoreCase("QUEUE"));
+        assertEquals('Q', queue.peek());
+    }
+
+    @Test
+    public void testChompBalanced() {
+        TokenQueue balancedQueue = new TokenQueue("(one (two) three) four");
+        assertEquals("one (two) three", balancedQueue.chompBalanced('(', ')'));
+        assertEquals(' ', balancedQueue.peek());
+    }
+
+    @Test
+    public void testUnescape() {
+        assertEquals("test", TokenQueue.unescape("test"));
+        assertEquals("te\\st", TokenQueue.unescape("te\\\\st"));
+    }
+
+    @Test
+    public void testConsumeWhitespace() {
+        TokenQueue whitespaceQueue = new TokenQueue("   test");
+        assertTrue(whitespaceQueue.consumeWhitespace());
+        assertEquals('t', whitespaceQueue.peek());
+    }
+
+    @Test
+    public void testConsumeWord() {
+        assertEquals("test", queue.consumeWord());
+        assertEquals('Q', queue.peek());
+    }
+
+    @Test
+    public void testConsumeTagName() {
+        TokenQueue tagQueue = new TokenQueue("tag-name");
+        assertEquals("tag-name", tagQueue.consumeTagName());
+    }
+
+    @Test
+    public void testConsumeElementSelector() {
+        TokenQueue selectorQueue = new TokenQueue("tag|name");
+        assertEquals("tag|name", selectorQueue.consumeElementSelector());
+    }
+
+    @Test
+    public void testConsumeCssIdentifier() {
+        TokenQueue cssQueue = new TokenQueue("identifier-123");
+        assertEquals("identifier-123", cssQueue.consumeCssIdentifier());
+    }
+
+    @Test
+    public void testConsumeAttributeKey() {
+        TokenQueue attrQueue = new TokenQueue("attr-key:123");
+        assertEquals("attr-key:123", attrQueue.consumeAttributeKey());
+    }
+
+    @Test
+    public void testRemainder() {
+        assertEquals("testQueue", queue.remainder());
+        assertTrue(queue.isEmpty());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("testQueue", queue.toString());
+        queue.consume("test");
+        assertEquals("Queue", queue.toString());
+    }
+}

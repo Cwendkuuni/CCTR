@@ -1,0 +1,137 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.Assert;
+import java.util.HashMap;
+import java.util.Map;
+
+public class CSVRecordTest {
+
+    private CSVRecord csvRecord;
+    private Map<String, Integer> mapping;
+    private String[] values;
+    private String comment;
+    private long recordNumber;
+
+    @Before
+    public void setUp() {
+        mapping = new HashMap<>();
+        mapping.put("name", 0);
+        mapping.put("age", 1);
+        values = new String[]{"John Doe", "30"};
+        comment = "Sample comment";
+        recordNumber = 1;
+        csvRecord = new CSVRecord(values, mapping, comment, recordNumber);
+    }
+
+    @Test
+    public void testGetByEnum() {
+        enum TestEnum { name, age }
+        Assert.assertEquals("John Doe", csvRecord.get(TestEnum.name));
+        Assert.assertEquals("30", csvRecord.get(TestEnum.age));
+    }
+
+    @Test
+    public void testGetByIndex() {
+        Assert.assertEquals("John Doe", csvRecord.get(0));
+        Assert.assertEquals("30", csvRecord.get(1));
+    }
+
+    @Test
+    public void testGetByName() {
+        Assert.assertEquals("John Doe", csvRecord.get("name"));
+        Assert.assertEquals("30", csvRecord.get("age"));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetByNameNoMapping() {
+        CSVRecord noMappingRecord = new CSVRecord(values, null, comment, recordNumber);
+        noMappingRecord.get("name");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetByNameNotMapped() {
+        csvRecord.get("address");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetByNameInconsistentRecord() {
+        String[] inconsistentValues = new String[]{"John Doe"};
+        CSVRecord inconsistentRecord = new CSVRecord(inconsistentValues, mapping, comment, recordNumber);
+        inconsistentRecord.get("age");
+    }
+
+    @Test
+    public void testGetComment() {
+        Assert.assertEquals("Sample comment", csvRecord.getComment());
+    }
+
+    @Test
+    public void testGetRecordNumber() {
+        Assert.assertEquals(1, csvRecord.getRecordNumber());
+    }
+
+    @Test
+    public void testIsConsistent() {
+        Assert.assertTrue(csvRecord.isConsistent());
+
+        String[] inconsistentValues = new String[]{"John Doe"};
+        CSVRecord inconsistentRecord = new CSVRecord(inconsistentValues, mapping, comment, recordNumber);
+        Assert.assertFalse(inconsistentRecord.isConsistent());
+    }
+
+    @Test
+    public void testIsMapped() {
+        Assert.assertTrue(csvRecord.isMapped("name"));
+        Assert.assertTrue(csvRecord.isMapped("age"));
+        Assert.assertFalse(csvRecord.isMapped("address"));
+    }
+
+    @Test
+    public void testIsSet() {
+        Assert.assertTrue(csvRecord.isSet("name"));
+        Assert.assertTrue(csvRecord.isSet("age"));
+        Assert.assertFalse(csvRecord.isSet("address"));
+    }
+
+    @Test
+    public void testIterator() {
+        Iterator<String> iterator = csvRecord.iterator();
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("John Doe", iterator.next());
+        Assert.assertTrue(iterator.hasNext());
+        Assert.assertEquals("30", iterator.next());
+        Assert.assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testPutIn() {
+        Map<String, String> map = new HashMap<>();
+        csvRecord.putIn(map);
+        Assert.assertEquals("John Doe", map.get("name"));
+        Assert.assertEquals("30", map.get("age"));
+    }
+
+    @Test
+    public void testSize() {
+        Assert.assertEquals(2, csvRecord.size());
+    }
+
+    @Test
+    public void testToMap() {
+        Map<String, String> map = csvRecord.toMap();
+        Assert.assertEquals("John Doe", map.get("name"));
+        Assert.assertEquals("30", map.get("age"));
+    }
+
+    @Test
+    public void testToString() {
+        Assert.assertEquals("[John Doe, 30]", csvRecord.toString());
+    }
+
+    @Test
+    public void testValues() {
+        Assert.assertArrayEquals(values, csvRecord.values());
+    }
+}
+```

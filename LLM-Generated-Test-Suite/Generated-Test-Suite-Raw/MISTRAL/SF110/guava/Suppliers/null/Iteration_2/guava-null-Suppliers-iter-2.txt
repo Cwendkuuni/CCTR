@@ -1,0 +1,183 @@
+```java
+package com.google.common.base;
+
+import com.google.common.annotations.GwtCompatible;
+import com.google.common.base.Function;
+import com.google.common.base.Preconditions;
+import com.google.common.base.Supplier;
+import com.google.common.base.Suppliers;
+import com.google.common.base.Suppliers.MemoizingSupplier;
+import com.google.common.base.Suppliers.SupplierComposition;
+import com.google.common.base.Suppliers.SupplierOfInstance;
+import com.google.common.base.Suppliers.ThreadSafeSupplier;
+import com.google.common.base.Suppliers.ExpiringMemoizingSupplier;
+import com.google.common.base.Suppliers.SupplierFunctionImpl;
+import com.google.common.base.Suppliers.SupplierFunction;
+import com.google.common.testing.EqualsTester;
+import com.google.common.testing.NullPointerTester;
+import com.google.common.testing.SerializableTester;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.io.Serializable;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
+import static org.junit.Assert.assertTrue;
+
+@RunWith(JUnit4.class)
+public class SuppliersTest {
+
+    @Test
+    public void testCompose() {
+        Function<String, Integer> function = input -> input.length();
+        Supplier<String> supplier = () -> "test";
+
+        Supplier<Integer> composedSupplier = Suppliers.compose(function, supplier);
+        assertEquals(Integer.valueOf(4), composedSupplier.get());
+    }
+
+    @Test
+    public void testMemoize() {
+        Supplier<String> delegate = () -> "test";
+        Supplier<String> memoizedSupplier = Suppliers.memoize(delegate);
+
+        assertEquals("test", memoizedSupplier.get());
+        assertEquals("test", memoizedSupplier.get());
+    }
+
+    @Test
+    public void testMemoizeWithExpiration() {
+        Supplier<String> delegate = () -> "test";
+        Supplier<String> memoizedSupplier = Suppliers.memoizeWithExpiration(delegate, 1, TimeUnit.SECONDS);
+
+        assertEquals("test", memoizedSupplier.get());
+        assertEquals("test", memoizedSupplier.get());
+
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
+
+        assertEquals("test", memoizedSupplier.get());
+    }
+
+    @Test
+    public void testOfInstance() {
+        String instance = "test";
+        Supplier<String> supplier = Suppliers.ofInstance(instance);
+
+        assertEquals("test", supplier.get());
+    }
+
+    @Test
+    public void testSynchronizedSupplier() {
+        Supplier<String> delegate = () -> "test";
+        Supplier<String> synchronizedSupplier = Suppliers.synchronizedSupplier(delegate);
+
+        assertEquals("test", synchronizedSupplier.get());
+    }
+
+    @Test
+    public void testSupplierFunction() {
+        Supplier<String> supplier = () -> "test";
+        Function<Supplier<String>, String> function = Suppliers.supplierFunction();
+
+        assertEquals("test", function.apply(supplier));
+    }
+
+    @Test
+    public void testSupplierCompositionEquals() {
+        Function<String, Integer> function = input -> input.length();
+        Supplier<String> supplier = () -> "test";
+
+        SupplierComposition<String, Integer> composition1 = new SupplierComposition<>(function, supplier);
+        SupplierComposition<String, Integer> composition2 = new SupplierComposition<>(function, supplier);
+
+        new EqualsTester()
+                .addEqualityGroup(composition1, composition2)
+                .testEquals();
+    }
+
+    @Test
+    public void testMemoizingSupplierEquals() {
+        Supplier<String> delegate = () -> "test";
+
+        MemoizingSupplier<String> memoizingSupplier1 = new MemoizingSupplier<>(delegate);
+        MemoizingSupplier<String> memoizingSupplier2 = new MemoizingSupplier<>(delegate);
+
+        new EqualsTester()
+                .addEqualityGroup(memoizingSupplier1, memoizingSupplier2)
+                .testEquals();
+    }
+
+    @Test
+    public void testSupplierOfInstanceEquals() {
+        String instance = "test";
+
+        SupplierOfInstance<String> supplier1 = new SupplierOfInstance<>(instance);
+        SupplierOfInstance<String> supplier2 = new SupplierOfInstance<>(instance);
+
+        new EqualsTester()
+                .addEqualityGroup(supplier1, supplier2)
+                .testEquals();
+    }
+
+    @Test
+    public void testThreadSafeSupplierEquals() {
+        Supplier<String> delegate = () -> "test";
+
+        ThreadSafeSupplier<String> threadSafeSupplier1 = new ThreadSafeSupplier<>(delegate);
+        ThreadSafeSupplier<String> threadSafeSupplier2 = new ThreadSafeSupplier<>(delegate);
+
+        new EqualsTester()
+                .addEqualityGroup(threadSafeSupplier1, threadSafeSupplier2)
+                .testEquals();
+    }
+
+    @Test
+    public void testExpiringMemoizingSupplierEquals() {
+        Supplier<String> delegate = () -> "test";
+
+        ExpiringMemoizingSupplier<String> expiringSupplier1 = new ExpiringMemoizingSupplier<>(delegate, 1, TimeUnit.SECONDS);
+        ExpiringMemoizingSupplier<String> expiringSupplier2 = new ExpiringMemoizingSupplier<>(delegate, 1, TimeUnit.SECONDS);
+
+        new EqualsTester()
+                .addEqualityGroup(expiringSupplier1, expiringSupplier2)
+                .testEquals();
+    }
+
+    @Test
+    public void testSerializable() {
+        Function<String, Integer> function = input -> input.length();
+        Supplier<String> supplier = () -> "test";
+
+        SupplierComposition<String, Integer> composition = new SupplierComposition<>(function, supplier);
+        SerializableTester.reserializeAndAssert(composition);
+
+        Supplier<String> delegate = () -> "test";
+        MemoizingSupplier<String> memoizingSupplier = new MemoizingSupplier<>(delegate);
+        SerializableTester.reserializeAndAssert(memoizingSupplier);
+
+        SupplierOfInstance<String> supplierOfInstance = new SupplierOfInstance<>("test");
+        SerializableTester.reserializeAndAssert(supplierOfInstance);
+
+        ThreadSafeSupplier<String> threadSafeSupplier = new ThreadSafeSupplier<>(delegate);
+        SerializableTester.reserializeAndAssert(threadSafeSupplier);
+
+        ExpiringMemoizingSupplier<String> expiringSupplier = new ExpiringMemoizingSupplier<>(delegate, 1, TimeUnit.SECONDS);
+        SerializableTester.reserializeAndAssert(expiringSupplier);
+    }
+
+    @Test
+    public void testNullPointers() {
+        NullPointerTester tester = new NullPointerTester();
+        tester.testAllPublicStaticMethods(Suppliers.class);
+    }
+}
+```

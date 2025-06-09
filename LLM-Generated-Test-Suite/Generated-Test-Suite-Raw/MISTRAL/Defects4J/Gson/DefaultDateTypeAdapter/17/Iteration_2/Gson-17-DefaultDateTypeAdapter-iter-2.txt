@@ -1,0 +1,111 @@
+```java
+package com.google.gson;
+
+import static org.junit.Assert.*;
+
+import java.io.IOException;
+import java.sql.Timestamp;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import com.google.gson.stream.JsonReader;
+import com.google.gson.stream.JsonWriter;
+
+public class DefaultDateTypeAdapterTest {
+
+    private DefaultDateTypeAdapter adapter;
+    private DateFormat enUsFormat;
+    private DateFormat localFormat;
+
+    @Before
+    public void setUp() {
+        enUsFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT, Locale.US);
+        localFormat = DateFormat.getDateTimeInstance(DateFormat.DEFAULT, DateFormat.DEFAULT);
+        adapter = new DefaultDateTypeAdapter(Date.class, enUsFormat, localFormat);
+    }
+
+    @Test
+    public void testWriteNullValue() throws IOException {
+        JsonWriter writer = new JsonWriter(new java.io.StringWriter());
+        adapter.write(writer, null);
+        assertEquals("null", writer.toString());
+    }
+
+    @Test
+    public void testWriteDateValue() throws IOException {
+        Date date = new Date();
+        JsonWriter writer = new JsonWriter(new java.io.StringWriter());
+        adapter.write(writer, date);
+        assertEquals("\"" + enUsFormat.format(date) + "\"", writer.toString());
+    }
+
+    @Test
+    public void testReadDateValue() throws IOException {
+        String dateString = enUsFormat.format(new Date());
+        JsonReader reader = new JsonReader(new java.io.StringReader("\"" + dateString + "\""));
+        Date result = adapter.read(reader);
+        assertEquals(dateString, enUsFormat.format(result));
+    }
+
+    @Test(expected = JsonParseException.class)
+    public void testReadNonStringValue() throws IOException {
+        JsonReader reader = new JsonReader(new java.io.StringReader("12345"));
+        adapter.read(reader);
+    }
+
+    @Test
+    public void testReadTimestampValue() throws IOException {
+        String dateString = enUsFormat.format(new Date());
+        JsonReader reader = new JsonReader(new java.io.StringReader("\"" + dateString + "\""));
+        adapter = new DefaultDateTypeAdapter(Timestamp.class, enUsFormat, localFormat);
+        Timestamp result = (Timestamp) adapter.read(reader);
+        assertEquals(dateString, enUsFormat.format(result));
+    }
+
+    @Test
+    public void testReadSqlDateValue() throws IOException {
+        String dateString = enUsFormat.format(new Date());
+        JsonReader reader = new JsonReader(new java.io.StringReader("\"" + dateString + "\""));
+        adapter = new DefaultDateTypeAdapter(java.sql.Date.class, enUsFormat, localFormat);
+        java.sql.Date result = (java.sql.Date) adapter.read(reader);
+        assertEquals(dateString, enUsFormat.format(result));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testInvalidDateType() {
+        new DefaultDateTypeAdapter(String.class, enUsFormat, localFormat);
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("DefaultDateTypeAdapter(SimpleDateFormat)", adapter.toString());
+    }
+
+    @Test
+    public void testConstructorWithDatePattern() {
+        String datePattern = "yyyy-MM-dd";
+        adapter = new DefaultDateTypeAdapter(Date.class, datePattern);
+        assertEquals("DefaultDateTypeAdapter(SimpleDateFormat)", adapter.toString());
+    }
+
+    @Test
+    public void testConstructorWithStyle() {
+        int style = DateFormat.SHORT;
+        adapter = new DefaultDateTypeAdapter(Date.class, style);
+        assertEquals("DefaultDateTypeAdapter(SimpleDateFormat)", adapter.toString());
+    }
+
+    @Test
+    public void testConstructorWithDateStyleAndTimeStyle() {
+        int dateStyle = DateFormat.SHORT;
+        int timeStyle = DateFormat.SHORT;
+        adapter = new DefaultDateTypeAdapter(Date.class, dateStyle, timeStyle);
+        assertEquals("DefaultDateTypeAdapter(SimpleDateFormat)", adapter.toString());
+    }
+}
+```

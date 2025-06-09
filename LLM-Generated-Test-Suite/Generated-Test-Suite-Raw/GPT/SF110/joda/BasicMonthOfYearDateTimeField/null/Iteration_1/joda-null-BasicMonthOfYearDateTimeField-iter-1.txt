@@ -1,0 +1,180 @@
+```java
+import static org.junit.Assert.*;
+import org.joda.time.chrono.BasicChronology;
+import org.joda.time.chrono.BasicMonthOfYearDateTimeField;
+import org.joda.time.DateTimeFieldType;
+import org.joda.time.DurationField;
+import org.joda.time.ReadablePartial;
+import org.joda.time.field.FieldUtils;
+import org.joda.time.DateTimeUtils;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+public class BasicMonthOfYearDateTimeFieldTest {
+
+    private BasicChronology mockChronology;
+    private BasicMonthOfYearDateTimeField field;
+    private final int leapMonth = 2; // Assuming February as the leap month for testing
+
+    @Before
+    public void setUp() {
+        mockChronology = Mockito.mock(BasicChronology.class);
+        Mockito.when(mockChronology.getAverageMillisPerMonth()).thenReturn(2629746000L); // Average milliseconds in a month
+        Mockito.when(mockChronology.getMaxMonth()).thenReturn(12);
+        Mockito.when(mockChronology.getMinYear()).thenReturn(1);
+        Mockito.when(mockChronology.getMaxYear()).thenReturn(9999);
+        field = new BasicMonthOfYearDateTimeField(mockChronology, leapMonth);
+    }
+
+    @Test
+    public void testIsLenient() {
+        assertFalse(field.isLenient());
+    }
+
+    @Test
+    public void testGet() {
+        long testMillis = 1625097600000L; // Example timestamp
+        Mockito.when(mockChronology.getMonthOfYear(testMillis)).thenReturn(7);
+        assertEquals(7, field.get(testMillis));
+    }
+
+    @Test
+    public void testAddInt() {
+        long testMillis = 1625097600000L; // Example timestamp
+        Mockito.when(mockChronology.getMillisOfDay(testMillis)).thenReturn(0L);
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2021)).thenReturn(7);
+        Mockito.when(mockChronology.getDayOfMonth(testMillis, 2021, 7)).thenReturn(1);
+        Mockito.when(mockChronology.getDaysInYearMonth(2021, 8)).thenReturn(31);
+        Mockito.when(mockChronology.getYearMonthDayMillis(2021, 8, 1)).thenReturn(1627776000000L);
+
+        assertEquals(1627776000000L, field.add(testMillis, 1));
+    }
+
+    @Test
+    public void testAddLong() {
+        long testMillis = 1625097600000L; // Example timestamp
+        Mockito.when(mockChronology.getMillisOfDay(testMillis)).thenReturn(0L);
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2021)).thenReturn(7);
+        Mockito.when(mockChronology.getDayOfMonth(testMillis, 2021, 7)).thenReturn(1);
+        Mockito.when(mockChronology.getDaysInYearMonth(2021, 8)).thenReturn(31);
+        Mockito.when(mockChronology.getYearMonthDayMillis(2021, 8, 1)).thenReturn(1627776000000L);
+
+        assertEquals(1627776000000L, field.add(testMillis, 1L));
+    }
+
+    @Test
+    public void testAddReadablePartial() {
+        ReadablePartial mockPartial = Mockito.mock(ReadablePartial.class);
+        int[] values = {7};
+        Mockito.when(mockPartial.size()).thenReturn(1);
+        Mockito.when(mockPartial.getFieldType(0)).thenReturn(DateTimeFieldType.monthOfYear());
+        Mockito.when(mockPartial.getValue(0)).thenReturn(7);
+
+        int[] result = field.add(mockPartial, 0, values, 1);
+        assertArrayEquals(new int[]{8}, result);
+    }
+
+    @Test
+    public void testAddWrapField() {
+        long testMillis = 1625097600000L; // Example timestamp
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2021)).thenReturn(7);
+        Mockito.when(mockChronology.getDayOfMonth(testMillis, 2021)).thenReturn(1);
+        Mockito.when(mockChronology.getDaysInYearMonth(2021, 8)).thenReturn(31);
+        Mockito.when(mockChronology.getYearMonthDayMillis(2021, 8, 1)).thenReturn(1627776000000L);
+
+        assertEquals(1627776000000L, field.addWrapField(testMillis, 1));
+    }
+
+    @Test
+    public void testGetDifferenceAsLong() {
+        long startMillis = 1625097600000L; // Example timestamp
+        long endMillis = 1627776000000L; // Example timestamp
+        Mockito.when(mockChronology.getYear(startMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(startMillis, 2021)).thenReturn(7);
+        Mockito.when(mockChronology.getYear(endMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(endMillis, 2021)).thenReturn(8);
+
+        assertEquals(1, field.getDifferenceAsLong(endMillis, startMillis));
+    }
+
+    @Test
+    public void testSet() {
+        long testMillis = 1625097600000L; // Example timestamp
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getDayOfMonth(testMillis, 2021)).thenReturn(1);
+        Mockito.when(mockChronology.getDaysInYearMonth(2021, 8)).thenReturn(31);
+        Mockito.when(mockChronology.getYearMonthDayMillis(2021, 8, 1)).thenReturn(1627776000000L);
+        Mockito.when(mockChronology.getMillisOfDay(testMillis)).thenReturn(0L);
+
+        assertEquals(1627776000000L, field.set(testMillis, 8));
+    }
+
+    @Test
+    public void testGetRangeDurationField() {
+        DurationField mockDurationField = Mockito.mock(DurationField.class);
+        Mockito.when(mockChronology.years()).thenReturn(mockDurationField);
+        assertEquals(mockDurationField, field.getRangeDurationField());
+    }
+
+    @Test
+    public void testIsLeap() {
+        long testMillis = 1614556800000L; // Example timestamp for a leap year
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2020);
+        Mockito.when(mockChronology.isLeapYear(2020)).thenReturn(true);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2020)).thenReturn(leapMonth);
+
+        assertTrue(field.isLeap(testMillis));
+    }
+
+    @Test
+    public void testGetLeapAmount() {
+        long testMillis = 1614556800000L; // Example timestamp for a leap year
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2020);
+        Mockito.when(mockChronology.isLeapYear(2020)).thenReturn(true);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2020)).thenReturn(leapMonth);
+
+        assertEquals(1, field.getLeapAmount(testMillis));
+    }
+
+    @Test
+    public void testGetLeapDurationField() {
+        DurationField mockDurationField = Mockito.mock(DurationField.class);
+        Mockito.when(mockChronology.days()).thenReturn(mockDurationField);
+        assertEquals(mockDurationField, field.getLeapDurationField());
+    }
+
+    @Test
+    public void testGetMinimumValue() {
+        assertEquals(1, field.getMinimumValue());
+    }
+
+    @Test
+    public void testGetMaximumValue() {
+        assertEquals(12, field.getMaximumValue());
+    }
+
+    @Test
+    public void testRoundFloor() {
+        long testMillis = 1625097600000L; // Example timestamp
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2021)).thenReturn(7);
+        Mockito.when(mockChronology.getYearMonthMillis(2021, 7)).thenReturn(1625097600000L);
+
+        assertEquals(1625097600000L, field.roundFloor(testMillis));
+    }
+
+    @Test
+    public void testRemainder() {
+        long testMillis = 1625097600000L; // Example timestamp
+        Mockito.when(mockChronology.getYear(testMillis)).thenReturn(2021);
+        Mockito.when(mockChronology.getMonthOfYear(testMillis, 2021)).thenReturn(7);
+        Mockito.when(mockChronology.getYearMonthMillis(2021, 7)).thenReturn(1625097600000L);
+
+        assertEquals(0L, field.remainder(testMillis));
+    }
+}
+```

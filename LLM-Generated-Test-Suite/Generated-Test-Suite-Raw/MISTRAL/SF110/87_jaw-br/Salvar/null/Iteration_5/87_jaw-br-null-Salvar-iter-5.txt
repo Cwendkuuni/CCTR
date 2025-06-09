@@ -1,0 +1,140 @@
+```java
+package jaw.entrada;
+
+import jaw.metamodelo.*;
+import jaw.gui.*;
+import java.util.*;
+import jaw.*;
+import javax.swing.filechooser.*;
+import java.awt.*;
+import javax.swing.*;
+import java.io.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+import org.mockito.*;
+
+public class SalvarTest {
+
+    private ProcessarEntidades formMock;
+    private Main mainMock;
+    private Serializacao serializacaoMock;
+    private SerializacaoXML serializacaoXMLMock;
+
+    @Before
+    public void setUp() {
+        formMock = Mockito.mock(ProcessarEntidades.class);
+        mainMock = Mockito.mock(Main.class);
+        serializacaoMock = Mockito.mock(Serializacao.class);
+        serializacaoXMLMock = Mockito.mock(SerializacaoXML.class);
+
+        Main.janelaPrincipal = mainMock;
+        Main.configuracao = Mockito.mock(Configuracao.class);
+    }
+
+    @Test
+    public void testConstructorWithSALVAR_XML() {
+        Mockito.when(formMock.getEntidades()).thenReturn(new Vector<Entidade>());
+        Mockito.when(formMock.getNomeArquivoSalvo()).thenReturn("Novo Projeto");
+        Mockito.when(Main.configuracao.getCaminhoDosProjetos()).thenReturn("/path/to/projects");
+
+        JFileChooser fileChooserMock = Mockito.mock(JFileChooser.class);
+        Mockito.when(fileChooserMock.showSaveDialog(formMock)).thenReturn(JFileChooser.APPROVE_OPTION);
+        Mockito.when(fileChooserMock.getSelectedFile()).thenReturn(new File("/path/to/projects/test.jaw.xml"));
+
+        Salvar salvar = new Salvar(formMock, Salvar.SALVAR_XML);
+
+        assertTrue(salvar.vela);
+        assertEquals("/path/to/projects/test.jaw.xml", salvar.arquivo);
+    }
+
+    @Test
+    public void testConstructorWithSALVAR() {
+        Mockito.when(formMock.getEntidades()).thenReturn(new Vector<Entidade>());
+        Mockito.when(formMock.getNomeArquivoSalvo()).thenReturn("Novo Projeto");
+        Mockito.when(Main.configuracao.getCaminhoDosProjetos()).thenReturn("/path/to/projects");
+
+        JFileChooser fileChooserMock = Mockito.mock(JFileChooser.class);
+        Mockito.when(fileChooserMock.showSaveDialog(formMock)).thenReturn(JFileChooser.APPROVE_OPTION);
+        Mockito.when(fileChooserMock.getSelectedFile()).thenReturn(new File("/path/to/projects/test.jaw"));
+
+        Salvar salvar = new Salvar(formMock, Salvar.SALVAR);
+
+        assertTrue(salvar.vela);
+        assertEquals("/path/to/projects/test.jaw", salvar.arquivo);
+    }
+
+    @Test
+    public void testConstructorWithSALVAR_COMO() {
+        Mockito.when(formMock.getEntidades()).thenReturn(new Vector<Entidade>());
+        Mockito.when(formMock.getNomeArquivoSalvo()).thenReturn("Novo Projeto");
+        Mockito.when(Main.configuracao.getCaminhoDosProjetos()).thenReturn("/path/to/projects");
+
+        JFileChooser fileChooserMock = Mockito.mock(JFileChooser.class);
+        Mockito.when(fileChooserMock.showSaveDialog(formMock)).thenReturn(JFileChooser.APPROVE_OPTION);
+        Mockito.when(fileChooserMock.getSelectedFile()).thenReturn(new File("/path/to/projects/test.jaw"));
+
+        Salvar salvar = new Salvar(formMock, Salvar.SALVAR_COMO);
+
+        assertTrue(salvar.vela);
+        assertEquals("/path/to/projects/test.jaw", salvar.arquivo);
+    }
+
+    @Test
+    public void testConstructorWithException() {
+        Mockito.when(formMock.getEntidades()).thenThrow(new RuntimeException("Test Exception"));
+
+        Salvar salvar = new Salvar(formMock, Salvar.SALVAR);
+
+        Mockito.verify(mainMock).log("java.lang.RuntimeException: Test Exception");
+    }
+
+    @Test
+    public void testConstructorWithNullFile() {
+        Mockito.when(formMock.getEntidades()).thenReturn(new Vector<Entidade>());
+        Mockito.when(formMock.getNomeArquivoSalvo()).thenReturn("Novo Projeto");
+        Mockito.when(Main.configuracao.getCaminhoDosProjetos()).thenReturn("/path/to/projects");
+
+        JFileChooser fileChooserMock = Mockito.mock(JFileChooser.class);
+        Mockito.when(fileChooserMock.showSaveDialog(formMock)).thenReturn(JFileChooser.CANCEL_OPTION);
+
+        Salvar salvar = new Salvar(formMock, Salvar.SALVAR);
+
+        assertFalse(salvar.vela);
+        assertEquals("", salvar.arquivo);
+    }
+
+    @Test
+    public void testConstructorWithSerializacaoException() {
+        Mockito.when(formMock.getEntidades()).thenReturn(new Vector<Entidade>());
+        Mockito.when(formMock.getNomeArquivoSalvo()).thenReturn("Novo Projeto");
+        Mockito.when(Main.configuracao.getCaminhoDosProjetos()).thenReturn("/path/to/projects");
+
+        JFileChooser fileChooserMock = Mockito.mock(JFileChooser.class);
+        Mockito.when(fileChooserMock.showSaveDialog(formMock)).thenReturn(JFileChooser.APPROVE_OPTION);
+        Mockito.when(fileChooserMock.getSelectedFile()).thenReturn(new File("/path/to/projects/test.jaw"));
+
+        Mockito.when(serializacaoMock.salvar(Mockito.anyList(), Mockito.anyString())).thenThrow(new RuntimeException("Test Exception"));
+
+        Salvar salvar = new Salvar(formMock, Salvar.SALVAR);
+
+        Mockito.verify(mainMock).log("java.lang.RuntimeException: Test Exception");
+    }
+
+    @Test
+    public void testConstructorWithSerializacaoXMLException() {
+        Mockito.when(formMock.getEntidades()).thenReturn(new Vector<Entidade>());
+        Mockito.when(formMock.getNomeArquivoSalvo()).thenReturn("Novo Projeto");
+        Mockito.when(Main.configuracao.getCaminhoDosProjetos()).thenReturn("/path/to/projects");
+
+        JFileChooser fileChooserMock = Mockito.mock(JFileChooser.class);
+        Mockito.when(fileChooserMock.showSaveDialog(formMock)).thenReturn(JFileChooser.APPROVE_OPTION);
+        Mockito.when(fileChooserMock.getSelectedFile()).thenReturn(new File("/path/to/projects/test.jaw.xml"));
+
+        Mockito.when(serializacaoXMLMock.entidades2XML(Mockito.anyList())).thenThrow(new RuntimeException("Test Exception"));
+
+        Salvar salvar = new Salvar(formMock, Salvar.SALVAR_XML);
+
+        Mockito.verify(mainMock).log("java.lang.RuntimeException: Test Exception");
+    }
+}
+```

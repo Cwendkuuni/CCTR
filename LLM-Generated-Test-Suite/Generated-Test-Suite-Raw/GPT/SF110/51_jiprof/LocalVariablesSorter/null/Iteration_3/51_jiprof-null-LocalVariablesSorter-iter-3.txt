@@ -1,0 +1,99 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.objectweb.asm.jip.MethodVisitor;
+import org.objectweb.asm.jip.Type;
+import org.objectweb.asm.jip.Label;
+import org.objectweb.asm.jip.Opcodes;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class LocalVariablesSorterTest {
+
+    private MethodVisitor mockMethodVisitor;
+    private LocalVariablesSorter localVariablesSorter;
+
+    @Before
+    public void setUp() {
+        mockMethodVisitor = mock(MethodVisitor.class);
+        localVariablesSorter = new LocalVariablesSorter(Opcodes.ACC_PUBLIC, "(I)V", mockMethodVisitor);
+    }
+
+    @Test
+    public void testVisitVarInsn() {
+        localVariablesSorter.visitVarInsn(Opcodes.ILOAD, 1);
+        verify(mockMethodVisitor).visitVarInsn(Opcodes.ILOAD, 1);
+    }
+
+    @Test
+    public void testVisitIincInsn() {
+        localVariablesSorter.visitIincInsn(1, 5);
+        verify(mockMethodVisitor).visitIincInsn(1, 5);
+    }
+
+    @Test
+    public void testVisitMaxs() {
+        localVariablesSorter.visitMaxs(10, 20);
+        verify(mockMethodVisitor).visitMaxs(10, localVariablesSorter.nextLocal);
+    }
+
+    @Test
+    public void testVisitLocalVariable() {
+        Label start = new Label();
+        Label end = new Label();
+        localVariablesSorter.visitLocalVariable("var", "I", null, start, end, 1);
+        verify(mockMethodVisitor).visitLocalVariable("var", "I", null, start, end, 1);
+    }
+
+    @Test
+    public void testVisitFrame() {
+        Object[] locals = new Object[]{Opcodes.INTEGER};
+        Object[] stack = new Object[]{};
+        localVariablesSorter.visitFrame(Opcodes.F_NEW, 1, locals, 0, stack);
+        verify(mockMethodVisitor).visitFrame(Opcodes.F_NEW, 1, locals, 0, stack);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testVisitFrameWithException() {
+        Object[] locals = new Object[]{Opcodes.INTEGER};
+        Object[] stack = new Object[]{};
+        localVariablesSorter.visitFrame(Opcodes.F_SAME, 1, locals, 0, stack);
+    }
+
+    @Test
+    public void testNewLocal() {
+        int localIndex = localVariablesSorter.newLocal(Type.INT_TYPE);
+        assertEquals(localVariablesSorter.firstLocal, localIndex);
+    }
+
+    @Test
+    public void testSetLocalType() {
+        // This method is protected and empty, so we can't directly test it.
+        // However, we can ensure it doesn't throw any exceptions when called.
+        localVariablesSorter.setLocalType(1, Type.INT_TYPE);
+    }
+
+    @Test
+    public void testSetFrameLocal() {
+        localVariablesSorter.visitFrame(Opcodes.F_NEW, 1, new Object[]{Opcodes.INTEGER}, 0, new Object[]{});
+        // Verify internal state change indirectly through visitFrame
+        assertNotNull(localVariablesSorter.newLocals[0]);
+    }
+
+    @Test
+    public void testRemap() {
+        int remappedIndex = localVariablesSorter.remap(1, Type.INT_TYPE);
+        assertEquals(1, remappedIndex);
+    }
+
+    @Test
+    public void testNewLocalMapping() {
+        int localIndex = localVariablesSorter.newLocalMapping(Type.INT_TYPE);
+        assertEquals(localVariablesSorter.firstLocal, localIndex);
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to test the `LocalVariablesSorter` class. It covers the main methods and ensures that the interactions with the `MethodVisitor` are as expected. Note that some methods, like `setLocalType`, are protected and empty, so they are not directly testable beyond ensuring they don't throw exceptions.

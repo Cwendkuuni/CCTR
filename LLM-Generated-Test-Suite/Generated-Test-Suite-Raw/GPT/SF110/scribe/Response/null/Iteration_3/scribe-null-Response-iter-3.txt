@@ -1,0 +1,102 @@
+Certainly! Below is a complete JUnit 4 test suite for the `Response` class. This test suite covers all the public methods and some of the private methods indirectly through the public interface.
+
+```java
+import org.junit.*;
+import org.mockito.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ResponseTest {
+
+    private HttpURLConnection mockConnection;
+    private InputStream mockInputStream;
+    private InputStream mockErrorStream;
+
+    @Before
+    public void setUp() throws Exception {
+        mockConnection = mock(HttpURLConnection.class);
+        mockInputStream = new ByteArrayInputStream("Success body".getBytes());
+        mockErrorStream = new ByteArrayInputStream("Error body".getBytes());
+    }
+
+    @Test
+    public void testResponseSuccess() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getInputStream()).thenReturn(mockInputStream);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(200, response.getCode());
+        assertEquals("Success body", response.getBody());
+        assertEquals("value1", response.getHeader("header1"));
+        assertEquals("value2", response.getHeader("header2"));
+        assertNotNull(response.getStream());
+    }
+
+    @Test
+    public void testResponseError() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(404);
+        when(mockConnection.getErrorStream()).thenReturn(mockErrorStream);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("Error body", response.getBody());
+        assertEquals("value1", response.getHeader("header1"));
+        assertEquals("value2", response.getHeader("header2"));
+        assertNotNull(response.getStream());
+    }
+
+    @Test
+    public void testResponseUnknownHostException() throws Exception {
+        when(mockConnection.connect()).thenThrow(new UnknownHostException());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("", response.getBody());
+    }
+
+    @Test
+    public void testGetHeaders() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getInputStream()).thenReturn(mockInputStream);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        Map<String, String> headers = response.getHeaders();
+        assertEquals(2, headers.size());
+        assertEquals("value1", headers.get("header1"));
+        assertEquals("value2", headers.get("header2"));
+    }
+
+    private Map<String, List<String>> createMockHeaders() {
+        Map<String, List<String>> headers = new HashMap<>();
+        headers.put("header1", Collections.singletonList("value1"));
+        headers.put("header2", Collections.singletonList("value2"));
+        return headers;
+    }
+}
+```
+
+### Explanation:
+
+1. **Setup**: We use Mockito to mock `HttpURLConnection` and `InputStream` objects. This allows us to simulate different scenarios without making actual network calls.
+
+2. **Test Cases**:
+   - **testResponseSuccess**: Tests a successful HTTP response (status code 200) and verifies the body and headers.
+   - **testResponseError**: Tests an error HTTP response (status code 404) and verifies the body and headers.
+   - **testResponseUnknownHostException**: Simulates an `UnknownHostException` and verifies that the response code is set to 404 and the body is empty.
+   - **testGetHeaders**: Verifies that headers are correctly parsed and returned.
+
+3. **Utility Method**:
+   - **createMockHeaders**: Creates a mock header map to simulate HTTP headers.
+
+This test suite should provide comprehensive coverage for the `Response` class.

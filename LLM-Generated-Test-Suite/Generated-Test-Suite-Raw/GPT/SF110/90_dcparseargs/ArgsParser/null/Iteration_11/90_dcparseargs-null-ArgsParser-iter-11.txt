@@ -1,0 +1,137 @@
+Certainly! Below is a JUnit 4 test suite for the `ArgsParser` class. This test suite aims to cover various scenarios for each method in the class.
+
+```java
+import de.devcity.parseargs.ArgsParser;
+import de.devcity.parseargs.arguments.SwitchArgument;
+import de.devcity.parseargs.arguments.ParameterArgument;
+import de.devcity.parseargs.arguments.StringArgument;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class ArgsParserTest {
+
+    private ArgsParser argsParser;
+
+    @Before
+    public void setUp() {
+        argsParser = new ArgsParser();
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSetArgsWithNull() {
+        argsParser.setArgs(null);
+    }
+
+    @Test
+    public void testSetArgs() {
+        String[] args = {"-a", "--long", "value"};
+        argsParser.setArgs(args);
+        assertArrayEquals(args, argsParser.getArgs());
+    }
+
+    @Test
+    public void testGetArgsCount() {
+        String[] args = {"-a", "--long", "value"};
+        argsParser.setArgs(args);
+        assertEquals(3, argsParser.getArgsCount());
+    }
+
+    @Test
+    public void testGetArgsLeftCount() {
+        String[] args = {"-a", "--long", "value"};
+        argsParser.setArgs(args);
+        assertEquals(3, argsParser.getArgsLeftCount());
+    }
+
+    @Test
+    public void testParseSwitchArgumentShort() {
+        String[] args = {"-abc"};
+        argsParser.setArgs(args);
+        SwitchArgument result = argsParser.parseSwitchArgument("b");
+        assertTrue(result.isPresent());
+        assertEquals(0, result.getIndex());
+        assertEquals("b", result.getKey());
+    }
+
+    @Test
+    public void testParseSwitchArgumentLong() {
+        String[] args = {"--enable-feature"};
+        argsParser.setArgs(args);
+        SwitchArgument result = argsParser.parseSwitchArgument("enable-feature");
+        assertTrue(result.isPresent());
+        assertEquals(0, result.getIndex());
+        assertEquals("enable-feature", result.getKey());
+    }
+
+    @Test
+    public void testParseSwitchArgumentNotFound() {
+        String[] args = {"--enable-feature"};
+        argsParser.setArgs(args);
+        SwitchArgument result = argsParser.parseSwitchArgument("disable-feature");
+        assertFalse(result.isPresent());
+        assertEquals(-1, result.getIndex());
+    }
+
+    @Test
+    public void testParseParameterArgumentShort() {
+        String[] args = {"-pvalue"};
+        argsParser.setArgs(args);
+        ParameterArgument result = argsParser.parseParameterArgument("p");
+        assertNotNull(result);
+        assertEquals(0, result.getIndex());
+        assertEquals("p", result.getKey());
+        assertEquals("value", result.getValue());
+    }
+
+    @Test
+    public void testParseParameterArgumentLong() {
+        String[] args = {"--param", "value"};
+        argsParser.setArgs(args);
+        ParameterArgument result = argsParser.parseParameterArgument("param");
+        assertNotNull(result);
+        assertEquals(0, result.getIndex());
+        assertEquals("param", result.getKey());
+        assertEquals("value", result.getValue());
+    }
+
+    @Test
+    public void testParseParameterArgumentNotFound() {
+        String[] args = {"--param", "value"};
+        argsParser.setArgs(args);
+        ParameterArgument result = argsParser.parseParameterArgument("other");
+        assertNull(result);
+    }
+
+    @Test
+    public void testParseStringArgument() {
+        String[] args = {"arg1", "arg2"};
+        argsParser.setArgs(args);
+        List<StringArgument> result = argsParser.parseStringArgument();
+        assertEquals(2, result.size());
+        assertEquals("arg1", result.get(0).getValue());
+        assertEquals("arg2", result.get(1).getValue());
+    }
+
+    @Test
+    public void testParseStringArgumentEmpty() {
+        String[] args = {};
+        argsParser.setArgs(args);
+        List<StringArgument> result = argsParser.parseStringArgument();
+        assertTrue(result.isEmpty());
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a new `ArgsParser` instance before each test.
+- **NullPointerException Test**: Tests that `setArgs` throws a `NullPointerException` when passed `null`.
+- **Basic Functionality Tests**: Tests for `setArgs`, `getArgsCount`, and `getArgsLeftCount` ensure that the basic functionality of setting and retrieving arguments works as expected.
+- **Switch Argument Tests**: Tests for parsing both short and long switch arguments, including cases where the switch is not found.
+- **Parameter Argument Tests**: Tests for parsing both short and long parameter arguments, including cases where the parameter is not found.
+- **String Argument Tests**: Tests for parsing string arguments, including an empty argument list.
+
+This test suite should provide comprehensive coverage for the `ArgsParser` class.

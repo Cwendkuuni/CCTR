@@ -1,0 +1,74 @@
+package org.apache.commons.cli;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Date;
+
+public class TypeHandlerTest {
+
+    @Test
+    public void testCreateValueString() {
+        assertEquals("test", TypeHandler.createValue("test", String.class));
+        assertEquals(123, TypeHandler.createValue("123", Integer.class));
+        assertEquals(123.45, TypeHandler.createValue("123.45", Double.class));
+        assertNull(TypeHandler.createValue("invalid", Integer.class));
+    }
+
+    @Test
+    public void testCreateValueClass() {
+        assertEquals("test", TypeHandler.createValue("test", String.class));
+        assertEquals(123, TypeHandler.createValue("123", Integer.class));
+        assertEquals(123.45, TypeHandler.createValue("123.45", Double.class));
+        assertNull(TypeHandler.createValue("invalid", Integer.class));
+    }
+
+    @Test
+    public void testCreateObject() {
+        assertNotNull(TypeHandler.createObject("java.lang.String"));
+        assertNull(TypeHandler.createObject("invalid.Class"));
+    }
+
+    @Test
+    public void testCreateNumber() {
+        assertEquals(123, TypeHandler.createNumber("123"));
+        assertEquals(123.45, TypeHandler.createNumber("123.45"));
+        assertNull(TypeHandler.createNumber("invalid"));
+    }
+
+    @Test
+    public void testCreateClass() {
+        assertEquals(String.class, TypeHandler.createClass("java.lang.String"));
+        assertNull(TypeHandler.createClass("invalid.Class"));
+    }
+
+    @Test
+    public void testCreateDate() {
+        assertNull(TypeHandler.createDate("invalid"));
+        // Add more tests when the createDate method is properly implemented
+    }
+
+    @Test
+    public void testCreateURL() {
+        try {
+            assertEquals(new URL("http://example.com"), TypeHandler.createURL("http://example.com"));
+        } catch (MalformedURLException e) {
+            fail("Unexpected MalformedURLException");
+        }
+        assertNull(TypeHandler.createURL("invalid"));
+    }
+
+    @Test
+    public void testCreateFile() {
+        assertEquals(new File("test.txt"), TypeHandler.createFile("test.txt"));
+    }
+
+    @Test
+    public void testCreateFiles() {
+        assertNull(TypeHandler.createFiles("invalid"));
+        // Add more tests when the createFiles method is properly implemented
+    }
+}

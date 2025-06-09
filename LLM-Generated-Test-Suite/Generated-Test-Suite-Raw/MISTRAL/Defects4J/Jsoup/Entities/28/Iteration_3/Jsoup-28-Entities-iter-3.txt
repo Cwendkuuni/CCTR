@@ -1,0 +1,122 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `Entities` class. This test suite covers all the methods in the `Entities` class.
+
+```java
+package org.jsoup.nodes;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.jsoup.nodes.Document;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class EntitiesTest {
+
+    private CharsetEncoder encoder;
+    private Document.OutputSettings outputSettings;
+
+    @Before
+    public void setUp() {
+        encoder = Charset.forName("UTF-8").newEncoder();
+        outputSettings = new Document.OutputSettings();
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertTrue(Entities.isNamedEntity("amp"));
+        assertFalse(Entities.isNamedEntity("unknown"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertEquals(Character.valueOf('&'), Entities.getCharacterByName("amp"));
+        assertNull(Entities.getCharacterByName("unknown"));
+    }
+
+    @Test
+    public void testEscape() {
+        String input = "& < > \" '";
+        String expectedXhtml = "&amp; &lt; &gt; &quot; &apos;";
+        String expectedBase = "&amp; &lt; &gt; &quot; &apos;";
+        String expectedExtended = "&amp; &lt; &gt; &quot; &apos;";
+
+        outputSettings.escapeMode(Document.OutputSettings.EscapeMode.xhtml);
+        assertEquals(expectedXhtml, Entities.escape(input, outputSettings));
+
+        outputSettings.escapeMode(Document.OutputSettings.EscapeMode.base);
+        assertEquals(expectedBase, Entities.escape(input, outputSettings));
+
+        outputSettings.escapeMode(Document.OutputSettings.EscapeMode.extended);
+        assertEquals(expectedExtended, Entities.escape(input, outputSettings));
+    }
+
+    @Test
+    public void testEscapeWithEncoder() {
+        String input = "& < > \" '";
+        String expectedXhtml = "&amp; &lt; &gt; &quot; &apos;";
+        String expectedBase = "&amp; &lt; &gt; &quot; &apos;";
+        String expectedExtended = "&amp; &lt; &gt; &quot; &apos;";
+
+        assertEquals(expectedXhtml, Entities.escape(input, encoder, Entities.EscapeMode.xhtml));
+        assertEquals(expectedBase, Entities.escape(input, encoder, Entities.EscapeMode.base));
+        assertEquals(expectedExtended, Entities.escape(input, encoder, Entities.EscapeMode.extended));
+    }
+
+    @Test
+    public void testUnescape() {
+        String input = "&lt; &gt; &amp; &quot; &apos;";
+        String expected = "< > & \" '";
+
+        assertEquals(expected, Entities.unescape(input));
+    }
+
+    @Test
+    public void testUnescapeStrict() {
+        String input = "&lt; &gt; &amp; &quot; &apos;";
+        String expected = "< > & \" '";
+
+        assertEquals(expected, Entities.unescape(input, true));
+    }
+
+    @Test
+    public void testLoadEntities() {
+        Map<String, Character> entities = new HashMap<>();
+        entities.put("lt", '<');
+        entities.put("gt", '>');
+        entities.put("amp", '&');
+        entities.put("quot", '"');
+        entities.put("apos", '\'');
+
+        Map<String, Character> loadedEntities = Entities.loadEntities("entities-base.properties");
+        assertTrue(loadedEntities.entrySet().containsAll(entities.entrySet()));
+    }
+
+    @Test
+    public void testToCharacterKey() {
+        Map<String, Character> inputMap = new HashMap<>();
+        inputMap.put("lt", '<');
+        inputMap.put("gt", '>');
+        inputMap.put("amp", '&');
+        inputMap.put("quot", '"');
+        inputMap.put("apos", '\'');
+
+        Map<Character, String> expectedMap = new HashMap<>();
+        expectedMap.put('<', "lt");
+        expectedMap.put('>', "gt");
+        expectedMap.put('&', "amp");
+        expectedMap.put('"', "quot");
+        expectedMap.put('\'', "apos");
+
+        Map<Character, String> resultMap = Entities.toCharacterKey(inputMap);
+        assertEquals(expectedMap, resultMap);
+    }
+}
+```
+
+This test suite includes tests for all the public and static methods in the `Entities` class, ensuring comprehensive coverage. Each test method verifies the expected behavior of the corresponding method in the `Entities` class.

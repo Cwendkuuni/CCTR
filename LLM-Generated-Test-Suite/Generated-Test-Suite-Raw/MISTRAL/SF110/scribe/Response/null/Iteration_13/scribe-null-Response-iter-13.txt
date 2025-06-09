@@ -1,0 +1,164 @@
+```java
+package org.scribe.model;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.net.UnknownHostException;
+import java.util.HashMap;
+import java.util.Map;
+
+public class ResponseTest {
+
+    private HttpURLConnection mockConnection;
+    private Response response;
+
+    @Before
+    public void setUp() throws Exception {
+        mockConnection = new MockHttpURLConnection();
+        response = new Response(mockConnection);
+    }
+
+    @Test
+    public void testConstructorSuccessfulResponse() throws IOException {
+        mockConnection.setResponseCode(200);
+        mockConnection.setInputStream(new ByteArrayInputStream("Test Body".getBytes()));
+        response = new Response(mockConnection);
+
+        assertEquals(200, response.getCode());
+        assertEquals("Test Body", response.getBody());
+        assertNotNull(response.getStream());
+        assertNotNull(response.getHeaders());
+    }
+
+    @Test
+    public void testConstructorUnsuccessfulResponse() throws IOException {
+        mockConnection.setResponseCode(404);
+        mockConnection.setErrorStream(new ByteArrayInputStream("Error Body".getBytes()));
+        response = new Response(mockConnection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("Error Body", response.getBody());
+        assertNotNull(response.getStream());
+        assertNotNull(response.getHeaders());
+    }
+
+    @Test
+    public void testConstructorUnknownHostException() throws IOException {
+        mockConnection.setThrowUnknownHostException(true);
+        response = new Response(mockConnection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("", response.getBody());
+    }
+
+    @Test
+    public void testGetBody() throws IOException {
+        mockConnection.setResponseCode(200);
+        mockConnection.setInputStream(new ByteArrayInputStream("Test Body".getBytes()));
+        response = new Response(mockConnection);
+
+        assertEquals("Test Body", response.getBody());
+    }
+
+    @Test
+    public void testGetStream() throws IOException {
+        mockConnection.setResponseCode(200);
+        mockConnection.setInputStream(new ByteArrayInputStream("Test Body".getBytes()));
+        response = new Response(mockConnection);
+
+        assertNotNull(response.getStream());
+    }
+
+    @Test
+    public void testGetCode() throws IOException {
+        mockConnection.setResponseCode(200);
+        response = new Response(mockConnection);
+
+        assertEquals(200, response.getCode());
+    }
+
+    @Test
+    public void testGetHeaders() throws IOException {
+        Map<String, List<String>> headerFields = new HashMap<>();
+        headerFields.put("Content-Type", Arrays.asList("application/json"));
+        mockConnection.setHeaderFields(headerFields);
+        response = new Response(mockConnection);
+
+        assertEquals("application/json", response.getHeaders().get("Content-Type"));
+    }
+
+    @Test
+    public void testGetHeader() throws IOException {
+        Map<String, List<String>> headerFields = new HashMap<>();
+        headerFields.put("Content-Type", Arrays.asList("application/json"));
+        mockConnection.setHeaderFields(headerFields);
+        response = new Response(mockConnection);
+
+        assertEquals("application/json", response.getHeader("Content-Type"));
+    }
+
+    private static class MockHttpURLConnection extends HttpURLConnection {
+        private int responseCode;
+        private InputStream inputStream;
+        private InputStream errorStream;
+        private boolean throwUnknownHostException;
+        private Map<String, List<String>> headerFields;
+
+        protected MockHttpURLConnection() {
+            super(null);
+        }
+
+        @Override
+        public void connect() throws IOException {
+            if (throwUnknownHostException) {
+                throw new UnknownHostException();
+            }
+        }
+
+        @Override
+        public int getResponseCode() throws IOException {
+            return responseCode;
+        }
+
+        @Override
+        public InputStream getInputStream() throws IOException {
+            return inputStream;
+        }
+
+        @Override
+        public InputStream getErrorStream() {
+            return errorStream;
+        }
+
+        @Override
+        public Map<String, List<String>> getHeaderFields() {
+            return headerFields;
+        }
+
+        public void setResponseCode(int responseCode) {
+            this.responseCode = responseCode;
+        }
+
+        public void setInputStream(InputStream inputStream) {
+            this.inputStream = inputStream;
+        }
+
+        public void setErrorStream(InputStream errorStream) {
+            this.errorStream = errorStream;
+        }
+
+        public void setThrowUnknownHostException(boolean throwUnknownHostException) {
+            this.throwUnknownHostException = throwUnknownHostException;
+        }
+
+        public void setHeaderFields(Map<String, List<String>> headerFields) {
+            this.headerFields = headerFields;
+        }
+    }
+}
+```

@@ -1,0 +1,85 @@
+```java
+import static org.junit.Assert.*;
+import org.joda.time.Chronology;
+import org.joda.time.DateTimeField;
+import org.joda.time.DateTimeZone;
+import org.joda.time.chrono.ISOChronology;
+import org.joda.time.field.LenientDateTimeField;
+import org.joda.time.field.StrictDateTimeField;
+import org.joda.time.field.DelegatedDateTimeField;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+public class LenientDateTimeFieldTest {
+
+    private DateTimeField mockField;
+    private Chronology mockChronology;
+    private LenientDateTimeField lenientField;
+
+    @Before
+    public void setUp() {
+        mockField = Mockito.mock(DateTimeField.class);
+        mockChronology = Mockito.mock(Chronology.class);
+        Mockito.when(mockChronology.getZone()).thenReturn(DateTimeZone.UTC);
+        lenientField = new LenientDateTimeField(mockField, mockChronology);
+    }
+
+    @Test
+    public void testGetInstance_NullField() {
+        assertNull(LenientDateTimeField.getInstance(null, mockChronology));
+    }
+
+    @Test
+    public void testGetInstance_AlreadyLenient() {
+        Mockito.when(mockField.isLenient()).thenReturn(true);
+        assertEquals(mockField, LenientDateTimeField.getInstance(mockField, mockChronology));
+    }
+
+    @Test
+    public void testGetInstance_StrictField() {
+        StrictDateTimeField strictField = Mockito.mock(StrictDateTimeField.class);
+        Mockito.when(strictField.getWrappedField()).thenReturn(mockField);
+        Mockito.when(mockField.isLenient()).thenReturn(false);
+
+        DateTimeField result = LenientDateTimeField.getInstance(strictField, mockChronology);
+        assertTrue(result instanceof LenientDateTimeField);
+    }
+
+    @Test
+    public void testGetInstance_NonLenientField() {
+        Mockito.when(mockField.isLenient()).thenReturn(false);
+        DateTimeField result = LenientDateTimeField.getInstance(mockField, mockChronology);
+        assertTrue(result instanceof LenientDateTimeField);
+    }
+
+    @Test
+    public void testIsLenient() {
+        assertTrue(lenientField.isLenient());
+    }
+
+    @Test
+    public void testSet() {
+        long instant = 1000L;
+        int value = 5;
+        int currentValue = 3;
+        long expectedLocalInstant = 2000L;
+
+        Mockito.when(mockField.get(instant)).thenReturn(currentValue);
+        Mockito.when(mockChronology.withUTC()).thenReturn(ISOChronology.getInstanceUTC());
+        Mockito.when(mockField.add(Mockito.anyLong(), Mockito.anyLong())).thenReturn(expectedLocalInstant);
+
+        long result = lenientField.set(instant, value);
+        assertEquals(expectedLocalInstant, result);
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to test the `LenientDateTimeField` class. It covers the following scenarios:
+
+1. `getInstance` method with a `null` field.
+2. `getInstance` method with an already lenient field.
+3. `getInstance` method with a strict field.
+4. `getInstance` method with a non-lenient field.
+5. `isLenient` method to ensure it always returns `true`.
+6. `set` method to verify the lenient behavior of setting a value.

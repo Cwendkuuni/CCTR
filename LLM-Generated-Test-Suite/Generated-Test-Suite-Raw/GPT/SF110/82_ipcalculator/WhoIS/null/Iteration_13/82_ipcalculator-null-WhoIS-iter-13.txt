@@ -1,0 +1,133 @@
+To create a comprehensive JUnit 4 test suite for the `WhoIS` class, we need to focus on testing the public methods and any significant private methods that can be accessed indirectly. The main methods to test are `actionPerformed`, `startQuery`, `displayError`, `query`, `getQuery`, and `reset`. Since `WhoIS` is a GUI component, testing will involve simulating user interactions and verifying the expected outcomes.
+
+Here's a JUnit 4 test suite for the `WhoIS` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.net.Socket;
+import javax.swing.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+public class WhoISTest {
+
+    private WhoIS whois;
+    private JTextField queryTextField;
+    private JButton queryButton;
+    private JButton resetButton;
+    private JCheckBox lowercaseD;
+    private JRadioButton lowercaseL;
+    private JRadioButton uppercaseL;
+    private JRadioButton lowercaseM;
+    private JRadioButton uppercaseM;
+    private JRadioButton lowercaseX;
+    private JComboBox inverseQueries;
+    private JList miscList;
+
+    @Before
+    public void setUp() {
+        whois = new WhoIS();
+        queryTextField = whois.queryTextField;
+        queryButton = whois.queryButton;
+        resetButton = whois.resetButton;
+        lowercaseD = whois.lowercaseD;
+        lowercaseL = whois.lowercaseL;
+        uppercaseL = whois.uppercaseL;
+        lowercaseM = whois.lowercaseM;
+        uppercaseM = whois.uppercaseM;
+        lowercaseX = whois.lowercaseX;
+        inverseQueries = whois.inverseQueries;
+        miscList = whois.miscList;
+    }
+
+    @Test
+    public void testActionPerformedQueryButton() {
+        queryTextField.setText("testQuery");
+        ActionEvent event = new ActionEvent(queryButton, ActionEvent.ACTION_PERFORMED, "Query");
+        whois.actionPerformed(event);
+        // Verify that startQuery is called
+        assertEquals("testQuery", whois.getQuery());
+    }
+
+    @Test
+    public void testActionPerformedResetButton() {
+        queryTextField.setText("testQuery");
+        lowercaseD.setSelected(true);
+        inverseQueries.setSelectedIndex(1);
+        miscList.setSelectedIndex(1);
+
+        ActionEvent event = new ActionEvent(resetButton, ActionEvent.ACTION_PERFORMED, "Reset");
+        whois.actionPerformed(event);
+
+        // Verify that reset is called
+        assertEquals("", queryTextField.getText());
+        assertFalse(lowercaseD.isSelected());
+        assertEquals(0, inverseQueries.getSelectedIndex());
+        assertEquals(0, miscList.getSelectedIndex());
+    }
+
+    @Test
+    public void testStartQueryWithEmptyQuery() {
+        queryTextField.setText("");
+        whois.startQuery();
+        // Verify that displayError is called with "No Query Detected"
+        // This requires mocking JOptionPane
+    }
+
+    @Test
+    public void testStartQueryWithValidQuery() {
+        queryTextField.setText("testQuery");
+        whois.startQuery();
+        // Verify that query is called with "testQuery"
+        // This requires mocking the network interaction
+    }
+
+    @Test
+    public void testDisplayError() {
+        // Mock JOptionPane to verify error message
+        JOptionPane mockPane = mock(JOptionPane.class);
+        whois.displayError("Test Error");
+        // Verify that JOptionPane.showMessageDialog is called with "Test Error"
+    }
+
+    @Test
+    public void testGetQuery() {
+        queryTextField.setText("testQuery");
+        lowercaseL.setSelected(true);
+        inverseQueries.setSelectedIndex(1);
+        miscList.setSelectedIndex(1);
+
+        String expectedQuery = "-i admin-c -l -T as-block testQuery";
+        assertEquals(expectedQuery, whois.getQuery());
+    }
+
+    @Test
+    public void testReset() {
+        queryTextField.setText("testQuery");
+        lowercaseD.setSelected(true);
+        inverseQueries.setSelectedIndex(1);
+        miscList.setSelectedIndex(1);
+
+        whois.reset();
+
+        assertEquals("", queryTextField.getText());
+        assertFalse(lowercaseD.isSelected());
+        assertEquals(0, inverseQueries.getSelectedIndex());
+        assertEquals(0, miscList.getSelectedIndex());
+    }
+}
+```
+
+### Notes:
+- **Mocking**: Some tests require mocking, especially for GUI components and network interactions. You can use libraries like Mockito to mock `JOptionPane` and `Socket` interactions.
+- **Network Interactions**: The `query` method involves network operations, which should be mocked to avoid actual network calls during testing.
+- **GUI Components**: Testing GUI components often involves simulating user actions and verifying the state of the components after these actions.
+- **Error Handling**: The `displayError` method uses `JOptionPane`, which should be mocked to verify that the correct error messages are displayed.
+
+This test suite provides a basic structure for testing the `WhoIS` class. You may need to adjust the tests based on the actual behavior of the methods and the specific requirements of your testing environment.

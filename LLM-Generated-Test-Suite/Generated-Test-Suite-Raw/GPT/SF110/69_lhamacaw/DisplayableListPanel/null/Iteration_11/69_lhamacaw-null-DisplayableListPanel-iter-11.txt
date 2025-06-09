@@ -1,0 +1,152 @@
+To create a comprehensive JUnit 4 test suite for the `DisplayableListPanel` class, we need to consider testing the public methods and the behavior of the class. Since the class interacts with various components and has dependencies, we'll need to mock these dependencies using a mocking framework like Mockito. Below is a test suite that covers the main functionalities of the `DisplayableListPanel` class.
+
+```java
+import macaw.util.DisplayableListPanel;
+import macaw.businessLayer.*;
+import macaw.system.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.*;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class DisplayableListPanelTest {
+
+    @Mock
+    private SessionProperties mockSessionProperties;
+    @Mock
+    private DisplayableListParentForm mockParentForm;
+    @Mock
+    private UserInterfaceFactory mockUserInterfaceFactory;
+    @Mock
+    private Log mockLog;
+    @Mock
+    private DisplayableList mockDisplayableList;
+    @Mock
+    private DisplayableListItemSelector mockListItemSelector;
+    @Mock
+    private DisplayableListItemAdder mockListItemAdder;
+    @Mock
+    private DisplayableListItemEditor mockListItemEditor;
+    @Mock
+    private DisplayableListItemViewer mockListItemViewer;
+    @Mock
+    private DisplayableListItemDeleter mockListItemDeleter;
+    @Mock
+    private User mockUser;
+    @Mock
+    private ActionEvent mockActionEvent;
+    @Mock
+    private Displayable mockDisplayable;
+
+    private DisplayableListPanel displayableListPanel;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+
+        when(mockSessionProperties.getLog()).thenReturn(mockLog);
+        when(mockSessionProperties.getUserInterfaceFactory()).thenReturn(mockUserInterfaceFactory);
+        when(mockSessionProperties.getProperty("currentUser")).thenReturn(mockUser);
+        when(mockUser.getUserID()).thenReturn("testUser");
+
+        displayableListPanel = new DisplayableListPanel(mockSessionProperties, mockParentForm, "Test Panel", true, true);
+        displayableListPanel.setDisplayableListItemSelector(mockListItemSelector);
+        displayableListPanel.setDisplayableListItemAdder(mockListItemAdder);
+        displayableListPanel.setDisplayableListItemEditor(mockListItemEditor);
+        displayableListPanel.setDisplayableListItemViewer(mockListItemViewer);
+        displayableListPanel.setDisplayableListItemDeleter(mockListItemDeleter);
+    }
+
+    @Test
+    public void testSetNewRecord() {
+        displayableListPanel.setNewRecord(true);
+        // Verify button states are updated
+        verify(mockUserInterfaceFactory, atLeastOnce()).createButton(anyString());
+    }
+
+    @Test
+    public void testGetPanel() {
+        JPanel panel = displayableListPanel.getPanel();
+        assertNotNull(panel);
+    }
+
+    @Test
+    public void testSetDisplayableItems() {
+        ArrayList<Displayable> displayables = new ArrayList<>();
+        displayables.add(mockDisplayable);
+        displayableListPanel.setDisplayableItems(displayables);
+        assertEquals(displayables, displayableListPanel.getAllListItems());
+    }
+
+    @Test
+    public void testSave() {
+        ArrayList<Displayable> displayables = new ArrayList<>();
+        displayables.add(mockDisplayable);
+        displayableListPanel.setDisplayableItems(displayables);
+        displayableListPanel.save();
+        assertEquals(displayables, displayableListPanel.getAllListItems());
+    }
+
+    @Test
+    public void testAddListItem() {
+        displayableListPanel.addListItem();
+        verify(mockListItemAdder, atLeastOnce()).addItems(anyString(), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testDeleteSelectedListItems() {
+        when(mockDisplayableList.itemsAreSelected()).thenReturn(true);
+        displayableListPanel.deleteSelectedListItems();
+        verify(mockListItemDeleter, atLeastOnce()).deleteListItems(anyString(), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testActionPerformedSelect() {
+        when(mockActionEvent.getSource()).thenReturn(displayableListPanel.select);
+        displayableListPanel.actionPerformed(mockActionEvent);
+        verify(mockListItemSelector, atLeastOnce()).selectListItems(anyString(), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testActionPerformedAdd() {
+        when(mockActionEvent.getSource()).thenReturn(displayableListPanel.add);
+        displayableListPanel.actionPerformed(mockActionEvent);
+        verify(mockListItemAdder, atLeastOnce()).addItems(anyString(), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testActionPerformedEdit() {
+        when(mockActionEvent.getSource()).thenReturn(displayableListPanel.edit);
+        displayableListPanel.actionPerformed(mockActionEvent);
+        verify(mockListItemEditor, atLeastOnce()).editListItem(anyString(), any(Displayable.class), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testActionPerformedView() {
+        when(mockActionEvent.getSource()).thenReturn(displayableListPanel.view);
+        displayableListPanel.actionPerformed(mockActionEvent);
+        verify(mockListItemViewer, atLeastOnce()).viewListItem(any(Displayable.class));
+    }
+
+    @Test
+    public void testActionPerformedDelete() {
+        when(mockActionEvent.getSource()).thenReturn(displayableListPanel.delete);
+        displayableListPanel.actionPerformed(mockActionEvent);
+        verify(mockListItemDeleter, atLeastOnce()).deleteListItems(anyString(), any(DisplayableList.class));
+    }
+}
+```
+
+### Explanation:
+- **Mocking Dependencies**: We use Mockito to mock dependencies such as `SessionProperties`, `DisplayableListParentForm`, and other interfaces that `DisplayableListPanel` interacts with.
+- **Testing Initialization**: We test the initialization of the panel and ensure that the UI components are created.
+- **Testing Public Methods**: We test methods like `setNewRecord`, `getPanel`, `setDisplayableItems`, `save`, and action methods to ensure they behave as expected.
+- **Action Events**: We simulate button clicks using `ActionEvent` and verify that the appropriate methods are called on the mocked interfaces.
+
+This test suite provides a comprehensive coverage of the `DisplayableListPanel` class's functionality.

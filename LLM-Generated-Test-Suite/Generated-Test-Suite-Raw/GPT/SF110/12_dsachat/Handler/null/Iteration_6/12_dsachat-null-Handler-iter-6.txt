@@ -1,0 +1,207 @@
+To create a comprehensive JUnit 4 test suite for the `Handler` class, we need to mock dependencies and test various scenarios for each method. Below is a test suite that covers the main functionalities of the `Handler` class. Note that this test suite assumes the existence of certain classes and methods (like `ConnectionEndpoint`, `UserEvent`, `InputEvent`, etc.) and uses mocking frameworks like Mockito to simulate their behavior.
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import dsachat.server.Handler;
+import dsachat.share.ConnectionEndpoint;
+import dsachat.share.InputEvent;
+import dsachat.share.UserEvent;
+import dsachat.share.hero.Hero;
+import dsachat.share.Challenge;
+import dsachat.share.ChallReq;
+
+import java.io.IOException;
+import java.util.Vector;
+
+public class HandlerTest {
+
+    private Handler handler;
+    private ConnectionEndpoint mockConnection;
+    private InputEvent mockInputEvent;
+    private UserEvent mockUserEvent;
+    private Hero mockHero;
+    private Challenge mockChallenge;
+    private ChallReq mockChallReq;
+
+    @Before
+    public void setUp() {
+        handler = new Handler();
+        mockConnection = mock(ConnectionEndpoint.class);
+        mockInputEvent = mock(InputEvent.class);
+        mockUserEvent = mock(UserEvent.class);
+        mockHero = mock(Hero.class);
+        mockChallenge = mock(Challenge.class);
+        mockChallReq = mock(ChallReq.class);
+    }
+
+    @Test
+    public void testAddConnection() throws IOException {
+        when(mockConnection.isConnected()).thenReturn(true);
+        handler.addConnection(mockConnection);
+
+        verify(mockConnection, never()).send(any());
+    }
+
+    @Test
+    public void testRemoveConnection() throws IOException {
+        when(mockConnection.getClientPort()).thenReturn(1234);
+        handler.addConnection(mockConnection);
+        handler.removeConnection(mockConnection);
+
+        ArgumentCaptor<UserEvent> captor = ArgumentCaptor.forClass(UserEvent.class);
+        verify(mockConnection, atLeastOnce()).send(captor.capture());
+        assertTrue(captor.getValue().isConnected());
+    }
+
+    @Test
+    public void testHandleInputString() throws IOException {
+        when(mockInputEvent.getData()).thenReturn("/dice 1d6");
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+        handler.handleInput(mockInputEvent);
+
+        verify(mockConnection, never()).send(any());
+    }
+
+    @Test
+    public void testHandleInputChallenge() throws IOException {
+        when(mockInputEvent.getData()).thenReturn(mockChallenge);
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+        when(mockChallenge.roll()).thenReturn("rolled");
+        when(mockChallenge.getTo()).thenReturn(null);
+
+        handler.handleInput(mockInputEvent);
+
+        verify(mockConnection, never()).send(any());
+    }
+
+    @Test
+    public void testHandleInputChallReq() throws IOException {
+        when(mockInputEvent.getData()).thenReturn(mockChallReq);
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+        when(mockChallReq.getTo()).thenReturn("target");
+
+        handler.handleInput(mockInputEvent);
+
+        verify(mockConnection, never()).send(any());
+    }
+
+    @Test
+    public void testHandleInputHero() throws IOException {
+        when(mockInputEvent.getData()).thenReturn(mockHero);
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+        when(mockHero.getName()).thenReturn("HeroName");
+
+        handler.handleInput(mockInputEvent);
+
+        verify(mockConnection, atLeastOnce()).send(any());
+    }
+
+    @Test
+    public void testHandleInputUserEvent() throws IOException {
+        when(mockInputEvent.getData()).thenReturn(mockUserEvent);
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+        when(mockUserEvent.getName()).thenReturn("Gamemaster");
+
+        handler.handleInput(mockInputEvent);
+
+        verify(mockConnection, atLeastOnce()).send(any());
+    }
+
+    @Test
+    public void testSendHeros() throws IOException {
+        handler.addConnection(mockConnection);
+        handler.sendHeros(mockConnection);
+
+        verify(mockConnection, atLeastOnce()).send(any(Vector.class));
+    }
+
+    @Test
+    public void testIsGmConnected() {
+        assertFalse(handler.isGmConnected());
+    }
+
+    @Test
+    public void testSendOneSystemMsg() throws IOException {
+        handler.sendOneSystemMsg(mockConnection, "Test message");
+
+        verify(mockConnection, atLeastOnce()).send("Test message");
+    }
+
+    @Test
+    public void testSendAllSystemMsg() throws IOException {
+        handler.addConnection(mockConnection);
+        handler.sendAllSystemMsg("Test message");
+
+        verify(mockConnection, atLeastOnce()).send("Test message");
+    }
+
+    @Test
+    public void testWhisper() throws IOException {
+        handler.addConnection(mockConnection);
+        handler.whisper(mockConnection, "target message");
+
+        verify(mockConnection, atLeastOnce()).send(any());
+    }
+
+    @Test
+    public void testRollDice() throws IOException {
+        handler.addConnection(mockConnection);
+        handler.rollDice(mockConnection, "1d6");
+
+        verify(mockConnection, never()).send(any());
+    }
+
+    @Test
+    public void testSendToOneStr() throws IOException {
+        handler.addConnection(mockConnection);
+        handler.sendToOneStr(mockConnection, "target", "message");
+
+        verify(mockConnection, never()).send(any());
+    }
+
+    @Test
+    public void testUpdateHero() {
+        handler.addConnection(mockConnection);
+        String result = handler.updateHero(mockConnection, mockHero);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testSendAllStr() throws IOException {
+        handler.addConnection(mockConnection);
+        handler.sendAllStr(mockConnection, "message");
+
+        verify(mockConnection, never()).send(any());
+    }
+
+    @Test
+    public void testSendAllObj() throws IOException {
+        handler.addConnection(mockConnection);
+        handler.sendAllObj(new Object());
+
+        verify(mockConnection, never()).send(any());
+    }
+
+    @Test
+    public void testGetName() {
+        handler.addConnection(mockConnection);
+        String name = handler.getName(mockConnection);
+
+        assertNull(name);
+    }
+}
+```
+
+### Notes:
+- This test suite uses Mockito to mock the `ConnectionEndpoint` and other dependencies.
+- Each test method is designed to test a specific functionality of the `Handler` class.
+- The test suite assumes that the `ConnectionEndpoint` and other classes have certain methods like `send`, `getClientPort`, etc.
+- The test suite covers the main methods of the `Handler` class, including `addConnection`, `removeConnection`, `handleInput`, and others.
+- The test suite uses assertions to verify the expected behavior of the methods.

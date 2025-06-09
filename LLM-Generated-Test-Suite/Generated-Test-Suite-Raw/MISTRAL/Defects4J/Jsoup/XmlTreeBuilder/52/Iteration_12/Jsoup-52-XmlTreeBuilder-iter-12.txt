@@ -1,0 +1,202 @@
+```java
+package org.jsoup.parser;
+
+import org.jsoup.helper.Validate;
+import org.jsoup.nodes.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class XmlTreeBuilderTest {
+
+    @Mock
+    private Token token;
+
+    @Mock
+    private Token.StartTag startTag;
+
+    @Mock
+    private Token.EndTag endTag;
+
+    @Mock
+    private Token.Comment commentToken;
+
+    @Mock
+    private Token.Character characterToken;
+
+    @Mock
+    private Token.Doctype doctypeToken;
+
+    @Mock
+    private ParseErrorList errors;
+
+    private XmlTreeBuilder xmlTreeBuilder;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        xmlTreeBuilder = new XmlTreeBuilder();
+    }
+
+    @Test
+    public void testInitialiseParse() {
+        String input = "<xml></xml>";
+        String baseUri = "http://example.com";
+
+        xmlTreeBuilder.initialiseParse(input, baseUri, errors);
+
+        assertEquals(Document.OutputSettings.Syntax.xml, xmlTreeBuilder.doc.outputSettings().syntax());
+        assertTrue(xmlTreeBuilder.stack.contains(xmlTreeBuilder.doc));
+    }
+
+    @Test
+    public void testProcessStartTag() {
+        when(token.type).thenReturn(Token.TokenType.StartTag);
+        when(token.asStartTag()).thenReturn(startTag);
+
+        xmlTreeBuilder.process(token);
+
+        verify(token).asStartTag();
+    }
+
+    @Test
+    public void testProcessEndTag() {
+        when(token.type).thenReturn(Token.TokenType.EndTag);
+        when(token.asEndTag()).thenReturn(endTag);
+
+        xmlTreeBuilder.process(token);
+
+        verify(token).asEndTag();
+    }
+
+    @Test
+    public void testProcessComment() {
+        when(token.type).thenReturn(Token.TokenType.Comment);
+        when(token.asComment()).thenReturn(commentToken);
+
+        xmlTreeBuilder.process(token);
+
+        verify(token).asComment();
+    }
+
+    @Test
+    public void testProcessCharacter() {
+        when(token.type).thenReturn(Token.TokenType.Character);
+        when(token.asCharacter()).thenReturn(characterToken);
+
+        xmlTreeBuilder.process(token);
+
+        verify(token).asCharacter();
+    }
+
+    @Test
+    public void testProcessDoctype() {
+        when(token.type).thenReturn(Token.TokenType.Doctype);
+        when(token.asDoctype()).thenReturn(doctypeToken);
+
+        xmlTreeBuilder.process(token);
+
+        verify(token).asDoctype();
+    }
+
+    @Test
+    public void testProcessEOF() {
+        when(token.type).thenReturn(Token.TokenType.EOF);
+
+        xmlTreeBuilder.process(token);
+
+        // No specific action for EOF, just ensure no exception is thrown
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testProcessUnexpectedToken() {
+        when(token.type).thenReturn(Token.TokenType.EOF); // Simulate unexpected token
+
+        xmlTreeBuilder.process(token);
+    }
+
+    @Test
+    public void testInsertNode() {
+        Node node = new Element(Tag.valueOf("div"), "http://example.com");
+        xmlTreeBuilder.insertNode(node);
+
+        assertTrue(xmlTreeBuilder.doc.childNodes().contains(node));
+    }
+
+    @Test
+    public void testInsertStartTag() {
+        when(startTag.name()).thenReturn("div");
+        when(startTag.isSelfClosing()).thenReturn(false);
+
+        Element element = xmlTreeBuilder.insert(startTag);
+
+        assertNotNull(element);
+        assertTrue(xmlTreeBuilder.stack.contains(element));
+    }
+
+    @Test
+    public void testInsertComment() {
+        when(commentToken.getData()).thenReturn("This is a comment");
+        when(commentToken.bogus).thenReturn(false);
+
+        xmlTreeBuilder.insert(commentToken);
+
+        assertTrue(xmlTreeBuilder.doc.childNodes().stream().anyMatch(node -> node instanceof Comment));
+    }
+
+    @Test
+    public void testInsertCharacter() {
+        when(characterToken.getData()).thenReturn("Some text");
+
+        xmlTreeBuilder.insert(characterToken);
+
+        assertTrue(xmlTreeBuilder.doc.childNodes().stream().anyMatch(node -> node instanceof TextNode));
+    }
+
+    @Test
+    public void testInsertDoctype() {
+        when(doctypeToken.getName()).thenReturn("html");
+        when(doctypeToken.getPublicIdentifier()).thenReturn("public");
+        when(doctypeToken.getSystemIdentifier()).thenReturn("system");
+
+        xmlTreeBuilder.insert(doctypeToken);
+
+        assertTrue(xmlTreeBuilder.doc.childNodes().stream().anyMatch(node -> node instanceof DocumentType));
+    }
+
+    @Test
+    public void testPopStackToClose() {
+        Element element1 = new Element(Tag.valueOf("div"), "http://example.com");
+        Element element2 = new Element(Tag.valueOf("span"), "http://example.com");
+        xmlTreeBuilder.stack.add(element1);
+        xmlTreeBuilder.stack.add(element2);
+
+        when(endTag.name()).thenReturn("span");
+
+        xmlTreeBuilder.popStackToClose(endTag);
+
+        assertFalse(xmlTreeBuilder.stack.contains(element2));
+    }
+
+    @Test
+    public void testParseFragment() {
+        String inputFragment = "<div><span>Text</span></div>";
+        String baseUri = "http://example.com";
+
+        List<Node> nodes = xmlTreeBuilder.parseFragment(inputFragment, baseUri, errors);
+
+        assertNotNull(nodes);
+        assertEquals(1, nodes.size());
+        assertTrue(nodes.get(0) instanceof Element);
+    }
+}
+```

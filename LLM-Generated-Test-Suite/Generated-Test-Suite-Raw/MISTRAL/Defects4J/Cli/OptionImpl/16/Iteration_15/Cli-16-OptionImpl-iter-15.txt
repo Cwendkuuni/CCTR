@@ -1,0 +1,162 @@
+```java
+package org.apache.commons.cli2.option;
+
+import org.apache.commons.cli2.DisplaySetting;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.util.HashSet;
+import java.util.LinkedList;
+import java.util.ListIterator;
+import java.util.Set;
+
+import static org.junit.Assert.*;
+
+public class OptionImplTest {
+
+    private OptionImpl option;
+    private WriteableCommandLine commandLine;
+    private ListIterator<String> arguments;
+
+    @Before
+    public void setUp() {
+        option = new OptionImpl(1, true) {
+            @Override
+            public String getPreferredName() {
+                return "preferredName";
+            }
+
+            @Override
+            public String getDescription() {
+                return "description";
+            }
+
+            @Override
+            public Set<String> getPrefixes() {
+                Set<String> prefixes = new HashSet<>();
+                prefixes.add("prefix");
+                return prefixes;
+            }
+
+            @Override
+            public Set<String> getTriggers() {
+                Set<String> triggers = new HashSet<>();
+                triggers.add("trigger");
+                return triggers;
+            }
+
+            @Override
+            public boolean canProcess(WriteableCommandLine commandLine, String argument) {
+                return argument.equals("trigger");
+            }
+        };
+
+        commandLine = Mockito.mock(WriteableCommandLine.class);
+        LinkedList<String> argList = new LinkedList<>();
+        argList.add("trigger");
+        arguments = argList.listIterator();
+    }
+
+    @Test
+    public void testCanProcess() {
+        assertTrue(option.canProcess(commandLine, arguments));
+    }
+
+    @Test
+    public void testToString() {
+        StringBuffer buffer = new StringBuffer();
+        option.appendUsage(buffer, DisplaySetting.ALL, null);
+        assertEquals(buffer.toString(), option.toString());
+    }
+
+    @Test
+    public void testGetId() {
+        assertEquals(1, option.getId());
+    }
+
+    @Test
+    public void testEquals() {
+        OptionImpl otherOption = new OptionImpl(1, true) {
+            @Override
+            public String getPreferredName() {
+                return "preferredName";
+            }
+
+            @Override
+            public String getDescription() {
+                return "description";
+            }
+
+            @Override
+            public Set<String> getPrefixes() {
+                Set<String> prefixes = new HashSet<>();
+                prefixes.add("prefix");
+                return prefixes;
+            }
+
+            @Override
+            public Set<String> getTriggers() {
+                Set<String> triggers = new HashSet<>();
+                triggers.add("trigger");
+                return triggers;
+            }
+
+            @Override
+            public boolean canProcess(WriteableCommandLine commandLine, String argument) {
+                return argument.equals("trigger");
+            }
+        };
+
+        assertTrue(option.equals(otherOption));
+    }
+
+    @Test
+    public void testHashCode() {
+        int hashCode = 1;
+        hashCode = (hashCode * 37) + "preferredName".hashCode();
+        hashCode = (hashCode * 37) + "description".hashCode();
+        Set<String> prefixes = new HashSet<>();
+        prefixes.add("prefix");
+        hashCode = (hashCode * 37) + prefixes.hashCode();
+        Set<String> triggers = new HashSet<>();
+        triggers.add("trigger");
+        hashCode = (hashCode * 37) + triggers.hashCode();
+
+        assertEquals(hashCode, option.hashCode());
+    }
+
+    @Test
+    public void testFindOption() {
+        assertNotNull(option.findOption("trigger"));
+        assertNull(option.findOption("nonExistentTrigger"));
+    }
+
+    @Test
+    public void testIsRequired() {
+        assertTrue(option.isRequired());
+    }
+
+    @Test
+    public void testDefaults() {
+        option.defaults(commandLine);
+        // No assertions needed as the method does nothing
+    }
+
+    @Test
+    public void testCheckPrefixes() {
+        Set<String> prefixes = new HashSet<>();
+        prefixes.add("prefix");
+        option.checkPrefixes(prefixes);
+        // No assertions needed as the method does not throw exceptions
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckPrefixesException() {
+        Set<String> prefixes = new HashSet<>();
+        prefixes.add("nonExistentPrefix");
+        option.checkPrefixes(prefixes);
+    }
+}
+```

@@ -1,0 +1,121 @@
+To create a comprehensive JUnit 4 test suite for the `SequencesComparator` class, we need to test the main functionalities provided by the class, particularly focusing on the `getScript` method, as it is the primary public method. We will also need to test the constructor to ensure it initializes the object correctly. Below is a JUnit 4 test suite that covers these aspects:
+
+```java
+import org.apache.commons.collections4.Equator;
+import org.apache.commons.collections4.sequence.EditScript;
+import org.apache.commons.collections4.sequence.SequencesComparator;
+import org.apache.commons.collections4.sequence.Command;
+import org.apache.commons.collections4.sequence.KeepCommand;
+import org.apache.commons.collections4.sequence.InsertCommand;
+import org.apache.commons.collections4.sequence.DeleteCommand;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class SequencesComparatorTest {
+
+    private List<String> sequence1;
+    private List<String> sequence2;
+    private Equator<String> equator;
+
+    @Before
+    public void setUp() {
+        sequence1 = Arrays.asList("a", "b", "c", "d");
+        sequence2 = Arrays.asList("a", "x", "c", "d");
+        equator = new Equator<String>() {
+            @Override
+            public boolean equate(String o1, String o2) {
+                return o1.equals(o2);
+            }
+
+            @Override
+            public int hash(String o) {
+                return o.hashCode();
+            }
+        };
+    }
+
+    @Test
+    public void testConstructorWithEquator() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2, equator);
+        assertNotNull(comparator);
+    }
+
+    @Test
+    public void testConstructorWithoutEquator() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2);
+        assertNotNull(comparator);
+    }
+
+    @Test
+    public void testGetScript() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2, equator);
+        EditScript<String> script = comparator.getScript();
+
+        assertNotNull(script);
+        List<Command<String>> commands = script.getCommands();
+        assertEquals(4, commands.size());
+
+        assertTrue(commands.get(0) instanceof KeepCommand);
+        assertTrue(commands.get(1) instanceof DeleteCommand);
+        assertTrue(commands.get(2) instanceof InsertCommand);
+        assertTrue(commands.get(3) instanceof KeepCommand);
+
+        assertEquals("a", ((KeepCommand<String>) commands.get(0)).getObject());
+        assertEquals("b", ((DeleteCommand<String>) commands.get(1)).getObject());
+        assertEquals("x", ((InsertCommand<String>) commands.get(2)).getObject());
+        assertEquals("c", ((KeepCommand<String>) commands.get(3)).getObject());
+    }
+
+    @Test
+    public void testGetScriptWithIdenticalSequences() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence1, equator);
+        EditScript<String> script = comparator.getScript();
+
+        assertNotNull(script);
+        List<Command<String>> commands = script.getCommands();
+        assertEquals(4, commands.size());
+
+        for (Command<String> command : commands) {
+            assertTrue(command instanceof KeepCommand);
+        }
+    }
+
+    @Test
+    public void testGetScriptWithEmptySequences() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(Arrays.asList(), Arrays.asList(), equator);
+        EditScript<String> script = comparator.getScript();
+
+        assertNotNull(script);
+        List<Command<String>> commands = script.getCommands();
+        assertTrue(commands.isEmpty());
+    }
+
+    @Test
+    public void testGetScriptWithOneEmptySequence() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, Arrays.asList(), equator);
+        EditScript<String> script = comparator.getScript();
+
+        assertNotNull(script);
+        List<Command<String>> commands = script.getCommands();
+        assertEquals(4, commands.size());
+
+        for (Command<String> command : commands) {
+            assertTrue(command instanceof DeleteCommand);
+        }
+    }
+}
+```
+
+### Explanation:
+- **Test Setup**: The `setUp` method initializes the sequences and an equator for use in the tests.
+- **Constructor Tests**: We test both constructors (with and without an equator) to ensure they initialize the object correctly.
+- **`getScript` Method Tests**: 
+  - We test the `getScript` method with sequences that have differences, identical sequences, empty sequences, and one empty sequence to ensure it handles all cases correctly.
+  - We verify the type and content of the commands in the `EditScript` returned by `getScript`.
+
+This test suite should provide a comprehensive check of the `SequencesComparator` class's functionality.

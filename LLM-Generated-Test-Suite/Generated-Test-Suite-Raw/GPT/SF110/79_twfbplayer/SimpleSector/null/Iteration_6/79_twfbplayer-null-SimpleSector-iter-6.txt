@@ -1,0 +1,114 @@
+To create a comprehensive JUnit 4 test suite for the `SimpleSector` class, we need to test all its methods, including constructors, getters, and other public methods. Below is a test suite that covers these aspects. Note that this test suite assumes the existence of mock or stub implementations for the interfaces and classes used in `SimpleSector`, such as `CombatantSide`, `CharacterClass`, `SectorBonus`, `Area`, `Combatant`, `Weapon`, and `SectorObserver`.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import java.util.HashSet;
+import java.util.Set;
+
+public class SimpleSectorTest {
+    private SimpleSector sector;
+    private CombatantSide mockSide;
+    private CharacterClass mockClass;
+    private SectorObserver mockObserver;
+    private Area mockArea;
+    private Combatant mockCombatant;
+    private Weapon mockWeapon;
+
+    @Before
+    public void setUp() {
+        mockSide = mock(CombatantSide.class);
+        mockClass = mock(CharacterClass.class);
+        mockObserver = mock(SectorObserver.class);
+        mockArea = mock(Area.class);
+        mockCombatant = mock(Combatant.class);
+        mockWeapon = mock(Weapon.class);
+
+        sector = new SimpleSector(10, true, false, 5, 3, true, 2, mockClass);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertEquals(10, sector.getHeight());
+        assertTrue(sector.isDefenderSpawn());
+        assertFalse(sector.isAttackerSpawn());
+        assertTrue(sector.isFlag());
+    }
+
+    @Test
+    public void testGainControl() {
+        sector.gainControl(mockSide);
+        assertEquals(mockSide, sector.getOccupier());
+        assertTrue(sector.isOccupied());
+    }
+
+    @Test
+    public void testFree() {
+        sector.gainControl(mockSide);
+        sector.free();
+        assertNull(sector.getOccupier());
+        assertFalse(sector.isOccupied());
+    }
+
+    @Test
+    public void testGetBonus() {
+        when(mockArea.isOccupied()).thenReturn(true);
+        when(mockArea.getOccupier()).thenReturn(mockCombatant);
+        when(mockCombatant.getWeapon()).thenReturn(mockWeapon);
+        when(mockWeapon.getSectorBonus(SectorBonus.BonusType.ATTACK)).thenReturn(1);
+        when(mockWeapon.getSectorBonus(SectorBonus.BonusType.DEFENSE)).thenReturn(1);
+        when(mockWeapon.getSectorBonus(SectorBonus.BonusType.DAMAGE)).thenReturn(1);
+
+        sector._addArea(mockArea);
+
+        SectorBonus bonus = sector.getBonus(mockClass);
+        assertEquals(8, bonus.getAttackBonus());
+        assertEquals(6, bonus.getDefenseBonus());
+        assertEquals(1, bonus.getDamageBonus());
+    }
+
+    @Test
+    public void testAddAndRemoveObserver() {
+        sector.addObserver(mockObserver);
+        sector.gainControl(mockSide);
+        verify(mockObserver, times(1)).occupierChanged();
+
+        sector.removeObserver(mockObserver);
+        sector.free();
+        verify(mockObserver, times(1)).occupierChanged(); // No additional call
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        SimpleSector sameSector = new SimpleSector(10, true, false, 5, 3, true, 2, mockClass);
+        assertTrue(sector.equals(sameSector));
+        assertEquals(sector.hashCode(), sameSector.hashCode());
+
+        SimpleSector differentSector = new SimpleSector(9, false, true, 4, 2, false, 1, mockClass);
+        assertFalse(sector.equals(differentSector));
+    }
+
+    @Test
+    public void testGetAreas() {
+        Set<Area> areas = sector.getAreas();
+        assertTrue(areas.isEmpty());
+
+        sector._addArea(mockArea);
+        assertTrue(sector.getAreas().contains(mockArea));
+    }
+}
+```
+
+### Explanation:
+- **Mocks and Stubs**: We use Mockito to create mock objects for dependencies like `CombatantSide`, `CharacterClass`, `SectorObserver`, `Area`, `Combatant`, and `Weapon`.
+- **Constructor Test**: Verifies that the constructor initializes fields correctly.
+- **Control Methods**: Tests `gainControl` and `free` methods to ensure they modify the occupier state correctly.
+- **Bonus Calculation**: Tests `getBonus` method by setting up mock areas and weapons to return specific bonuses.
+- **Observer Pattern**: Tests adding and removing observers and ensures they are notified of changes.
+- **Equality and Hashing**: Tests `equals` and `hashCode` methods for consistency.
+- **Area Management**: Tests adding and retrieving areas.
+
+This test suite should provide a comprehensive check of the `SimpleSector` class's functionality.

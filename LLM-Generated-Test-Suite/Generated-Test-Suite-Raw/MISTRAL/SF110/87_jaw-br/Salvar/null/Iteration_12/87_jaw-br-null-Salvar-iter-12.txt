@@ -1,0 +1,146 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `Salvar` class. This test suite covers various scenarios and methods within the `Salvar` class.
+
+```java
+import jaw.entrada.Salvar;
+import jaw.metamodelo.Entidade;
+import jaw.gui.ProcessarEntidades;
+import jaw.Main;
+import jaw.Serializacao;
+import jaw.SerializacaoXML;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import java.io.File;
+import java.io.FileWriter;
+import java.util.List;
+import java.util.Vector;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Main.class, Serializacao.class, SerializacaoXML.class, JOptionPane.class, FileWriter.class})
+public class SalvarTest {
+
+    @Mock
+    private ProcessarEntidades form;
+
+    @Mock
+    private Main main;
+
+    @Mock
+    private Serializacao serializacao;
+
+    @Mock
+    private SerializacaoXML serializacaoXML;
+
+    @Mock
+    private JFileChooser fileChooser;
+
+    @Mock
+    private File file;
+
+    @Mock
+    private FileWriter fileWriter;
+
+    private Salvar salvar;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        PowerMockito.mockStatic(Main.class);
+        PowerMockito.mockStatic(Serializacao.class);
+        PowerMockito.mockStatic(SerializacaoXML.class);
+        PowerMockito.mockStatic(JOptionPane.class);
+        PowerMockito.mockStatic(FileWriter.class);
+
+        when(Main.configuracao.getCaminhoDosProjetos()).thenReturn("testPath");
+        when(Main.janelaPrincipal.log(anyString())).thenReturn(null);
+        when(form.getEntidades()).thenReturn(new Vector<Entidade>());
+        when(form.getNomeArquivoSalvo()).thenReturn("Novo Projeto");
+        when(fileChooser.getSelectedFile()).thenReturn(file);
+        when(file.getAbsolutePath()).thenReturn("testPath/testFile.jaw");
+        when(serializacao.salvar(anyList(), anyString())).thenReturn(true);
+        when(serializacaoXML.entidades2XML(anyList())).thenReturn("<xml></xml>");
+    }
+
+    @Test
+    public void testSalvarXML() throws Exception {
+        when(fileChooser.showSaveDialog(form)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(file.getName()).thenReturn("testFile.jaw.xml");
+
+        salvar = new Salvar(form, Salvar.SALVAR_XML);
+
+        verify(fileChooser).setFileFilter(any(FileFilter.class));
+        verify(fileChooser).showSaveDialog(form);
+        verify(fileWriter).write(anyString());
+        verify(fileWriter).flush();
+        verify(fileWriter).close();
+        verify(JOptionPane.class).showMessageDialog(form, "Arquivo Exportado com sucesso!", "Jaw - Salvar", 1);
+    }
+
+    @Test
+    public void testSalvar() throws Exception {
+        when(fileChooser.showSaveDialog(form)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(file.getName()).thenReturn("testFile.jaw");
+
+        salvar = new Salvar(form, Salvar.SALVAR);
+
+        verify(fileChooser).setFileFilter(any(FileFilter.class));
+        verify(fileChooser).showSaveDialog(form);
+        verify(serializacao).salvar(anyList(), anyString());
+        verify(JOptionPane.class).showMessageDialog(form, "Arquivo salvo com sucesso!", "Jaw - Salvar", 1);
+    }
+
+    @Test
+    public void testSalvarComo() throws Exception {
+        when(fileChooser.showSaveDialog(form)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(file.getName()).thenReturn("testFile.jaw");
+
+        salvar = new Salvar(form, Salvar.SALVAR_COMO);
+
+        verify(fileChooser).setFileFilter(any(FileFilter.class));
+        verify(fileChooser).showSaveDialog(form);
+        verify(serializacao).salvar(anyList(), anyString());
+        verify(JOptionPane.class).showMessageDialog(form, "Arquivo salvo com sucesso!", "Jaw - Salvar", 1);
+    }
+
+    @Test
+    public void testSalvarException() throws Exception {
+        when(fileChooser.showSaveDialog(form)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(file.getName()).thenReturn("testFile.jaw");
+        when(serializacao.salvar(anyList(), anyString())).thenThrow(new Exception("Test Exception"));
+
+        salvar = new Salvar(form, Salvar.SALVAR);
+
+        verify(fileChooser).setFileFilter(any(FileFilter.class));
+        verify(fileChooser).showSaveDialog(form);
+        verify(serializacao).salvar(anyList(), anyString());
+        verify(JOptionPane.class).showMessageDialog(null, "Não foi possível salvar esse arquivo\n Verifique o formato das entidades !", "Salvando Arquivo", 0);
+    }
+
+    @Test
+    public void testSalvarXMLException() throws Exception {
+        when(fileChooser.showSaveDialog(form)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(file.getName()).thenReturn("testFile.jaw.xml");
+        doThrow(new IOException("Test Exception")).when(fileWriter).write(anyString());
+
+        salvar = new Salvar(form, Salvar.SALVAR_XML);
+
+        verify(fileChooser).setFileFilter(any(FileFilter.class));
+        verify(fileChooser).showSaveDialog(form);
+        verify(fileWriter).write(anyString());
+        verify(JOptionPane.class).showMessageDialog(form, "Não foi possível salvar esse arquivo\n Verifique o formato das entidades !", "Salvando Arquivo", 0);
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito for mocking dependencies. It also uses PowerMock to mock static methods and constructors. The tests cover different scenarios, including successful saves and exceptions.

@@ -1,0 +1,63 @@
+package org.scribe.model;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.scribe.model.OAuthRequest;
+import org.scribe.model.Verb;
+
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class OAuthRequestTest {
+
+    private OAuthRequest request;
+
+    @Before
+    public void setUp() {
+        request = new OAuthRequest(Verb.GET, "http://example.com");
+    }
+
+    @Test
+    public void testAddOAuthParameterValidKey() {
+        request.addOAuthParameter("oauth_token", "tokenValue");
+        Map<String, String> params = request.getOauthParameters();
+        assertTrue(params.containsKey("oauth_token"));
+        assertEquals("tokenValue", params.get("oauth_token"));
+    }
+
+    @Test
+    public void testAddOAuthParameterValidScopeKey() {
+        request.addOAuthParameter("scope", "read");
+        Map<String, String> params = request.getOauthParameters();
+        assertTrue(params.containsKey("scope"));
+        assertEquals("read", params.get("scope"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddOAuthParameterInvalidKey() {
+        request.addOAuthParameter("invalid_key", "value");
+    }
+
+    @Test
+    public void testGetOauthParametersEmpty() {
+        Map<String, String> params = request.getOauthParameters();
+        assertTrue(params.isEmpty());
+    }
+
+    @Test
+    public void testGetOauthParametersNonEmpty() {
+        request.addOAuthParameter("oauth_token", "tokenValue");
+        request.addOAuthParameter("scope", "read");
+        Map<String, String> params = request.getOauthParameters();
+        assertEquals(2, params.size());
+        assertEquals("tokenValue", params.get("oauth_token"));
+        assertEquals("read", params.get("scope"));
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "@OAuthRequest(GET, http://example.com)";
+        assertEquals(expected, request.toString());
+    }
+}

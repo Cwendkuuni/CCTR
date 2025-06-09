@@ -1,0 +1,67 @@
+package com.ib.client;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class ExecutionFilterTest {
+
+    private ExecutionFilter executionFilter1;
+    private ExecutionFilter executionFilter2;
+    private ExecutionFilter executionFilter3;
+
+    @Before
+    public void setUp() {
+        executionFilter1 = new ExecutionFilter();
+        executionFilter2 = new ExecutionFilter(1, "ACCT123", "2023-10-01T10:00:00", "AAPL", "STK", "NYSE", "BUY");
+        executionFilter3 = new ExecutionFilter(1, "ACCT123", "2023-10-01T10:00:00", "AAPL", "STK", "NYSE", "BUY");
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertEquals(0, executionFilter1.m_clientId);
+        assertNull(executionFilter1.m_acctCode);
+        assertNull(executionFilter1.m_time);
+        assertNull(executionFilter1.m_symbol);
+        assertNull(executionFilter1.m_secType);
+        assertNull(executionFilter1.m_exchange);
+        assertNull(executionFilter1.m_side);
+    }
+
+    @Test
+    public void testParameterizedConstructor() {
+        assertEquals(1, executionFilter2.m_clientId);
+        assertEquals("ACCT123", executionFilter2.m_acctCode);
+        assertEquals("2023-10-01T10:00:00", executionFilter2.m_time);
+        assertEquals("AAPL", executionFilter2.m_symbol);
+        assertEquals("STK", executionFilter2.m_secType);
+        assertEquals("NYSE", executionFilter2.m_exchange);
+        assertEquals("BUY", executionFilter2.m_side);
+    }
+
+    @Test
+    public void testEquals_SameObject() {
+        assertTrue(executionFilter2.equals(executionFilter2));
+    }
+
+    @Test
+    public void testEquals_DifferentObjectSameValues() {
+        assertTrue(executionFilter2.equals(executionFilter3));
+    }
+
+    @Test
+    public void testEquals_DifferentObjectDifferentValues() {
+        ExecutionFilter differentFilter = new ExecutionFilter(2, "ACCT456", "2023-10-01T11:00:00", "GOOG", "STK", "NASDAQ", "SELL");
+        assertFalse(executionFilter2.equals(differentFilter));
+    }
+
+    @Test
+    public void testEquals_NullObject() {
+        assertFalse(executionFilter2.equals(null));
+    }
+
+    @Test
+    public void testEquals_DifferentClass() {
+        assertFalse(executionFilter2.equals(new Object()));
+    }
+}

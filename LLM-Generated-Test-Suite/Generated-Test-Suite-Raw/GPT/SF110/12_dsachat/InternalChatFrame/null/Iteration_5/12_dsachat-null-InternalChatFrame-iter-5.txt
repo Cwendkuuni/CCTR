@@ -1,0 +1,118 @@
+To create a comprehensive JUnit 4 test suite for the `InternalChatFrame` class, we need to test each public method and any significant private methods that influence the behavior of the class. Below is a test suite that covers the main functionalities of the `InternalChatFrame` class. Note that some methods, like GUI-related ones, might be challenging to test directly without a GUI testing framework, but we can still test the logic and state changes.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.*;
+import javax.swing.text.BadLocationException;
+import javax.swing.text.StyledDocument;
+import java.awt.*;
+import java.awt.event.ActionEvent;
+
+public class InternalChatFrameTest {
+
+    private InternalChatFrame chatFrame;
+    private MainFrame mockParent;
+    private StyledDocument mockDoc;
+
+    @Before
+    public void setUp() {
+        mockParent = mock(MainFrame.class);
+        when(mockParent.getSize()).thenReturn(new Dimension(800, 600));
+        chatFrame = new InternalChatFrame(mockParent);
+        mockDoc = chatFrame.showTxt.getStyledDocument();
+    }
+
+    @Test
+    public void testAddUser() {
+        chatFrame.addUser("TestUser");
+        assertEquals("TestUser", chatFrame.getUserlist()[0]);
+    }
+
+    @Test
+    public void testDeleteUser() {
+        chatFrame.addUser("TestUser");
+        chatFrame.deleteUser("TestUser");
+        assertEquals(0, chatFrame.getUserlist().length);
+    }
+
+    @Test
+    public void testGetUserlist() {
+        chatFrame.addUser("User1");
+        chatFrame.addUser("User2");
+        String[] userList = chatFrame.getUserlist();
+        assertEquals(2, userList.length);
+        assertEquals("User1", userList[0]);
+        assertEquals("User2", userList[1]);
+    }
+
+    @Test
+    public void testAddText() throws BadLocationException {
+        chatFrame.addText("TestUser: Hello World");
+        String chatLog = chatFrame.getChatlog();
+        assertTrue(chatLog.contains("Hello World"));
+    }
+
+    @Test
+    public void testActionPerformedChooseColor() {
+        chatFrame.addUser("TestUser");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame, ActionEvent.ACTION_PERFORMED, "chooseColor");
+        chatFrame.actionPerformed(event);
+
+        // Since JColorChooser is a GUI component, we can't directly test the color change without user interaction.
+        // However, we can verify that the method was called.
+        verify(mockDoc, atLeastOnce()).getStyle("TestUser");
+    }
+
+    @Test
+    public void testActionPerformedBgColor() {
+        chatFrame.addUser("TestUser");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame, ActionEvent.ACTION_PERFORMED, "bgColor");
+        chatFrame.actionPerformed(event);
+
+        // Similar to chooseColor, we can't directly test the color change without user interaction.
+        // We can check if the background color of the JTextPane was set.
+        assertNotNull(chatFrame.showTxt.getBackground());
+    }
+
+    @Test
+    public void testActionPerformedWhisper() {
+        chatFrame.addUser("TestUser");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame, ActionEvent.ACTION_PERFORMED, "whisper");
+        chatFrame.actionPerformed(event);
+
+        assertEquals("/w TestUser ", chatFrame.txtInput.getText());
+    }
+
+    @Test
+    public void testMaybeShowPopup() {
+        MouseEvent mockEvent = mock(MouseEvent.class);
+        when(mockEvent.isPopupTrigger()).thenReturn(true);
+        when(mockEvent.getSource()).thenReturn(chatFrame.list);
+
+        chatFrame.maybeShowPopup(mockEvent);
+
+        // Verify that the popup menu is shown
+        assertTrue(chatFrame.listPop.isVisible());
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock the `MainFrame` and `StyledDocument` to isolate the `InternalChatFrame` for testing.
+- **Setup**: The `setUp` method initializes the `InternalChatFrame` with a mocked parent frame.
+- **Tests**: Each test method checks a specific functionality of the `InternalChatFrame` class:
+  - `testAddUser`, `testDeleteUser`, and `testGetUserlist` test user management.
+  - `testAddText` checks if text is correctly added to the chat log.
+  - `testActionPerformedChooseColor`, `testActionPerformedBgColor`, and `testActionPerformedWhisper` test the action commands.
+  - `testMaybeShowPopup` verifies that the popup menu is shown when appropriate.
+
+This test suite provides a good starting point for testing the `InternalChatFrame` class. GUI components and interactions are challenging to test without a GUI testing framework, so some tests focus on verifying method calls and state changes.

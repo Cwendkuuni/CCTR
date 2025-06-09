@@ -1,0 +1,211 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+import dsachat.server.Handler;
+import dsachat.share.ConnectionEndpoint;
+import dsachat.share.InputEvent;
+import dsachat.share.UserEvent;
+import dsachat.share.hero.Hero;
+import dsachat.share.Challenge;
+import dsachat.share.ChallReq;
+
+public class HandlerTest {
+
+    private Handler handler;
+    private ConnectionEndpoint mockConnection;
+    private InputEvent mockInputEvent;
+
+    @Before
+    public void setUp() {
+        handler = new Handler();
+        mockConnection = mock(ConnectionEndpoint.class);
+        mockInputEvent = mock(InputEvent.class);
+    }
+
+    @Test
+    public void testAddConnection() {
+        handler.addConnection(mockConnection);
+        verify(mockConnection, atLeastOnce()).isConnected();
+        assertEquals(1, handler.clients.size());
+    }
+
+    @Test
+    public void testRemoveConnection() {
+        handler.addConnection(mockConnection);
+        handler.removeConnection(mockConnection);
+        assertEquals(0, handler.clients.size());
+    }
+
+    @Test
+    public void testHandleInputString() {
+        when(mockInputEvent.getData()).thenReturn("Hello World");
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+
+        handler.addConnection(mockConnection);
+        handler.handleInput(mockInputEvent);
+
+        verify(mockConnection).send(": Hello World");
+    }
+
+    @Test
+    public void testHandleInputCommand() {
+        when(mockInputEvent.getData()).thenReturn("/whisper user1 Hello");
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+
+        handler.addConnection(mockConnection);
+        handler.handleInput(mockInputEvent);
+
+        verify(mockConnection).send("You whisper to user1: Hello");
+    }
+
+    @Test
+    public void testHandleInputChallenge() {
+        Challenge challenge = new Challenge();
+        when(mockInputEvent.getData()).thenReturn(challenge);
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+
+        handler.addConnection(mockConnection);
+        handler.handleInput(mockInputEvent);
+
+        verify(mockConnection).send(anyString());
+    }
+
+    @Test
+    public void testHandleInputChallReq() {
+        ChallReq challReq = new ChallReq();
+        when(mockInputEvent.getData()).thenReturn(challReq);
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+
+        handler.addConnection(mockConnection);
+        handler.handleInput(mockInputEvent);
+
+        verify(mockConnection).send(any(ChallReq.class));
+    }
+
+    @Test
+    public void testHandleInputHero() {
+        Hero hero = new Hero();
+        when(mockInputEvent.getData()).thenReturn(hero);
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+
+        handler.addConnection(mockConnection);
+        handler.handleInput(mockInputEvent);
+
+        verify(mockConnection).send("Welcome " + hero.getName());
+    }
+
+    @Test
+    public void testHandleInputUserEvent() {
+        UserEvent userEvent = new UserEvent(false, "Gamemaster");
+        when(mockInputEvent.getData()).thenReturn(userEvent);
+        when(mockInputEvent.getSource()).thenReturn(mockConnection);
+
+        handler.addConnection(mockConnection);
+        handler.handleInput(mockInputEvent);
+
+        verify(mockConnection).send("Welcome Gamemaster");
+    }
+
+    @Test
+    public void testSendHeros() {
+        Hero hero = new Hero();
+        handler.addConnection(mockConnection);
+        handler.updateHero(mockConnection, hero);
+
+        handler.sendHeros(mockConnection);
+
+        verify(mockConnection).send(any(Vector.class));
+    }
+
+    @Test
+    public void testIsGmConnected() {
+        handler.addConnection(mockConnection);
+        handler.clients.elementAt(0).name = "Gamemaster";
+
+        assertTrue(handler.isGmConnected());
+    }
+
+    @Test
+    public void testSendOneSystemMsg() {
+        handler.addConnection(mockConnection);
+        handler.sendOneSystemMsg(mockConnection, "Test Message");
+
+        verify(mockConnection).send("Test Message");
+    }
+
+    @Test
+    public void testSendAllSystemMsg() {
+        handler.addConnection(mockConnection);
+        handler.sendAllSystemMsg("Test Message");
+
+        verify(mockConnection).send("Test Message");
+    }
+
+    @Test
+    public void testWhisper() {
+        handler.addConnection(mockConnection);
+        handler.clients.elementAt(0).name = "user1";
+
+        handler.whisper(mockConnection, "user1 Hello");
+
+        verify(mockConnection).send("You whisper to user1: Hello");
+    }
+
+    @Test
+    public void testRollDice() {
+        handler.addConnection(mockConnection);
+        handler.rollDice(mockConnection, "1d6");
+
+        verify(mockConnection).send(anyString());
+    }
+
+    @Test
+    public void testSendToOneStr() {
+        handler.addConnection(mockConnection);
+        handler.clients.elementAt(0).name = "user1";
+
+        handler.sendToOneStr(mockConnection, "user1", "Hello");
+
+        verify(mockConnection).send(": Hello");
+    }
+
+    @Test
+    public void testUpdateHero() {
+        Hero hero = new Hero();
+        handler.addConnection(mockConnection);
+
+        String result = handler.updateHero(mockConnection, hero);
+
+        assertEquals(hero.getName(), result);
+    }
+
+    @Test
+    public void testSendAllStr() {
+        handler.addConnection(mockConnection);
+        handler.sendAllStr(mockConnection, "Test Message");
+
+        verify(mockConnection).send(": Test Message");
+    }
+
+    @Test
+    public void testSendAllObj() {
+        Object obj = new Object();
+        handler.addConnection(mockConnection);
+        handler.sendAllObj(obj);
+
+        verify(mockConnection).send(obj);
+    }
+
+    @Test
+    public void testGetName() {
+        handler.addConnection(mockConnection);
+        handler.clients.elementAt(0).name = "user1";
+
+        String name = handler.getName(mockConnection);
+
+        assertEquals("user1", name);
+    }
+}
+```

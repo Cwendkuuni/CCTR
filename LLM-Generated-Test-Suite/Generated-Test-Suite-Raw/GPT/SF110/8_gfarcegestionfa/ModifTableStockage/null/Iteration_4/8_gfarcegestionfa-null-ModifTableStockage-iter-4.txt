@@ -1,0 +1,98 @@
+To create a comprehensive JUnit 4 test suite for the `ModifTableStockage` class, we need to test each method thoroughly. This involves testing various scenarios, including edge cases, to ensure the methods behave as expected. Below is a test suite that covers the methods in the `ModifTableStockage` class. Note that this assumes the existence of a `TableStockage` class with appropriate methods like `getColumnCount`, `getRowCount`, `getColumnName`, `getValueAt`, `setColumnName`, `setValueAt`, and `getColumnClass`.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+public class ModifTableStockageTest {
+
+    private TableStockage mockTableStockage;
+    private ModifTableStockage modifTableStockage;
+
+    @Before
+    public void setUp() {
+        mockTableStockage = Mockito.mock(TableStockage.class);
+        Mockito.when(mockTableStockage.getColumnCount()).thenReturn(3);
+        Mockito.when(mockTableStockage.getRowCount()).thenReturn(2);
+        Mockito.when(mockTableStockage.getColumnName(Mockito.anyInt())).thenReturn("Column");
+        Mockito.when(mockTableStockage.getColumnClass(Mockito.anyInt())).thenReturn(String.class);
+        Mockito.when(mockTableStockage.getValueAt(Mockito.anyInt(), Mockito.anyInt())).thenReturn("Value");
+
+        modifTableStockage = new ModifTableStockage(mockTableStockage);
+    }
+
+    @Test
+    public void testAjouterColonne() {
+        TableStockage result = modifTableStockage.ajouterColonne("NewColumn", Integer.class);
+        assertEquals(4, result.getColumnCount());
+        assertEquals("NewColumn", result.getColumnName(3));
+    }
+
+    @Test
+    public void testAjouterLigne() {
+        TableStockage result = modifTableStockage.ajouterLigne();
+        assertEquals(4, result.getRowCount());
+        assertEquals("", result.getValueAt(2, 0));
+    }
+
+    @Test
+    public void testSupprimerColonne() {
+        TableStockage result = modifTableStockage.supprimerColonne(1);
+        assertEquals(2, result.getColumnCount());
+    }
+
+    @Test
+    public void testSupprimerLigne() {
+        TableStockage result = modifTableStockage.supprimerLigne(1);
+        assertEquals(2, result.getRowCount());
+    }
+
+    @Test
+    public void testSeparerColonne() {
+        Mockito.when(mockTableStockage.getColumnClass(0)).thenReturn(String.class);
+        Mockito.when(mockTableStockage.getValueAt(0, 0)).thenReturn("Value1 Value2");
+        TableStockage result = modifTableStockage.separerColonne(0);
+        assertEquals(4, result.getColumnCount());
+        assertEquals("Value1", result.getValueAt(0, 0));
+        assertEquals("Value2", result.getValueAt(0, 1));
+    }
+
+    @Test
+    public void testFusionnerColonnes() {
+        Mockito.when(mockTableStockage.getColumnClass(0)).thenReturn(String.class);
+        Mockito.when(mockTableStockage.getColumnClass(1)).thenReturn(String.class);
+        Mockito.when(mockTableStockage.getValueAt(0, 0)).thenReturn("Value1");
+        Mockito.when(mockTableStockage.getValueAt(0, 1)).thenReturn("Value2");
+        TableStockage result = modifTableStockage.fusionnerColonnes(0);
+        assertEquals(2, result.getColumnCount());
+        assertEquals("Value1 Value2", result.getValueAt(0, 0));
+    }
+
+    @Test
+    public void testColonneMail() {
+        TableStockage result = modifTableStockage.colonneMail();
+        assertEquals(4, result.getColumnCount());
+        assertEquals(Boolean.class, result.getColumnClass(3));
+        assertEquals(true, result.getValueAt(0, 3));
+    }
+
+    @Test
+    public void testSelectMail() {
+        Mockito.when(mockTableStockage.getColumnName(3)).thenReturn("Envoyer E-Mail a:");
+        Mockito.when(mockTableStockage.getValueAt(0, 3)).thenReturn(true);
+        Mockito.when(mockTableStockage.getValueAt(1, 3)).thenReturn(false);
+        TableStockage result = modifTableStockage.selectMail();
+        assertEquals(2, result.getRowCount());
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to create a mock `TableStockage` object. This allows us to define the behavior of methods like `getColumnCount`, `getRowCount`, etc., without needing a real implementation.
+- **Setup**: The `setUp` method initializes the mock and the `ModifTableStockage` instance before each test.
+- **Tests**: Each method in `ModifTableStockage` is tested with assertions to verify the expected outcomes. Edge cases and typical use cases are considered.
+- **Assertions**: We use assertions to check the number of columns, rows, and specific values in the `TableStockage` after operations.
+
+This test suite should be run in an environment where JUnit 4 and Mockito are available. Adjust the mock behavior and assertions as needed based on the actual implementation of `TableStockage`.

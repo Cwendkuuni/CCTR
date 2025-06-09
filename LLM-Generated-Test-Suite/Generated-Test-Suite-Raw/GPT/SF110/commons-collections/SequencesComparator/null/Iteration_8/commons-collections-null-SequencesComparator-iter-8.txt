@@ -1,0 +1,145 @@
+To create a comprehensive JUnit 4 test suite for the `SequencesComparator` class, we need to test the public methods, particularly focusing on the `getScript` method since it is the primary public method exposed by the class. We will also need to consider edge cases such as empty sequences, sequences with no common elements, and sequences with all elements in common.
+
+Below is a JUnit 4 test suite for the `SequencesComparator` class:
+
+```java
+import org.apache.commons.collections4.sequence.SequencesComparator;
+import org.apache.commons.collections4.sequence.EditScript;
+import org.apache.commons.collections4.sequence.CommandVisitor;
+import org.apache.commons.collections4.sequence.KeepCommand;
+import org.apache.commons.collections4.sequence.InsertCommand;
+import org.apache.commons.collections4.sequence.DeleteCommand;
+import org.apache.commons.collections4.functors.DefaultEquator;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.List;
+
+public class SequencesComparatorTest {
+
+    @Test
+    public void testEmptySequences() {
+        List<String> seq1 = Arrays.asList();
+        List<String> seq2 = Arrays.asList();
+        SequencesComparator<String> comparator = new SequencesComparator<>(seq1, seq2);
+        EditScript<String> script = comparator.getScript();
+        assertTrue(script.isEmpty());
+    }
+
+    @Test
+    public void testIdenticalSequences() {
+        List<String> seq1 = Arrays.asList("a", "b", "c");
+        List<String> seq2 = Arrays.asList("a", "b", "c");
+        SequencesComparator<String> comparator = new SequencesComparator<>(seq1, seq2);
+        EditScript<String> script = comparator.getScript();
+        assertEquals(3, script.size());
+        script.visit(new CommandVisitor<String>() {
+            int index = 0;
+            @Override
+            public void visitKeepCommand(T object) {
+                assertEquals(seq1.get(index), object);
+                index++;
+            }
+            @Override
+            public void visitInsertCommand(T object) {
+                fail("No insertions expected");
+            }
+            @Override
+            public void visitDeleteCommand(T object) {
+                fail("No deletions expected");
+            }
+        });
+    }
+
+    @Test
+    public void testCompletelyDifferentSequences() {
+        List<String> seq1 = Arrays.asList("a", "b", "c");
+        List<String> seq2 = Arrays.asList("x", "y", "z");
+        SequencesComparator<String> comparator = new SequencesComparator<>(seq1, seq2);
+        EditScript<String> script = comparator.getScript();
+        assertEquals(6, script.size());
+        script.visit(new CommandVisitor<String>() {
+            int index1 = 0;
+            int index2 = 0;
+            @Override
+            public void visitKeepCommand(T object) {
+                fail("No keeps expected");
+            }
+            @Override
+            public void visitInsertCommand(T object) {
+                assertEquals(seq2.get(index2), object);
+                index2++;
+            }
+            @Override
+            public void visitDeleteCommand(T object) {
+                assertEquals(seq1.get(index1), object);
+                index1++;
+            }
+        });
+    }
+
+    @Test
+    public void testPartialOverlapSequences() {
+        List<String> seq1 = Arrays.asList("a", "b", "c", "d");
+        List<String> seq2 = Arrays.asList("b", "c", "e");
+        SequencesComparator<String> comparator = new SequencesComparator<>(seq1, seq2);
+        EditScript<String> script = comparator.getScript();
+        assertEquals(5, script.size());
+        script.visit(new CommandVisitor<String>() {
+            int index1 = 0;
+            int index2 = 0;
+            @Override
+            public void visitKeepCommand(T object) {
+                assertEquals(seq1.get(index1), seq2.get(index2));
+                index1++;
+                index2++;
+            }
+            @Override
+            public void visitInsertCommand(T object) {
+                assertEquals("e", object);
+                index2++;
+            }
+            @Override
+            public void visitDeleteCommand(T object) {
+                assertTrue(object.equals("a") || object.equals("d"));
+                index1++;
+            }
+        });
+    }
+
+    @Test
+    public void testCustomEquator() {
+        List<String> seq1 = Arrays.asList("a", "b", "c");
+        List<String> seq2 = Arrays.asList("A", "B", "C");
+        SequencesComparator<String> comparator = new SequencesComparator<>(seq1, seq2, (s1, s2) -> s1.equalsIgnoreCase(s2));
+        EditScript<String> script = comparator.getScript();
+        assertEquals(3, script.size());
+        script.visit(new CommandVisitor<String>() {
+            int index = 0;
+            @Override
+            public void visitKeepCommand(T object) {
+                assertEquals(seq1.get(index).toLowerCase(), object.toLowerCase());
+                index++;
+            }
+            @Override
+            public void visitInsertCommand(T object) {
+                fail("No insertions expected");
+            }
+            @Override
+            public void visitDeleteCommand(T object) {
+                fail("No deletions expected");
+            }
+        });
+    }
+}
+```
+
+### Explanation:
+- **testEmptySequences**: Tests the behavior when both sequences are empty.
+- **testIdenticalSequences**: Tests when both sequences are identical.
+- **testCompletelyDifferentSequences**: Tests when sequences have no elements in common.
+- **testPartialOverlapSequences**: Tests when sequences have some elements in common.
+- **testCustomEquator**: Tests using a custom equator to compare elements case-insensitively.
+
+This test suite covers various scenarios to ensure the `SequencesComparator` class functions correctly under different conditions.

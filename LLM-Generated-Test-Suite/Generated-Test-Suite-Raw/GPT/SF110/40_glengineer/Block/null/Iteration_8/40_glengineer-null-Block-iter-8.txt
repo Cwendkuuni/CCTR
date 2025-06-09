@@ -1,0 +1,151 @@
+To create a comprehensive JUnit 4 test suite for the `Block` class, we need to consider testing all public methods, including constructors, and handle both normal and exceptional cases. Since `Block` is an abstract class, we'll need to create a concrete subclass for testing purposes. Below is a complete JUnit 4 test suite for the `Block` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.util.List;
+import glengineer.blocks.Block;
+import glengineer.positions.CharPosition;
+import glengineer.positions.Scheme;
+
+public class BlockTest {
+
+    private Scheme scheme;
+    private Block block;
+
+    // Concrete subclass for testing
+    private class TestBlock extends Block {
+        public TestBlock(Scheme scheme, int x1, int y1, int x2, int y2) {
+            super(scheme, x1, y1, x2, y2);
+        }
+
+        public TestBlock(Scheme scheme, CharPosition p1, CharPosition p2) {
+            super(scheme, p1, p2);
+        }
+
+        public TestBlock(Scheme scheme) {
+            super(scheme);
+        }
+
+        @Override
+        public Block subblock(int p0, int p1, int p2, int p3) {
+            return new TestBlock(scheme, p0, p1, p2, p3);
+        }
+
+        @Override
+        public List<Block> extractSequentialSubblocks() {
+            return null;
+        }
+
+        @Override
+        public List<Block> extractParallelSubblocks() {
+            return null;
+        }
+    }
+
+    @Before
+    public void setUp() {
+        // Initialize a Scheme object with some dummy data
+        scheme = new Scheme();
+        scheme.x2 = 10;
+        scheme.y2 = 10;
+        scheme.lines = new String[] {
+            "abcdefghij",
+            "klmnopqrst",
+            "uvwxyzabcd",
+            "efghijklmn",
+            "opqrstuvwx",
+            "yzabcdefgh",
+            "ijklmnopqr",
+            "stuvwxyzab",
+            "cdefghijkl",
+            "mnopqrstuv"
+        };
+        block = new TestBlock(scheme, 0, 0, 9, 9);
+    }
+
+    @Test
+    public void testConstructorWithCoordinates() {
+        Block b = new TestBlock(scheme, 1, 1, 8, 8);
+        assertNotNull(b);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithInvalidCoordinates() {
+        new TestBlock(scheme, -1, -1, 11, 11);
+    }
+
+    @Test
+    public void testConstructorWithCharPositions() {
+        CharPosition p1 = new CharPosition(1, 1);
+        CharPosition p2 = new CharPosition(8, 8);
+        Block b = new TestBlock(scheme, p1, p2);
+        assertNotNull(b);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        Block b = new TestBlock(scheme);
+        assertNotNull(b);
+    }
+
+    @Test
+    public void testCharAt() {
+        assertEquals('a', block.charAt(0, 0));
+        assertEquals('j', block.charAt(9, 0));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCharAtOutOfBounds() {
+        block.charAt(10, 10);
+    }
+
+    @Test
+    public void testTextAt() {
+        assertEquals("abc", block.textAt(0, 3, 0));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTextAtOutOfBounds() {
+        block.textAt(0, 11, 0);
+    }
+
+    @Test
+    public void testContainsOnlyOneWord() {
+        // Assuming firstWord_Horizontally and lastWord_Horizontally are implemented
+        // This test will need to be adjusted based on actual implementation
+        // For now, we assume it returns true for a block with a single word
+        assertTrue(block.containsOnlyOneWord());
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "Block(0,0, 9,9):\n" +
+                          " ##############\n" +
+                          " # abcdefghij #\n" +
+                          " # klmnopqrst #\n" +
+                          " # uvwxyzabcd #\n" +
+                          " # efghijklmn #\n" +
+                          " # opqrstuvwx #\n" +
+                          " # yzabcdefgh #\n" +
+                          " # ijklmnopqr #\n" +
+                          " # stuvwxyzab #\n" +
+                          " # cdefghijkl #\n" +
+                          " ##############";
+        assertEquals(expected, block.toString());
+    }
+
+    @Test
+    public void testGetUpperLine() {
+        assertEquals("abcdefghij", block.getUpperLine());
+    }
+}
+```
+
+### Notes:
+- The `TestBlock` class is a concrete subclass of `Block` used for testing purposes.
+- The `Scheme` class and its properties (`x2`, `y2`, `lines`) are assumed to be correctly implemented.
+- The `containsOnlyOneWord` test assumes the presence of `firstWord_Horizontally` and `lastWord_Horizontally` methods, which are not provided in the original code. Adjustments may be needed based on their actual implementation.
+- The `toString` method test assumes a specific format for the block's string representation.
+- The test suite includes both normal and exceptional cases to ensure robustness.

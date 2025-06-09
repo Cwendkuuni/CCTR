@@ -1,0 +1,126 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import javax.swing.text.Element;
+import javax.swing.text.Utilities;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+
+public class SearchableTextPaneTest {
+
+    private SearchableTextPane textPane;
+    private Font font;
+    private int tabSize;
+
+    @Before
+    public void setUp() {
+        font = new Font("Arial", Font.PLAIN, 12);
+        tabSize = 4;
+        textPane = new SearchableTextPane(font, tabSize);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertEquals(font, textPane.getFont());
+        assertEquals(tabSize, textPane.getTabSize());
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth_NoParent() {
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth_WithParent() {
+        Component parent = Mockito.mock(Component.class);
+        ComponentUI ui = Mockito.mock(ComponentUI.class);
+        Mockito.when(ui.getPreferredSize(textPane)).thenReturn(new Dimension(100, 100));
+        Mockito.when(parent.getSize()).thenReturn(new Dimension(150, 150));
+
+        textPane.setUI(ui);
+        textPane.setParent(parent);
+
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testHighlight_NoTerm() {
+        List<LineResult> results = textPane.highlight("", 0);
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    public void testHighlight_WithTerm() throws BadLocationException {
+        Document doc = Mockito.mock(Document.class);
+        Mockito.when(doc.getText(0, 0)).thenReturn("This is a test text.");
+        textPane.setDocument(doc);
+
+        List<LineResult> results = textPane.highlight("test", 0);
+        assertFalse(results.isEmpty());
+    }
+
+    @Test
+    public void testRemoveHighlights() {
+        textPane.removeHighlights();
+        assertEquals(0, textPane.getHighlighter().getHighlights().length);
+    }
+
+    @Test
+    public void testSearch_NoTerm() {
+        int pos = textPane.search("");
+        assertEquals(-1, pos);
+    }
+
+    @Test
+    public void testSearch_WithTerm() throws BadLocationException {
+        Document doc = Mockito.mock(Document.class);
+        Mockito.when(doc.getText(0, 0)).thenReturn("This is a test text.");
+        textPane.setDocument(doc);
+
+        int pos = textPane.search("test");
+        assertEquals(10, pos);
+    }
+
+    @Test
+    public void testSearch_WithTermAndStartPos() throws BadLocationException {
+        Document doc = Mockito.mock(Document.class);
+        Mockito.when(doc.getText(0, 0)).thenReturn("This is a test text.");
+        textPane.setDocument(doc);
+
+        int pos = textPane.search("test", 5);
+        assertEquals(10, pos);
+    }
+
+    @Test
+    public void testConvertWords2Lines() throws BadLocationException {
+        List<WordResult> words = new ArrayList<>();
+        words.add(new WordResult(0, 4, null));
+        words.add(new WordResult(5, 7, null));
+
+        Element elem = Mockito.mock(Element.class);
+        Mockito.when(elem.getStartOffset()).thenReturn(0);
+        Mockito.when(elem.getEndOffset()).thenReturn(10);
+        Mockito.when(Utilities.getParagraphElement(textPane, 0)).thenReturn(elem);
+
+        List<LineResult> lines = textPane.convertWords2Lines(words);
+        assertEquals(1, lines.size());
+    }
+
+    @Test
+    public void testUpdateWordResult() throws BadLocationException {
+        WordResult wordResult = new WordResult(0, 4, null);
+        LineResult lineResult = new LineResult(0, 0, 10);
+
+        textPane.updateWordResult(wordResult, lineResult);
+        assertEquals(1, wordResult.parent.lineNumber);
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to test the `SearchableTextPane` class. It covers the constructor, methods for highlighting, searching, and converting words to lines. Note that some methods and classes like `LineResult` and `WordResult` are assumed to exist based on the context provided. You may need to adjust the tests if these classes have specific implementations or constructors.

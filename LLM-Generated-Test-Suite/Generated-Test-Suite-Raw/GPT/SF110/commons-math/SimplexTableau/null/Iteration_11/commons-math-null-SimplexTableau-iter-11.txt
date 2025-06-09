@@ -1,0 +1,121 @@
+To create a comprehensive JUnit 4 test suite for the `SimplexTableau` class, we need to test the functionality of each method. Given the complexity of the class, the test suite will focus on the main functionalities, including initialization, tableau creation, constraint normalization, and basic operations like row manipulation and solution retrieval.
+
+Below is a JUnit 4 test suite for the `SimplexTableau` class:
+
+```java
+import org.apache.commons.math3.optimization.GoalType;
+import org.apache.commons.math3.optimization.linear.LinearConstraint;
+import org.apache.commons.math3.optimization.linear.LinearObjectiveFunction;
+import org.apache.commons.math3.optimization.linear.Relationship;
+import org.apache.commons.math3.util.Precision;
+import org.apache.commons.math3.linear.ArrayRealVector;
+import org.apache.commons.math3.linear.RealVector;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class SimplexTableauTest {
+
+    private LinearObjectiveFunction f;
+    private Collection<LinearConstraint> constraints;
+    private SimplexTableau simplexTableau;
+
+    @Before
+    public void setUp() {
+        f = new LinearObjectiveFunction(new ArrayRealVector(new double[]{2, 3}), 0);
+        constraints = new ArrayList<>();
+        constraints.add(new LinearConstraint(new ArrayRealVector(new double[]{1, 1}), Relationship.LEQ, 4));
+        constraints.add(new LinearConstraint(new ArrayRealVector(new double[]{1, 0}), Relationship.GEQ, 1));
+        simplexTableau = new SimplexTableau(f, constraints, GoalType.MAXIMIZE, true, 1e-6);
+    }
+
+    @Test
+    public void testInitialization() {
+        assertNotNull(simplexTableau);
+        assertEquals(2, simplexTableau.getNumDecisionVariables());
+        assertEquals(2, simplexTableau.getNumSlackVariables());
+        assertEquals(0, simplexTableau.getNumArtificialVariables());
+    }
+
+    @Test
+    public void testCreateTableau() {
+        RealMatrix tableau = simplexTableau.getData();
+        assertNotNull(tableau);
+        assertEquals(3, tableau.getRowDimension());
+        assertEquals(6, tableau.getColumnDimension());
+    }
+
+    @Test
+    public void testNormalizeConstraints() {
+        List<LinearConstraint> normalizedConstraints = simplexTableau.normalizeConstraints(constraints);
+        assertEquals(2, normalizedConstraints.size());
+        assertEquals(Relationship.LEQ, normalizedConstraints.get(0).getRelationship());
+        assertEquals(Relationship.GEQ, normalizedConstraints.get(1).getRelationship());
+    }
+
+    @Test
+    public void testIsOptimal() {
+        assertFalse(simplexTableau.isOptimal());
+    }
+
+    @Test
+    public void testGetSolution() {
+        simplexTableau.dropPhase1Objective();
+        PointValuePair solution = simplexTableau.getSolution();
+        assertNotNull(solution);
+        assertEquals(2, solution.getPoint().length);
+    }
+
+    @Test
+    public void testDivideRow() {
+        simplexTableau.divideRow(1, 2);
+        assertEquals(0.5, simplexTableau.getEntry(1, 0), 1e-6);
+    }
+
+    @Test
+    public void testSubtractRow() {
+        simplexTableau.subtractRow(1, 2, 1);
+        assertEquals(0.0, simplexTableau.getEntry(1, 0), 1e-6);
+    }
+
+    @Test
+    public void testEqualsAndHashCode() {
+        SimplexTableau anotherTableau = new SimplexTableau(f, constraints, GoalType.MAXIMIZE, true, 1e-6);
+        assertTrue(simplexTableau.equals(anotherTableau));
+        assertEquals(simplexTableau.hashCode(), anotherTableau.hashCode());
+    }
+
+    @Test
+    public void testGetBasicRow() {
+        Integer basicRow = simplexTableau.getBasicRow(2);
+        assertNull(basicRow);
+    }
+
+    @Test
+    public void testDropPhase1Objective() {
+        simplexTableau.dropPhase1Objective();
+        assertEquals(0, simplexTableau.getNumArtificialVariables());
+    }
+}
+```
+
+### Explanation:
+- **Initialization Tests**: Verify that the `SimplexTableau` is initialized correctly with the expected number of decision, slack, and artificial variables.
+- **Tableau Creation**: Check that the tableau is created with the correct dimensions.
+- **Constraint Normalization**: Ensure constraints are normalized correctly.
+- **Optimality Check**: Test the `isOptimal` method to verify if the tableau is optimal.
+- **Solution Retrieval**: Test the `getSolution` method to ensure it returns a valid solution.
+- **Row Operations**: Test `divideRow` and `subtractRow` methods for correct row manipulation.
+- **Equality and Hash Code**: Verify that `equals` and `hashCode` methods work as expected.
+- **Basic Row Retrieval**: Test `getBasicRow` method to ensure it returns the correct row index.
+- **Phase 1 Objective Drop**: Test `dropPhase1Objective` to ensure artificial variables are handled correctly.
+
+This test suite provides a comprehensive coverage of the `SimplexTableau` class's functionality.

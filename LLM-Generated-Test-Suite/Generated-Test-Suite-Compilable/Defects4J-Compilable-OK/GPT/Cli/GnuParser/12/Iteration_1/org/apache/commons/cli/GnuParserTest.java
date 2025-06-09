@@ -1,0 +1,93 @@
+package org.apache.commons.cli;
+
+import org.apache.commons.cli.GnuParser;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.Option;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class GnuParserTest {
+
+    private GnuParser parser;
+    private Options options;
+
+    @Before
+    public void setUp() {
+        parser = new GnuParser();
+        options = new Options();
+        options.addOption(new Option("a", "alpha", false, "Alpha option"));
+        options.addOption(new Option("b", "beta", false, "Beta option"));
+        options.addOption(new Option("D", "debug", true, "Debug option"));
+    }
+
+    @Test
+    public void testFlattenWithSingleDashOption() {
+        String[] args = {"-a"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-a"}, result);
+    }
+
+    @Test
+    public void testFlattenWithDoubleDashOption() {
+        String[] args = {"--alpha"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"--alpha"}, result);
+    }
+
+    @Test
+    public void testFlattenWithNonOptionArgument() {
+        String[] args = {"-a", "file.txt"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-a", "file.txt"}, result);
+    }
+
+    @Test
+    public void testFlattenWithStopAtNonOption() {
+        String[] args = {"-a", "file.txt", "-b"};
+        String[] result = parser.flatten(options, args, true);
+        assertArrayEquals(new String[]{"-a", "file.txt", "-b"}, result);
+    }
+
+    @Test
+    public void testFlattenWithStopAtNonOptionAndNonOptionFirst() {
+        String[] args = {"file.txt", "-a", "-b"};
+        String[] result = parser.flatten(options, args, true);
+        assertArrayEquals(new String[]{"file.txt", "-a", "-b"}, result);
+    }
+
+    @Test
+    public void testFlattenWithDoubleDash() {
+        String[] args = {"-a", "--", "-b"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-a", "--", "-b"}, result);
+    }
+
+    @Test
+    public void testFlattenWithSpecialPropertiesOption() {
+        String[] args = {"-Dproperty=value"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-D", "property=value"}, result);
+    }
+
+    @Test
+    public void testFlattenWithUnknownOption() {
+        String[] args = {"-x"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-x"}, result);
+    }
+
+    @Test
+    public void testFlattenWithUnknownOptionAndStopAtNonOption() {
+        String[] args = {"-x", "-a"};
+        String[] result = parser.flatten(options, args, true);
+        assertArrayEquals(new String[]{"-x", "-a"}, result);
+    }
+
+    @Test
+    public void testFlattenWithMultipleOptions() {
+        String[] args = {"-a", "-b", "-Dproperty=value"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-a", "-b", "-D", "property=value"}, result);
+    }
+}

@@ -1,0 +1,141 @@
+```java
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Map;
+import net.sf.sugar.fspath.FSPath;
+import net.sf.sugar.fspath.FSPathFactory;
+import net.sf.sugar.fspath.FSPathResult;
+import net.sf.sugar.fspath.FSPathResultList;
+
+public class FSPathExplorerTest {
+
+    private FSPathExplorer explorer;
+    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+
+    @Before
+    public void setUp() {
+        explorer = new FSPathExplorer();
+        explorer.out = new PrintStream(outContent);
+        explorer.err = new PrintStream(errContent);
+    }
+
+    @After
+    public void tearDown() {
+        explorer = null;
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(explorer);
+        assertNotNull(explorer.out);
+        assertNotNull(explorer.err);
+        assertNotNull(explorer.prompt);
+        assertEquals("fspath>", explorer.prompt.getPromptText());
+    }
+
+    @Test
+    public void testShowWelcome() {
+        FSPathExplorer.showWelcome();
+        assertTrue(outContent.toString().contains("FSPathExplorer"));
+    }
+
+    @Test
+    public void testShowHelp() {
+        FSPathExplorer.showHelp();
+        assertTrue(outContent.toString().contains("FSPathExplorer help"));
+    }
+
+    @Test
+    public void testConfigureExplorer() {
+        String[] args = {"-path", "/tmp", "-find", "//dir[@name='test']"};
+        explorer.configureExplorer(args);
+        assertEquals(new File("/tmp"), explorer.rootPath);
+        assertEquals("//dir[@name='test']", explorer.fsPathQuery);
+    }
+
+    @Test
+    public void testCreateFSPathWithRootPath() {
+        explorer.rootPath = new File("/tmp");
+        explorer.createFSPath();
+        assertNotNull(explorer.fsPath);
+        assertEquals("/tmp", explorer.fsPath.getRootDirectory().getAbsolutePath());
+    }
+
+    @Test
+    public void testCreateFSPathWithoutRootPath() {
+        explorer.createFSPath();
+        assertNotNull(explorer.fsPath);
+        assertNotNull(explorer.fsPath.getRootDirectory());
+    }
+
+    @Test
+    public void testStartExitCommand() throws Exception {
+        explorer.prompt = new MockPrompt("exit");
+        explorer.start();
+        assertTrue(outContent.toString().contains("exiting....."));
+    }
+
+    @Test
+    public void testStartPwdCommand() throws Exception {
+        explorer.prompt = new MockPrompt("pwd");
+        explorer.start();
+        assertTrue(outContent.toString().contains("Current directory"));
+    }
+
+    @Test
+    public void testStartCdCommand() throws Exception {
+        explorer.prompt = new MockPrompt("cd /tmp");
+        explorer.start();
+        assertTrue(outContent.toString().contains("changed to : /tmp"));
+    }
+
+    @Test
+    public void testStartHelpCommand() throws Exception {
+        explorer.prompt = new MockPrompt("help");
+        explorer.start();
+        assertTrue(outContent.toString().contains("FSPathExplorer help"));
+    }
+
+    @Test
+    public void testStartFSPathQuery() throws Exception {
+        explorer.prompt = new MockPrompt("//dir[@name='test']");
+        explorer.fsPath = new MockFSPath();
+        explorer.start();
+        assertTrue(outContent.toString().contains("test_result"));
+    }
+
+    private class MockPrompt extends Prompt {
+        private String input;
+
+        public MockPrompt(String input) {
+            super(System.in, explorer.out, explorer.err);
+            this.input = input;
+        }
+
+        @Override
+        public String readLine() throws IOException {
+            return input;
+        }
+    }
+
+    private class MockFSPath extends FSPath {
+        public MockFSPath() {
+            super(new File("/"));
+        }
+
+        @Override
+        public FSPathResultList query(String query) {
+            FSPathResultList results = new FSPathResultList();
+            results.add(new FSPathResult(new File("test_result")));
+            return results;
+        }
+    }
+}
+```

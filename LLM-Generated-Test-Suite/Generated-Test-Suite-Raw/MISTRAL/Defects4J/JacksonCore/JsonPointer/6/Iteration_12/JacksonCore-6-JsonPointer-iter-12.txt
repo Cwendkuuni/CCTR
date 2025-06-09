@@ -1,0 +1,181 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `JsonPointer` class. This test suite covers all the public methods and ensures that the class behaves as expected.
+
+```java
+package com.fasterxml.jackson.core;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+public class JsonPointerTest {
+
+    @Test
+    public void testCompileEmptyPointer() {
+        JsonPointer pointer = JsonPointer.compile("");
+        assertEquals(JsonPointer.EMPTY, pointer);
+    }
+
+    @Test
+    public void testCompileValidPointer() {
+        JsonPointer pointer = JsonPointer.compile("/foo/bar");
+        assertNotNull(pointer);
+        assertEquals("/foo/bar", pointer.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCompileInvalidPointer() {
+        JsonPointer.compile("foo/bar");
+    }
+
+    @Test
+    public void testValueOf() {
+        JsonPointer pointer = JsonPointer.valueOf("/foo/bar");
+        assertNotNull(pointer);
+        assertEquals("/foo/bar", pointer.toString());
+    }
+
+    @Test
+    public void testMatches() {
+        JsonPointer pointer = JsonPointer.compile("/foo");
+        assertFalse(pointer.matches());
+
+        JsonPointer emptyPointer = JsonPointer.compile("");
+        assertTrue(emptyPointer.matches());
+    }
+
+    @Test
+    public void testGetMatchingProperty() {
+        JsonPointer pointer = JsonPointer.compile("/foo");
+        assertEquals("foo", pointer.getMatchingProperty());
+    }
+
+    @Test
+    public void testGetMatchingIndex() {
+        JsonPointer pointer = JsonPointer.compile("/0");
+        assertEquals(0, pointer.getMatchingIndex());
+    }
+
+    @Test
+    public void testMayMatchProperty() {
+        JsonPointer pointer = JsonPointer.compile("/foo");
+        assertTrue(pointer.mayMatchProperty());
+
+        JsonPointer emptyPointer = JsonPointer.compile("");
+        assertFalse(emptyPointer.mayMatchProperty());
+    }
+
+    @Test
+    public void testMayMatchElement() {
+        JsonPointer pointer = JsonPointer.compile("/0");
+        assertTrue(pointer.mayMatchElement());
+
+        JsonPointer emptyPointer = JsonPointer.compile("");
+        assertFalse(emptyPointer.mayMatchElement());
+    }
+
+    @Test
+    public void testMatchProperty() {
+        JsonPointer pointer = JsonPointer.compile("/foo/bar");
+        JsonPointer nextSegment = pointer.matchProperty("foo");
+        assertNotNull(nextSegment);
+        assertEquals("/bar", nextSegment.toString());
+
+        JsonPointer mismatch = pointer.matchProperty("baz");
+        assertNull(mismatch);
+    }
+
+    @Test
+    public void testMatchElement() {
+        JsonPointer pointer = JsonPointer.compile("/0/1");
+        JsonPointer nextSegment = pointer.matchElement(0);
+        assertNotNull(nextSegment);
+        assertEquals("/1", nextSegment.toString());
+
+        JsonPointer mismatch = pointer.matchElement(1);
+        assertNull(mismatch);
+    }
+
+    @Test
+    public void testTail() {
+        JsonPointer pointer = JsonPointer.compile("/foo/bar");
+        JsonPointer tail = pointer.tail();
+        assertNotNull(tail);
+        assertEquals("/bar", tail.toString());
+
+        JsonPointer emptyPointer = JsonPointer.compile("");
+        assertNull(emptyPointer.tail());
+    }
+
+    @Test
+    public void testToString() {
+        JsonPointer pointer = JsonPointer.compile("/foo/bar");
+        assertEquals("/foo/bar", pointer.toString());
+    }
+
+    @Test
+    public void testHashCode() {
+        JsonPointer pointer1 = JsonPointer.compile("/foo/bar");
+        JsonPointer pointer2 = JsonPointer.compile("/foo/bar");
+        assertEquals(pointer1.hashCode(), pointer2.hashCode());
+    }
+
+    @Test
+    public void testEquals() {
+        JsonPointer pointer1 = JsonPointer.compile("/foo/bar");
+        JsonPointer pointer2 = JsonPointer.compile("/foo/bar");
+        assertTrue(pointer1.equals(pointer2));
+
+        JsonPointer pointer3 = JsonPointer.compile("/baz");
+        assertFalse(pointer1.equals(pointer3));
+    }
+
+    @Test
+    public void testParseIndex() {
+        assertEquals(0, JsonPointer._parseIndex("0"));
+        assertEquals(123, JsonPointer._parseIndex("123"));
+        assertEquals(-1, JsonPointer._parseIndex("abc"));
+        assertEquals(-1, JsonPointer._parseIndex("0123"));
+        assertEquals(-1, JsonPointer._parseIndex("2147483648")); // larger than Integer.MAX_VALUE
+    }
+
+    @Test
+    public void testParseTail() {
+        JsonPointer pointer = JsonPointer._parseTail("/foo/bar");
+        assertNotNull(pointer);
+        assertEquals("/foo/bar", pointer.toString());
+
+        JsonPointer emptyPointer = JsonPointer._parseTail("/");
+        assertEquals(JsonPointer.EMPTY, emptyPointer);
+    }
+
+    @Test
+    public void testParseQuotedTail() {
+        JsonPointer pointer = JsonPointer._parseQuotedTail("/foo~1bar", 4);
+        assertNotNull(pointer);
+        assertEquals("/foo/bar", pointer.toString());
+    }
+
+    @Test
+    public void testAppendEscape() {
+        StringBuilder sb = new StringBuilder();
+        JsonPointer._appendEscape(sb, '0');
+        assertEquals("~", sb.toString());
+
+        sb = new StringBuilder();
+        JsonPointer._appendEscape(sb, '1');
+        assertEquals("/", sb.toString());
+
+        sb = new StringBuilder();
+        JsonPointer._appendEscape(sb, '2');
+        assertEquals("~2", sb.toString());
+    }
+}
+```
+
+This test suite covers the following aspects:
+- Compiling and validating JSON pointers.
+- Checking the behavior of the `matches`, `getMatchingProperty`, `getMatchingIndex`, `mayMatchProperty`, and `mayMatchElement` methods.
+- Testing the `matchProperty` and `matchElement` methods.
+- Verifying the `tail`, `toString`, `hashCode`, and `equals` methods.
+- Testing internal methods like `_parseIndex`, `_parseTail`, `_parseQuotedTail`, and `_appendEscape`.
+
+You can run this test suite using any JUnit 4 compatible test runner.

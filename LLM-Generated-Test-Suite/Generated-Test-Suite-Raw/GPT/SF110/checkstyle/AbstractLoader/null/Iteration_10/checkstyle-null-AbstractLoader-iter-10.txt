@@ -1,0 +1,77 @@
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import com.puppycrawl.tools.checkstyle.api.AbstractLoader;
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+public class AbstractLoaderTest {
+
+    private AbstractLoader loader;
+    private Map<String, String> publicIdToResourceNameMap;
+
+    @Before
+    public void setUp() throws SAXException, ParserConfigurationException {
+        publicIdToResourceNameMap = new HashMap<>();
+        publicIdToResourceNameMap.put("-//Puppy Crawl//DTD Check Configuration 1.3//EN", "config.dtd");
+        loader = new AbstractLoader(publicIdToResourceNameMap) {};
+    }
+
+    @Test
+    public void testParseInputSource() throws IOException, SAXException {
+        InputSource inputSource = mock(InputSource.class);
+        try {
+            loader.parseInputSource(inputSource);
+        } catch (SAXException | IOException e) {
+            fail("Parsing should not throw an exception");
+        }
+    }
+
+    @Test
+    public void testResolveEntityWithKnownPublicId() throws IOException, SAXException {
+        String publicId = "-//Puppy Crawl//DTD Check Configuration 1.3//EN";
+        String systemId = "http://example.com/config.dtd";
+        InputSource result = loader.resolveEntity(publicId, systemId);
+        assertNotNull("InputSource should not be null for known publicId", result);
+    }
+
+    @Test
+    public void testResolveEntityWithUnknownPublicId() throws IOException, SAXException {
+        String publicId = "unknown";
+        String systemId = "http://example.com/unknown.dtd";
+        InputSource result = loader.resolveEntity(publicId, systemId);
+        assertNull("InputSource should be null for unknown publicId", result.getByteStream());
+    }
+
+    @Test(expected = SAXException.class)
+    public void testError() throws SAXException {
+        SAXParseException exception = mock(SAXParseException.class);
+        loader.error(exception);
+    }
+
+    @Test(expected = SAXException.class)
+    public void testFatalError() throws SAXException {
+        SAXParseException exception = mock(SAXParseException.class);
+        loader.fatalError(exception);
+    }
+}
+```
+
+### Explanation:
+- **setUp Method**: Initializes the `AbstractLoader` instance with a sample DTD mapping.
+- **testParseInputSource**: Tests the `parseInputSource` method to ensure it doesn't throw exceptions for a valid input source.
+- **testResolveEntityWithKnownPublicId**: Tests `resolveEntity` with a known public ID to ensure it returns a non-null `InputSource`.
+- **testResolveEntityWithUnknownPublicId**: Tests `resolveEntity` with an unknown public ID to ensure it returns a null `InputSource`.
+- **testError** and **testFatalError**: Ensure that the `error` and `fatalError` methods throw `SAXException` as expected.
+
+This test suite uses JUnit 4 and Mockito for mocking objects and verifying behavior.

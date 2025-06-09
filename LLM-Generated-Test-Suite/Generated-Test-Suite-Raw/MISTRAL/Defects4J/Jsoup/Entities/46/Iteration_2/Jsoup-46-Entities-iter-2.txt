@@ -1,0 +1,115 @@
+```java
+package org.jsoup.nodes;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Entities;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class EntitiesTest {
+
+    private Entities entities;
+
+    @Before
+    public void setUp() {
+        entities = new Entities();
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertTrue(Entities.isNamedEntity("amp"));
+        assertFalse(Entities.isNamedEntity("unknown"));
+    }
+
+    @Test
+    public void testIsBaseNamedEntity() {
+        assertTrue(Entities.isBaseNamedEntity("lt"));
+        assertTrue(Entities.isBaseNamedEntity("amp"));
+        assertFalse(Entities.isBaseNamedEntity("unknown"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertEquals(Character.valueOf('&'), Entities.getCharacterByName("amp"));
+        assertNull(Entities.getCharacterByName("unknown"));
+    }
+
+    @Test
+    public void testEscape() {
+        Document.OutputSettings outputSettings = new Document.OutputSettings();
+        outputSettings.escapeMode(Entities.EscapeMode.base);
+
+        String input = "& < > \"";
+        String expected = "&amp; &lt; &gt; &quot;";
+        assertEquals(expected, Entities.escape(input, outputSettings));
+    }
+
+    @Test
+    public void testEscapeWithXhtmlMode() {
+        Document.OutputSettings outputSettings = new Document.OutputSettings();
+        outputSettings.escapeMode(Entities.EscapeMode.xhtml);
+
+        String input = "& < > \"";
+        String expected = "&amp; < > \"";
+        assertEquals(expected, Entities.escape(input, outputSettings));
+    }
+
+    @Test
+    public void testUnescape() {
+        String input = "&lt; &gt; &amp; &quot;";
+        String expected = "< > & \"";
+        assertEquals(expected, Entities.unescape(input));
+    }
+
+    @Test
+    public void testUnescapeStrict() {
+        String input = "&lt; &gt; &amp; &quot;";
+        String expected = "< > & \"";
+        assertEquals(expected, Entities.unescape(input, true));
+    }
+
+    @Test
+    public void testCanEncode() {
+        CharsetEncoder encoder = java.nio.charset.Charset.forName("US-ASCII").newEncoder();
+        assertTrue(Entities.canEncode(Entities.CoreCharset.ascii, 'a', encoder));
+        assertFalse(Entities.canEncode(Entities.CoreCharset.ascii, 'é', encoder));
+    }
+
+    @Test
+    public void testLoadEntities() {
+        Map<String, Character> entitiesMap = new HashMap<>();
+        entitiesMap.put("lt", '<');
+        entitiesMap.put("gt", '>');
+        entitiesMap.put("amp", '&');
+        entitiesMap.put("quot", '"');
+
+        Map<String, Character> loadedEntities = Entities.loadEntities("entities-base.properties");
+        assertEquals(entitiesMap, loadedEntities);
+    }
+
+    @Test
+    public void testToCharacterKey() {
+        Map<String, Character> inputMap = new HashMap<>();
+        inputMap.put("lt", '<');
+        inputMap.put("gt", '>');
+        inputMap.put("amp", '&');
+        inputMap.put("quot", '"');
+
+        Map<Character, String> expectedMap = new HashMap<>();
+        expectedMap.put('<', "lt");
+        expectedMap.put('>', "gt");
+        expectedMap.put('&', "amp");
+        expectedMap.put('"', "quot");
+
+        Map<Character, String> resultMap = Entities.toCharacterKey(inputMap);
+        assertEquals(expectedMap, resultMap);
+    }
+}
+```

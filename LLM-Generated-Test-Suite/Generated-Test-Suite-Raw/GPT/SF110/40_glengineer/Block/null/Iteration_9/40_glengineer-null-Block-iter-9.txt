@@ -1,0 +1,176 @@
+To create a comprehensive JUnit 4 test suite for the `Block` class, we need to consider testing all the public methods and constructors. Since `Block` is an abstract class, we will need to create a concrete subclass for testing purposes. Additionally, we will need to mock or create simple implementations for the `Scheme`, `CharPosition`, `HWordPosition`, and `WordPosition` classes/interfaces, as they are not provided.
+
+Below is a JUnit 4 test suite for the `Block` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.util.List;
+import java.util.ArrayList;
+
+// Mock classes for testing
+class Scheme {
+    int x2;
+    int y2;
+    String[] lines;
+
+    Scheme(int x2, int y2, String[] lines) {
+        this.x2 = x2;
+        this.y2 = y2;
+        this.lines = lines;
+    }
+
+    String textAt(int x1, int x2, int y) {
+        return lines[y].substring(x1, x2);
+    }
+}
+
+class CharPosition {
+    int x;
+    int y;
+
+    CharPosition(int x, int y) {
+        this.x = x;
+        this.y = y;
+    }
+}
+
+class HWordPosition extends CharPosition {
+    HWordPosition(int x, int y) {
+        super(x, y);
+    }
+}
+
+class WordPosition extends CharPosition {
+    WordPosition(int x, int y) {
+        super(x, y);
+    }
+}
+
+// Concrete implementation of Block for testing
+class ConcreteBlock extends Block {
+    public ConcreteBlock(Scheme scheme, int x1, int y1, int x2, int y2) {
+        super(scheme, x1, y1, x2, y2);
+    }
+
+    public ConcreteBlock(Scheme scheme, CharPosition p1, CharPosition p2) {
+        super(scheme, p1, p2);
+    }
+
+    public ConcreteBlock(Scheme scheme) {
+        super(scheme);
+    }
+
+    @Override
+    public Block subblock(int p0, int p1, int p2, int p3) {
+        return new ConcreteBlock(scheme, p0, p1, p2, p3);
+    }
+
+    @Override
+    public List<Block> extractSequentialSubblocks() {
+        return new ArrayList<>();
+    }
+
+    @Override
+    public List<Block> extractParallelSubblocks() {
+        return new ArrayList<>();
+    }
+
+    @Override
+    public HWordPosition firstWord_Horizontally() {
+        return new HWordPosition(x1, y1);
+    }
+
+    @Override
+    public WordPosition lastWord_Horizontally() {
+        return new WordPosition(x2, y2);
+    }
+
+    @Override
+    public boolean isTrivial() {
+        return x1 == x2 && y1 == y2;
+    }
+}
+
+public class BlockTest {
+    private Scheme scheme;
+    private ConcreteBlock block;
+
+    @Before
+    public void setUp() {
+        String[] lines = {"Hello World", "This is a test", "JUnit testing"};
+        scheme = new Scheme(10, 3, lines);
+        block = new ConcreteBlock(scheme, 0, 0, 10, 2);
+    }
+
+    @Test
+    public void testConstructorWithCoordinates() {
+        ConcreteBlock block = new ConcreteBlock(scheme, 0, 0, 10, 2);
+        assertNotNull(block);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithInvalidCoordinates() {
+        new ConcreteBlock(scheme, -1, 0, 10, 2);
+    }
+
+    @Test
+    public void testConstructorWithCharPositions() {
+        CharPosition p1 = new CharPosition(0, 0);
+        CharPosition p2 = new CharPosition(10, 2);
+        ConcreteBlock block = new ConcreteBlock(scheme, p1, p2);
+        assertNotNull(block);
+    }
+
+    @Test
+    public void testConstructorWithScheme() {
+        ConcreteBlock block = new ConcreteBlock(scheme);
+        assertNotNull(block);
+    }
+
+    @Test
+    public void testCharAt() {
+        assertEquals('H', block.charAt(0, 0));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCharAtOutOfBounds() {
+        block.charAt(11, 0);
+    }
+
+    @Test
+    public void testTextAt() {
+        assertEquals("Hello", block.textAt(0, 5, 0));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTextAtOutOfBounds() {
+        block.textAt(0, 15, 0);
+    }
+
+    @Test
+    public void testContainsOnlyOneWord() {
+        assertTrue(block.containsOnlyOneWord());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testContainsOnlyOneWordInTrivialBlock() {
+        ConcreteBlock trivialBlock = new ConcreteBlock(scheme, 0, 0, 0, 0);
+        trivialBlock.containsOnlyOneWord();
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "Block(0,0, 10,2):\n ###########\n # Hello Worl #\n # This is a t #\n ###########";
+        assertEquals(expected, block.toString());
+    }
+
+    @Test
+    public void testGetUpperLine() {
+        assertEquals("Hello Worl", block.getUpperLine());
+    }
+}
+```
+
+This test suite covers the constructors, methods, and edge cases for the `Block` class. Note that the `ConcreteBlock` class is a simple implementation of `Block` to facilitate testing. The mock classes `Scheme`, `CharPosition`, `HWordPosition`, and `WordPosition` are also provided to simulate the necessary dependencies.

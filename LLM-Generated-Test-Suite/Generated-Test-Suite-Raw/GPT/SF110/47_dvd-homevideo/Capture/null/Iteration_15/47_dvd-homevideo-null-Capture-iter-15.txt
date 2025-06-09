@@ -1,0 +1,132 @@
+To create a comprehensive JUnit 4 test suite for the `Capture` class, we need to mock the dependencies and simulate various scenarios. The `Capture` class relies heavily on the `GUI` class and interacts with the file system and processes, so we'll use mocking to isolate the tests from these dependencies.
+
+Below is a JUnit 4 test suite for the `Capture` class:
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.ArgumentMatchers;
+import org.mockito.Mock;
+import org.mockito.Mockito;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class CaptureTest {
+
+    @Mock
+    private GUI mockGUI;
+
+    private Capture capture;
+
+    @Before
+    public void setUp() {
+        when(mockGUI.strOutputDir).thenReturn("testOutputDir");
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(false);
+        when(mockGUI.ErrorCheck(anyString())).thenReturn(false);
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+        capture = new Capture(1, 30, mockGUI);
+    }
+
+    @Test
+    public void testInitWithThreadSelected() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(true);
+        assertFalse(capture.init());
+        assertNotNull(capture.m_Thread);
+    }
+
+    @Test
+    public void testInitWithoutThreadSelected() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(false);
+        assertFalse(capture.init());
+    }
+
+    @Test
+    public void testDVCaptureDirectoryExists() throws IOException, InterruptedException {
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(true);
+        when(mockDir.isDirectory()).thenReturn(true);
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(ArgumentMatchers.contains("already exists"));
+    }
+
+    @Test
+    public void testDVCaptureFileExists() throws IOException, InterruptedException {
+        File mockFile = mock(File.class);
+        when(mockFile.exists()).thenReturn(true);
+        when(mockFile.isDirectory()).thenReturn(false);
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(ArgumentMatchers.contains("file with the Output directory name"));
+    }
+
+    @Test
+    public void testDVCaptureNewDirectory() throws IOException, InterruptedException {
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(false);
+
+        capture.DV_Capture();
+
+        verify(mockDir, times(1)).mkdir();
+    }
+
+    @Test
+    public void testDVCaptureIOException() throws IOException {
+        doThrow(new IOException()).when(Runtime.getRuntime()).exec(any(String[].class), any(), any(File.class));
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(ArgumentMatchers.contains("IO Error"));
+    }
+
+    @Test
+    public void testDVCaptureInterruptedException() throws IOException, InterruptedException {
+        doThrow(new InterruptedException()).when(Runtime.getRuntime()).exec(any(String[].class), any(), any(File.class));
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(ArgumentMatchers.contains("thread was interrupted"));
+    }
+
+    @Test
+    public void testDVCaptureCommandNotFound() throws IOException {
+        BufferedReader mockErrIn = mock(BufferedReader.class);
+        when(mockErrIn.ready()).thenReturn(true);
+        when(mockErrIn.readLine()).thenReturn("/bin/sh: dvgrab: command not found");
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(ArgumentMatchers.contains("Could not locate dvgrab"));
+    }
+
+    @Test
+    public void testDVCaptureNoCameraExists() throws IOException, InterruptedException {
+        BufferedReader mockErrIn = mock(BufferedReader.class);
+        when(mockErrIn.ready()).thenReturn(true);
+        when(mockErrIn.readLine()).thenReturn("Error: no camera exists");
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(ArgumentMatchers.contains("camcorder is not connected"));
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock the `GUI` class and any other interactions that involve external dependencies like file operations and process execution.
+- **Setup**: The `setUp` method initializes the `Capture` object with mocked dependencies.
+- **Test Methods**: Each test method simulates a different scenario, such as when the output directory already exists, when a file with the same name exists, or when exceptions are thrown during execution.
+- **Assertions and Verifications**: We use assertions to check the expected outcomes and Mockito's `verify` method to ensure that certain methods are called with expected arguments.
+
+This test suite covers various scenarios and edge cases for the `Capture` class, ensuring that its methods behave as expected under different conditions.

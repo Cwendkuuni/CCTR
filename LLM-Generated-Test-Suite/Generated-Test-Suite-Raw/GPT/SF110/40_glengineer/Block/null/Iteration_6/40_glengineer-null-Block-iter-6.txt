@@ -1,0 +1,162 @@
+To create a comprehensive JUnit 4 test suite for the `Block` class, we need to test all the public methods and constructors. Since `Block` is an abstract class, we'll need to create a concrete subclass for testing purposes. Additionally, we'll need to mock or create instances of the `Scheme` and `CharPosition` classes, as they are used in the `Block` class.
+
+Below is a JUnit 4 test suite for the `Block` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.util.List;
+import java.util.ArrayList;
+
+public class BlockTest {
+
+    private Scheme scheme;
+    private Block block;
+
+    // A concrete subclass of Block for testing purposes
+    private class TestBlock extends Block {
+        public TestBlock(Scheme scheme, int x1, int y1, int x2, int y2) {
+            super(scheme, x1, y1, x2, y2);
+        }
+
+        public TestBlock(Scheme scheme, CharPosition p1, CharPosition p2) {
+            super(scheme, p1, p2);
+        }
+
+        public TestBlock(Scheme scheme) {
+            super(scheme);
+        }
+
+        @Override
+        public Block subblock(int p0, int p1, int p2, int p3) {
+            return new TestBlock(scheme, p0, p1, p2, p3);
+        }
+
+        @Override
+        public List<Block> extractSequentialSubblocks() {
+            return new ArrayList<>();
+        }
+
+        @Override
+        public List<Block> extractParallelSubblocks() {
+            return new ArrayList<>();
+        }
+    }
+
+    // Mock Scheme class for testing
+    private class Scheme {
+        public int x2 = 10;
+        public int y2 = 10;
+        public String[] lines = {
+            "abcdefghij",
+            "klmnopqrst",
+            "uvwxyzabcd",
+            "efghijklmn",
+            "opqrstuvwx",
+            "yzabcdefgh",
+            "ijklmnopqr",
+            "stuvwxyzab",
+            "cdefghijkl",
+            "mnopqrstuv"
+        };
+
+        public String textAt(int x1, int x2, int y) {
+            return lines[y].substring(x1, x2);
+        }
+    }
+
+    // Mock CharPosition class for testing
+    private class CharPosition {
+        public int x;
+        public int y;
+
+        public CharPosition(int x, int y) {
+            this.x = x;
+            this.y = y;
+        }
+    }
+
+    @Before
+    public void setUp() {
+        scheme = new Scheme();
+        block = new TestBlock(scheme, 0, 0, 5, 5);
+    }
+
+    @Test
+    public void testConstructorWithCoordinates() {
+        Block b = new TestBlock(scheme, 0, 0, 5, 5);
+        assertNotNull(b);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithInvalidCoordinates() {
+        new TestBlock(scheme, -1, 0, 5, 5);
+    }
+
+    @Test
+    public void testConstructorWithCharPositions() {
+        CharPosition p1 = new CharPosition(0, 0);
+        CharPosition p2 = new CharPosition(5, 5);
+        Block b = new TestBlock(scheme, p1, p2);
+        assertNotNull(b);
+    }
+
+    @Test
+    public void testConstructorWithScheme() {
+        Block b = new TestBlock(scheme);
+        assertNotNull(b);
+    }
+
+    @Test
+    public void testCharAt() {
+        assertEquals('a', block.charAt(0, 0));
+        assertEquals('e', block.charAt(4, 0));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCharAtOutOfBounds() {
+        block.charAt(10, 10);
+    }
+
+    @Test
+    public void testTextAt() {
+        assertEquals("abcde", block.textAt(0, 5, 0));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTextAtOutOfBounds() {
+        block.textAt(0, 15, 0);
+    }
+
+    @Test
+    public void testContainsOnlyOneWord() {
+        // Assuming firstWord_Horizontally and lastWord_Horizontally are implemented
+        // and return the same word for this test case
+        assertTrue(block.containsOnlyOneWord());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testContainsOnlyOneWordInTrivialBlock() {
+        Block trivialBlock = new TestBlock(scheme, 0, 0, 0, 0);
+        trivialBlock.containsOnlyOneWord();
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "Block(0,0, 5,5):\n #######\n # abcde #\n # klmno #\n # uvwxy #\n # efghi #\n # opqrs #\n #######";
+        assertEquals(expected, block.toString());
+    }
+
+    @Test
+    public void testGetUpperLine() {
+        assertEquals("abcde", block.getUpperLine());
+    }
+}
+```
+
+### Notes:
+- The `TestBlock` class is a concrete subclass of `Block` used for testing purposes.
+- The `Scheme` and `CharPosition` classes are mocked to provide necessary functionality for testing.
+- The test suite includes tests for constructors, `charAt`, `textAt`, `containsOnlyOneWord`, `toString`, and `getUpperLine`.
+- Some methods like `firstWord_Horizontally` and `lastWord_Horizontally` are assumed to be implemented in the actual `Block` class for the `containsOnlyOneWord` test to work correctly. Adjust these tests based on the actual implementation of these methods.

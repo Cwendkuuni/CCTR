@@ -1,0 +1,125 @@
+```java
+package org.jsoup.safety;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.safety.Whitelist;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class CleanerTest {
+
+    private Cleaner cleaner;
+    private Whitelist whitelist;
+
+    @Before
+    public void setUp() {
+        whitelist = Whitelist.basic();
+        cleaner = new Cleaner(whitelist);
+    }
+
+    @Test
+    public void testClean_ValidDocument() {
+        String html = "<div><p>Hello, World!</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertEquals("Hello, World!", cleanDocument.body().text());
+    }
+
+    @Test
+    public void testClean_InvalidDocument() {
+        String html = "<div><script>alert('xss')</script><p>Hello, World!</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertEquals("Hello, World!", cleanDocument.body().text());
+    }
+
+    @Test
+    public void testClean_EmptyDocument() {
+        String html = "";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertEquals("", cleanDocument.body().text());
+    }
+
+    @Test
+    public void testIsValid_ValidDocument() {
+        String html = "<div><p>Hello, World!</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+
+        assertTrue(cleaner.isValid(dirtyDocument));
+    }
+
+    @Test
+    public void testIsValid_InvalidDocument() {
+        String html = "<div><script>alert('xss')</script><p>Hello, World!</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+
+        assertFalse(cleaner.isValid(dirtyDocument));
+    }
+
+    @Test
+    public void testIsValid_EmptyDocument() {
+        String html = "";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+
+        assertTrue(cleaner.isValid(dirtyDocument));
+    }
+
+    @Test
+    public void testCopySafeNodes_ValidNodes() {
+        String html = "<div><p>Hello, World!</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Element source = dirtyDocument.body();
+        Element dest = Document.createShell(dirtyDocument.baseUri()).body();
+
+        int numDiscarded = cleaner.copySafeNodes(source, dest);
+
+        assertEquals(0, numDiscarded);
+        assertEquals("Hello, World!", dest.text());
+    }
+
+    @Test
+    public void testCopySafeNodes_InvalidNodes() {
+        String html = "<div><script>alert('xss')</script><p>Hello, World!</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Element source = dirtyDocument.body();
+        Element dest = Document.createShell(dirtyDocument.baseUri()).body();
+
+        int numDiscarded = cleaner.copySafeNodes(source, dest);
+
+        assertTrue(numDiscarded > 0);
+        assertEquals("Hello, World!", dest.text());
+    }
+
+    @Test
+    public void testCreateSafeElement_ValidElement() {
+        String html = "<div><p>Hello, World!</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Element sourceEl = dirtyDocument.selectFirst("p");
+
+        Cleaner.ElementMeta elementMeta = cleaner.createSafeElement(sourceEl);
+
+        assertEquals("p", elementMeta.el.tagName());
+        assertEquals(0, elementMeta.numAttribsDiscarded);
+    }
+
+    @Test
+    public void testCreateSafeElement_InvalidElement() {
+        String html = "<div><script>alert('xss')</script></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Element sourceEl = dirtyDocument.selectFirst("script");
+
+        Cleaner.ElementMeta elementMeta = cleaner.createSafeElement(sourceEl);
+
+        assertNull(elementMeta.el);
+        assertTrue(elementMeta.numAttribsDiscarded > 0);
+    }
+}
+```

@@ -1,0 +1,56 @@
+package com.pmdesigns.jvc.tools;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class TokenMgrErrorTest {
+
+    private TokenMgrError tokenMgrError;
+
+    @Before
+    public void setUp() {
+        tokenMgrError = new TokenMgrError();
+    }
+
+    @Test
+    public void testAddEscapes() {
+        assertEquals("\\t\\n\\r\\b\\f\\\"\\'\\\\", TokenMgrError.addEscapes("\t\n\r\b\f\"\'\\"));
+        assertEquals("\\u0000", TokenMgrError.addEscapes("\0"));
+        assertEquals("abc", TokenMgrError.addEscapes("abc"));
+        assertEquals("\\u00e9", TokenMgrError.addEscapes("\u00e9"));
+    }
+
+    @Test
+    public void testLexicalError() {
+        String expected = "Lexical error at line 1, column 1.  Encountered: \"\\t\" (9), after : \"\"";
+        assertEquals(expected, TokenMgrError.LexicalError(false, 0, 1, 1, "", '\t'));
+
+        expected = "Lexical error at line 2, column 3.  Encountered: \"a\" (97), after : \"abc\"";
+        assertEquals(expected, TokenMgrError.LexicalError(false, 0, 2, 3, "abc", 'a'));
+
+        expected = "Lexical error at line 3, column 4.  Encountered: <EOF> , after : \"def\"";
+        assertEquals(expected, TokenMgrError.LexicalError(true, 0, 3, 4, "def", '\0'));
+    }
+
+    @Test
+    public void testGetMessage() {
+        tokenMgrError = new TokenMgrError("Test Message", 0);
+        assertEquals("Test Message", tokenMgrError.getMessage());
+    }
+
+    @Test
+    public void testConstructorWithMessageAndReason() {
+        tokenMgrError = new TokenMgrError("Test Message", 1);
+        assertEquals("Test Message", tokenMgrError.getMessage());
+        assertEquals(1, tokenMgrError.errorCode);
+    }
+
+    @Test
+    public void testConstructorWithLexicalError() {
+        tokenMgrError = new TokenMgrError(false, 0, 1, 1, "", '\t', 2);
+        String expectedMessage = "Lexical error at line 1, column 1.  Encountered: \"\\t\" (9), after : \"\"";
+        assertEquals(expectedMessage, tokenMgrError.getMessage());
+        assertEquals(2, tokenMgrError.errorCode);
+    }
+}

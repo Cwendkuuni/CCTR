@@ -1,0 +1,140 @@
+```java
+package org.apache.commons.cli;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Properties;
+
+import static org.junit.Assert.*;
+
+public class ParserTest {
+
+    private Parser parser;
+    private Options options;
+
+    @Before
+    public void setUp() {
+        parser = new Parser() {
+            @Override
+            protected String[] flatten(Options opts, String[] arguments, boolean stopAtNonOption) throws ParseException {
+                return arguments;
+            }
+        };
+        options = new Options();
+    }
+
+    @Test
+    public void testSetOptions() {
+        parser.setOptions(options);
+        assertEquals(options, parser.getOptions());
+    }
+
+    @Test
+    public void testGetOptions() {
+        parser.setOptions(options);
+        assertEquals(options, parser.getOptions());
+    }
+
+    @Test
+    public void testGetRequiredOptions() {
+        parser.setOptions(options);
+        assertEquals(options.getRequiredOptions(), parser.getRequiredOptions());
+    }
+
+    @Test
+    public void testParse() throws ParseException {
+        String[] arguments = {"-a", "valueA", "-b", "valueB"};
+        CommandLine cmd = parser.parse(options, arguments);
+        assertNotNull(cmd);
+    }
+
+    @Test
+    public void testParseWithProperties() throws ParseException {
+        String[] arguments = {"-a", "valueA", "-b", "valueB"};
+        Properties properties = new Properties();
+        properties.setProperty("a", "valueA");
+        properties.setProperty("b", "valueB");
+        CommandLine cmd = parser.parse(options, arguments, properties);
+        assertNotNull(cmd);
+    }
+
+    @Test
+    public void testParseWithStopAtNonOption() throws ParseException {
+        String[] arguments = {"-a", "valueA", "nonOption", "-b", "valueB"};
+        CommandLine cmd = parser.parse(options, arguments, true);
+        assertNotNull(cmd);
+        assertTrue(cmd.getArgList().contains("nonOption"));
+    }
+
+    @Test
+    public void testParseWithPropertiesAndStopAtNonOption() throws ParseException {
+        String[] arguments = {"-a", "valueA", "nonOption", "-b", "valueB"};
+        Properties properties = new Properties();
+        properties.setProperty("a", "valueA");
+        properties.setProperty("b", "valueB");
+        CommandLine cmd = parser.parse(options, arguments, properties, true);
+        assertNotNull(cmd);
+        assertTrue(cmd.getArgList().contains("nonOption"));
+    }
+
+    @Test(expected = ParseException.class)
+    public void testParseWithUnrecognizedOption() throws ParseException {
+        String[] arguments = {"-a", "valueA", "-c", "valueC"};
+        parser.parse(options, arguments);
+    }
+
+    @Test
+    public void testProcessProperties() {
+        Properties properties = new Properties();
+        properties.setProperty("a", "valueA");
+        properties.setProperty("b", "valueB");
+        parser.setOptions(options);
+        parser.processProperties(properties);
+        // Add assertions based on the expected behavior of processProperties
+    }
+
+    @Test(expected = MissingOptionException.class)
+    public void testCheckRequiredOptions() throws MissingOptionException {
+        Option requiredOption = new Option("r", "required", true, "required option");
+        requiredOption.setRequired(true);
+        options.addOption(requiredOption);
+        parser.setOptions(options);
+        parser.checkRequiredOptions();
+    }
+
+    @Test
+    public void testProcessArgs() throws ParseException {
+        Option opt = new Option("a", "optionA", true, "option with argument");
+        ListIterator<String> iter = Arrays.asList("valueA", "valueB").listIterator();
+        parser.setOptions(options);
+        parser.processArgs(opt, iter);
+        assertEquals("valueA", opt.getValue());
+    }
+
+    @Test(expected = ParseException.class)
+    public void testProcessArgsWithMissingArgument() throws ParseException {
+        Option opt = new Option("a", "optionA", true, "option with argument");
+        ListIterator<String> iter = Arrays.asList().listIterator();
+        parser.setOptions(options);
+        parser.processArgs(opt, iter);
+    }
+
+    @Test
+    public void testProcessOption() throws ParseException {
+        Option opt = new Option("a", "optionA", true, "option with argument");
+        options.addOption(opt);
+        ListIterator<String> iter = Arrays.asList("valueA").listIterator();
+        parser.setOptions(options);
+        parser.processOption("-a", iter);
+        assertEquals("valueA", opt.getValue());
+    }
+
+    @Test(expected = ParseException.class)
+    public void testProcessOptionWithUnrecognizedOption() throws ParseException {
+        ListIterator<String> iter = Arrays.asList("valueA").listIterator();
+        parser.setOptions(options);
+        parser.processOption("-c", iter);
+    }
+}
+```

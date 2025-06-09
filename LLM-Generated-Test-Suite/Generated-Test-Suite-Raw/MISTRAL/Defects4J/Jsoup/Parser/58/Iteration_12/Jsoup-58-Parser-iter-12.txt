@@ -1,0 +1,147 @@
+```java
+package org.jsoup.parser;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.Node;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class ParserTest {
+
+    private Parser parser;
+    private TreeBuilder treeBuilder;
+
+    @Before
+    public void setUp() {
+        treeBuilder = new HtmlTreeBuilder();
+        parser = new Parser(treeBuilder);
+    }
+
+    @Test
+    public void testParseInput() {
+        String html = "<html><body><p>Hello World</p></body></html>";
+        String baseUri = "http://example.com";
+        Document doc = parser.parseInput(html, baseUri);
+        assertNotNull(doc);
+        assertEquals("Hello World", doc.select("p").text());
+    }
+
+    @Test
+    public void testGetTreeBuilder() {
+        assertEquals(treeBuilder, parser.getTreeBuilder());
+    }
+
+    @Test
+    public void testSetTreeBuilder() {
+        TreeBuilder newTreeBuilder = new XmlTreeBuilder();
+        parser.setTreeBuilder(newTreeBuilder);
+        assertEquals(newTreeBuilder, parser.getTreeBuilder());
+    }
+
+    @Test
+    public void testIsTrackErrors() {
+        assertFalse(parser.isTrackErrors());
+        parser.setTrackErrors(5);
+        assertTrue(parser.isTrackErrors());
+    }
+
+    @Test
+    public void testSetTrackErrors() {
+        parser.setTrackErrors(5);
+        assertTrue(parser.isTrackErrors());
+        parser.setTrackErrors(0);
+        assertFalse(parser.isTrackErrors());
+    }
+
+    @Test
+    public void testGetErrors() {
+        String html = "<html><body><p>Hello World</p></body></html>";
+        String baseUri = "http://example.com";
+        parser.setTrackErrors(5);
+        parser.parseInput(html, baseUri);
+        List<ParseError> errors = parser.getErrors();
+        assertNotNull(errors);
+    }
+
+    @Test
+    public void testSettings() {
+        ParseSettings settings = new ParseSettings();
+        parser.settings(settings);
+        assertEquals(settings, parser.settings());
+    }
+
+    @Test
+    public void testParse() {
+        String html = "<html><body><p>Hello World</p></body></html>";
+        String baseUri = "http://example.com";
+        Document doc = Parser.parse(html, baseUri);
+        assertNotNull(doc);
+        assertEquals("Hello World", doc.select("p").text());
+    }
+
+    @Test
+    public void testParseFragment() {
+        String fragmentHtml = "<p>Hello World</p>";
+        String baseUri = "http://example.com";
+        Element context = new Element("div");
+        List<Node> nodes = Parser.parseFragment(fragmentHtml, context, baseUri);
+        assertNotNull(nodes);
+        assertEquals(1, nodes.size());
+        assertEquals("p", nodes.get(0).nodeName());
+    }
+
+    @Test
+    public void testParseXmlFragment() {
+        String fragmentXml = "<p>Hello World</p>";
+        String baseUri = "http://example.com";
+        List<Node> nodes = Parser.parseXmlFragment(fragmentXml, baseUri);
+        assertNotNull(nodes);
+        assertEquals(1, nodes.size());
+        assertEquals("p", nodes.get(0).nodeName());
+    }
+
+    @Test
+    public void testParseBodyFragment() {
+        String bodyHtml = "<p>Hello World</p>";
+        String baseUri = "http://example.com";
+        Document doc = Parser.parseBodyFragment(bodyHtml, baseUri);
+        assertNotNull(doc);
+        assertEquals("Hello World", doc.select("p").text());
+    }
+
+    @Test
+    public void testUnescapeEntities() {
+        String escapedString = "&lt;p&gt;Hello World&lt;/p&gt;";
+        String unescapedString = Parser.unescapeEntities(escapedString, false);
+        assertEquals("<p>Hello World</p>", unescapedString);
+    }
+
+    @Test
+    public void testParseBodyFragmentRelaxed() {
+        String bodyHtml = "<p>Hello World</p>";
+        String baseUri = "http://example.com";
+        Document doc = Parser.parseBodyFragmentRelaxed(bodyHtml, baseUri);
+        assertNotNull(doc);
+        assertEquals("Hello World", doc.select("p").text());
+    }
+
+    @Test
+    public void testHtmlParser() {
+        Parser htmlParser = Parser.htmlParser();
+        assertNotNull(htmlParser);
+        assertTrue(htmlParser.getTreeBuilder() instanceof HtmlTreeBuilder);
+    }
+
+    @Test
+    public void testXmlParser() {
+        Parser xmlParser = Parser.xmlParser();
+        assertNotNull(xmlParser);
+        assertTrue(xmlParser.getTreeBuilder() instanceof XmlTreeBuilder);
+    }
+}
+```

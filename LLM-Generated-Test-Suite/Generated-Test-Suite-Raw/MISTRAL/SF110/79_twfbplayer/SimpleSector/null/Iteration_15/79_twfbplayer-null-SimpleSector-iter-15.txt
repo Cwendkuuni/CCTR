@@ -1,0 +1,152 @@
+```java
+package de.outstare.fortbattleplayer.model.impl;
+
+import de.outstare.fortbattleplayer.model.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.HashSet;
+import java.util.Set;
+
+public class SimpleSectorTest {
+
+    private SimpleSector simpleSector;
+    private CombatantSide side;
+    private Area area;
+    private SectorObserver observer;
+    private CharacterClass charClass;
+
+    @Before
+    public void setUp() {
+        side = CombatantSide.ATTACKER;
+        area = new Area();
+        observer = new SectorObserver() {
+            @Override
+            public void occupierChanged() {
+                // Mock implementation
+            }
+        };
+        charClass = CharacterClass.WARRIOR;
+        simpleSector = new SimpleSector(10, true, false, 5, 3, true, 2, charClass);
+    }
+
+    @Test
+    public void testFree() {
+        simpleSector.gainControl(side);
+        simpleSector.free();
+        assertEquals(0, simpleSector.getOccupierCount());
+        assertNull(simpleSector.getOccupier());
+    }
+
+    @Test
+    public void testGainControl() {
+        simpleSector.gainControl(side);
+        assertEquals(1, simpleSector.getOccupierCount());
+        assertEquals(side, simpleSector.getOccupier());
+    }
+
+    @Test
+    public void testGetOccupier() {
+        assertNull(simpleSector.getOccupier());
+        simpleSector.gainControl(side);
+        assertEquals(side, simpleSector.getOccupier());
+    }
+
+    @Test
+    public void testIsOccupied() {
+        assertFalse(simpleSector.isOccupied());
+        simpleSector.gainControl(side);
+        assertTrue(simpleSector.isOccupied());
+    }
+
+    @Test
+    public void testGetHeight() {
+        assertEquals(10, simpleSector.getHeight());
+    }
+
+    @Test
+    public void testIsDefenderSpawn() {
+        assertTrue(simpleSector.isDefenderSpawn());
+    }
+
+    @Test
+    public void testIsAttackerSpawn() {
+        assertFalse(simpleSector.isAttackerSpawn());
+    }
+
+    @Test
+    public void testIsFlag() {
+        assertTrue(simpleSector.isFlag());
+    }
+
+    @Test
+    public void testGetBonus() {
+        SectorBonus bonus = simpleSector.getBonus(charClass);
+        assertEquals(7, bonus.getAttackBonus()); // 5 (attackBonus) + 2 (classBonus)
+        assertEquals(5, bonus.getDefenseBonus()); // 3 (defendBonus) + 2 (classBonus)
+        assertEquals(0, bonus.getDamageBonus()); // Assuming no weapon bonus
+    }
+
+    @Test
+    public void testGetAreas() {
+        Set<Area> areas = simpleSector.getAreas();
+        assertTrue(areas.isEmpty());
+        simpleSector._addArea(area);
+        assertEquals(1, areas.size());
+        assertTrue(areas.contains(area));
+    }
+
+    @Test
+    public void testAddArea() {
+        simpleSector._addArea(area);
+        assertTrue(simpleSector.getAreas().contains(area));
+    }
+
+    @Test
+    public void testHashCode() {
+        SimpleSector anotherSector = new SimpleSector(10, true, false, 5, 3, true, 2, charClass);
+        assertEquals(simpleSector.hashCode(), anotherSector.hashCode());
+    }
+
+    @Test
+    public void testEquals() {
+        SimpleSector anotherSector = new SimpleSector(10, true, false, 5, 3, true, 2, charClass);
+        assertTrue(simpleSector.equals(anotherSector));
+        assertFalse(simpleSector.equals(null));
+        assertFalse(simpleSector.equals(new Object()));
+    }
+
+    @Test
+    public void testAddObserver() {
+        simpleSector.addObserver(observer);
+        assertTrue(simpleSector.getObservers().contains(observer));
+    }
+
+    @Test
+    public void testRemoveObserver() {
+        simpleSector.addObserver(observer);
+        simpleSector.removeObserver(observer);
+        assertFalse(simpleSector.getObservers().contains(observer));
+    }
+
+    private int getOccupierCount(SimpleSector sector) {
+        try {
+            java.lang.reflect.Field field = SimpleSector.class.getDeclaredField("occupierCount");
+            field.setAccessible(true);
+            return field.getInt(sector);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Set<SectorObserver> getObservers(SimpleSector sector) {
+        try {
+            java.lang.reflect.Field field = SimpleSector.class.getDeclaredField("observers");
+            field.setAccessible(true);
+            return (Set<SectorObserver>) field.get(sector);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```

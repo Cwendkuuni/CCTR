@@ -1,0 +1,88 @@
+Certainly! Below is a JUnit 4 test suite for the `MainMenu` class. This test suite aims to cover the functionality of the methods within the class, including the constructor, `createMenu`, and `addShortcutAndIcon` methods. Note that some methods rely on external resources and classes, so mock objects or stubs are used where necessary.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.*;
+import java.net.URL;
+import java.util.MissingResourceException;
+
+public class MainMenuTest {
+
+    private InspirentoMediator mockMediator;
+    private MainMenu mainMenu;
+
+    @Before
+    public void setUp() {
+        mockMediator = mock(InspirentoMediator.class);
+        mainMenu = new MainMenu(mockMediator);
+    }
+
+    @Test
+    public void testMainMenuConstructor() {
+        assertNotNull("MainMenu should be instantiated", mainMenu);
+    }
+
+    @Test
+    public void testCreateMenu() {
+        // Mock UIResources to return specific values
+        mockStaticUIResources("fileLabel", "File");
+        mockStaticUIResources("file", "new,open,save,-,exit");
+
+        JMenu menu = mainMenu.createMenu("file");
+        assertNotNull("Menu should be created", menu);
+        assertEquals("Menu should have 5 items", 5, menu.getItemCount());
+        assertEquals("First item should be 'new'", "new", menu.getItem(0).getText());
+        assertEquals("Fourth item should be a separator", null, menu.getItem(3));
+    }
+
+    @Test
+    public void testAddShortcutAndIcon() {
+        JMenuItem menuItem = new JMenuItem("Test Item");
+        mockStaticUIResources("testShortcut", "ctrl T");
+        mockStaticUIResources("testIcon", "/path/to/icon.png");
+
+        mainMenu.addShortcutAndIcon(menuItem, "test");
+
+        assertEquals("Shortcut should be set", KeyStroke.getKeyStroke("ctrl T"), menuItem.getAccelerator());
+
+        ArgumentCaptor<URL> urlCaptor = ArgumentCaptor.forClass(URL.class);
+        verify(menuItem).setIcon(any(ImageIcon.class));
+    }
+
+    @Test
+    public void testAddShortcutAndIconWithMissingResources() {
+        JMenuItem menuItem = new JMenuItem("Test Item");
+
+        // No exception should be thrown even if resources are missing
+        mainMenu.addShortcutAndIcon(menuItem, "missing");
+
+        assertNull("Shortcut should not be set", menuItem.getAccelerator());
+        assertNull("Icon should not be set", menuItem.getIcon());
+    }
+
+    private void mockStaticUIResources(String key, String value) {
+        try {
+            when(UIResources.getString(key)).thenReturn(value);
+        } catch (MissingResourceException e) {
+            fail("Mocking UIResources failed for key: " + key);
+        }
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: The test suite uses Mockito to mock dependencies like `InspirentoMediator` and `UIResources`. This is crucial because the `MainMenu` class relies on these external resources.
+- **Test Methods**:
+  - `testMainMenuConstructor`: Verifies that the `MainMenu` object is instantiated correctly.
+  - `testCreateMenu`: Tests the `createMenu` method by mocking the `UIResources` to return specific menu items and labels.
+  - `testAddShortcutAndIcon`: Tests the `addShortcutAndIcon` method to ensure shortcuts and icons are set correctly.
+  - `testAddShortcutAndIconWithMissingResources`: Ensures that the method handles missing resources gracefully without throwing exceptions.
+- **Utility Method**: `mockStaticUIResources` is a helper method to mock the static `UIResources.getString` method.
+
+This test suite provides a basic structure and can be expanded with more detailed tests as needed.

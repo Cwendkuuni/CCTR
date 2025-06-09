@@ -1,0 +1,106 @@
+```java
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class PosixParserTest {
+
+    private PosixParser parser;
+    private Options options;
+
+    @Before
+    public void setUp() {
+        parser = new PosixParser();
+        options = new Options();
+        options.addOption("a", false, "Option a");
+        options.addOption("b", true, "Option b");
+        options.addOption("c", "cOption", false, "Option c");
+        options.addOption("d", "dOption", true, "Option d");
+    }
+
+    @Test
+    public void testFlattenWithSingleDash() {
+        String[] args = {"-a", "-b", "value", "-c"};
+        String[] expected = {"-a", "-b", "value", "-c"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithDoubleDash() {
+        String[] args = {"--cOption", "--dOption=value"};
+        String[] expected = {"--cOption", "--dOption", "value"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithNonOption() {
+        String[] args = {"-a", "nonOption", "-b", "value"};
+        String[] expected = {"-a", "--", "nonOption", "-b", "value"};
+        String[] result = parser.flatten(options, args, true);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithStopAtNonOptionFalse() {
+        String[] args = {"-a", "nonOption", "-b", "value"};
+        String[] expected = {"-a", "nonOption", "-b", "value"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithBurstToken() {
+        String[] args = {"-abc"};
+        String[] expected = {"-a", "-b", "-c"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithBurstTokenAndArgument() {
+        String[] args = {"-abvalue"};
+        String[] expected = {"-a", "-b", "value"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithUnknownOptionAndStopAtNonOptionTrue() {
+        String[] args = {"-x", "value"};
+        String[] expected = {"--", "x", "value"};
+        String[] result = parser.flatten(options, args, true);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithUnknownOptionAndStopAtNonOptionFalse() {
+        String[] args = {"-x", "value"};
+        String[] expected = {"-x", "value"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithDoubleDashAsArgument() {
+        String[] args = {"--"};
+        String[] expected = {"--"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithSingleDashAsArgument() {
+        String[] args = {"-"};
+        String[] expected = {"-"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+}
+```
+This test suite covers various scenarios for the `PosixParser` class, including handling of single and double dashes, options with and without arguments, non-option arguments, and the behavior of the `stopAtNonOption` flag.

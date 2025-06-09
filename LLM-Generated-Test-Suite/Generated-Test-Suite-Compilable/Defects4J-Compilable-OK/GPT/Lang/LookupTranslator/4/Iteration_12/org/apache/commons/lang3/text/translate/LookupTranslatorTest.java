@@ -1,0 +1,101 @@
+package org.apache.commons.lang3.text.translate;
+
+import org.apache.commons.lang3.text.translate.LookupTranslator;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+
+import static org.junit.Assert.assertEquals;
+
+public class LookupTranslatorTest {
+
+    private LookupTranslator translator;
+
+    @Before
+    public void setUp() {
+        // Initialize the LookupTranslator with some test data
+        translator = new LookupTranslator(
+                new CharSequence[][]{
+                        {"a", "1"},
+                        {"b", "2"},
+                        {"abc", "123"},
+                        {"d", "4"}
+                }
+        );
+    }
+
+    @Test
+    public void testTranslateSingleCharacter() throws IOException {
+        Writer writer = new StringWriter();
+        int result = translator.translate("a", 0, writer);
+        assertEquals(1, result);
+        assertEquals("1", writer.toString());
+    }
+
+    @Test
+    public void testTranslateMultipleCharacters() throws IOException {
+        Writer writer = new StringWriter();
+        int result = translator.translate("abc", 0, writer);
+        assertEquals(3, result);
+        assertEquals("123", writer.toString());
+    }
+
+    @Test
+    public void testTranslateNonMatchingCharacter() throws IOException {
+        Writer writer = new StringWriter();
+        int result = translator.translate("z", 0, writer);
+        assertEquals(0, result);
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testTranslatePartialMatch() throws IOException {
+        Writer writer = new StringWriter();
+        int result = translator.translate("ab", 0, writer);
+        assertEquals(1, result);
+        assertEquals("1", writer.toString());
+    }
+
+    @Test
+    public void testTranslateWithOffset() throws IOException {
+        Writer writer = new StringWriter();
+        int result = translator.translate("xabc", 1, writer);
+        assertEquals(3, result);
+        assertEquals("123", writer.toString());
+    }
+
+    @Test
+    public void testTranslateEmptyInput() throws IOException {
+        Writer writer = new StringWriter();
+        int result = translator.translate("", 0, writer);
+        assertEquals(0, result);
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testTranslateNullInput() throws IOException {
+        Writer writer = new StringWriter();
+        int result = translator.translate(null, 0, writer);
+        assertEquals(0, result);
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testTranslateWithLongerInput() throws IOException {
+        Writer writer = new StringWriter();
+        int result = translator.translate("abcd", 0, writer);
+        assertEquals(3, result);
+        assertEquals("123", writer.toString());
+    }
+
+    @Test
+    public void testTranslateWithMultipleMatches() throws IOException {
+        Writer writer = new StringWriter();
+        int result = translator.translate("abcd", 1, writer);
+        assertEquals(1, result);
+        assertEquals("2", writer.toString());
+    }
+}

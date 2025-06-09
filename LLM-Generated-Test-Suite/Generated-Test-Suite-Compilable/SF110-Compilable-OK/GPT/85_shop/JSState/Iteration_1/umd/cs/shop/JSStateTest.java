@@ -1,0 +1,103 @@
+package umd.cs.shop;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class JSStateTest {
+
+    private JSState jsState;
+    private JSListLogicalAtoms mockAtoms;
+    private JSOperator mockOperator;
+    private JSSubstitution mockSubstitution;
+    private JSListAxioms mockAxioms;
+    private JSListLogicalAtoms mockAddL;
+    private JSListLogicalAtoms mockDelL;
+    private JSPredicateForm mockPredicateForm;
+
+    @Before
+    public void setUp() {
+        jsState = new JSState();
+        mockAtoms = mock(JSListLogicalAtoms.class);
+        mockOperator = mock(JSOperator.class);
+        mockSubstitution = mock(JSSubstitution.class);
+        mockAxioms = mock(JSListAxioms.class);
+        mockAddL = mock(JSListLogicalAtoms.class);
+        mockDelL = mock(JSListLogicalAtoms.class);
+        mockPredicateForm = mock(JSPredicateForm.class);
+    }
+
+    @Test
+    public void testAddElementsToState() {
+        when(mockAtoms.size()).thenReturn(2);
+        when(mockAtoms.elementAt(0)).thenReturn(mockPredicateForm);
+        when(mockAtoms.elementAt(1)).thenReturn(mockPredicateForm);
+        when(jsState.contains(mockPredicateForm)).thenReturn(false);
+
+        jsState.addElementsToState(mockAtoms);
+
+        verify(jsState, times(2)).insertElementAt(any(JSPredicateForm.class), anyInt());
+    }
+
+    @Test
+    public void testApply() {
+        JSPlan mockPlan = mock(JSPlan.class);
+        JSState result = jsState.apply(mockPlan);
+
+        assertNotNull(result);
+        // Since the method is not implemented, we can't assert more than the default behavior
+    }
+
+    @Test
+    public void testApplyOp() {
+        when(mockOperator.addList()).thenReturn(mockAddL);
+        when(mockOperator.deleteList()).thenReturn(mockDelL);
+        when(mockAddL.applySubstitutionListLogicalAtoms(mockSubstitution)).thenReturn(mockAddL);
+        when(mockDelL.applySubstitutionListLogicalAtoms(mockSubstitution)).thenReturn(mockDelL);
+
+        JSTState result = jsState.applyOp(mockOperator, mockSubstitution, mockAddL, mockDelL);
+
+        assertNotNull(result);
+        // Further assertions would depend on the behavior of the mocked methods
+    }
+
+    @Test
+    public void testSatisfies() {
+        JSListSubstitution mockSatisfiers = mock(JSListSubstitution.class);
+        when(mockAxioms.TheoremProver(any(), any(), any(), anyBoolean())).thenReturn(mockSatisfiers);
+        when(mockSatisfiers.fail()).thenReturn(false);
+        when(mockSatisfiers.elementAt(0)).thenReturn(mockSubstitution);
+
+        JSSubstitution result = jsState.satisfies(mockAtoms, mockSubstitution, mockAxioms);
+
+        assertNotNull(result);
+        // Further assertions would depend on the behavior of the mocked methods
+    }
+
+    @Test
+    public void testSatisfiesAll() {
+        JSListSubstitution mockSatisfiers = mock(JSListSubstitution.class);
+        when(mockAxioms.TheoremProver(any(), any(), any(), anyBoolean())).thenReturn(mockSatisfiers);
+        when(mockSatisfiers.size()).thenReturn(1);
+        when(mockSatisfiers.elementAt(0)).thenReturn(mockSubstitution);
+
+        JSListSubstitution result = jsState.satisfiesAll(mockAtoms, mockSubstitution, mockAxioms);
+
+        assertNotNull(result);
+        assertEquals(1, result.size());
+    }
+
+    @Test
+    public void testSatisfiesTAm() {
+        when(jsState.size()).thenReturn(1);
+        when(jsState.elementAt(0)).thenReturn(mockPredicateForm);
+        when(mockPredicateForm.matches(mockPredicateForm, mockSubstitution)).thenReturn(mockSubstitution);
+        when(mockSubstitution.fail()).thenReturn(false);
+
+        JSListSubstitution result = jsState.satisfiesTAm(mockPredicateForm, mockSubstitution);
+
+        assertNotNull(result);
+        assertFalse(result.isEmpty());
+    }
+}

@@ -1,0 +1,97 @@
+To create a comprehensive JUnit 4 test suite for the `FontChooserDialog` class, we need to test the main functionalities of the dialog, including the visibility toggle, reset functionality, and button actions. Below is a test suite that covers these aspects:
+
+```java
+import org.junit.*;
+import static org.junit.Assert.*;
+import org.mockito.*;
+import javax.swing.*;
+import java.awt.*;
+import java.awt.event.*;
+
+public class FontChooserDialogTest {
+
+    private FontChooserDialog dialog;
+    private JFontChooser mockChooserPane;
+    private ActionListener mockOkListener;
+    private ActionListener mockCancelListener;
+    private Font initialFont;
+
+    @Before
+    public void setUp() {
+        mockChooserPane = Mockito.mock(JFontChooser.class);
+        mockOkListener = Mockito.mock(ActionListener.class);
+        mockCancelListener = Mockito.mock(ActionListener.class);
+        initialFont = new Font("Arial", Font.PLAIN, 12);
+        Mockito.when(mockChooserPane.getFont()).thenReturn(initialFont);
+
+        dialog = new FontChooserDialog(null, "Test Dialog", true, mockChooserPane, mockOkListener, mockCancelListener);
+    }
+
+    @Test
+    public void testDialogVisibility() {
+        dialog.setVisible(true);
+        assertEquals(initialFont, dialog.chooserPane.getFont());
+        dialog.setVisible(false);
+    }
+
+    @Test
+    public void testResetFunctionality() {
+        Font newFont = new Font("Times New Roman", Font.BOLD, 14);
+        Mockito.when(mockChooserPane.getFont()).thenReturn(newFont);
+        dialog.setVisible(true);
+        dialog.reset();
+        Mockito.verify(mockChooserPane).setFont(initialFont);
+    }
+
+    @Test
+    public void testOkButtonAction() {
+        JButton okButton = findButtonByActionCommand(dialog, "OK");
+        assertNotNull(okButton);
+        okButton.doClick();
+        Mockito.verify(mockOkListener, Mockito.times(1)).actionPerformed(Mockito.any(ActionEvent.class));
+        assertFalse(dialog.isVisible());
+    }
+
+    @Test
+    public void testCancelButtonAction() {
+        JButton cancelButton = findButtonByActionCommand(dialog, "cancel");
+        assertNotNull(cancelButton);
+        cancelButton.doClick();
+        Mockito.verify(mockCancelListener, Mockito.times(1)).actionPerformed(Mockito.any(ActionEvent.class));
+        assertFalse(dialog.isVisible());
+    }
+
+    @Test
+    public void testResetButtonAction() {
+        JButton resetButton = findButtonByActionCommand(dialog, UIManager.getString("ColorChooser.resetText"));
+        assertNotNull(resetButton);
+        resetButton.doClick();
+        Mockito.verify(mockChooserPane).setFont(initialFont);
+    }
+
+    private JButton findButtonByActionCommand(FontChooserDialog dialog, String actionCommand) {
+        for (Component comp : dialog.getContentPane().getComponents()) {
+            if (comp instanceof JPanel) {
+                for (Component buttonComp : ((JPanel) comp).getComponents()) {
+                    if (buttonComp instanceof JButton) {
+                        JButton button = (JButton) buttonComp;
+                        if (actionCommand.equals(button.getActionCommand())) {
+                            return button;
+                        }
+                    }
+                }
+            }
+        }
+        return null;
+    }
+}
+```
+
+### Explanation:
+- **Setup**: We use Mockito to create mock objects for `JFontChooser` and `ActionListener`. This allows us to simulate and verify interactions without needing actual implementations.
+- **Visibility Test**: We check that the initial font is set when the dialog becomes visible.
+- **Reset Functionality Test**: We verify that the `reset` method sets the font back to the initial font.
+- **Button Actions**: We simulate button clicks and verify that the appropriate listeners are triggered and that the dialog visibility changes as expected.
+- **Helper Method**: `findButtonByActionCommand` is used to locate buttons within the dialog based on their action command, which is useful for simulating button clicks in tests.
+
+This test suite should cover the main functionalities of the `FontChooserDialog` class.

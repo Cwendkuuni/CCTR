@@ -1,0 +1,291 @@
+```java
+package org.jsoup.parser;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.jsoup.nodes.Attributes;
+
+import static org.junit.Assert.*;
+
+public class TokenTest {
+
+    private Token.Doctype doctype;
+    private Token.StartTag startTag;
+    private Token.EndTag endTag;
+    private Token.Comment comment;
+    private Token.Character character;
+    private Token.EOF eof;
+
+    @Before
+    public void setUp() {
+        doctype = new Token.Doctype();
+        startTag = new Token.StartTag();
+        endTag = new Token.EndTag();
+        comment = new Token.Comment();
+        character = new Token.Character();
+        eof = new Token.EOF();
+    }
+
+    @Test
+    public void testTokenType() {
+        assertEquals("Doctype", doctype.tokenType());
+        assertEquals("StartTag", startTag.tokenType());
+        assertEquals("EndTag", endTag.tokenType());
+        assertEquals("Comment", comment.tokenType());
+        assertEquals("Character", character.tokenType());
+        assertEquals("EOF", eof.tokenType());
+    }
+
+    @Test
+    public void testDoctypeReset() {
+        doctype.name.append("html");
+        doctype.publicIdentifier.append("public");
+        doctype.systemIdentifier.append("system");
+        doctype.forceQuirks = true;
+
+        doctype.reset();
+
+        assertEquals("", doctype.getName());
+        assertEquals("", doctype.getPublicIdentifier());
+        assertEquals("", doctype.getSystemIdentifier());
+        assertFalse(doctype.isForceQuirks());
+    }
+
+    @Test
+    public void testStartTagReset() {
+        startTag.tagName = "div";
+        startTag.normalName = "div";
+        startTag.selfClosing = true;
+        startTag.attributes = new Attributes();
+
+        startTag.reset();
+
+        assertNull(startTag.tagName);
+        assertNull(startTag.normalName);
+        assertFalse(startTag.selfClosing);
+        assertNotNull(startTag.attributes);
+    }
+
+    @Test
+    public void testEndTagReset() {
+        endTag.tagName = "div";
+        endTag.normalName = "div";
+
+        endTag.reset();
+
+        assertNull(endTag.tagName);
+        assertNull(endTag.normalName);
+    }
+
+    @Test
+    public void testCommentReset() {
+        comment.data.append("comment");
+        comment.bogus = true;
+
+        comment.reset();
+
+        assertEquals("", comment.getData());
+        assertFalse(comment.bogus);
+    }
+
+    @Test
+    public void testCharacterReset() {
+        character.data = "text";
+
+        character.reset();
+
+        assertNull(character.getData());
+    }
+
+    @Test
+    public void testEOFReset() {
+        eof.reset();
+        // No fields to reset, just ensure it doesn't throw an exception
+    }
+
+    @Test
+    public void testNewAttribute() {
+        startTag.pendingAttributeName = "id";
+        startTag.pendingAttributeValueS = "1";
+        startTag.hasPendingAttributeValue = true;
+
+        startTag.newAttribute();
+
+        assertEquals("1", startTag.getAttributes().get("id"));
+    }
+
+    @Test
+    public void testFinaliseTag() {
+        startTag.pendingAttributeName = "class";
+        startTag.pendingAttributeValueS = "container";
+        startTag.hasPendingAttributeValue = true;
+
+        startTag.finaliseTag();
+
+        assertEquals("container", startTag.getAttributes().get("class"));
+    }
+
+    @Test
+    public void testName() {
+        startTag.tagName = "div";
+        assertEquals("div", startTag.name());
+    }
+
+    @Test
+    public void testNormalName() {
+        startTag.tagName = "Div";
+        startTag.normalName = "div";
+        assertEquals("div", startTag.normalName());
+    }
+
+    @Test
+    public void testIsSelfClosing() {
+        startTag.selfClosing = true;
+        assertTrue(startTag.isSelfClosing());
+    }
+
+    @Test
+    public void testGetAttributes() {
+        startTag.attributes = new Attributes();
+        startTag.attributes.put("id", "1");
+        assertEquals("1", startTag.getAttributes().get("id"));
+    }
+
+    @Test
+    public void testAppendTagNameString() {
+        startTag.appendTagName("div");
+        assertEquals("div", startTag.tagName);
+    }
+
+    @Test
+    public void testAppendTagNameChar() {
+        startTag.appendTagName('d');
+        startTag.appendTagName('i');
+        startTag.appendTagName('v');
+        assertEquals("div", startTag.tagName);
+    }
+
+    @Test
+    public void testAppendAttributeNameString() {
+        startTag.appendAttributeName("class");
+        assertEquals("class", startTag.pendingAttributeName);
+    }
+
+    @Test
+    public void testAppendAttributeNameChar() {
+        startTag.appendAttributeName('c');
+        startTag.appendAttributeName('l');
+        startTag.appendAttributeName('a');
+        startTag.appendAttributeName('s');
+        startTag.appendAttributeName('s');
+        assertEquals("class", startTag.pendingAttributeName);
+    }
+
+    @Test
+    public void testAppendAttributeValueString() {
+        startTag.appendAttributeValue("container");
+        assertEquals("container", startTag.pendingAttributeValueS);
+    }
+
+    @Test
+    public void testAppendAttributeValueChar() {
+        startTag.appendAttributeValue('c');
+        startTag.appendAttributeValue('o');
+        startTag.appendAttributeValue('n');
+        startTag.appendAttributeValue('t');
+        startTag.appendAttributeValue('a');
+        startTag.appendAttributeValue('i');
+        startTag.appendAttributeValue('n');
+        startTag.appendAttributeValue('e');
+        startTag.appendAttributeValue('r');
+        assertEquals("container", startTag.pendingAttributeValue.toString());
+    }
+
+    @Test
+    public void testAppendAttributeValueCharArray() {
+        char[] chars = {'c', 'o', 'n', 't', 'a', 'i', 'n', 'e', 'r'};
+        startTag.appendAttributeValue(chars);
+        assertEquals("container", startTag.pendingAttributeValue.toString());
+    }
+
+    @Test
+    public void testAppendAttributeValueIntArray() {
+        int[] codepoints = {'c', 'o', 'n', 't', 'a', 'i', 'n', 'e', 'r'};
+        startTag.appendAttributeValue(codepoints);
+        assertEquals("container", startTag.pendingAttributeValue.toString());
+    }
+
+    @Test
+    public void testSetEmptyAttributeValue() {
+        startTag.setEmptyAttributeValue();
+        assertTrue(startTag.hasEmptyAttributeValue);
+    }
+
+    @Test
+    public void testEnsureAttributeValue() {
+        startTag.ensureAttributeValue();
+        assertTrue(startTag.hasPendingAttributeValue);
+    }
+
+    @Test
+    public void testIsDoctype() {
+        assertTrue(doctype.isDoctype());
+        assertFalse(startTag.isDoctype());
+    }
+
+    @Test
+    public void testAsDoctype() {
+        assertEquals(doctype, doctype.asDoctype());
+    }
+
+    @Test
+    public void testIsStartTag() {
+        assertTrue(startTag.isStartTag());
+        assertFalse(endTag.isStartTag());
+    }
+
+    @Test
+    public void testAsStartTag() {
+        assertEquals(startTag, startTag.asStartTag());
+    }
+
+    @Test
+    public void testIsEndTag() {
+        assertTrue(endTag.isEndTag());
+        assertFalse(startTag.isEndTag());
+    }
+
+    @Test
+    public void testAsEndTag() {
+        assertEquals(endTag, endTag.asEndTag());
+    }
+
+    @Test
+    public void testIsComment() {
+        assertTrue(comment.isComment());
+        assertFalse(startTag.isComment());
+    }
+
+    @Test
+    public void testAsComment() {
+        assertEquals(comment, comment.asComment());
+    }
+
+    @Test
+    public void testIsCharacter() {
+        assertTrue(character.isCharacter());
+        assertFalse(startTag.isCharacter());
+    }
+
+    @Test
+    public void testAsCharacter() {
+        assertEquals(character, character.asCharacter());
+    }
+
+    @Test
+    public void testIsEOF() {
+        assertTrue(eof.isEOF());
+        assertFalse(startTag.isEOF());
+    }
+}
+```

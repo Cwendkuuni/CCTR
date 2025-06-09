@@ -1,0 +1,173 @@
+```java
+import static org.junit.Assert.*;
+
+import java.text.Format;
+import java.text.ParsePosition;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+import org.apache.commons.lang.text.ExtendedMessageFormat;
+import org.junit.Before;
+import org.junit.Test;
+
+public class ExtendedMessageFormatTest {
+
+    private Map<String, FormatFactory> registry;
+
+    @Before
+    public void setUp() {
+        registry = new HashMap<>();
+        registry.put("upper", new UpperCaseFormatFactory());
+    }
+
+    @Test
+    public void testConstructorWithPattern() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}");
+        assertEquals("Hello {0}", emf.toPattern());
+    }
+
+    @Test
+    public void testConstructorWithPatternAndLocale() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}", Locale.US);
+        assertEquals("Hello {0}", emf.toPattern());
+    }
+
+    @Test
+    public void testConstructorWithPatternAndRegistry() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0,upper}", registry);
+        assertEquals("Hello {0,upper}", emf.toPattern());
+    }
+
+    @Test
+    public void testConstructorWithPatternLocaleAndRegistry() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0,upper}", Locale.US, registry);
+        assertEquals("Hello {0,upper}", emf.toPattern());
+    }
+
+    @Test
+    public void testApplyPattern() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}", registry);
+        emf.applyPattern("Hi {0,upper}");
+        assertEquals("Hi {0,upper}", emf.toPattern());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormat() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}");
+        emf.setFormat(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatByArgumentIndex() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}");
+        emf.setFormatByArgumentIndex(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormats() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}");
+        emf.setFormats(new Format[0]);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatsByArgumentIndex() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}");
+        emf.setFormatsByArgumentIndex(new Format[0]);
+    }
+
+    @Test
+    public void testGetFormat() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0,upper}", registry);
+        Format format = emf.getFormat("upper");
+        assertNotNull(format);
+    }
+
+    @Test
+    public void testReadArgumentIndex() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}");
+        ParsePosition pos = new ParsePosition(6);
+        int index = emf.readArgumentIndex("Hello {0}", pos);
+        assertEquals(0, index);
+    }
+
+    @Test
+    public void testParseFormatDescription() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0,upper}", registry);
+        ParsePosition pos = new ParsePosition(7);
+        String desc = emf.parseFormatDescription("Hello {0,upper}", pos);
+        assertEquals("upper", desc);
+    }
+
+    @Test
+    public void testInsertFormats() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0,upper}", registry);
+        String pattern = emf.insertFormats("Hello {0}", new ArrayList<>(List.of("upper")));
+        assertEquals("Hello {0,upper}", pattern);
+    }
+
+    @Test
+    public void testSeekNonWs() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}");
+        ParsePosition pos = new ParsePosition(5);
+        emf.seekNonWs("Hello {0}", pos);
+        assertEquals(6, pos.getIndex());
+    }
+
+    @Test
+    public void testNext() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}");
+        ParsePosition pos = new ParsePosition(5);
+        emf.next(pos);
+        assertEquals(6, pos.getIndex());
+    }
+
+    @Test
+    public void testAppendQuotedString() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}");
+        ParsePosition pos = new ParsePosition(0);
+        StringBuffer sb = new StringBuffer();
+        emf.appendQuotedString("'Hello'", pos, sb, true);
+        assertEquals("Hello", sb.toString());
+    }
+
+    @Test
+    public void testGetQuotedString() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}");
+        ParsePosition pos = new ParsePosition(0);
+        emf.getQuotedString("'Hello'", pos, true);
+        assertEquals(7, pos.getIndex());
+    }
+
+    @Test
+    public void testContainsElements() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Hello {0}");
+        Collection<String> coll = new ArrayList<>();
+        coll.add("element");
+        assertTrue(emf.containsElements(coll));
+    }
+
+    // Mock FormatFactory for testing
+    private static class UpperCaseFormatFactory implements FormatFactory {
+        @Override
+        public Format getFormat(String name, String args, Locale locale) {
+            return new UpperCaseFormat();
+        }
+    }
+
+    // Mock Format for testing
+    private static class UpperCaseFormat extends Format {
+        @Override
+        public StringBuffer format(Object obj, StringBuffer toAppendTo, FieldPosition pos) {
+            return toAppendTo.append(obj.toString().toUpperCase());
+        }
+
+        @Override
+        public Object parseObject(String source, ParsePosition pos) {
+            return source.substring(pos.getIndex()).toUpperCase();
+        }
+    }
+}
+```
+
+This test suite covers the main functionalities of the `ExtendedMessageFormat` class, including constructors, pattern application, and format handling. It also includes tests for unsupported operations and utility methods. The `UpperCaseFormatFactory` and `UpperCaseFormat` are mock implementations to test custom format handling.

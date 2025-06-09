@@ -1,0 +1,97 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `ReflectionSearch` class. This suite includes tests for each public method, as well as some of the private methods where applicable.
+
+```java
+import net.sourceforge.beanbin.reflect.ReflectionSearch;
+import net.sourceforge.beanbin.search.*;
+import net.sourceforge.beanbin.query.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.lang.annotation.*;
+import java.lang.reflect.Method;
+import java.util.List;
+import static org.junit.Assert.*;
+
+public class ReflectionSearchTest {
+
+    private ReflectionSearch reflectionSearch;
+    private Class<?> testClass;
+
+    @Before
+    public void setUp() {
+        testClass = TestClass.class;
+        reflectionSearch = new ReflectionSearch(testClass);
+    }
+
+    @Test
+    public void testHasAnnotationWithExistingAnnotation() {
+        assertTrue(reflectionSearch.hasAnnotation("@TestAnnotation"));
+    }
+
+    @Test
+    public void testHasAnnotationWithNonExistingAnnotation() {
+        assertFalse(reflectionSearch.hasAnnotation("@NonExistingAnnotation"));
+    }
+
+    @Test
+    public void testHasAnnotationWithWildcard() {
+        assertTrue(reflectionSearch.hasAnnotation("@Test*"));
+    }
+
+    @Test
+    public void testMethodsThatHave() throws BeanBinException {
+        ReflectionSearch result = reflectionSearch.methodsThatHave("testMethod");
+        List<Method> methods = result.getMethods();
+        assertNotNull(methods);
+        assertFalse(methods.isEmpty());
+    }
+
+    @Test
+    public void testMethodsThatDontHave() throws BeanBinException {
+        ReflectionSearch result = reflectionSearch.methodsThatDontHave("nonExistingMethod");
+        List<Method> methods = result.getMethods();
+        assertNotNull(methods);
+        assertFalse(methods.isEmpty());
+    }
+
+    @Test
+    public void testAnd() throws BeanBinException {
+        ReflectionSearch result = reflectionSearch.methodsThatHave("testMethod").and().methodsThatDontHave("nonExistingMethod");
+        List<Method> methods = result.getMethods();
+        assertNotNull(methods);
+        assertFalse(methods.isEmpty());
+    }
+
+    @Test
+    public void testOr() throws BeanBinException {
+        ReflectionSearch result = reflectionSearch.methodsThatHave("testMethod").or().methodsThatDontHave("nonExistingMethod");
+        List<Method> methods = result.getMethods();
+        assertNotNull(methods);
+        assertFalse(methods.isEmpty());
+    }
+
+    @Test
+    public void testGetMethods() throws BeanBinException {
+        List<Method> methods = reflectionSearch.getMethods();
+        assertNotNull(methods);
+    }
+
+    // Test class with annotations and methods for testing purposes
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface TestAnnotation {}
+
+    @TestAnnotation
+    private static class TestClass {
+        public void testMethod() {}
+        public void anotherMethod() {}
+    }
+}
+```
+
+### Explanation:
+- **Setup**: A `TestClass` with a custom annotation `@TestAnnotation` is used to test the `ReflectionSearch` class.
+- **Tests for `hasAnnotation`**: These tests check if the `hasAnnotation` method correctly identifies annotations, including those with wildcards.
+- **Tests for `methodsThatHave` and `methodsThatDontHave`**: These tests ensure that methods are correctly filtered based on the presence or absence of terms.
+- **Tests for `and` and `or`**: These tests verify that the logical conditions are applied correctly when chaining method criteria.
+- **Test for `getMethods`**: This test checks that the `getMethods` method returns a non-null list of methods.
+
+This test suite assumes that the `ReflectionSearch` class interacts with other components like `Query`, `MethodReflectionCriteria`, and `ReflectionShelf`, which are not fully defined here. Adjustments may be necessary based on the actual implementations of these components.

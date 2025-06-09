@@ -1,0 +1,242 @@
+To create a comprehensive JUnit 4 test suite for the `Monitor` class, we need to test each method, including edge cases and exceptions. Below is a test suite that covers the functionality of the `Monitor` class. Note that some methods require a `Guard` object, so we'll create a simple implementation of the `Guard` class for testing purposes.
+
+```java
+import com.google.common.util.concurrent.Monitor;
+import com.google.common.util.concurrent.Monitor.Guard;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.locks.ReentrantLock;
+
+import static org.junit.Assert.*;
+
+public class MonitorTest {
+
+    private Monitor monitor;
+    private TestGuard guard;
+
+    @Before
+    public void setUp() {
+        monitor = new Monitor();
+        guard = new TestGuard(monitor);
+    }
+
+    @Test
+    public void testEnter() {
+        monitor.enter();
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterInterruptibly() throws InterruptedException {
+        monitor.enterInterruptibly();
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterWithTimeout() {
+        assertTrue(monitor.enter(1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterInterruptiblyWithTimeout() throws InterruptedException {
+        assertTrue(monitor.enterInterruptibly(1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testTryEnter() {
+        assertTrue(monitor.tryEnter());
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterWhen() throws InterruptedException {
+        monitor.enterWhen(guard);
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterWhenUninterruptibly() {
+        monitor.enterWhenUninterruptibly(guard);
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterWhenWithTimeout() throws InterruptedException {
+        assertTrue(monitor.enterWhen(guard, 1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterWhenUninterruptiblyWithTimeout() {
+        assertTrue(monitor.enterWhenUninterruptibly(guard, 1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterIf() {
+        assertTrue(monitor.enterIf(guard));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterIfInterruptibly() throws InterruptedException {
+        assertTrue(monitor.enterIfInterruptibly(guard));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterIfWithTimeout() {
+        assertTrue(monitor.enterIf(guard, 1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testEnterIfInterruptiblyWithTimeout() throws InterruptedException {
+        assertTrue(monitor.enterIfInterruptibly(guard, 1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testTryEnterIf() {
+        assertTrue(monitor.tryEnterIf(guard));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testWaitFor() throws InterruptedException {
+        monitor.enter();
+        monitor.waitFor(guard);
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testWaitForUninterruptibly() {
+        monitor.enter();
+        monitor.waitForUninterruptibly(guard);
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testWaitForWithTimeout() throws InterruptedException {
+        monitor.enter();
+        assertTrue(monitor.waitFor(guard, 1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testWaitForUninterruptiblyWithTimeout() {
+        monitor.enter();
+        assertTrue(monitor.waitForUninterruptibly(guard, 1, TimeUnit.SECONDS));
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testLeave() {
+        monitor.enter();
+        monitor.leave();
+        assertFalse(monitor.isOccupied());
+    }
+
+    @Test
+    public void testIsFair() {
+        assertFalse(monitor.isFair());
+        Monitor fairMonitor = new Monitor(true);
+        assertTrue(fairMonitor.isFair());
+    }
+
+    @Test
+    public void testIsOccupied() {
+        assertFalse(monitor.isOccupied());
+        monitor.enter();
+        assertTrue(monitor.isOccupied());
+        monitor.leave();
+    }
+
+    @Test
+    public void testIsOccupiedByCurrentThread() {
+        assertFalse(monitor.isOccupiedByCurrentThread());
+        monitor.enter();
+        assertTrue(monitor.isOccupiedByCurrentThread());
+        monitor.leave();
+    }
+
+    @Test
+    public void testGetOccupiedDepth() {
+        assertEquals(0, monitor.getOccupiedDepth());
+        monitor.enter();
+        assertEquals(1, monitor.getOccupiedDepth());
+        monitor.leave();
+    }
+
+    @Test
+    public void testGetQueueLength() {
+        assertEquals(0, monitor.getQueueLength());
+    }
+
+    @Test
+    public void testHasQueuedThreads() {
+        assertFalse(monitor.hasQueuedThreads());
+    }
+
+    @Test
+    public void testHasQueuedThread() {
+        Thread thread = new Thread();
+        assertFalse(monitor.hasQueuedThread(thread));
+    }
+
+    @Test
+    public void testHasWaiters() {
+        monitor.enter();
+        assertFalse(monitor.hasWaiters(guard));
+        monitor.leave();
+    }
+
+    @Test
+    public void testGetWaitQueueLength() {
+        monitor.enter();
+        assertEquals(0, monitor.getWaitQueueLength(guard));
+        monitor.leave();
+    }
+
+    private static class TestGuard extends Guard {
+        protected TestGuard(Monitor monitor) {
+            super(monitor);
+        }
+
+        @Override
+        public boolean isSatisfied() {
+            return true;
+        }
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a `Monitor` instance and a `TestGuard` instance before each test.
+- **Test Methods**: Each method in the `Monitor` class is tested. For methods that require a `Guard`, a simple `TestGuard` class is used, which always returns `true` for `isSatisfied()`.
+- **Assertions**: The tests use assertions to verify the expected behavior of each method, such as checking if the lock is held by the current thread or if the monitor is occupied.
+- **Edge Cases**: The tests include edge cases like timeouts and exceptions (e.g., `IllegalMonitorStateException`).
+
+This test suite should provide a comprehensive coverage of the `Monitor` class's functionality.

@@ -1,0 +1,118 @@
+To create a comprehensive JUnit 4 test suite for the `Salvar` class, we need to consider testing the constructor and its behavior based on different `tipoSalvar` values. Since the `Salvar` class interacts with file dialogs and external dependencies, we'll need to mock these interactions. Below is a test suite using JUnit 4 and Mockito for mocking:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import jaw.entrada.Salvar;
+import jaw.metamodelo.Entidade;
+import jaw.ProcessarEntidades;
+import jaw.Serializacao;
+import jaw.SerializacaoXML;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import javax.swing.*;
+import java.io.File;
+import java.io.FileWriter;
+import java.util.List;
+import java.util.Vector;
+
+@RunWith(MockitoJUnitRunner.class)
+public class SalvarTest {
+
+    @Mock
+    private ProcessarEntidades mockForm;
+
+    @Mock
+    private JFileChooser mockFileChooser;
+
+    @Mock
+    private Serializacao mockSerializacao;
+
+    @Mock
+    private SerializacaoXML mockSerializacaoXML;
+
+    @Mock
+    private FileWriter mockFileWriter;
+
+    @Mock
+    private File mockFile;
+
+    @Captor
+    private ArgumentCaptor<String> stringCaptor;
+
+    private List<Entidade> mockEntidades;
+
+    @Before
+    public void setUp() {
+        mockEntidades = new Vector<>();
+        when(mockForm.getEntidades()).thenReturn(mockEntidades);
+        when(mockForm.getNomeArquivoSalvo()).thenReturn("Novo Projeto");
+        when(mockFileChooser.getSelectedFile()).thenReturn(mockFile);
+        when(mockFile.getAbsolutePath()).thenReturn("testPath");
+    }
+
+    @Test
+    public void testSalvarXML() throws Exception {
+        when(mockFileChooser.showSaveDialog(mockForm)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(mockFile.getName()).thenReturn("test.jaw.xml");
+        when(mockSerializacaoXML.entidades2XML(mockEntidades)).thenReturn("<xml></xml>");
+
+        Salvar salvar = new Salvar(mockForm, Salvar.SALVAR_XML);
+
+        verify(mockFileChooser).setFileFilter(any(Salvar.Filtro2.class));
+        verify(mockFileWriter).write(stringCaptor.capture());
+        assertEquals("<xml></xml>", stringCaptor.getValue());
+    }
+
+    @Test
+    public void testSalvar() throws Exception {
+        when(mockFileChooser.showSaveDialog(mockForm)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(mockFile.getName()).thenReturn("test.jaw");
+        when(mockSerializacao.salvar(mockEntidades, "testPath.jaw")).thenReturn(true);
+
+        Salvar salvar = new Salvar(mockForm, Salvar.SALVAR);
+
+        verify(mockFileChooser).setFileFilter(any(Salvar.Filtro.class));
+        verify(mockSerializacao).salvar(mockEntidades, "testPath.jaw");
+    }
+
+    @Test
+    public void testSalvarComo() throws Exception {
+        when(mockFileChooser.showSaveDialog(mockForm)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(mockFile.getName()).thenReturn("test.jaw");
+        when(mockSerializacao.salvar(mockEntidades, "testPath.jaw")).thenReturn(true);
+
+        Salvar salvar = new Salvar(mockForm, Salvar.SALVAR_COMO);
+
+        verify(mockFileChooser).setFileFilter(any(Salvar.Filtro.class));
+        verify(mockSerializacao).salvar(mockEntidades, "testPath.jaw");
+    }
+
+    @Test
+    public void testSalvarWithNewProject() throws Exception {
+        when(mockForm.getNomeArquivoSalvo()).thenReturn("Novo Projeto");
+        when(mockFileChooser.showSaveDialog(mockForm)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(mockFile.getName()).thenReturn("test.jaw");
+        when(mockSerializacao.salvar(mockEntidades, "testPath.jaw")).thenReturn(true);
+
+        Salvar salvar = new Salvar(mockForm, Salvar.SALVAR);
+
+        verify(mockFileChooser).setFileFilter(any(Salvar.Filtro.class));
+        verify(mockSerializacao).salvar(mockEntidades, "testPath.jaw");
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: We use Mockito to mock dependencies like `ProcessarEntidades`, `JFileChooser`, `Serializacao`, and `SerializacaoXML`.
+- **Setup**: The `setUp` method initializes the mock objects and sets up common behavior.
+- **Tests**: Each test method verifies the behavior of the `Salvar` constructor for different `tipoSalvar` values.
+- **File Dialogs**: We simulate user interaction with file dialogs using `JFileChooser.APPROVE_OPTION`.
+- **Assertions**: We verify that the correct methods are called and the expected behavior occurs.
+
+This test suite covers the main functionalities of the `Salvar` class, focusing on the interactions with file dialogs and serialization processes.

@@ -1,0 +1,123 @@
+To create a comprehensive JUnit 4 test suite for the `jgaapGUI` class, we need to focus on testing the behavior of the `actionPerformed` method, as it is the primary method that handles user interactions. Since the class is heavily reliant on GUI components and user interactions, we will use mocking to simulate these interactions. We'll use a library like Mockito to mock the components and interactions.
+
+Here's a basic test suite for the `jgaapGUI` class:
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+
+import static org.mockito.Mockito.*;
+
+public class jgaapGUITest {
+
+    private jgaapGUI gui;
+    private guiDriver mockDriver;
+    private ActionEvent mockEvent;
+
+    @Before
+    public void setUp() {
+        mockDriver = mock(guiDriver.class);
+        gui = new jgaapGUI();
+        gui.driver = mockDriver; // Injecting the mock driver
+    }
+
+    @Test
+    public void testActionPerformedExit() {
+        mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "Exit");
+        try {
+            gui.actionPerformed(mockEvent);
+        } catch (SecurityException e) {
+            // Expected exception due to System.exit call
+        }
+    }
+
+    @Test
+    public void testActionPerformedKnownAuthor() {
+        mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "knownauthor");
+        gui.actionPerformed(mockEvent);
+        assertTrue(gui.currentAuthor.isEnabled());
+        assertEquals("", gui.currentAuthor.getText());
+    }
+
+    @Test
+    public void testActionPerformedUnknownAuthor() {
+        mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "unknownauthor");
+        gui.actionPerformed(mockEvent);
+        assertFalse(gui.currentAuthor.isEnabled());
+        assertEquals("", gui.currentAuthor.getText());
+    }
+
+    @Test
+    public void testActionPerformedImport() {
+        JFileChooser mockFileChooser = mock(JFileChooser.class);
+        when(mockFileChooser.showOpenDialog(gui)).thenReturn(JFileChooser.APPROVE_OPTION);
+        File mockFile = mock(File.class);
+        when(mockFileChooser.getSelectedFile()).thenReturn(mockFile);
+        when(mockFile.toString()).thenReturn("mockFilePath");
+        when(mockFile.getName()).thenReturn("mockFileName");
+
+        gui.chooseFile = mockFileChooser;
+        gui.currentAuthor.setText("Test Author");
+
+        mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "Import");
+        gui.actionPerformed(mockEvent);
+
+        verify(mockDriver).addDocument("mockFilePath", "Test Author");
+        assertTrue(gui.listKnown.getText().contains("Test Author - mockFileName"));
+    }
+
+    @Test
+    public void testActionPerformedCanonicize() {
+        guiDriver.preprocessEngineDriver mockPe = mock(guiDriver.preprocessEngineDriver.class);
+        when(mockDriver.preprocessEngineDriver(any(), any(), any())).thenReturn(mockPe);
+
+        mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "Canonicize");
+        gui.actionPerformed(mockEvent);
+
+        verify(mockPe).start();
+    }
+
+    @Test
+    public void testActionPerformedCreateEventSet() {
+        guiDriver.createEventSetDriver mockEsd = mock(guiDriver.createEventSetDriver.class);
+        when(mockDriver.createEventSetDriver(anyString(), any(), any())).thenReturn(mockEsd);
+
+        mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "CreateEventSet");
+        gui.actionPerformed(mockEvent);
+
+        verify(mockEsd).start();
+    }
+
+    @Test
+    public void testActionPerformedAnalyze() {
+        guiDriver.runStatisticalAnalysisDriver mockRsad = mock(guiDriver.runStatisticalAnalysisDriver.class);
+        when(mockDriver.runStatisticalAnalysisDriver(anyString(), any(), any())).thenReturn(mockRsad);
+        when(mockRsad.getResults()).thenReturn("Analysis Results");
+
+        mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "Analyze");
+        gui.actionPerformed(mockEvent);
+
+        verify(mockRsad).start();
+        assertTrue(gui.listResults.getText().contains("Analysis Results"));
+    }
+
+    @Test
+    public void testActionPerformedDemo() {
+        mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "demo");
+        gui.actionPerformed(mockEvent);
+        // Check console output or other side effects if necessary
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock the `guiDriver` and other components like `JFileChooser` and `File` to simulate user interactions and file selections.
+- **Action Events**: We create `ActionEvent` instances with different commands to test the behavior of the `actionPerformed` method.
+- **Assertions**: We use assertions to verify the expected state of the GUI components after actions are performed.
+- **System.exit Handling**: The `testActionPerformedExit` test is expected to throw a `SecurityException` due to the `System.exit` call. In a real-world scenario, you might want to handle this differently, possibly by using a `SecurityManager` to prevent the JVM from exiting during tests.
+
+This test suite provides a basic structure for testing the `jgaapGUI` class. Depending on the actual implementation details and dependencies, you might need to adjust the tests accordingly.

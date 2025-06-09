@@ -1,0 +1,129 @@
+```java
+package com.google.common.cache;
+
+import com.google.common.annotations.Beta;
+import com.google.common.collect.ImmutableMap;
+import com.google.common.base.Preconditions;
+import com.google.common.base.MoreObjects;
+import com.google.common.base.Objects;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.util.concurrent.TimeUnit;
+
+@Beta
+public class CacheBuilderSpecTest {
+
+    private CacheBuilderSpec spec;
+
+    @Before
+    public void setUp() {
+        spec = CacheBuilderSpec.parse("");
+    }
+
+    @Test
+    public void testParse() {
+        String specification = "initialCapacity=10,maximumSize=100,expireAfterWrite=10s";
+        CacheBuilderSpec parsedSpec = CacheBuilderSpec.parse(specification);
+
+        assertEquals(Integer.valueOf(10), parsedSpec.initialCapacity);
+        assertEquals(Long.valueOf(100), parsedSpec.maximumSize);
+        assertEquals(Long.valueOf(10), parsedSpec.writeExpirationDuration);
+        assertEquals(TimeUnit.SECONDS, parsedSpec.writeExpirationTimeUnit);
+    }
+
+    @Test
+    public void testDisableCaching() {
+        CacheBuilderSpec disabledSpec = CacheBuilderSpec.disableCaching();
+        assertEquals(Long.valueOf(0), disabledSpec.maximumSize);
+    }
+
+    @Test
+    public void testToCacheBuilder() {
+        spec.initialCapacity = 10;
+        spec.maximumSize = 100L;
+        spec.writeExpirationDuration = 10;
+        spec.writeExpirationTimeUnit = TimeUnit.SECONDS;
+
+        CacheBuilder<Object, Object> builder = spec.toCacheBuilder();
+
+        assertEquals(10, builder.initialCapacity);
+        assertEquals(100L, builder.maximumSize);
+        assertEquals(10, builder.expireAfterWriteDuration);
+        assertEquals(TimeUnit.SECONDS, builder.expireAfterWriteTimeUnit);
+    }
+
+    @Test
+    public void testToParsableString() {
+        String specification = "initialCapacity=10,maximumSize=100,expireAfterWrite=10s";
+        CacheBuilderSpec parsedSpec = CacheBuilderSpec.parse(specification);
+
+        assertEquals(specification, parsedSpec.toParsableString());
+    }
+
+    @Test
+    public void testToString() {
+        String specification = "initialCapacity=10,maximumSize=100,expireAfterWrite=10s";
+        CacheBuilderSpec parsedSpec = CacheBuilderSpec.parse(specification);
+
+        assertEquals(MoreObjects.toStringHelper(parsedSpec).addValue(specification).toString(), parsedSpec.toString());
+    }
+
+    @Test
+    public void testHashCode() {
+        String specification = "initialCapacity=10,maximumSize=100,expireAfterWrite=10s";
+        CacheBuilderSpec parsedSpec = CacheBuilderSpec.parse(specification);
+
+        int expectedHashCode = Objects.hashCode(
+            parsedSpec.initialCapacity,
+            parsedSpec.maximumSize,
+            parsedSpec.maximumWeight,
+            parsedSpec.concurrencyLevel,
+            parsedSpec.keyStrength,
+            parsedSpec.valueStrength,
+            parsedSpec.recordStats,
+            CacheBuilderSpec.durationInNanos(parsedSpec.writeExpirationDuration, parsedSpec.writeExpirationTimeUnit),
+            CacheBuilderSpec.durationInNanos(parsedSpec.accessExpirationDuration, parsedSpec.accessExpirationTimeUnit),
+            CacheBuilderSpec.durationInNanos(parsedSpec.refreshDuration, parsedSpec.refreshTimeUnit)
+        );
+
+        assertEquals(expectedHashCode, parsedSpec.hashCode());
+    }
+
+    @Test
+    public void testEquals() {
+        String specification = "initialCapacity=10,maximumSize=100,expireAfterWrite=10s";
+        CacheBuilderSpec parsedSpec1 = CacheBuilderSpec.parse(specification);
+        CacheBuilderSpec parsedSpec2 = CacheBuilderSpec.parse(specification);
+
+        assertTrue(parsedSpec1.equals(parsedSpec2));
+    }
+
+    @Test
+    public void testDurationInNanos() {
+        long duration = 10;
+        TimeUnit unit = TimeUnit.SECONDS;
+
+        assertEquals(Long.valueOf(TimeUnit.SECONDS.toNanos(duration)), CacheBuilderSpec.durationInNanos(duration, unit));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testParseInvalidKey() {
+        String specification = "invalidKey=10";
+        CacheBuilderSpec.parse(specification);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testParseInvalidValue() {
+        String specification = "initialCapacity=invalidValue";
+        CacheBuilderSpec.parse(specification);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testParseInvalidDurationFormat() {
+        String specification = "expireAfterWrite=10x";
+        CacheBuilderSpec.parse(specification);
+    }
+}
+```

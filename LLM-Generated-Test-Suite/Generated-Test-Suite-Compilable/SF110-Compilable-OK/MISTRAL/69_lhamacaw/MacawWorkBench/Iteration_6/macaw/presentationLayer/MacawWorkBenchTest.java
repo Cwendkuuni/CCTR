@@ -1,0 +1,90 @@
+package macaw.presentationLayer;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+import macaw.presentationLayer.MacawWorkBench;
+import macaw.system.SessionProperties;
+import macaw.system.UserInterfaceFactory;
+import macaw.system.MacawMessages;
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class MacawWorkBenchTest {
+
+    @Mock
+    private SessionProperties sessionProperties;
+
+    @Mock
+    private UserInterfaceFactory userInterfaceFactory;
+
+    @Mock
+    private JDialog dialog;
+
+    @Mock
+    private JButton editConstants;
+
+    @Mock
+    private JButton editVariables;
+
+    @Mock
+    private JButton exportVariableData;
+
+    @Mock
+    private JButton exit;
+
+    private MacawWorkBench macawWorkBench;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        when(sessionProperties.getUserInterfaceFactory()).thenReturn(userInterfaceFactory);
+        when(userInterfaceFactory.createDialog()).thenReturn(dialog);
+        when(userInterfaceFactory.createButton(anyString())).thenReturn(editConstants, editVariables, exportVariableData, exit);
+
+        macawWorkBench = new MacawWorkBench(sessionProperties);
+    }
+
+    @Test
+    public void testShow() {
+        macawWorkBench.show();
+        verify(dialog).setVisible(true);
+    }
+
+    @Test
+    public void testEditConstants() {
+        macawWorkBench.actionPerformed(new ActionEvent(editConstants, ActionEvent.ACTION_PERFORMED, null));
+        verify(editConstants).addActionListener(macawWorkBench);
+    }
+
+    @Test
+    public void testEditVariables() {
+        macawWorkBench.actionPerformed(new ActionEvent(editVariables, ActionEvent.ACTION_PERFORMED, null));
+        verify(editVariables).addActionListener(macawWorkBench);
+    }
+
+    @Test
+    public void testExportVariableData() {
+        macawWorkBench.actionPerformed(new ActionEvent(exportVariableData, ActionEvent.ACTION_PERFORMED, null));
+        verify(exportVariableData).addActionListener(macawWorkBench);
+    }
+
+    @Test
+    public void testExit() {
+        macawWorkBench.actionPerformed(new ActionEvent(exit, ActionEvent.ACTION_PERFORMED, null));
+        verify(exit).addActionListener(macawWorkBench);
+    }
+
+    @Test
+    public void testActionPerformedUnknownButton() {
+        JButton unknownButton = mock(JButton.class);
+        macawWorkBench.actionPerformed(new ActionEvent(unknownButton, ActionEvent.ACTION_PERFORMED, null));
+        verify(unknownButton, never()).addActionListener(macawWorkBench);
+    }
+}

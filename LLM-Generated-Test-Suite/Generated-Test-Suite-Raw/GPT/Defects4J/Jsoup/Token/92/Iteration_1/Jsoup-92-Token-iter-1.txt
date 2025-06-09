@@ -1,0 +1,167 @@
+```java
+import org.jsoup.parser.Token;
+import org.jsoup.parser.Token.Doctype;
+import org.jsoup.parser.Token.StartTag;
+import org.jsoup.parser.Token.EndTag;
+import org.jsoup.parser.Token.Comment;
+import org.jsoup.parser.Token.Character;
+import org.jsoup.parser.Token.CData;
+import org.jsoup.parser.Token.EOF;
+import org.jsoup.nodes.Attributes;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class TokenTest {
+
+    private Doctype doctype;
+    private StartTag startTag;
+    private EndTag endTag;
+    private Comment comment;
+    private Character character;
+    private CData cdata;
+    private EOF eof;
+
+    @Before
+    public void setUp() {
+        doctype = new Doctype();
+        startTag = new StartTag();
+        endTag = new EndTag();
+        comment = new Comment();
+        character = new Character();
+        cdata = new CData("cdata content");
+        eof = new EOF();
+    }
+
+    @Test
+    public void testDoctypeReset() {
+        doctype.name.append("html");
+        doctype.pubSysKey = "public";
+        doctype.publicIdentifier.append("publicId");
+        doctype.systemIdentifier.append("systemId");
+        doctype.forceQuirks = true;
+
+        doctype.reset();
+
+        assertEquals("", doctype.getName());
+        assertNull(doctype.getPubSysKey());
+        assertEquals("", doctype.getPublicIdentifier());
+        assertEquals("", doctype.getSystemIdentifier());
+        assertFalse(doctype.isForceQuirks());
+    }
+
+    @Test
+    public void testStartTagReset() {
+        startTag.name("div");
+        startTag.selfClosing = true;
+        startTag.getAttributes().put("key", "value");
+
+        startTag.reset();
+
+        assertNull(startTag.name());
+        assertNull(startTag.getAttributes().get("key"));
+        assertFalse(startTag.isSelfClosing());
+    }
+
+    @Test
+    public void testEndTagReset() {
+        endTag.name("div");
+
+        endTag.reset();
+
+        assertNull(endTag.name());
+    }
+
+    @Test
+    public void testCommentReset() {
+        comment.data.append("comment data");
+        comment.bogus = true;
+
+        comment.reset();
+
+        assertEquals("", comment.getData());
+        assertFalse(comment.bogus);
+    }
+
+    @Test
+    public void testCharacterReset() {
+        character.data("character data");
+
+        character.reset();
+
+        assertNull(character.getData());
+    }
+
+    @Test
+    public void testCData() {
+        assertEquals("cdata content", cdata.getData());
+        assertEquals("<![CDATA[cdata content]]>", cdata.toString());
+    }
+
+    @Test
+    public void testEOFReset() {
+        assertSame(eof, eof.reset());
+    }
+
+    @Test
+    public void testTokenTypeMethods() {
+        assertTrue(doctype.isDoctype());
+        assertSame(doctype, doctype.asDoctype());
+
+        assertTrue(startTag.isStartTag());
+        assertSame(startTag, startTag.asStartTag());
+
+        assertTrue(endTag.isEndTag());
+        assertSame(endTag, endTag.asEndTag());
+
+        assertTrue(comment.isComment());
+        assertSame(comment, comment.asComment());
+
+        assertTrue(character.isCharacter());
+        assertSame(character, character.asCharacter());
+
+        assertTrue(cdata.isCData());
+
+        assertTrue(eof.isEOF());
+    }
+
+    @Test
+    public void testStartTagNameAttr() {
+        Attributes attributes = new Attributes();
+        attributes.put("key", "value");
+
+        startTag.nameAttr("div", attributes);
+
+        assertEquals("div", startTag.name());
+        assertEquals("value", startTag.getAttributes().get("key"));
+    }
+
+    @Test
+    public void testStartTagToString() {
+        startTag.name("div");
+        assertEquals("<div>", startTag.toString());
+
+        startTag.getAttributes().put("key", "value");
+        assertEquals("<div key=\"value\">", startTag.toString());
+    }
+
+    @Test
+    public void testEndTagToString() {
+        endTag.name("div");
+        assertEquals("</div>", endTag.toString());
+    }
+
+    @Test
+    public void testCommentToString() {
+        comment.data.append("comment data");
+        assertEquals("<!--comment data-->", comment.toString());
+    }
+
+    @Test
+    public void testCharacterToString() {
+        character.data("character data");
+        assertEquals("character data", character.toString());
+    }
+}
+```

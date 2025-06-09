@@ -1,0 +1,141 @@
+Certainly! Below is a JUnit 4 test suite for the `TucsonSimple` class. This test suite aims to cover all the methods in the class, including both public and private methods. Note that testing private methods directly is not a common practice, but for the sake of completeness, we can use reflection to access them.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import corina.formats.TucsonSimple;
+import corina.Sample;
+import corina.Year;
+import corina.Range;
+import corina.WrongFiletypeException;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+    private Sample sampleMock;
+
+    @Before
+    public void setUp() {
+        tucsonSimple = new TucsonSimple();
+        sampleMock = mock(Sample.class);
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("format.tucsonsimple", tucsonSimple.toString());
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        assertEquals(".RWL", tucsonSimple.getDefaultExtension());
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        BufferedReader readerMock = mock(BufferedReader.class);
+        tucsonSimple.load(readerMock);
+    }
+
+    @Test
+    public void testMake6digitCode() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("make6digitCode", Sample.class);
+        method.setAccessible(true);
+
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "1234567");
+        when(sampleMock.meta).thenReturn(meta);
+
+        String code = (String) method.invoke(tucsonSimple, sampleMock);
+        assertEquals("123456", code);
+
+        meta.put("id", "123");
+        code = (String) method.invoke(tucsonSimple, sampleMock);
+        assertEquals("123   ", code);
+
+        meta.remove("id");
+        code = (String) method.invoke(tucsonSimple, sampleMock);
+        assertEquals("000000", code);
+    }
+
+    @Test
+    public void testSaveRowHeader() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("saveRowHeader", BufferedWriter.class, Sample.class, String.class, int.class, Year.class);
+        method.setAccessible(true);
+
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(stringWriter);
+
+        Range rangeMock = mock(Range.class);
+        when(sampleMock.range).thenReturn(rangeMock);
+        when(rangeMock.getStart()).thenReturn(new Year(2000));
+
+        method.invoke(tucsonSimple, writer, sampleMock, "123456", 6, new Year(1999));
+        writer.flush();
+        assertEquals("1234562000", stringWriter.toString().trim());
+    }
+
+    @Test
+    public void testSaveData() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("saveData", Sample.class, BufferedWriter.class);
+        method.setAccessible(true);
+
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(stringWriter);
+
+        Range rangeMock = mock(Range.class);
+        when(sampleMock.range).thenReturn(rangeMock);
+        when(rangeMock.getStart()).thenReturn(new Year(2000));
+        when(rangeMock.getEnd()).thenReturn(new Year(2005));
+
+        Map<Year, Integer> data = new HashMap<>();
+        data.put(new Year(2000), 100);
+        data.put(new Year(2001), 200);
+        when(sampleMock.data).thenReturn(data);
+
+        method.invoke(tucsonSimple, sampleMock, writer);
+        writer.flush();
+        assertTrue(stringWriter.toString().contains("100"));
+        assertTrue(stringWriter.toString().contains("200"));
+    }
+
+    @Test
+    public void testComputeRange() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("computeRange", Sample.class);
+        method.setAccessible(true);
+
+        Range rangeMock = mock(Range.class);
+        when(sampleMock.range).thenReturn(rangeMock);
+        when(rangeMock.getStart()).thenReturn(new Year(2000));
+
+        Range result = (Range) method.invoke(tucsonSimple, sampleMock);
+        assertEquals(rangeMock, result);
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        BufferedWriter writerMock = mock(BufferedWriter.class);
+        tucsonSimple.save(sampleMock, writerMock);
+        verify(writerMock, atLeastOnce()).write(anyString());
+    }
+}
+```
+
+### Explanation:
+- **Mockito** is used to create mock objects for `Sample`, `BufferedReader`, `BufferedWriter`, and `Range` to isolate the tests from dependencies.
+- **Reflection** is used to access private methods (`make6digitCode`, `saveRowHeader`, `saveData`, `computeRange`) for testing purposes.
+- **Assertions** are used to verify the expected outcomes of method calls.
+- **Exception Testing** is done using the `expected` attribute of the `@Test` annotation to ensure that the `load` method throws a `WrongFiletypeException`.
+
+This test suite should provide comprehensive coverage for the `TucsonSimple` class.

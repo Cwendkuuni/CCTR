@@ -1,0 +1,113 @@
+To create a comprehensive JUnit 4 test suite for the `LocalVariablesSorter` class, we need to test each method, including the constructor, and ensure that the class behaves as expected. Below is a test suite that covers the main functionalities of the class. Note that this test suite assumes the presence of mock objects or stubs for `MethodVisitor` and other dependencies, as the actual behavior of `LocalVariablesSorter` depends on these components.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+import org.objectweb.asm.jip.MethodVisitor;
+import org.objectweb.asm.jip.Type;
+import org.objectweb.asm.jip.Label;
+import org.objectweb.asm.jip.Opcodes;
+
+public class LocalVariablesSorterTest {
+
+    private MethodVisitor mockMethodVisitor;
+    private LocalVariablesSorter localVariablesSorter;
+
+    @Before
+    public void setUp() {
+        mockMethodVisitor = mock(MethodVisitor.class);
+        localVariablesSorter = new LocalVariablesSorter(Opcodes.ACC_PUBLIC, "(I)V", mockMethodVisitor);
+    }
+
+    @Test
+    public void testConstructorInitializesFields() {
+        assertEquals(1, localVariablesSorter.firstLocal);
+        assertEquals(1, localVariablesSorter.nextLocal);
+    }
+
+    @Test
+    public void testVisitVarInsnRemapsVariable() {
+        localVariablesSorter.visitVarInsn(Opcodes.ILOAD, 1);
+        ArgumentCaptor<Integer> opcodeCaptor = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Integer> varCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(mockMethodVisitor).visitVarInsn(opcodeCaptor.capture(), varCaptor.capture());
+        assertEquals(Opcodes.ILOAD, (int) opcodeCaptor.getValue());
+        assertEquals(1, (int) varCaptor.getValue());
+    }
+
+    @Test
+    public void testVisitIincInsnRemapsVariable() {
+        localVariablesSorter.visitIincInsn(1, 5);
+        ArgumentCaptor<Integer> varCaptor = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Integer> incrementCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(mockMethodVisitor).visitIincInsn(varCaptor.capture(), incrementCaptor.capture());
+        assertEquals(1, (int) varCaptor.getValue());
+        assertEquals(5, (int) incrementCaptor.getValue());
+    }
+
+    @Test
+    public void testVisitMaxsUpdatesMaxLocals() {
+        localVariablesSorter.visitMaxs(10, 5);
+        ArgumentCaptor<Integer> maxStackCaptor = ArgumentCaptor.forClass(Integer.class);
+        ArgumentCaptor<Integer> maxLocalsCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(mockMethodVisitor).visitMaxs(maxStackCaptor.capture(), maxLocalsCaptor.capture());
+        assertEquals(10, (int) maxStackCaptor.getValue());
+        assertEquals(1, (int) maxLocalsCaptor.getValue());
+    }
+
+    @Test
+    public void testVisitLocalVariableRemapsIndex() {
+        Label start = new Label();
+        Label end = new Label();
+        localVariablesSorter.visitLocalVariable("var", "I", null, start, end, 1);
+        ArgumentCaptor<Integer> indexCaptor = ArgumentCaptor.forClass(Integer.class);
+        verify(mockMethodVisitor).visitLocalVariable(eq("var"), eq("I"), isNull(), eq(start), eq(end), indexCaptor.capture());
+        assertEquals(1, (int) indexCaptor.getValue());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testVisitFrameThrowsExceptionForInvalidType() {
+        localVariablesSorter.visitFrame(0, 0, new Object[0], 0, new Object[0]);
+    }
+
+    @Test
+    public void testVisitFrameHandlesExpandedFrames() {
+        Object[] locals = new Object[] { Opcodes.INTEGER };
+        Object[] stack = new Object[] { Opcodes.FLOAT };
+        localVariablesSorter.visitFrame(-1, 1, locals, 1, stack);
+        verify(mockMethodVisitor).visitFrame(eq(-1), eq(1), any(Object[].class), eq(1), eq(stack));
+    }
+
+    @Test
+    public void testNewLocalAllocatesNewLocalVariable() {
+        int local = localVariablesSorter.newLocal(Type.INT_TYPE);
+        assertEquals(1, local);
+        assertEquals(2, localVariablesSorter.nextLocal);
+    }
+
+    @Test
+    public void testRemapReturnsSameVarForFirstLocal() {
+        int remapped = localVariablesSorter.remap(0, Type.INT_TYPE);
+        assertEquals(0, remapped);
+    }
+
+    @Test
+    public void testRemapChangesVarForNewLocal() {
+        int remapped = localVariablesSorter.remap(1, Type.INT_TYPE);
+        assertNotEquals(1, remapped);
+    }
+}
+```
+
+### Explanation:
+- **Mocks and Stubs**: The test suite uses Mockito to create a mock `MethodVisitor` object. This allows us to verify interactions with this object without needing a full implementation.
+- **Constructor Test**: Verifies that the constructor initializes the fields correctly.
+- **Method Tests**: Each method is tested to ensure it behaves as expected. This includes verifying that the correct methods on the `MethodVisitor` are called with the expected arguments.
+- **Exception Handling**: Tests that an `IllegalStateException` is thrown when `visitFrame` is called with an invalid type.
+- **Remapping Logic**: Tests the remapping logic to ensure variables are remapped correctly.
+
+This test suite provides a comprehensive set of tests for the `LocalVariablesSorter` class, ensuring that its methods function correctly under various conditions.

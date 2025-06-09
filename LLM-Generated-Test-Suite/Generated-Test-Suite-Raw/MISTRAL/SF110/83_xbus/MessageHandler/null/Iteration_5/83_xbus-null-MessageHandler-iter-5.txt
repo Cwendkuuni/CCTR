@@ -1,0 +1,110 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.util.*;
+import net.sf.xbus.base.core.MessageHandler;
+
+public class MessageHandlerTest {
+
+    private MessageHandler messageHandler;
+
+    @Before
+    public void setUp() {
+        messageHandler = MessageHandler.getInstance("test");
+    }
+
+    @Test
+    public void testGetMessage_KeyFound() {
+        // Assuming there is a message file with key "testKey" and value "Test Message"
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        String result = messageHandler.getMessage("testKey", params);
+        assertEquals("Test Message", result);
+    }
+
+    @Test
+    public void testGetMessage_KeyNotFound() {
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        String result = messageHandler.getMessage("nonExistentKey", params);
+        assertEquals("Key: nonExistentKey not found in message file", result);
+    }
+
+    @Test
+    public void testGetMessageOptional_KeyFound() {
+        // Assuming there is a message file with key "testKey" and value "Test Message"
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        String result = messageHandler.getMessageOptional("testKey", params);
+        assertEquals("Test Message", result);
+    }
+
+    @Test
+    public void testGetMessageOptional_KeyNotFound() {
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        String result = messageHandler.getMessageOptional("nonExistentKey", params);
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetMessageOptional_WithParams() {
+        // Assuming there is a message file with key "paramKey" and value "Param1: $1$ Param2: $2$"
+        List<String> params = new ArrayList<>();
+        params.add("value1");
+        params.add("value2");
+        String result = messageHandler.getMessageOptional("paramKey", params);
+        assertEquals("Param1: value1 Param2: value2", result);
+    }
+
+    @Test
+    public void testGetInstance_SameInstance() {
+        MessageHandler instance1 = MessageHandler.getInstance("test");
+        MessageHandler instance2 = MessageHandler.getInstance("test");
+        assertSame(instance1, instance2);
+    }
+
+    @Test
+    public void testGetInstance_DifferentInstance() {
+        MessageHandler instance1 = MessageHandler.getInstance("test1");
+        MessageHandler instance2 = MessageHandler.getInstance("test2");
+        assertNotSame(instance1, instance2);
+    }
+
+    @Test
+    public void testAddMessages_FileNotFound() {
+        // This test assumes that the directory does not contain the message file
+        MessageHandler instance = new MessageHandler("nonExistentBase");
+        // No exception should be thrown, and the system should not exit
+        assertTrue(true); // Placeholder for actual verification
+    }
+
+    @Test
+    public void testMessagesFilter_Accept() {
+        MessagesFilter filter = new MessagesFilter("test", "_en_US.properties");
+        assertTrue(filter.accept(null, "test_en_US.properties"));
+    }
+
+    @Test
+    public void testMessagesFilter_Reject() {
+        MessagesFilter filter = new MessagesFilter("test", "_en_US.properties");
+        assertFalse(filter.accept(null, "wrong_en_US.properties"));
+    }
+
+    private static class MessagesFilter implements FilenameFilter {
+        private String mPrefix;
+        private String mPostfix;
+
+        public MessagesFilter(final String prefix, final String postfix) {
+            this.mPrefix = prefix;
+            this.mPostfix = postfix;
+        }
+
+        @Override
+        public boolean accept(final File dir, final String filename) {
+            return filename.startsWith(this.mPrefix) && filename.endsWith(this.mPostfix);
+        }
+    }
+}
+```

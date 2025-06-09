@@ -1,0 +1,91 @@
+To create a comprehensive JUnit 4 test suite for the `SchurTransformer` class, we need to test the public methods and handle potential exceptions. The class primarily involves matrix transformations, so we'll need to create test cases that verify the correctness of these transformations. Here's a basic test suite:
+
+```java
+import static org.junit.Assert.*;
+import org.apache.commons.math3.linear.*;
+import org.apache.commons.math3.exception.*;
+import org.junit.Before;
+import org.junit.Test;
+
+public class SchurTransformerTest {
+
+    private RealMatrix matrix;
+    private SchurTransformer transformer;
+
+    @Before
+    public void setUp() {
+        // Initialize a simple 3x3 matrix for testing
+        double[][] data = {
+            {4, -2, 1},
+            {1, 1, 0},
+            {0, 3, 3}
+        };
+        matrix = MatrixUtils.createRealMatrix(data);
+        transformer = new SchurTransformer(matrix);
+    }
+
+    @Test
+    public void testGetP() {
+        RealMatrix P = transformer.getP();
+        assertNotNull("Matrix P should not be null", P);
+        assertEquals("Matrix P should have the same dimensions as the input matrix", matrix.getRowDimension(), P.getRowDimension());
+        assertEquals("Matrix P should have the same dimensions as the input matrix", matrix.getColumnDimension(), P.getColumnDimension());
+    }
+
+    @Test
+    public void testGetPT() {
+        RealMatrix PT = transformer.getPT();
+        assertNotNull("Matrix PT should not be null", PT);
+        assertEquals("Matrix PT should have the same dimensions as the input matrix", matrix.getRowDimension(), PT.getRowDimension());
+        assertEquals("Matrix PT should have the same dimensions as the input matrix", matrix.getColumnDimension(), PT.getColumnDimension());
+    }
+
+    @Test
+    public void testGetT() {
+        RealMatrix T = transformer.getT();
+        assertNotNull("Matrix T should not be null", T);
+        assertEquals("Matrix T should have the same dimensions as the input matrix", matrix.getRowDimension(), T.getRowDimension());
+        assertEquals("Matrix T should have the same dimensions as the input matrix", matrix.getColumnDimension(), T.getColumnDimension());
+    }
+
+    @Test(expected = NonSquareMatrixException.class)
+    public void testNonSquareMatrixException() {
+        // Create a non-square matrix
+        double[][] data = {
+            {1, 2, 3},
+            {4, 5, 6}
+        };
+        RealMatrix nonSquareMatrix = MatrixUtils.createRealMatrix(data);
+        new SchurTransformer(nonSquareMatrix);
+    }
+
+    @Test(expected = MaxCountExceededException.class)
+    public void testMaxCountExceededException() {
+        // This test is tricky because it depends on the internal state of the algorithm.
+        // We will create a matrix that is known to cause convergence issues.
+        double[][] data = {
+            {1, 1, 1},
+            {1, 1, 1},
+            {1, 1, 1}
+        };
+        RealMatrix problematicMatrix = MatrixUtils.createRealMatrix(data);
+        new SchurTransformer(problematicMatrix);
+    }
+}
+```
+
+### Explanation:
+
+1. **Setup**: We initialize a simple 3x3 matrix and create a `SchurTransformer` instance in the `setUp` method, which runs before each test.
+
+2. **Test `getP` Method**: We verify that the `getP` method returns a non-null matrix with the same dimensions as the input matrix.
+
+3. **Test `getPT` Method**: Similar to `getP`, we check that `getPT` returns a non-null matrix with the correct dimensions.
+
+4. **Test `getT` Method**: We ensure that `getT` returns a non-null matrix with the correct dimensions.
+
+5. **Test Non-Square Matrix Exception**: We verify that a `NonSquareMatrixException` is thrown when a non-square matrix is passed to the constructor.
+
+6. **Test Max Count Exceeded Exception**: This test is designed to trigger a `MaxCountExceededException`. However, creating a matrix that reliably causes this exception can be challenging without knowing the specific conditions that lead to non-convergence. The provided matrix is a simple example that might cause issues, but this test may need adjustment based on the actual behavior of the algorithm.
+
+This test suite provides a basic framework for testing the `SchurTransformer` class. Depending on the specific requirements and behavior of the class, additional tests may be necessary to cover edge cases and ensure comprehensive coverage.

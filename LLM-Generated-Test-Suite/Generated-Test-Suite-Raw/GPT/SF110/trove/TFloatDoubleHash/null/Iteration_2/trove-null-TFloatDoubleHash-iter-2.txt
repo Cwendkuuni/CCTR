@@ -1,0 +1,150 @@
+Certainly! Below is a JUnit 4 test suite for the `TFloatDoubleHash` class. This test suite aims to cover the functionality provided by the class, including constructors, methods, and edge cases.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.*;
+
+public class TFloatDoubleHashTest {
+
+    private TFloatDoubleHash hash;
+
+    @Before
+    public void setUp() {
+        hash = new TFloatDoubleHash(10, 0.5f, -1.0f, -1.0) {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        TFloatDoubleHash defaultHash = new TFloatDoubleHash() {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+        assertEquals(0.0f, defaultHash.getNoEntryKey(), 0.0);
+        assertEquals(0.0, defaultHash.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacity() {
+        TFloatDoubleHash hashWithCapacity = new TFloatDoubleHash(20) {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+        assertEquals(0.0f, hashWithCapacity.getNoEntryKey(), 0.0);
+        assertEquals(0.0, hashWithCapacity.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testConstructorWithCapacityAndLoadFactor() {
+        TFloatDoubleHash hashWithCapacityAndLoadFactor = new TFloatDoubleHash(20, 0.75f) {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+        assertEquals(0.0f, hashWithCapacityAndLoadFactor.getNoEntryKey(), 0.0);
+        assertEquals(0.0, hashWithCapacityAndLoadFactor.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testConstructorWithAllParameters() {
+        assertEquals(-1.0f, hash.getNoEntryKey(), 0.0);
+        assertEquals(-1.0, hash.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testSetUp() {
+        int capacity = hash.setUp(15);
+        assertTrue(capacity >= 15);
+    }
+
+    @Test
+    public void testContains() {
+        hash.insertKey(1.0f);
+        assertTrue(hash.contains(1.0f));
+        assertFalse(hash.contains(2.0f));
+    }
+
+    @Test
+    public void testForEach() {
+        hash.insertKey(1.0f);
+        hash.insertKey(2.0f);
+        boolean result = hash.forEach(value -> value > 0);
+        assertTrue(result);
+    }
+
+    @Test
+    public void testRemoveAt() {
+        int index = hash.insertKey(1.0f);
+        hash.removeAt(index);
+        assertFalse(hash.contains(1.0f));
+    }
+
+    @Test
+    public void testIndex() {
+        int index = hash.insertKey(1.0f);
+        assertEquals(index, hash.index(1.0f));
+        assertEquals(-1, hash.index(2.0f));
+    }
+
+    @Test
+    public void testInsertKey() {
+        int index = hash.insertKey(1.0f);
+        assertTrue(index >= 0);
+        assertTrue(hash.contains(1.0f));
+    }
+
+    @Test
+    public void testInsertKeyRehash() {
+        int index = hash.insertKey(1.0f);
+        int rehashIndex = hash.insertKeyRehash(1.0f, index, HashFunctions.hash(1.0f), (byte) 1);
+        assertEquals(-index - 1, rehashIndex);
+    }
+
+    @Test
+    public void testXinsertKey() {
+        int index = hash.XinsertKey(1.0f);
+        assertTrue(index >= 0);
+        assertTrue(hash.contains(1.0f));
+    }
+
+    @Test
+    public void testWriteExternal() throws IOException, ClassNotFoundException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(bos);
+        hash.writeExternal(out);
+        out.flush();
+        out.close();
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+        ObjectInputStream in = new ObjectInputStream(bis);
+        TFloatDoubleHash newHash = new TFloatDoubleHash() {
+            @Override
+            protected int setUp(int initialCapacity) {
+                return super.setUp(initialCapacity);
+            }
+        };
+        newHash.readExternal(in);
+        assertEquals(hash.getNoEntryKey(), newHash.getNoEntryKey(), 0.0);
+        assertEquals(hash.getNoEntryValue(), newHash.getNoEntryValue(), 0.0);
+    }
+}
+```
+
+### Explanation:
+- **Setup**: A `setUp` method initializes a `TFloatDoubleHash` instance with specific parameters before each test.
+- **Constructors**: Tests for different constructors ensure that the `no_entry_key` and `no_entry_value` are set correctly.
+- **Methods**: Each method in the class is tested for expected behavior, including edge cases.
+- **Serialization**: Tests for `writeExternal` and `readExternal` ensure that the object can be serialized and deserialized correctly.
+
+This test suite assumes that the `TFloatDoubleHash` class is abstract and requires a concrete subclass for instantiation. The anonymous subclass in the test suite provides the necessary implementation for testing purposes.

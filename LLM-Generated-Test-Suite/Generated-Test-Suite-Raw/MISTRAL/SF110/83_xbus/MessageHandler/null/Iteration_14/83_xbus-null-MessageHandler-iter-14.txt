@@ -1,0 +1,80 @@
+```java
+package net.sf.xbus.base.core;
+
+import net.sf.xbus.base.core.trace.Trace;
+import net.sf.xbus.base.core.strings.XStringSupport;
+import net.sf.xbus.base.core.config.Constants;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.*;
+import java.io.*;
+
+public class MessageHandlerTest {
+
+    private MessageHandler messageHandler;
+    private static final String BASE_NAME = "test";
+    private static final String TEST_DIR = "test/resources/";
+
+    @Before
+    public void setUp() {
+        // Ensure the test directory exists and contains the necessary properties files
+        new File(TEST_DIR).mkdirs();
+        createTestPropertiesFile(TEST_DIR + BASE_NAME + "_en_US.properties");
+
+        // Initialize the MessageHandler instance
+        messageHandler = MessageHandler.getInstance(BASE_NAME);
+    }
+
+    @Test
+    public void testGetMessage() {
+        List<String> params = Arrays.asList("param1", "param2");
+        String result = messageHandler.getMessage("test.key", params);
+        assertEquals("Test message with param1 and param2", result);
+    }
+
+    @Test
+    public void testGetMessageOptional() {
+        List<String> params = Arrays.asList("param1", "param2");
+        String result = messageHandler.getMessageOptional("test.key", params);
+        assertEquals("Test message with $1$ and $2$", result);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNullParams() {
+        String result = messageHandler.getMessageOptional("test.key", null);
+        assertEquals("Test message with $1$ and $2$", result);
+    }
+
+    @Test
+    public void testGetMessageOptionalWithNullKey() {
+        List<String> params = Arrays.asList("param1", "param2");
+        String result = messageHandler.getMessageOptional("non.existent.key", params);
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetMessageWithNullKey() {
+        List<String> params = Arrays.asList("param1", "param2");
+        String result = messageHandler.getMessage("non.existent.key", params);
+        assertEquals("Key: non.existent.key not found in message file", result);
+    }
+
+    @Test
+    public void testGetInstance() {
+        MessageHandler instance1 = MessageHandler.getInstance(BASE_NAME);
+        MessageHandler instance2 = MessageHandler.getInstance(BASE_NAME);
+        assertSame(instance1, instance2);
+    }
+
+    private void createTestPropertiesFile(String filePath) {
+        Properties props = new Properties();
+        props.setProperty("test.key", "Test message with $1$ and $2$");
+        try (FileOutputStream out = new FileOutputStream(filePath)) {
+            props.store(out, null);
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+    }
+}
+```

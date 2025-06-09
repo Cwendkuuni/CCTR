@@ -1,0 +1,120 @@
+To create a comprehensive JUnit 4 test suite for the `LagoonCLI` class, we need to consider testing the main method's behavior under various input scenarios, as well as the private methods `getProperty` and `showTime`. Since `getProperty` and `showTime` are private, we'll use reflection to test them. Here's a complete test suite:
+
+```java
+import nu.staldal.lagoon.LagoonCLI;
+import nu.staldal.lagoon.core.LagoonException;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
+
+public class LagoonCLITest {
+
+    private final PrintStream originalOut = System.out;
+    private final PrintStream originalErr = System.err;
+    private final InputStream originalIn = System.in;
+    private ByteArrayOutputStream outContent;
+    private ByteArrayOutputStream errContent;
+
+    @Before
+    public void setUpStreams() {
+        outContent = new ByteArrayOutputStream();
+        errContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+    }
+
+    @After
+    public void restoreStreams() {
+        System.setOut(originalOut);
+        System.setErr(originalErr);
+        System.setIn(originalIn);
+    }
+
+    @Test
+    public void testMainNoArgs() {
+        LagoonCLI.main(new String[]{});
+        assertTrue(outContent.toString().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainInvalidInterval() {
+        LagoonCLI.main(new String[]{"test.properties", "invalid"});
+        assertTrue(outContent.toString().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainNegativeInterval() {
+        LagoonCLI.main(new String[]{"test.properties", "-1"});
+        assertTrue(outContent.toString().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainFileNotFound() {
+        LagoonCLI.main(new String[]{"nonexistent.properties"});
+        assertTrue(errContent.toString().contains("File not found"));
+    }
+
+    @Test
+    public void testGetProperty() throws Exception {
+        Properties props = new Properties();
+        props.setProperty("testKey", "testValue");
+        LagoonCLI.class.getDeclaredField("properties").set(null, props);
+
+        Method getPropertyMethod = LagoonCLI.class.getDeclaredMethod("getProperty", String.class);
+        getPropertyMethod.setAccessible(true);
+
+        String value = (String) getPropertyMethod.invoke(null, "testKey");
+        assertEquals("testValue", value);
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyException() throws Exception {
+        Properties props = new Properties();
+        LagoonCLI.class.getDeclaredField("properties").set(null, props);
+
+        Method getPropertyMethod = LagoonCLI.class.getDeclaredMethod("getProperty", String.class);
+        getPropertyMethod.setAccessible(true);
+
+        getPropertyMethod.invoke(null, "missingKey");
+    }
+
+    @Test
+    public void testShowTimeMilliseconds() throws Exception {
+        Method showTimeMethod = LagoonCLI.class.getDeclaredMethod("showTime", long.class);
+        showTimeMethod.setAccessible(true);
+
+        showTimeMethod.invoke(null, 5000L);
+        assertTrue(outContent.toString().contains("in 5000 ms"));
+    }
+
+    @Test
+    public void testShowTimeSeconds() throws Exception {
+        Method showTimeMethod = LagoonCLI.class.getDeclaredMethod("showTime", long.class);
+        showTimeMethod.setAccessible(true);
+
+        showTimeMethod.invoke(null, 15000L);
+        assertTrue(outContent.toString().contains("in 15 s"));
+    }
+}
+```
+
+### Explanation:
+- **Stream Redirection**: We redirect `System.out` and `System.err` to capture printed output for assertions.
+- **Reflection**: Used to access and test private methods `getProperty` and `showTime`.
+- **Test Cases**:
+  - **`testMainNoArgs`**: Tests behavior when no arguments are provided.
+  - **`testMainInvalidInterval`**: Tests behavior with an invalid interval argument.
+  - **`testMainNegativeInterval`**: Tests behavior with a negative interval.
+  - **`testMainFileNotFound`**: Tests behavior when a non-existent file is specified.
+  - **`testGetProperty`**: Tests the `getProperty` method for a valid key.
+  - **`testGetPropertyException`**: Tests the `getProperty` method for an exception when a key is missing.
+  - **`testShowTimeMilliseconds`**: Tests `showTime` for output in milliseconds.
+  - **`testShowTimeSeconds`**: Tests `showTime` for output in seconds.
+
+This suite covers the main scenarios and edge cases for the `LagoonCLI` class.

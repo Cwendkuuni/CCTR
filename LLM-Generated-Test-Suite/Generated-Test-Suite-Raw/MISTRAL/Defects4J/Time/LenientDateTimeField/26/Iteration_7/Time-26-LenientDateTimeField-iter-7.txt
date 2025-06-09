@@ -1,0 +1,73 @@
+```java
+import static org.junit.Assert.*;
+import org.joda.time.Chronology;
+import org.joda.time.DateTimeField;
+import org.joda.time.chrono.ISOChronology;
+import org.joda.time.field.LenientDateTimeField;
+import org.joda.time.field.StrictDateTimeField;
+import org.junit.Before;
+import org.junit.Test;
+
+public class LenientDateTimeFieldTest {
+
+    private Chronology baseChronology;
+    private DateTimeField strictField;
+    private DateTimeField lenientField;
+
+    @Before
+    public void setUp() {
+        baseChronology = ISOChronology.getInstanceUTC();
+        strictField = new StrictDateTimeField(baseChronology.dayOfMonth());
+        lenientField = LenientDateTimeField.getInstance(strictField, baseChronology);
+    }
+
+    @Test
+    public void testGetInstance_NullField() {
+        assertNull(LenientDateTimeField.getInstance(null, baseChronology));
+    }
+
+    @Test
+    public void testGetInstance_AlreadyLenient() {
+        DateTimeField lenientField = LenientDateTimeField.getInstance(lenientField, baseChronology);
+        assertTrue(lenientField.isLenient());
+    }
+
+    @Test
+    public void testGetInstance_StrictField() {
+        DateTimeField lenientField = LenientDateTimeField.getInstance(strictField, baseChronology);
+        assertTrue(lenientField.isLenient());
+    }
+
+    @Test
+    public void testIsLenient() {
+        assertTrue(lenientField.isLenient());
+    }
+
+    @Test
+    public void testSet_InBounds() {
+        long instant = baseChronology.getDateTimeMillis(2023, 1, 1, 0, 0);
+        int value = 10;
+        long expected = baseChronology.getDateTimeMillis(2023, 1, 10, 0, 0);
+        long result = lenientField.set(instant, value);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testSet_OutOfBounds() {
+        long instant = baseChronology.getDateTimeMillis(2023, 1, 1, 0, 0);
+        int value = 40; // January has 31 days
+        long expected = baseChronology.getDateTimeMillis(2023, 2, 9, 0, 0); // 40 - 31 = 9 days into February
+        long result = lenientField.set(instant, value);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testSet_NegativeValue() {
+        long instant = baseChronology.getDateTimeMillis(2023, 1, 1, 0, 0);
+        int value = -5;
+        long expected = baseChronology.getDateTimeMillis(2022, 12, 27, 0, 0); // -5 days from January 1, 2023
+        long result = lenientField.set(instant, value);
+        assertEquals(expected, result);
+    }
+}
+```

@@ -1,0 +1,121 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import org.apache.commons.compress.archivers.tar.TarUtils;
+
+public class TarUtilsTest {
+
+    @Test
+    public void testParseOctal() {
+        byte[] buffer = {' ', '1', '2', '3', ' ', 0};
+        assertEquals(83L, TarUtils.parseOctal(buffer, 0, buffer.length));
+
+        byte[] bufferWithLeadingNUL = {0, '1', '2', '3', ' ', 0};
+        assertEquals(0L, TarUtils.parseOctal(bufferWithLeadingNUL, 0, bufferWithLeadingNUL.length));
+
+        byte[] bufferAllNUL = {0, 0, 0, 0, 0, 0};
+        assertEquals(0L, TarUtils.parseOctal(bufferAllNUL, 0, bufferAllNUL.length));
+
+        byte[] bufferInvalid = {' ', '1', '2', '8', ' ', 0};
+        try {
+            TarUtils.parseOctal(bufferInvalid, 0, bufferInvalid.length);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // Expected exception
+        }
+    }
+
+    @Test
+    public void testParseOctalOrBinary() {
+        byte[] bufferOctal = {' ', '1', '2', '3', ' ', 0};
+        assertEquals(83L, TarUtils.parseOctalOrBinary(bufferOctal, 0, bufferOctal.length));
+
+        byte[] bufferBinary = {(byte) 0x80, 0x01, 0x02};
+        assertEquals(258L, TarUtils.parseOctalOrBinary(bufferBinary, 0, bufferBinary.length));
+
+        byte[] bufferBinaryOverflow = {(byte) 0x80, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
+        try {
+            TarUtils.parseOctalOrBinary(bufferBinaryOverflow, 0, bufferBinaryOverflow.length);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // Expected exception
+        }
+    }
+
+    @Test
+    public void testParseBoolean() {
+        byte[] bufferTrue = {1};
+        assertTrue(TarUtils.parseBoolean(bufferTrue, 0));
+
+        byte[] bufferFalse = {0};
+        assertFalse(TarUtils.parseBoolean(bufferFalse, 0));
+    }
+
+    @Test
+    public void testParseName() {
+        byte[] buffer = {'t', 'e', 's', 't', 0, 'i', 'g', 'n', 'o', 'r', 'e'};
+        assertEquals("test", TarUtils.parseName(buffer, 0, buffer.length));
+    }
+
+    @Test
+    public void testFormatNameBytes() {
+        byte[] buffer = new byte[10];
+        int offset = TarUtils.formatNameBytes("test", buffer, 0, buffer.length);
+        assertEquals(10, offset);
+        assertEquals("test", new String(buffer, 0, 4));
+        for (int i = 4; i < buffer.length; i++) {
+            assertEquals(0, buffer[i]);
+        }
+    }
+
+    @Test
+    public void testFormatUnsignedOctalString() {
+        byte[] buffer = new byte[10];
+        TarUtils.formatUnsignedOctalString(83, buffer, 0, buffer.length);
+        assertEquals("0000000123", new String(buffer));
+    }
+
+    @Test
+    public void testFormatOctalBytes() {
+        byte[] buffer = new byte[10];
+        int offset = TarUtils.formatOctalBytes(83, buffer, 0, buffer.length);
+        assertEquals(10, offset);
+        assertEquals("000000012 ", new String(buffer));
+    }
+
+    @Test
+    public void testFormatLongOctalBytes() {
+        byte[] buffer = new byte[10];
+        int offset = TarUtils.formatLongOctalBytes(83, buffer, 0, buffer.length);
+        assertEquals(10, offset);
+        assertEquals("000000012 ", new String(buffer));
+    }
+
+    @Test
+    public void testFormatLongOctalOrBinaryBytes() {
+        byte[] buffer = new byte[10];
+        int offset = TarUtils.formatLongOctalOrBinaryBytes(83, buffer, 0, buffer.length);
+        assertEquals(10, offset);
+        assertEquals("000000012 ", new String(buffer));
+
+        byte[] bufferBinary = new byte[10];
+        offset = TarUtils.formatLongOctalOrBinaryBytes(Long.MAX_VALUE, bufferBinary, 0, bufferBinary.length);
+        assertEquals(10, offset);
+        assertTrue((bufferBinary[0] & 0x80) != 0);
+    }
+
+    @Test
+    public void testFormatCheckSumOctalBytes() {
+        byte[] buffer = new byte[10];
+        int offset = TarUtils.formatCheckSumOctalBytes(83, buffer, 0, buffer.length);
+        assertEquals(10, offset);
+        assertEquals("000000012\0 ", new String(buffer));
+    }
+
+    @Test
+    public void testComputeCheckSum() {
+        byte[] buffer = {'t', 'e', 's', 't'};
+        assertEquals(448L, TarUtils.computeCheckSum(buffer));
+    }
+}
+```

@@ -1,0 +1,84 @@
+package de.beiri22.stringincrementor.helper;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertArrayEquals;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class IndexedStringTest {
+
+    private IndexedString indexedString;
+
+    @Before
+    public void setUp() {
+        indexedString = new IndexedString("hello world");
+    }
+
+    @Test
+    public void testConstructor() {
+        // Test that the constructor initializes the values array correctly
+        char[] expectedValues = {'h', 'e', 'l', 'l', 'o', ' ', 'w', 'o', 'r', 'l', 'd'};
+        assertArrayEquals(expectedValues, getValues(indexedString));
+
+        // Test that the constructor initializes the index array correctly
+        int[][] index = getIndex(indexedString);
+        assertNotNull(index);
+        assertEquals(256, index.length);
+        assertArrayEquals(new int[]{0}, index['h']);
+        assertArrayEquals(new int[]{1}, index['e']);
+        assertArrayEquals(new int[]{2, 3, 9}, index['l']);
+        assertArrayEquals(new int[]{4, 7}, index['o']);
+        assertArrayEquals(new int[]{5}, index[' ']);
+        assertArrayEquals(new int[]{6}, index['w']);
+        assertArrayEquals(new int[]{8}, index['r']);
+        assertArrayEquals(new int[]{10}, index['d']);
+    }
+
+    @Test
+    public void testIndexOf() {
+        // Test finding a substring at the beginning
+        assertEquals(0, indexedString.indexOf("hello".toCharArray()));
+
+        // Test finding a substring in the middle
+        assertEquals(6, indexedString.indexOf("world".toCharArray()));
+
+        // Test finding a substring that does not exist
+        assertEquals(-1, indexedString.indexOf("bye".toCharArray()));
+
+        // Test finding a single character
+        assertEquals(4, indexedString.indexOf("o".toCharArray()));
+
+        // Test finding a substring with repeated characters
+        assertEquals(2, indexedString.indexOf("ll".toCharArray()));
+
+        // Test finding a substring that is the entire string
+        assertEquals(0, indexedString.indexOf("hello world".toCharArray()));
+
+        // Test finding a substring that is longer than the string
+        assertEquals(-1, indexedString.indexOf("hello world!".toCharArray()));
+    }
+
+    // Helper method to access private 'values' field
+    private char[] getValues(IndexedString indexedString) {
+        try {
+            java.lang.reflect.Field field = IndexedString.class.getDeclaredField("values");
+            field.setAccessible(true);
+            return (char[]) field.get(indexedString);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    // Helper method to access private 'index' field
+    private int[][] getIndex(IndexedString indexedString) {
+        try {
+            java.lang.reflect.Field field = IndexedString.class.getDeclaredField("index");
+            field.setAccessible(true);
+            return (int[][]) field.get(indexedString);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}

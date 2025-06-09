@@ -1,0 +1,109 @@
+```java
+package com.google.gson.internal.bind.util;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.Assert;
+
+import java.text.ParseException;
+import java.text.ParsePosition;
+import java.util.Date;
+import java.util.TimeZone;
+
+public class ISO8601UtilsTest {
+
+    private static final TimeZone TIMEZONE_UTC = TimeZone.getTimeZone("UTC");
+
+    @Before
+    public void setUp() {
+        // Any setup code if needed
+    }
+
+    @Test
+    public void testFormatDate() {
+        Date date = new Date(1609459200000L); // 2021-01-01T00:00:00Z
+        String formattedDate = ISO8601Utils.format(date);
+        Assert.assertEquals("2021-01-01T00:00:00Z", formattedDate);
+    }
+
+    @Test
+    public void testFormatDateWithMillis() {
+        Date date = new Date(1609459200123L); // 2021-01-01T00:00:00.123Z
+        String formattedDate = ISO8601Utils.format(date, true);
+        Assert.assertEquals("2021-01-01T00:00:00.123Z", formattedDate);
+    }
+
+    @Test
+    public void testFormatDateWithTimeZone() {
+        Date date = new Date(1609459200000L); // 2021-01-01T00:00:00Z
+        TimeZone tz = TimeZone.getTimeZone("GMT+02:00");
+        String formattedDate = ISO8601Utils.format(date, false, tz);
+        Assert.assertEquals("2020-12-31T22:00:00+02:00", formattedDate);
+    }
+
+    @Test
+    public void testParseDate() throws ParseException {
+        String dateString = "2021-01-01T00:00:00Z";
+        ParsePosition pos = new ParsePosition(0);
+        Date date = ISO8601Utils.parse(dateString, pos);
+        Assert.assertEquals(1609459200000L, date.getTime());
+    }
+
+    @Test
+    public void testParseDateWithMillis() throws ParseException {
+        String dateString = "2021-01-01T00:00:00.123Z";
+        ParsePosition pos = new ParsePosition(0);
+        Date date = ISO8601Utils.parse(dateString, pos);
+        Assert.assertEquals(1609459200123L, date.getTime());
+    }
+
+    @Test
+    public void testParseDateWithTimeZone() throws ParseException {
+        String dateString = "2020-12-31T22:00:00+02:00";
+        ParsePosition pos = new ParsePosition(0);
+        Date date = ISO8601Utils.parse(dateString, pos);
+        Assert.assertEquals(1609459200000L, date.getTime());
+    }
+
+    @Test(expected = ParseException.class)
+    public void testParseInvalidDate() throws ParseException {
+        String dateString = "invalid-date";
+        ParsePosition pos = new ParsePosition(0);
+        ISO8601Utils.parse(dateString, pos);
+    }
+
+    @Test
+    public void testCheckOffset() {
+        String value = "2021-01-01T00:00:00Z";
+        Assert.assertTrue(ISO8601Utils.checkOffset(value, 4, '-'));
+        Assert.assertFalse(ISO8601Utils.checkOffset(value, 4, 'T'));
+    }
+
+    @Test
+    public void testParseInt() {
+        String value = "2021";
+        int result = ISO8601Utils.parseInt(value, 0, 4);
+        Assert.assertEquals(2021, result);
+    }
+
+    @Test(expected = NumberFormatException.class)
+    public void testParseIntInvalid() {
+        String value = "abcd";
+        ISO8601Utils.parseInt(value, 0, 4);
+    }
+
+    @Test
+    public void testPadInt() {
+        StringBuilder buffer = new StringBuilder();
+        ISO8601Utils.padInt(buffer, 5, 2);
+        Assert.assertEquals("05", buffer.toString());
+    }
+
+    @Test
+    public void testIndexOfNonDigit() {
+        String value = "1234abcd";
+        int index = ISO8601Utils.indexOfNonDigit(value, 0);
+        Assert.assertEquals(4, index);
+    }
+}
+```

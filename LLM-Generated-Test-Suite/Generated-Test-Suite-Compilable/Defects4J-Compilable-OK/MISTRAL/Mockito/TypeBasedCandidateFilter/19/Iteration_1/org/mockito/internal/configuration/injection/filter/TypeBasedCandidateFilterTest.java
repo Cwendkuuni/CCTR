@@ -1,0 +1,83 @@
+package org.mockito.internal.configuration.injection.filter;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.OngoingInjecter;
+import org.mockito.internal.configuration.injection.filter.TypeBasedCandidateFilter;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TypeBasedCandidateFilterTest {
+
+    private MockCandidateFilter mockNextFilter;
+    private TypeBasedCandidateFilter typeBasedCandidateFilter;
+    private Field mockField;
+    private Object mockFieldInstance;
+
+    @Before
+    public void setUp() throws NoSuchFieldException {
+        mockNextFilter = mock(MockCandidateFilter.class);
+        typeBasedCandidateFilter = new TypeBasedCandidateFilter(mockNextFilter);
+        mockField = getClass().getDeclaredField("mockFieldInstance");
+        mockFieldInstance = new Object();
+    }
+
+    @Test
+    public void testFilterCandidate_NoMatches() {
+        Collection<Object> mocks = Arrays.asList(new Object(), new Object());
+        when(mockNextFilter.filterCandidate(anyCollection(), eq(mockField), eq(mockFieldInstance)))
+                .thenReturn(mock(OngoingInjecter.class));
+
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, mockField, mockFieldInstance);
+
+        verify(mockNextFilter).filterCandidate(Collections.emptyList(), mockField, mockFieldInstance);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testFilterCandidate_OneMatch() {
+        Object matchingMock = new Object();
+        Collection<Object> mocks = Arrays.asList(new Object(), matchingMock);
+        when(mockNextFilter.filterCandidate(anyCollection(), eq(mockField), eq(mockFieldInstance)))
+                .thenReturn(mock(OngoingInjecter.class));
+
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, mockField, mockFieldInstance);
+
+        verify(mockNextFilter).filterCandidate(Arrays.asList(matchingMock), mockField, mockFieldInstance);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testFilterCandidate_MultipleMatches() {
+        Object matchingMock1 = new Object();
+        Object matchingMock2 = new Object();
+        Collection<Object> mocks = Arrays.asList(new Object(), matchingMock1, matchingMock2);
+        when(mockNextFilter.filterCandidate(anyCollection(), eq(mockField), eq(mockFieldInstance)))
+                .thenReturn(mock(OngoingInjecter.class));
+
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, mockField, mockFieldInstance);
+
+        verify(mockNextFilter).filterCandidate(Arrays.asList(matchingMock1, matchingMock2), mockField, mockFieldInstance);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testFilterCandidate_EmptyMocks() {
+        Collection<Object> mocks = Collections.emptyList();
+        when(mockNextFilter.filterCandidate(anyCollection(), eq(mockField), eq(mockFieldInstance)))
+                .thenReturn(mock(OngoingInjecter.class));
+
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, mockField, mockFieldInstance);
+
+        verify(mockNextFilter).filterCandidate(Collections.emptyList(), mockField, mockFieldInstance);
+        assertNotNull(result);
+    }
+}

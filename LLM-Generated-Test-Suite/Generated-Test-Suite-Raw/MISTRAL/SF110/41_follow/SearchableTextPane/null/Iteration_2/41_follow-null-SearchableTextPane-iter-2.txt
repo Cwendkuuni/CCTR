@@ -1,0 +1,108 @@
+```java
+package ghm.follow.search;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import javax.swing.*;
+import java.awt.*;
+import java.util.List;
+import java.util.logging.Logger;
+import javax.swing.text.BadLocationException;
+
+public class SearchableTextPaneTest {
+
+    private SearchableTextPane searchableTextPane;
+    private Font font;
+    private int tabSize;
+
+    @Before
+    public void setUp() {
+        font = new Font("Arial", Font.PLAIN, 12);
+        tabSize = 4;
+        searchableTextPane = new SearchableTextPane(font, tabSize);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(searchableTextPane);
+        assertEquals(font, searchableTextPane.getFont());
+        assertEquals(tabSize, searchableTextPane.getTabSize());
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth() {
+        JScrollPane scrollPane = new JScrollPane(searchableTextPane);
+        searchableTextPane.setSize(200, 200);
+        scrollPane.setSize(300, 300);
+        assertTrue(searchableTextPane.getScrollableTracksViewportWidth());
+
+        searchableTextPane.setSize(400, 400);
+        assertFalse(searchableTextPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testHighlight() throws BadLocationException {
+        searchableTextPane.setText("This is a test. This is only a test.");
+        List<LineResult> results = searchableTextPane.highlight("test", 0);
+        assertNotNull(results);
+        assertEquals(2, results.size());
+
+        results = searchableTextPane.highlight("nonexistent", 0);
+        assertTrue(results.isEmpty());
+    }
+
+    @Test
+    public void testRemoveHighlights() {
+        searchableTextPane.setText("This is a test.");
+        searchableTextPane.highlight("test", 0);
+        searchableTextPane.removeHighlights();
+        assertTrue(searchableTextPane.getHighlighter().getHighlights().length == 0);
+    }
+
+    @Test
+    public void testSearch() {
+        searchableTextPane.setText("This is a test. This is only a test.");
+        int pos = searchableTextPane.search("test");
+        assertEquals(10, pos);
+
+        pos = searchableTextPane.search("test");
+        assertEquals(28, pos);
+
+        pos = searchableTextPane.search("nonexistent");
+        assertEquals(-1, pos);
+    }
+
+    @Test
+    public void testSearchWithStartPos() {
+        searchableTextPane.setText("This is a test. This is only a test.");
+        int pos = searchableTextPane.search("test", 0);
+        assertEquals(10, pos);
+
+        pos = searchableTextPane.search("test", 11);
+        assertEquals(28, pos);
+
+        pos = searchableTextPane.search("nonexistent", 0);
+        assertEquals(-1, pos);
+    }
+
+    @Test
+    public void testConvertWords2Lines() throws BadLocationException {
+        searchableTextPane.setText("This is a test.\nThis is only a test.");
+        List<WordResult> words = List.of(new WordResult(10, 14), new WordResult(31, 35));
+        List<LineResult> lines = searchableTextPane.convertWords2Lines(words);
+        assertNotNull(lines);
+        assertEquals(2, lines.size());
+    }
+
+    @Test
+    public void testUpdateWordResult() throws BadLocationException {
+        searchableTextPane.setText("This is a test.\nThis is only a test.");
+        WordResult wordResult = new WordResult(10, 14);
+        LineResult lineResult = new LineResult(0, 0, 20);
+        searchableTextPane.updateWordResult(wordResult, lineResult);
+        assertEquals(1, wordResult.parent.lineNumber);
+        assertEquals(0, wordResult.getLineOffset());
+    }
+}
+```

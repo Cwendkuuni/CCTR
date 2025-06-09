@@ -1,0 +1,135 @@
+To create a comprehensive JUnit 4 test suite for the `FoxHuntFrame` class, we need to consider testing the main functionalities of the class, including the `addPoint` method, the `actionPerformed` method, and the error handling in the `loadLandmarks` method. We will also need to mock or stub certain components, such as the `FoxCalc` and `HuntDisplay` classes, since they are not provided. Additionally, we will simulate user interactions with the GUI components.
+
+Here is a JUnit 4 test suite for the `FoxHuntFrame` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.io.*;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame foxHuntFrame;
+    private HuntDisplay mockDisplay;
+    private FoxCalc mockFoxCalc;
+
+    @Before
+    public void setUp() {
+        mockDisplay = mock(HuntDisplay.class);
+        mockFoxCalc = mock(FoxCalc.class);
+        foxHuntFrame = new FoxHuntFrame();
+        foxHuntFrame.display = mockDisplay;
+    }
+
+    @Test
+    public void testAddPoint() {
+        // Set up input values
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+
+        // Mock the behavior of FoxCalc
+        TrigPoint mockTrigPoint = new TrigPoint(34.0522, -118.2437, 45);
+        when(mockFoxCalc.calcFox(any(TrigPoint.class), any(TrigPoint.class))).thenReturn(mockTrigPoint);
+
+        // Add a point
+        foxHuntFrame.addPoint();
+
+        // Verify that the point was added to the display
+        verify(mockDisplay).addPoint(any(TrigPoint.class));
+
+        // Verify that the fox point was calculated and added
+        if (foxHuntFrame.points.size() > 1) {
+            verify(mockDisplay, times(2)).addPoint(any(TrigPoint.class));
+        }
+    }
+
+    @Test
+    public void testActionPerformed() {
+        // Create a mock ActionEvent
+        ActionEvent mockEvent = mock(ActionEvent.class);
+
+        // Call actionPerformed
+        foxHuntFrame.actionPerformed(mockEvent);
+
+        // Verify that addPoint was called
+        verify(mockDisplay).addPoint(any(TrigPoint.class));
+    }
+
+    @Test
+    public void testLoadLandmarksFileNotFound() {
+        // Redirect System.exit to prevent the test from exiting
+        SecurityManager securityManager = new SecurityManager() {
+            @Override
+            public void checkExit(int status) {
+                throw new SecurityException("System exit not allowed");
+            }
+
+            @Override
+            public void checkPermission(java.security.Permission perm) {
+            }
+        };
+        System.setSecurityManager(securityManager);
+
+        try {
+            foxHuntFrame.loadLandmarks();
+            fail("Expected SecurityException to be thrown");
+        } catch (SecurityException e) {
+            assertEquals("System exit not allowed", e.getMessage());
+        } finally {
+            System.setSecurityManager(null);
+        }
+    }
+
+    @Test
+    public void testErrorHandling() {
+        // Mock JOptionPane to simulate user interaction
+        JOptionPane mockOptionPane = mock(JOptionPane.class);
+        when(mockOptionPane.showOptionDialog(any(), anyString(), anyString(), anyInt(), anyInt(), any(), any(), any()))
+                .thenReturn(0); // Simulate "Abort" option
+
+        // Redirect System.exit to prevent the test from exiting
+        SecurityManager securityManager = new SecurityManager() {
+            @Override
+            public void checkExit(int status) {
+                throw new SecurityException("System exit not allowed");
+            }
+
+            @Override
+            public void checkPermission(java.security.Permission perm) {
+            }
+        };
+        System.setSecurityManager(securityManager);
+
+        try {
+            foxHuntFrame.error("Test error message");
+            fail("Expected SecurityException to be thrown");
+        } catch (SecurityException e) {
+            assertEquals("System exit not allowed", e.getMessage());
+        } finally {
+            System.setSecurityManager(null);
+        }
+    }
+}
+```
+
+### Explanation:
+
+1. **Mocking and Setup**: We use Mockito to mock the `HuntDisplay` and `FoxCalc` classes, as they are not provided. This allows us to verify interactions with these components.
+
+2. **Test `addPoint` Method**: We simulate user input by setting text in the `theta`, `lat`, and `lon` text fields. We then call `addPoint` and verify that the `HuntDisplay`'s `addPoint` method is called with the correct arguments.
+
+3. **Test `actionPerformed` Method**: We simulate an `ActionEvent` and verify that `addPoint` is called when the action is performed.
+
+4. **Test `loadLandmarks` Method**: We test the error handling for a missing landmarks file by redirecting `System.exit` and verifying that an exception is thrown.
+
+5. **Test `error` Method**: We simulate user interaction with a mocked `JOptionPane` and verify that the correct option leads to a system exit.
+
+Note: This test suite assumes that the `FoxCalc` and `HuntDisplay` classes are available and that the `TrigPoint` class has a constructor and methods as used in the test. Adjustments may be needed based on the actual implementations of these classes.

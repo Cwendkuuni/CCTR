@@ -1,0 +1,154 @@
+```java
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.ExtendedBufferedReader;
+import org.apache.commons.csv.Token;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringReader;
+
+import static org.junit.Assert.*;
+
+public class LexerTest {
+
+    private Lexer lexer;
+    private ExtendedBufferedReader reader;
+    private CSVFormat format;
+
+    @Before
+    public void setUp() {
+        format = CSVFormat.DEFAULT;
+        reader = new ExtendedBufferedReader(new StringReader(""));
+        lexer = new Lexer(format, reader) {
+            @Override
+            Token nextToken(Token reusableToken) throws IOException {
+                return null;
+            }
+        };
+    }
+
+    @Test
+    public void testMapNullToDisabled() {
+        assertEquals('\ufffe', lexer.mapNullToDisabled(null));
+        assertEquals('a', lexer.mapNullToDisabled('a'));
+    }
+
+    @Test
+    public void testGetLineNumber() {
+        assertEquals(0, lexer.getLineNumber());
+    }
+
+    @Test
+    public void testReadEscape() throws IOException {
+        reader = new ExtendedBufferedReader(new StringReader("\\n"));
+        lexer = new Lexer(format, reader) {
+            @Override
+            Token nextToken(Token reusableToken) throws IOException {
+                return null;
+            }
+        };
+        reader.read(); // Simulate reading the escape character
+        assertEquals('\n', lexer.readEscape());
+
+        reader = new ExtendedBufferedReader(new StringReader("\\r"));
+        lexer = new Lexer(format, reader) {
+            @Override
+            Token nextToken(Token reusableToken) throws IOException {
+                return null;
+            }
+        };
+        reader.read(); // Simulate reading the escape character
+        assertEquals('\r', lexer.readEscape());
+    }
+
+    @Test(expected = IOException.class)
+    public void testReadEscapeEOF() throws IOException {
+        reader = new ExtendedBufferedReader(new StringReader("\\"));
+        lexer = new Lexer(format, reader) {
+            @Override
+            Token nextToken(Token reusableToken) throws IOException {
+                return null;
+            }
+        };
+        reader.read(); // Simulate reading the escape character
+        lexer.readEscape();
+    }
+
+    @Test
+    public void testTrimTrailingSpaces() {
+        StringBuilder buffer = new StringBuilder("test   ");
+        lexer.trimTrailingSpaces(buffer);
+        assertEquals("test", buffer.toString());
+
+        buffer = new StringBuilder("   ");
+        lexer.trimTrailingSpaces(buffer);
+        assertEquals("", buffer.toString());
+    }
+
+    @Test
+    public void testReadEndOfLine() throws IOException {
+        reader = new ExtendedBufferedReader(new StringReader("\r\n"));
+        lexer = new Lexer(format, reader) {
+            @Override
+            Token nextToken(Token reusableToken) throws IOException {
+                return null;
+            }
+        };
+        assertTrue(lexer.readEndOfLine('\r'));
+
+        reader = new ExtendedBufferedReader(new StringReader("\n"));
+        lexer = new Lexer(format, reader) {
+            @Override
+            Token nextToken(Token reusableToken) throws IOException {
+                return null;
+            }
+        };
+        assertTrue(lexer.readEndOfLine('\n'));
+    }
+
+    @Test
+    public void testIsWhitespace() {
+        assertTrue(lexer.isWhitespace(' '));
+        assertFalse(lexer.isWhitespace(format.getDelimiter()));
+    }
+
+    @Test
+    public void testIsStartOfLine() {
+        assertTrue(lexer.isStartOfLine('\n'));
+        assertTrue(lexer.isStartOfLine('\r'));
+        assertTrue(lexer.isStartOfLine(Constants.UNDEFINED));
+        assertFalse(lexer.isStartOfLine('a'));
+    }
+
+    @Test
+    public void testIsEndOfFile() {
+        assertTrue(lexer.isEndOfFile(Constants.END_OF_STREAM));
+        assertFalse(lexer.isEndOfFile('a'));
+    }
+
+    @Test
+    public void testIsDelimiter() {
+        assertTrue(lexer.isDelimiter(format.getDelimiter()));
+        assertFalse(lexer.isDelimiter('a'));
+    }
+
+    @Test
+    public void testIsEscape() {
+        assertTrue(lexer.isEscape(format.getEscape()));
+        assertFalse(lexer.isEscape('a'));
+    }
+
+    @Test
+    public void testIsQuoteChar() {
+        assertTrue(lexer.isQuoteChar(format.getQuoteChar()));
+        assertFalse(lexer.isQuoteChar('a'));
+    }
+
+    @Test
+    public void testIsCommentStart() {
+        assertTrue(lexer.isCommentStart(format.getCommentStart()));
+        assertFalse(lexer.isCommentStart('a'));
+    }
+}
+```

@@ -1,0 +1,123 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import net.sf.xbus.base.core.MessageHandler;
+import java.util.*;
+
+public class MessageHandlerTest {
+
+    private MessageHandler messageHandler;
+
+    @Before
+    public void setUp() {
+        messageHandler = MessageHandler.getInstance("testBasename");
+    }
+
+    @Test
+    public void testGetMessage_KeyFound() {
+        // Assuming there is a key "testKey" in the message file with value "Test Message"
+        String key = "testKey";
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        String expectedMessage = "Test Message";
+
+        String result = messageHandler.getMessage(key, params);
+
+        assertEquals(expectedMessage, result);
+    }
+
+    @Test
+    public void testGetMessage_KeyNotFound() {
+        String key = "nonExistentKey";
+        List<String> params = new ArrayList<>();
+        String expectedMessage = "Key: " + key + " not found in message file";
+
+        String result = messageHandler.getMessage(key, params);
+
+        assertEquals(expectedMessage, result);
+    }
+
+    @Test
+    public void testGetMessageOptional_KeyFound() {
+        // Assuming there is a key "testKey" in the message file with value "Test Message $1$"
+        String key = "testKey";
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        String expectedMessage = "Test Message param1";
+
+        String result = messageHandler.getMessageOptional(key, params);
+
+        assertEquals(expectedMessage, result);
+    }
+
+    @Test
+    public void testGetMessageOptional_KeyNotFound() {
+        String key = "nonExistentKey";
+        List<String> params = new ArrayList<>();
+
+        String result = messageHandler.getMessageOptional(key, params);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetMessageOptional_NullParams() {
+        // Assuming there is a key "testKey" in the message file with value "Test Message"
+        String key = "testKey";
+        String expectedMessage = "Test Message";
+
+        String result = messageHandler.getMessageOptional(key, null);
+
+        assertEquals(expectedMessage, result);
+    }
+
+    @Test
+    public void testGetInstance_NewInstance() {
+        String basename = "newBasename";
+        MessageHandler instance = MessageHandler.getInstance(basename);
+
+        assertNotNull(instance);
+        assertSame(instance, MessageHandler.getInstance(basename));
+    }
+
+    @Test
+    public void testGetInstance_ExistingInstance() {
+        String basename = "testBasename";
+        MessageHandler instance1 = MessageHandler.getInstance(basename);
+        MessageHandler instance2 = MessageHandler.getInstance(basename);
+
+        assertSame(instance1, instance2);
+    }
+
+    @Test
+    public void testAddMessages_ValidFiles() {
+        // This test assumes the presence of valid message files in the specified directories
+        // and that the MessageHandler constructor correctly initializes the mMessages Hashtable.
+        String basename = "testBasename";
+        MessageHandler instance = new MessageHandler(basename);
+
+        assertNotNull(instance.mMessages);
+        assertFalse(instance.mMessages.isEmpty());
+    }
+
+    @Test
+    public void testMessagesFilter_Accept() {
+        String prefix = "testPrefix";
+        String postfix = "_en_US.properties";
+        MessageHandler.MessagesFilter filter = new MessageHandler.MessagesFilter(prefix, postfix);
+
+        assertTrue(filter.accept(null, "testPrefix_en_US.properties"));
+    }
+
+    @Test
+    public void testMessagesFilter_Reject() {
+        String prefix = "testPrefix";
+        String postfix = "_en_US.properties";
+        MessageHandler.MessagesFilter filter = new MessageHandler.MessagesFilter(prefix, postfix);
+
+        assertFalse(filter.accept(null, "wrongPrefix_en_US.properties"));
+        assertFalse(filter.accept(null, "testPrefix_wrong_postfix.properties"));
+    }
+}
+```

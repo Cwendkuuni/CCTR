@@ -1,0 +1,127 @@
+```java
+import org.jdom2.Namespace;
+import org.jdom2.Element;
+import org.jdom2.Attribute;
+import org.jdom2.util.NamespaceStack;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.Iterator;
+
+public class NamespaceStackTest {
+
+    private NamespaceStack namespaceStack;
+    private Namespace ns1;
+    private Namespace ns2;
+    private Namespace ns3;
+    private Element element;
+    private Attribute attribute;
+
+    @Before
+    public void setUp() {
+        namespaceStack = new NamespaceStack();
+        ns1 = Namespace.getNamespace("http://example.com/ns1");
+        ns2 = Namespace.getNamespace("http://example.com/ns2");
+        ns3 = Namespace.getNamespace("http://example.com/ns3");
+        element = new Element("root", ns1);
+        attribute = new Attribute("attr", "value", ns2);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(namespaceStack);
+        assertEquals(0, namespaceStack.getScope().length);
+    }
+
+    @Test
+    public void testPushElement() {
+        namespaceStack.push(element);
+        Namespace[] scope = namespaceStack.getScope();
+        assertEquals(1, scope.length);
+        assertEquals(ns1, scope[0]);
+    }
+
+    @Test
+    public void testPushAttribute() {
+        namespaceStack.push(attribute);
+        Namespace[] scope = namespaceStack.getScope();
+        assertEquals(1, scope.length);
+        assertEquals(ns2, scope[0]);
+    }
+
+    @Test
+    public void testPushPop() {
+        namespaceStack.push(element);
+        namespaceStack.push(attribute);
+        namespaceStack.pop();
+        Namespace[] scope = namespaceStack.getScope();
+        assertEquals(1, scope.length);
+        assertEquals(ns1, scope[0]);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testPopEmptyStack() {
+        namespaceStack.pop();
+    }
+
+    @Test
+    public void testAddedForward() {
+        namespaceStack.push(element);
+        Iterable<Namespace> added = namespaceStack.addedForward();
+        Iterator<Namespace> iterator = added.iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals(ns1, iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testAddedReverse() {
+        namespaceStack.push(element);
+        Iterable<Namespace> added = namespaceStack.addedReverse();
+        Iterator<Namespace> iterator = added.iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals(ns1, iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testIterator() {
+        namespaceStack.push(element);
+        Iterator<Namespace> iterator = namespaceStack.iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals(ns1, iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test
+    public void testGetScope() {
+        namespaceStack.push(element);
+        Namespace[] scope = namespaceStack.getScope();
+        assertEquals(1, scope.length);
+        assertEquals(ns1, scope[0]);
+    }
+
+    @Test
+    public void testIsInScope() {
+        namespaceStack.push(element);
+        assertTrue(namespaceStack.isInScope(ns1));
+        assertFalse(namespaceStack.isInScope(ns2));
+    }
+
+    @Test
+    public void testBinarySearch() {
+        Namespace[] data = {ns1, ns2, ns3};
+        int index = NamespaceStack.binarySearch(data, 0, data.length, ns2);
+        assertEquals(1, index);
+    }
+
+    @Test
+    public void testCheckNamespace() {
+        Namespace[] scope = {ns1};
+        Namespace[] newScope = NamespaceStack.checkNamespace(null, ns2, scope);
+        assertEquals(2, newScope.length);
+        assertEquals(ns2, newScope[0]);
+        assertEquals(ns1, newScope[1]);
+    }
+}
+```

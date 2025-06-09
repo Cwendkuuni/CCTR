@@ -1,0 +1,104 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import net.sourceforge.beanbin.reflect.ReflectionSearch;
+import net.sourceforge.beanbin.search.*;
+import net.sourceforge.beanbin.query.*;
+
+public class ReflectionSearchTest {
+
+    private ReflectionSearch reflectionSearch;
+    private Class<?> testClass;
+
+    @Before
+    public void setUp() {
+        testClass = TestClass.class;
+        reflectionSearch = new ReflectionSearch(testClass);
+    }
+
+    @Test
+    public void testHasAnnotationWithExactMatch() {
+        assertTrue(reflectionSearch.hasAnnotation("@TestAnnotation"));
+    }
+
+    @Test
+    public void testHasAnnotationWithWildcardMatch() {
+        assertTrue(reflectionSearch.hasAnnotation("@Test*"));
+    }
+
+    @Test
+    public void testHasAnnotationWithNoMatch() {
+        assertFalse(reflectionSearch.hasAnnotation("@NonExistent"));
+    }
+
+    @Test
+    public void testMethodsThatHave() throws BeanBinException {
+        ReflectionSearch result = reflectionSearch.methodsThatHave("testMethod");
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testMethodsThatDontHave() throws BeanBinException {
+        ReflectionSearch result = reflectionSearch.methodsThatDontHave("nonExistentMethod");
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testAnd() {
+        ReflectionSearch result = reflectionSearch.and();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOr() {
+        ReflectionSearch result = reflectionSearch.or();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testGetMethods() throws BeanBinException {
+        List<Method> methods = reflectionSearch.getMethods();
+        assertNotNull(methods);
+    }
+
+    @Test
+    public void testIntersect() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        Method method = Mockito.mock(Method.class);
+        master.add(method);
+        toAdd.add(method);
+
+        reflectionSearch.intersect(master, toAdd);
+        assertEquals(1, master.size());
+    }
+
+    @Test
+    public void testUnion() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        Method method = Mockito.mock(Method.class);
+        toAdd.add(method);
+
+        reflectionSearch.union(master, toAdd);
+        assertEquals(1, master.size());
+    }
+
+    // Dummy class and annotation for testing purposes
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface TestAnnotation {}
+
+    @TestAnnotation
+    private static class TestClass {
+        public void testMethod() {}
+    }
+}
+```
+
+This test suite uses JUnit 4 to test the `ReflectionSearch` class. It includes tests for each public method and some protected methods, using a dummy class and annotation to simulate real-world scenarios. The `Mockito` library is used to mock `Method` objects for testing `intersect` and `union` methods.

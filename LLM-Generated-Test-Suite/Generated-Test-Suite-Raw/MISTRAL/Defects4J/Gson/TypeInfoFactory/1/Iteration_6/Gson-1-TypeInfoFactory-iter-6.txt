@@ -1,0 +1,233 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `TypeInfoFactory` class. This test suite includes tests for all public methods and some private methods via reflection.
+
+```java
+package com.google.gson;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.lang.reflect.WildcardType;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class TypeInfoFactoryTest {
+
+    private TypeInfoFactory typeInfoFactory;
+
+    @Before
+    public void setUp() {
+        typeInfoFactory = new TypeInfoFactory();
+    }
+
+    @Test
+    public void testGetTypeInfoForArray() {
+        Type arrayType = new TypeToken<String[]>() {}.getType();
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(arrayType);
+        assertNotNull(typeInfoArray);
+        assertEquals(arrayType, typeInfoArray.getType());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArray_NonArrayType() {
+        Type nonArrayType = String.class;
+        TypeInfoFactory.getTypeInfoForArray(nonArrayType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField() throws NoSuchFieldException {
+        class TestClass<T> {
+            T field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeDefiningF = new TypeToken<TestClass<String>>() {}.getType();
+
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+        assertNotNull(typeInfo);
+        assertEquals(String.class, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetActualType_Class() throws NoSuchFieldException {
+        class TestClass {
+            String field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeToEvaluate = field.getGenericType();
+        Type parentType = TestClass.class;
+        Class<?> rawParentClass = TestClass.class;
+
+        Type actualType = invokeGetActualType(typeToEvaluate, parentType, rawParentClass);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test
+    public void testGetActualType_ParameterizedType() throws NoSuchFieldException {
+        class TestClass<T> {
+            List<T> field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeToEvaluate = field.getGenericType();
+        Type parentType = new TypeToken<TestClass<String>>() {}.getType();
+        Class<?> rawParentClass = TestClass.class;
+
+        Type actualType = invokeGetActualType(typeToEvaluate, parentType, rawParentClass);
+        assertTrue(actualType instanceof ParameterizedType);
+        ParameterizedType parameterizedType = (ParameterizedType) actualType;
+        assertEquals(List.class, parameterizedType.getRawType());
+        assertEquals(String.class, parameterizedType.getActualTypeArguments()[0]);
+    }
+
+    @Test
+    public void testGetActualType_GenericArrayType() throws NoSuchFieldException {
+        class TestClass<T> {
+            T[] field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeToEvaluate = field.getGenericType();
+        Type parentType = new TypeToken<TestClass<String>>() {}.getType();
+        Class<?> rawParentClass = TestClass.class;
+
+        Type actualType = invokeGetActualType(typeToEvaluate, parentType, rawParentClass);
+        assertTrue(actualType instanceof GenericArrayType);
+        assertEquals(String[].class, actualType);
+    }
+
+    @Test
+    public void testGetActualType_TypeVariable() throws NoSuchFieldException {
+        class TestClass<T> {
+            T field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeToEvaluate = field.getGenericType();
+        Type parentType = new TypeToken<TestClass<String>>() {}.getType();
+        Class<?> rawParentClass = TestClass.class;
+
+        Type actualType = invokeGetActualType(typeToEvaluate, parentType, rawParentClass);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetActualType_TypeVariable_NonParameterizedType() throws NoSuchFieldException {
+        class TestClass<T> {
+            T field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeToEvaluate = field.getGenericType();
+        Type parentType = TestClass.class;
+        Class<?> rawParentClass = TestClass.class;
+
+        invokeGetActualType(typeToEvaluate, parentType, rawParentClass);
+    }
+
+    @Test
+    public void testGetActualType_WildcardType() throws NoSuchFieldException {
+        class TestClass<T> {
+            List<? extends T> field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeToEvaluate = field.getGenericType();
+        Type parentType = new TypeToken<TestClass<String>>() {}.getType();
+        Class<?> rawParentClass = TestClass.class;
+
+        Type actualType = invokeGetActualType(typeToEvaluate, parentType, rawParentClass);
+        assertTrue(actualType instanceof WildcardType);
+        WildcardType wildcardType = (WildcardType) actualType;
+        assertEquals(String.class, wildcardType.getUpperBounds()[0]);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetActualType_UnsupportedType() {
+        Type typeToEvaluate = new Type() {};
+        Type parentType = String.class;
+        Class<?> rawParentClass = String.class;
+
+        invokeGetActualType(typeToEvaluate, parentType, rawParentClass);
+    }
+
+    @Test
+    public void testExtractRealTypes() {
+        Type[] actualTypeArguments = new Type[]{String.class, Integer.class};
+        Type parentType = String.class;
+        Class<?> rawParentClass = String.class;
+
+        Type[] realTypes = invokeExtractRealTypes(actualTypeArguments, parentType, rawParentClass);
+        assertArrayEquals(actualTypeArguments, realTypes);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testExtractRealTypes_NullArguments() {
+        Type[] actualTypeArguments = null;
+        Type parentType = String.class;
+        Class<?> rawParentClass = String.class;
+
+        invokeExtractRealTypes(actualTypeArguments, parentType, rawParentClass);
+    }
+
+    @Test
+    public void testGetIndex() {
+        TypeVariable<?>[] types = new TypeVariable<?>[]{String.class.getTypeParameters()[0]};
+        TypeVariable<?> type = String.class.getTypeParameters()[0];
+
+        int index = invokeGetIndex(types, type);
+        assertEquals(0, index);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetIndex_TypeVariableNotFound() {
+        TypeVariable<?>[] types = new TypeVariable<?>[]{String.class.getTypeParameters()[0]};
+        TypeVariable<?> type = Integer.class.getTypeParameters()[0];
+
+        invokeGetIndex(types, type);
+    }
+
+    private Type invokeGetActualType(Type typeToEvaluate, Type parentType, Class<?> rawParentClass) {
+        try {
+            java.lang.reflect.Method method = TypeInfoFactory.class.getDeclaredMethod(
+                    "getActualType", Type.class, Type.class, Class.class);
+            method.setAccessible(true);
+            return (Type) method.invoke(typeInfoFactory, typeToEvaluate, parentType, rawParentClass);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private Type[] invokeExtractRealTypes(Type[] actualTypeArguments, Type parentType, Class<?> rawParentClass) {
+        try {
+            java.lang.reflect.Method method = TypeInfoFactory.class.getDeclaredMethod(
+                    "extractRealTypes", Type[].class, Type.class, Class.class);
+            method.setAccessible(true);
+            return (Type[]) method.invoke(typeInfoFactory, actualTypeArguments, parentType, rawParentClass);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private int invokeGetIndex(TypeVariable<?>[] types, TypeVariable<?> type) {
+        try {
+            java.lang.reflect.Method method = TypeInfoFactory.class.getDeclaredMethod(
+                    "getIndex", TypeVariable[].class, TypeVariable.class);
+            method.setAccessible(true);
+            return (int) method.invoke(typeInfoFactory, types, type);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
+
+This test suite covers the public methods `getTypeInfoForArray` and `getTypeInfoForField`, as well as the private methods `getActualType`, `extractRealTypes`, and `getIndex` using reflection. Each test case verifies the expected behavior and handles edge cases appropriately.

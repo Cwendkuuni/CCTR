@@ -1,0 +1,111 @@
+```java
+package com.puppycrawl.tools.checkstyle.api;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.List;
+
+public class FileTextTest {
+
+    private FileText fileText;
+    private File testFile;
+
+    @Before
+    public void setUp() throws IOException {
+        testFile = new File("testFile.txt");
+        List<String> lines = Arrays.asList("Line 1", "Line 2", "Line 3");
+        Files.write(lines, testFile, Charset.defaultCharset());
+        fileText = new FileText(testFile, "UTF-8");
+    }
+
+    @Test
+    public void testConstructorWithFileAndCharset() throws IOException {
+        assertNotNull(fileText);
+        assertEquals(testFile, fileText.getFile());
+        assertEquals(Charset.forName("UTF-8"), fileText.getCharset());
+        assertEquals("Line 1\nLine 2\nLine 3", fileText.getFullText().toString());
+    }
+
+    @Test
+    public void testConstructorWithFileText() {
+        FileText copy = new FileText(fileText);
+        assertEquals(fileText.getFile(), copy.getFile());
+        assertEquals(fileText.getCharset(), copy.getCharset());
+        assertEquals(fileText.getFullText(), copy.getFullText());
+        assertArrayEquals(fileText.toLinesArray(), copy.toLinesArray());
+    }
+
+    @Test
+    public void testFromLines() {
+        List<String> lines = Arrays.asList("Line 1", "Line 2", "Line 3");
+        FileText fromLines = FileText.fromLines(testFile, lines);
+        assertEquals(testFile, fromLines.getFile());
+        assertEquals("Line 1\nLine 2\nLine 3\n", fromLines.getFullText().toString());
+        assertArrayEquals(lines.toArray(new String[0]), fromLines.toLinesArray());
+    }
+
+    @Test
+    public void testGetFile() {
+        assertEquals(testFile, fileText.getFile());
+    }
+
+    @Test
+    public void testGetCharset() {
+        assertEquals(Charset.forName("UTF-8"), fileText.getCharset());
+    }
+
+    @Test
+    public void testGetFullText() {
+        assertEquals("Line 1\nLine 2\nLine 3", fileText.getFullText().toString());
+    }
+
+    @Test
+    public void testToLinesArray() {
+        String[] expectedLines = {"Line 1", "Line 2", "Line 3"};
+        assertArrayEquals(expectedLines, fileText.toLinesArray());
+    }
+
+    @Test
+    public void testLineColumn() {
+        LineColumn lineColumn = fileText.lineColumn(0);
+        assertEquals(1, lineColumn.getLine());
+        assertEquals(0, lineColumn.getColumn());
+
+        lineColumn = fileText.lineColumn(6);
+        assertEquals(1, lineColumn.getLine());
+        assertEquals(6, lineColumn.getColumn());
+
+        lineColumn = fileText.lineColumn(7);
+        assertEquals(2, lineColumn.getLine());
+        assertEquals(0, lineColumn.getColumn());
+    }
+
+    @Test
+    public void testGet() {
+        assertEquals("Line 1", fileText.get(0));
+        assertEquals("Line 2", fileText.get(1));
+        assertEquals("Line 3", fileText.get(2));
+    }
+
+    @Test
+    public void testSize() {
+        assertEquals(3, fileText.size());
+    }
+
+    @Test(expected = IOException.class)
+    public void testReadFileWithNonExistentFile() throws IOException {
+        File nonExistentFile = new File("nonExistentFile.txt");
+        new FileText(nonExistentFile, "UTF-8");
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testReadFileWithUnsupportedCharset() throws IOException {
+        new FileText(testFile, "UnsupportedCharset");
+    }
+}
+```

@@ -1,0 +1,66 @@
+```java
+package com.google.common.base;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+public class Utf8Test {
+
+    @Test
+    public void testEncodedLength() {
+        // Test with ASCII characters
+        assertEquals(5, Utf8.encodedLength("Hello"));
+
+        // Test with non-ASCII characters
+        assertEquals(7, Utf8.encodedLength("Hello\u0080"));
+
+        // Test with surrogate pairs
+        assertEquals(8, Utf8.encodedLength("Hello\uD83D\uDE00"));
+
+        // Test with invalid surrogate pairs
+        try {
+            Utf8.encodedLength("Hello\uD83D");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Unpaired surrogate at index 5", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testIsWellFormed() {
+        // Test with valid UTF-8 bytes
+        assertTrue(Utf8.isWellFormed(new byte[] { (byte) 0x48, (byte) 0x65, (byte) 0x6C, (byte) 0x6C, (byte) 0x6F }));
+
+        // Test with invalid UTF-8 bytes
+        assertFalse(Utf8.isWellFormed(new byte[] { (byte) 0xC0, (byte) 0x80 }));
+
+        // Test with incomplete UTF-8 bytes
+        assertFalse(Utf8.isWellFormed(new byte[] { (byte) 0xC0 }));
+    }
+
+    @Test
+    public void testIsWellFormedWithOffsetAndLength() {
+        byte[] bytes = new byte[] { (byte) 0x48, (byte) 0x65, (byte) 0x6C, (byte) 0x6C, (byte) 0x6F, (byte) 0xC0, (byte) 0x80 };
+
+        // Test with valid UTF-8 bytes and offset/length
+        assertTrue(Utf8.isWellFormed(bytes, 0, 5));
+
+        // Test with invalid UTF-8 bytes and offset/length
+        assertFalse(Utf8.isWellFormed(bytes, 5, 2));
+
+        // Test with incomplete UTF-8 bytes and offset/length
+        assertFalse(Utf8.isWellFormed(bytes, 5, 1));
+    }
+
+    @Test
+    public void testIsWellFormedSlowPath() {
+        byte[] bytes = new byte[] { (byte) 0xC0, (byte) 0x80, (byte) 0x48, (byte) 0x65, (byte) 0x6C, (byte) 0x6C, (byte) 0x6F };
+
+        // Test with invalid UTF-8 bytes at the beginning
+        assertFalse(Utf8.isWellFormedSlowPath(bytes, 0, bytes.length));
+
+        // Test with valid UTF-8 bytes after the invalid ones
+        assertTrue(Utf8.isWellFormedSlowPath(bytes, 2, bytes.length - 2));
+    }
+}
+```

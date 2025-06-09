@@ -1,0 +1,351 @@
+```java
+package org.apache.commons.cli2.option;
+
+import org.apache.commons.cli2.DisplaySetting;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.util.HashSet;
+import java.util.ListIterator;
+import java.util.Set;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class OptionImplTest {
+
+    private OptionImpl option;
+    private WriteableCommandLine commandLine;
+    private ListIterator<String> arguments;
+
+    @Before
+    public void setUp() {
+        option = new OptionImpl(1, true) {
+            @Override
+            public String getPreferredName() {
+                return "preferredName";
+            }
+
+            @Override
+            public String getDescription() {
+                return "description";
+            }
+
+            @Override
+            public Set<String> getPrefixes() {
+                return new HashSet<>();
+            }
+
+            @Override
+            public Set<String> getTriggers() {
+                return new HashSet<>();
+            }
+
+            @Override
+            public boolean canProcess(WriteableCommandLine commandLine, String argument) {
+                return false;
+            }
+
+            @Override
+            public void appendUsage(StringBuffer buffer, DisplaySetting displaySetting, String prefix) {
+                buffer.append("usage");
+            }
+        };
+        commandLine = Mockito.mock(WriteableCommandLine.class);
+        arguments = Mockito.mock(ListIterator.class);
+    }
+
+    @Test
+    public void testCanProcess() {
+        when(arguments.hasNext()).thenReturn(true);
+        when(arguments.next()).thenReturn("argument");
+
+        boolean result = option.canProcess(commandLine, arguments);
+
+        assertFalse(result);
+        verify(arguments).previous();
+    }
+
+    @Test
+    public void testCanProcessNoArguments() {
+        when(arguments.hasNext()).thenReturn(false);
+
+        boolean result = option.canProcess(commandLine, arguments);
+
+        assertFalse(result);
+    }
+
+    @Test
+    public void testToString() {
+        String result = option.toString();
+
+        assertEquals("usage", result);
+    }
+
+    @Test
+    public void testGetId() {
+        int result = option.getId();
+
+        assertEquals(1, result);
+    }
+
+    @Test
+    public void testEquals() {
+        OptionImpl otherOption = new OptionImpl(1, true) {
+            @Override
+            public String getPreferredName() {
+                return "preferredName";
+            }
+
+            @Override
+            public String getDescription() {
+                return "description";
+            }
+
+            @Override
+            public Set<String> getPrefixes() {
+                return new HashSet<>();
+            }
+
+            @Override
+            public Set<String> getTriggers() {
+                return new HashSet<>();
+            }
+
+            @Override
+            public boolean canProcess(WriteableCommandLine commandLine, String argument) {
+                return false;
+            }
+
+            @Override
+            public void appendUsage(StringBuffer buffer, DisplaySetting displaySetting, String prefix) {
+                buffer.append("usage");
+            }
+        };
+
+        assertTrue(option.equals(otherOption));
+    }
+
+    @Test
+    public void testEqualsDifferentId() {
+        OptionImpl otherOption = new OptionImpl(2, true) {
+            @Override
+            public String getPreferredName() {
+                return "preferredName";
+            }
+
+            @Override
+            public String getDescription() {
+                return "description";
+            }
+
+            @Override
+            public Set<String> getPrefixes() {
+                return new HashSet<>();
+            }
+
+            @Override
+            public Set<String> getTriggers() {
+                return new HashSet<>();
+            }
+
+            @Override
+            public boolean canProcess(WriteableCommandLine commandLine, String argument) {
+                return false;
+            }
+
+            @Override
+            public void appendUsage(StringBuffer buffer, DisplaySetting displaySetting, String prefix) {
+                buffer.append("usage");
+            }
+        };
+
+        assertFalse(option.equals(otherOption));
+    }
+
+    @Test
+    public void testHashCode() {
+        int result = option.hashCode();
+
+        assertEquals(1, result);
+    }
+
+    @Test
+    public void testFindOption() {
+        Set<String> triggers = new HashSet<>();
+        triggers.add("trigger");
+        option = new OptionImpl(1, true) {
+            @Override
+            public String getPreferredName() {
+                return "preferredName";
+            }
+
+            @Override
+            public String getDescription() {
+                return "description";
+            }
+
+            @Override
+            public Set<String> getPrefixes() {
+                return new HashSet<>();
+            }
+
+            @Override
+            public Set<String> getTriggers() {
+                return triggers;
+            }
+
+            @Override
+            public boolean canProcess(WriteableCommandLine commandLine, String argument) {
+                return false;
+            }
+
+            @Override
+            public void appendUsage(StringBuffer buffer, DisplaySetting displaySetting, String prefix) {
+                buffer.append("usage");
+            }
+        };
+
+        Option result = option.findOption("trigger");
+
+        assertEquals(option, result);
+    }
+
+    @Test
+    public void testFindOptionNotFound() {
+        Set<String> triggers = new HashSet<>();
+        triggers.add("trigger");
+        option = new OptionImpl(1, true) {
+            @Override
+            public String getPreferredName() {
+                return "preferredName";
+            }
+
+            @Override
+            public String getDescription() {
+                return "description";
+            }
+
+            @Override
+            public Set<String> getPrefixes() {
+                return new HashSet<>();
+            }
+
+            @Override
+            public Set<String> getTriggers() {
+                return triggers;
+            }
+
+            @Override
+            public boolean canProcess(WriteableCommandLine commandLine, String argument) {
+                return false;
+            }
+
+            @Override
+            public void appendUsage(StringBuffer buffer, DisplaySetting displaySetting, String prefix) {
+                buffer.append("usage");
+            }
+        };
+
+        Option result = option.findOption("otherTrigger");
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testIsRequired() {
+        assertTrue(option.isRequired());
+    }
+
+    @Test
+    public void testDefaults() {
+        option.defaults(commandLine);
+
+        // No assertions needed as the method does nothing
+    }
+
+    @Test
+    public void testCheckPrefixes() {
+        Set<String> prefixes = new HashSet<>();
+        prefixes.add("prefix");
+        option = new OptionImpl(1, true) {
+            @Override
+            public String getPreferredName() {
+                return "preferredName";
+            }
+
+            @Override
+            public String getDescription() {
+                return "description";
+            }
+
+            @Override
+            public Set<String> getPrefixes() {
+                return prefixes;
+            }
+
+            @Override
+            public Set<String> getTriggers() {
+                return new HashSet<>();
+            }
+
+            @Override
+            public boolean canProcess(WriteableCommandLine commandLine, String argument) {
+                return false;
+            }
+
+            @Override
+            public void appendUsage(StringBuffer buffer, DisplaySetting displaySetting, String prefix) {
+                buffer.append("usage");
+            }
+        };
+
+        option.checkPrefixes(prefixes);
+
+        // No assertions needed as the method does nothing
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCheckPrefixesException() {
+        Set<String> prefixes = new HashSet<>();
+        prefixes.add("prefix");
+        Set<String> triggers = new HashSet<>();
+        triggers.add("trigger");
+        option = new OptionImpl(1, true) {
+            @Override
+            public String getPreferredName() {
+                return "preferredName";
+            }
+
+            @Override
+            public String getDescription() {
+                return "description";
+            }
+
+            @Override
+            public Set<String> getPrefixes() {
+                return prefixes;
+            }
+
+            @Override
+            public Set<String> getTriggers() {
+                return triggers;
+            }
+
+            @Override
+            public boolean canProcess(WriteableCommandLine commandLine, String argument) {
+                return false;
+            }
+
+            @Override
+            public void appendUsage(StringBuffer buffer, DisplaySetting displaySetting, String prefix) {
+                buffer.append("usage");
+            }
+        };
+
+        option.checkPrefixes(prefixes);
+    }
+}
+```

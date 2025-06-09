@@ -1,0 +1,146 @@
+To create a comprehensive JUnit 4 test suite for the `Request` class, we need to test all public methods and ensure that the class behaves as expected under various conditions. Below is a test suite that covers the functionality of the `Request` class. Note that this suite uses mocking for the `HttpURLConnection` to avoid making real HTTP requests.
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.scribe.exceptions.OAuthException;
+import org.scribe.model.Request;
+import org.scribe.model.Response;
+import org.scribe.model.Verb;
+
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class RequestTest {
+
+    @Mock
+    private HttpURLConnection mockConnection;
+
+    @Before
+    public void setUp() throws Exception {
+        when(mockConnection.getOutputStream()).thenReturn(new ByteArrayOutputStream());
+    }
+
+    @Test
+    public void testConstructor() {
+        Request request = new Request(Verb.GET, "http://example.com");
+        assertEquals("http://example.com", request.getUrl());
+        assertEquals(Verb.GET, request.getVerb());
+    }
+
+    @Test
+    public void testAddHeader() {
+        Request request = new Request(Verb.GET, "http://example.com");
+        request.addHeader("Content-Type", "application/json");
+        assertEquals("application/json", request.getHeaders().get("Content-Type"));
+    }
+
+    @Test
+    public void testAddBodyParameter() {
+        Request request = new Request(Verb.POST, "http://example.com");
+        request.addBodyParameter("key", "value");
+        assertEquals("value", request.getBodyParams().get("key"));
+    }
+
+    @Test
+    public void testAddQuerystringParameter() {
+        Request request = new Request(Verb.GET, "http://example.com");
+        request.addQuerystringParameter("key", "value");
+        assertEquals("value", request.getQueryStringParams().get("key"));
+    }
+
+    @Test
+    public void testAddPayloadString() {
+        Request request = new Request(Verb.POST, "http://example.com");
+        request.addPayload("payload");
+        assertEquals("payload", request.getBodyContents());
+    }
+
+    @Test
+    public void testAddPayloadByteArray() {
+        Request request = new Request(Verb.POST, "http://example.com");
+        byte[] payload = "payload".getBytes();
+        request.addPayload(payload);
+        assertArrayEquals(payload, request.getByteBodyContents());
+    }
+
+    @Test
+    public void testGetSanitizedUrl() {
+        Request request = new Request(Verb.GET, "http://example.com?param=value");
+        assertEquals("http://example.com", request.getSanitizedUrl());
+    }
+
+    @Test
+    public void testGetCharset() {
+        Request request = new Request(Verb.GET, "http://example.com");
+        assertEquals(Charset.defaultCharset().name(), request.getCharset());
+        request.setCharset("UTF-8");
+        assertEquals("UTF-8", request.getCharset());
+    }
+
+    @Test
+    public void testSetConnectionKeepAlive() {
+        Request request = new Request(Verb.GET, "http://example.com");
+        request.setConnectionKeepAlive(true);
+        // No direct way to test this, but ensure no exceptions are thrown
+    }
+
+    @Test
+    public void testSend() throws Exception {
+        Request request = new Request(Verb.GET, "http://example.com");
+        request.setConnection(mockConnection);
+        Response response = request.send();
+        assertNotNull(response);
+        verify(mockConnection).setRequestMethod("GET");
+    }
+
+    @Test(expected = OAuthException.class)
+    public void testSendThrowsException() throws Exception {
+        Request request = new Request(Verb.GET, "http://example.com");
+        request.setConnection(mockConnection);
+        doThrow(new IOException()).when(mockConnection).setRequestMethod("GET");
+        request.send();
+    }
+
+    @Test
+    public void testSetConnectTimeout() {
+        Request request = new Request(Verb.GET, "http://example.com");
+        request.setConnection(mockConnection);
+        request.setConnectTimeout(10, TimeUnit.SECONDS);
+        verify(mockConnection).setConnectTimeout(10000);
+    }
+
+    @Test
+    public void testSetReadTimeout() {
+        Request request = new Request(Verb.GET, "http://example.com");
+        request.setConnection(mockConnection);
+        request.setReadTimeout(10, TimeUnit.SECONDS);
+        verify(mockConnection).setReadTimeout(10000);
+    }
+
+    @Test
+    public void testToString() {
+        Request request = new Request(Verb.GET, "http://example.com");
+        assertEquals("@Request(GET http://example.com)", request.toString());
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock `HttpURLConnection` to avoid making real HTTP requests.
+- **Setup**: The `setUp` method initializes the mock connection to return a `ByteArrayOutputStream` when `getOutputStream()` is called.
+- **Tests**: Each test method checks a specific functionality of the `Request` class, ensuring that methods behave as expected.
+- **Exception Handling**: We test exception handling by forcing an `IOException` and verifying that an `OAuthException` is thrown.
+- **Timeouts**: We verify that the correct timeout values are set on the connection.
+
+This test suite should provide comprehensive coverage for the `Request` class.

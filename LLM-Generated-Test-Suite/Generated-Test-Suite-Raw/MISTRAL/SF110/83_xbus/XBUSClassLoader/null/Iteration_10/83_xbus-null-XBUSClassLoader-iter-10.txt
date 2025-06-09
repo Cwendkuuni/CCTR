@@ -1,0 +1,118 @@
+```java
+package net.sf.xbus.base.core.reflection;
+
+import net.sf.xbus.base.core.*;
+import net.sf.xbus.base.core.trace.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Vector;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({XBUSClassLoader.class, Trace.class, System.class})
+public class XBUSClassLoaderTest {
+
+    private static final String XBUS_HOME = "/path/to/xbus";
+
+    @Before
+    public void setUp() {
+        // Mock the Constants.XBUS_HOME
+        PowerMockito.mockStatic(Constants.class);
+        when(Constants.XBUS_HOME).thenReturn(XBUS_HOME);
+
+        // Mock System.exit to prevent actual system exit
+        PowerMockito.mockStatic(System.class);
+        PowerMockito.doNothing().when(System.class);
+        System.exit(Mockito.anyInt());
+    }
+
+    @Test
+    public void testGetInstance() {
+        ClassLoader parent = mock(ClassLoader.class);
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parent);
+        assertNotNull(classLoader);
+    }
+
+    @Test
+    public void testCreateClassLoader() {
+        ClassLoader parent = mock(ClassLoader.class);
+        XBUSClassLoader classLoader = XBUSClassLoader.createClassLoader(parent);
+        assertNotNull(classLoader);
+    }
+
+    @Test
+    public void testAddUrls() {
+        Vector<URL> urls = new Vector<>();
+        String dirName = XBUS_HOME + "/lib";
+
+        // Mock File and listFiles
+        File libPath = mock(File.class);
+        File[] jars = {mock(File.class), mock(File.class)};
+        when(libPath.listFiles()).thenReturn(jars);
+        when(jars[0].isFile()).thenReturn(true);
+        when(jars[0].getName()).thenReturn("test.jar");
+        when(jars[1].isFile()).thenReturn(true);
+        when(jars[1].getName()).thenReturn("test.zip");
+
+        PowerMockito.mockStatic(File.class);
+        when(new File(dirName)).thenReturn(libPath);
+
+        try {
+            when(jars[0].toURL()).thenReturn(new URL("file://test.jar"));
+            when(jars[1].toURL()).thenReturn(new URL("file://test.zip"));
+        } catch (MalformedURLException e) {
+            fail("Unexpected MalformedURLException");
+        }
+
+        XBUSClassLoader.addUrls(urls, dirName);
+        assertEquals(2, urls.size());
+    }
+
+    @Test
+    public void testAddUrlsMalformedURLException() {
+        Vector<URL> urls = new Vector<>();
+        String dirName = XBUS_HOME + "/lib";
+
+        // Mock File and listFiles
+        File libPath = mock(File.class);
+        File[] jars = {mock(File.class)};
+        when(libPath.listFiles()).thenReturn(jars);
+        when(jars[0].isFile()).thenReturn(true);
+        when(jars[0].getName()).thenReturn("test.jar");
+
+        PowerMockito.mockStatic(File.class);
+        when(new File(dirName)).thenReturn(libPath);
+
+        try {
+            when(jars[0].toURL()).thenThrow(new MalformedURLException());
+        } catch (MalformedURLException e) {
+            fail("Unexpected MalformedURLException");
+        }
+
+        // Mock Trace.error
+        PowerMockito.mockStatic(Trace.class);
+        PowerMockito.doNothing().when(Trace.class);
+        Trace.error(any(MalformedURLException.class));
+
+        XBUSClassLoader.addUrls(urls, dirName);
+        assertEquals(0, urls.size());
+    }
+
+    @Test
+    public void testStaticBlock() {
+        assertNull(XBUSClassLoader.mClassLoader);
+        assertEquals(XBUSClassLoader.class, XBUSClassLoader.classLock);
+    }
+}
+```

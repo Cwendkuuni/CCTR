@@ -1,0 +1,139 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import de.devcity.parseargs.ArgsParser;
+import de.devcity.parseargs.arguments.SwitchArgument;
+import de.devcity.parseargs.arguments.ParameterArgument;
+import de.devcity.parseargs.arguments.StringArgument;
+
+import java.util.List;
+
+public class ArgsParserTest {
+
+    private ArgsParser parser;
+
+    @Before
+    public void setUp() {
+        parser = new ArgsParser();
+    }
+
+    @Test
+    public void testGetArgsCount() {
+        String[] args = {"-a", "--long", "value"};
+        parser.setArgs(args);
+        assertEquals(3, parser.getArgsCount());
+    }
+
+    @Test
+    public void testGetArgs() {
+        String[] args = {"-a", "--long", "value"};
+        parser.setArgs(args);
+        assertArrayEquals(args, parser.getArgs());
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testSetArgsNull() {
+        parser.setArgs(null);
+    }
+
+    @Test
+    public void testSetArgs() {
+        String[] args = {"-a", "--long", "value"};
+        parser.setArgs(args);
+        assertArrayEquals(args, parser.getArgs());
+    }
+
+    @Test
+    public void testGetArgsLeftCount() {
+        String[] args = {"-a", "--long", "value"};
+        parser.setArgs(args);
+        assertEquals(3, parser.getArgsLeftCount());
+
+        parser.parseSwitchArgument("a");
+        assertEquals(2, parser.getArgsLeftCount());
+
+        parser.parseParameterArgument("long");
+        assertEquals(0, parser.getArgsLeftCount());
+    }
+
+    @Test
+    public void testParseSwitchArgumentShort() {
+        String[] args = {"-a", "-b"};
+        parser.setArgs(args);
+
+        SwitchArgument result = parser.parseSwitchArgument("a");
+        assertTrue(result.isPresent());
+        assertEquals(0, result.getIndex());
+        assertEquals("a", result.getKey());
+
+        result = parser.parseSwitchArgument("b");
+        assertTrue(result.isPresent());
+        assertEquals(1, result.getIndex());
+        assertEquals("b", result.getKey());
+
+        result = parser.parseSwitchArgument("c");
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void testParseSwitchArgumentLong() {
+        String[] args = {"--long", "--short"};
+        parser.setArgs(args);
+
+        SwitchArgument result = parser.parseSwitchArgument("long");
+        assertTrue(result.isPresent());
+        assertEquals(0, result.getIndex());
+        assertEquals("long", result.getKey());
+
+        result = parser.parseSwitchArgument("short");
+        assertTrue(result.isPresent());
+        assertEquals(1, result.getIndex());
+        assertEquals("short", result.getKey());
+
+        result = parser.parseSwitchArgument("nonexistent");
+        assertFalse(result.isPresent());
+    }
+
+    @Test
+    public void testParseParameterArgumentShort() {
+        String[] args = {"-a", "value"};
+        parser.setArgs(args);
+
+        ParameterArgument result = parser.parseParameterArgument("a");
+        assertNotNull(result);
+        assertEquals(0, result.getIndex());
+        assertEquals("a", result.getKey());
+        assertEquals("value", result.getValue());
+    }
+
+    @Test
+    public void testParseParameterArgumentLong() {
+        String[] args = {"--long", "value"};
+        parser.setArgs(args);
+
+        ParameterArgument result = parser.parseParameterArgument("long");
+        assertNotNull(result);
+        assertEquals(0, result.getIndex());
+        assertEquals("long", result.getKey());
+        assertEquals("value", result.getValue());
+    }
+
+    @Test
+    public void testParseStringArgument() {
+        String[] args = {"value1", "value2"};
+        parser.setArgs(args);
+
+        List<StringArgument> result = parser.parseStringArgument();
+        assertEquals(2, result.size());
+
+        StringArgument arg1 = result.get(0);
+        assertEquals(0, arg1.getIndex());
+        assertEquals("value1", arg1.getValue());
+
+        StringArgument arg2 = result.get(1);
+        assertEquals(1, arg2.getIndex());
+        assertEquals("value2", arg2.getValue());
+    }
+}
+```

@@ -1,0 +1,109 @@
+Certainly! Below is a JUnit 4 test suite for the `Entities` class. This suite tests the public and package-private methods of the class. Note that some methods require mock objects or specific setups, such as `Document.OutputSettings`, which are assumed to be available or mocked appropriately.
+
+```java
+import org.jsoup.nodes.Entities;
+import org.jsoup.nodes.Document;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class EntitiesTest {
+
+    private Document.OutputSettings mockOutputSettings;
+    private CharsetEncoder mockEncoder;
+
+    @Before
+    public void setUp() {
+        mockOutputSettings = mock(Document.OutputSettings.class);
+        mockEncoder = mock(CharsetEncoder.class);
+        when(mockOutputSettings.escapeMode()).thenReturn(Entities.EscapeMode.base);
+        when(mockOutputSettings.encoder()).thenReturn(mockEncoder);
+        when(mockEncoder.charset()).thenReturn(Charset.forName("UTF-8"));
+        when(mockEncoder.canEncode(anyChar())).thenReturn(true);
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertFalse(Entities.isNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testIsBaseNamedEntity() {
+        assertTrue(Entities.isBaseNamedEntity("lt"));
+        assertFalse(Entities.isBaseNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertNull(Entities.getCharacterByName("nonexistent"));
+    }
+
+    @Test
+    public void testEscape() {
+        String input = "This is a <test> & \"example\".";
+        String expected = "This is a &lt;test&gt; &amp; &quot;example&quot;.";
+        String result = Entities.escape(input, mockOutputSettings);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testEscapeWithDifferentEscapeMode() {
+        when(mockOutputSettings.escapeMode()).thenReturn(Entities.EscapeMode.xhtml);
+        String input = "This is a <test> & \"example\".";
+        String expected = "This is a &lt;test&gt; &amp; \"example\".";
+        String result = Entities.escape(input, mockOutputSettings);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testUnescape() {
+        String input = "This is a &lt;test&gt; &amp; &quot;example&quot;.";
+        String expected = "This is a <test> & \"example\".";
+        String result = Entities.unescape(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testUnescapeStrict() {
+        String input = "This is a &lt;test&gt; &amp; &quot;example&quot;";
+        String expected = "This is a <test> & \"example\"";
+        String result = Entities.unescape(input, true);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testCanEncodeAscii() {
+        assertTrue(Entities.canEncode(Entities.CoreCharset.ascii, 'A', mockEncoder));
+        assertFalse(Entities.canEncode(Entities.CoreCharset.ascii, 'é', mockEncoder));
+    }
+
+    @Test
+    public void testCanEncodeUtf() {
+        assertTrue(Entities.canEncode(Entities.CoreCharset.utf, 'A', mockEncoder));
+        assertTrue(Entities.canEncode(Entities.CoreCharset.utf, 'é', mockEncoder));
+    }
+
+    @Test
+    public void testCanEncodeFallback() {
+        when(mockEncoder.canEncode('A')).thenReturn(true);
+        when(mockEncoder.canEncode('é')).thenReturn(false);
+        assertTrue(Entities.canEncode(Entities.CoreCharset.fallback, 'A', mockEncoder));
+        assertFalse(Entities.canEncode(Entities.CoreCharset.fallback, 'é', mockEncoder));
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: The `Document.OutputSettings` and `CharsetEncoder` are mocked to simulate different scenarios and configurations.
+- **Test Methods**: Each method in the `Entities` class is tested with various inputs to ensure correct functionality.
+- **Assertions**: The tests use assertions to verify that the actual output matches the expected output.
+- **Setup**: The `setUp` method initializes the mock objects before each test.
+
+This test suite should cover the main functionalities of the `Entities` class. Adjustments may be needed based on the actual implementation details of `Document.OutputSettings` and other dependencies.

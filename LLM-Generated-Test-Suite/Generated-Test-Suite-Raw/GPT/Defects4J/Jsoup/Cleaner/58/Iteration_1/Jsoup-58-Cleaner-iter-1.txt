@@ -1,0 +1,101 @@
+```java
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Cleaner;
+import org.jsoup.safety.Whitelist;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class CleanerTest {
+    private Cleaner cleaner;
+    private Whitelist whitelist;
+
+    @Before
+    public void setUp() {
+        whitelist = Whitelist.basic();
+        cleaner = new Cleaner(whitelist);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithNullWhitelist() {
+        new Cleaner(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCleanWithNullDocument() {
+        cleaner.clean(null);
+    }
+
+    @Test
+    public void testCleanWithEmptyDocument() {
+        Document dirtyDoc = Document.createShell("");
+        Document cleanDoc = cleaner.clean(dirtyDoc);
+        assertNotNull(cleanDoc);
+        assertEquals("", cleanDoc.body().html());
+    }
+
+    @Test
+    public void testCleanWithValidDocument() {
+        String html = "<div><p>Hello, <b>world!</b></p></div>";
+        Document dirtyDoc = Parser.parseBodyFragment(html, "");
+        Document cleanDoc = cleaner.clean(dirtyDoc);
+        assertNotNull(cleanDoc);
+        assertEquals("<div><p>Hello, <b>world!</b></p></div>", cleanDoc.body().html());
+    }
+
+    @Test
+    public void testCleanWithInvalidDocument() {
+        String html = "<div><script>alert('XSS')</script><p>Hello, <b>world!</b></p></div>";
+        Document dirtyDoc = Parser.parseBodyFragment(html, "");
+        Document cleanDoc = cleaner.clean(dirtyDoc);
+        assertNotNull(cleanDoc);
+        assertEquals("<div><p>Hello, <b>world!</b></p></div>", cleanDoc.body().html());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIsValidWithNullDocument() {
+        cleaner.isValid(null);
+    }
+
+    @Test
+    public void testIsValidWithValidDocument() {
+        String html = "<div><p>Hello, <b>world!</b></p></div>";
+        Document dirtyDoc = Parser.parseBodyFragment(html, "");
+        assertTrue(cleaner.isValid(dirtyDoc));
+    }
+
+    @Test
+    public void testIsValidWithInvalidDocument() {
+        String html = "<div><script>alert('XSS')</script><p>Hello, <b>world!</b></p></div>";
+        Document dirtyDoc = Parser.parseBodyFragment(html, "");
+        assertFalse(cleaner.isValid(dirtyDoc));
+    }
+
+    @Test
+    public void testCopySafeNodes() {
+        String html = "<div><p>Hello, <b>world!</b></p></div>";
+        Document dirtyDoc = Parser.parseBodyFragment(html, "");
+        Element source = dirtyDoc.body();
+        Element dest = new Element("body");
+        int numDiscarded = cleaner.copySafeNodes(source, dest);
+        assertEquals(0, numDiscarded);
+        assertEquals("<div><p>Hello, <b>world!</b></p></div>", dest.html());
+    }
+
+    @Test
+    public void testCopySafeNodesWithUnsafeNodes() {
+        String html = "<div><script>alert('XSS')</script><p>Hello, <b>world!</b></p></div>";
+        Document dirtyDoc = Parser.parseBodyFragment(html, "");
+        Element source = dirtyDoc.body();
+        Element dest = new Element("body");
+        int numDiscarded = cleaner.copySafeNodes(source, dest);
+        assertEquals(1, numDiscarded);
+        assertEquals("<div><p>Hello, <b>world!</b></p></div>", dest.html());
+    }
+}
+```
+
+This test suite covers the main functionalities of the `Cleaner` class, including the constructor, `clean`, `isValid`, and `copySafeNodes` methods. It checks for both valid and invalid inputs, ensuring that the class behaves as expected under different scenarios.

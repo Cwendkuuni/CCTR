@@ -1,0 +1,171 @@
+```java
+package org.jsoup.select;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.jsoup.helper.StringUtil;
+import org.jsoup.parser.TokenQueue;
+import org.jsoup.select.Evaluator;
+import org.jsoup.select.QueryParser;
+import org.jsoup.select.Selector;
+import org.jsoup.select.StructuralEvaluator;
+import org.jsoup.select.CombiningEvaluator;
+
+import static org.junit.Assert.*;
+
+public class QueryParserTest {
+
+    private QueryParser queryParser;
+
+    @Before
+    public void setUp() {
+        queryParser = new QueryParser("div");
+    }
+
+    @Test
+    public void testParse() {
+        Evaluator evaluator = QueryParser.parse("div");
+        assertTrue(evaluator instanceof Evaluator.Tag);
+        assertEquals("div", ((Evaluator.Tag) evaluator).tagName);
+    }
+
+    @Test
+    public void testParseWithCombinator() {
+        Evaluator evaluator = QueryParser.parse("div > span");
+        assertTrue(evaluator instanceof CombiningEvaluator.And);
+        CombiningEvaluator.And andEvaluator = (CombiningEvaluator.And) evaluator;
+        assertTrue(andEvaluator.evaluators.get(0) instanceof StructuralEvaluator.ImmediateParent);
+        assertTrue(andEvaluator.evaluators.get(1) instanceof Evaluator.Tag);
+        assertEquals("span", ((Evaluator.Tag) andEvaluator.evaluators.get(1)).tagName);
+    }
+
+    @Test
+    public void testParseWithMultipleCombinators() {
+        Evaluator evaluator = QueryParser.parse("div > span + p");
+        assertTrue(evaluator instanceof CombiningEvaluator.And);
+        CombiningEvaluator.And andEvaluator = (CombiningEvaluator.And) evaluator;
+        assertTrue(andEvaluator.evaluators.get(0) instanceof StructuralEvaluator.ImmediatePreviousSibling);
+        assertTrue(andEvaluator.evaluators.get(1) instanceof CombiningEvaluator.And);
+        CombiningEvaluator.And nestedAndEvaluator = (CombiningEvaluator.And) andEvaluator.evaluators.get(1);
+        assertTrue(nestedAndEvaluator.evaluators.get(0) instanceof StructuralEvaluator.ImmediateParent);
+        assertTrue(nestedAndEvaluator.evaluators.get(1) instanceof Evaluator.Tag);
+        assertEquals("span", ((Evaluator.Tag) nestedAndEvaluator.evaluators.get(1)).tagName);
+    }
+
+    @Test
+    public void testParseWithOrCombinator() {
+        Evaluator evaluator = QueryParser.parse("div, span");
+        assertTrue(evaluator instanceof CombiningEvaluator.Or);
+        CombiningEvaluator.Or orEvaluator = (CombiningEvaluator.Or) evaluator;
+        assertTrue(orEvaluator.evaluators.get(0) instanceof Evaluator.Tag);
+        assertEquals("div", ((Evaluator.Tag) orEvaluator.evaluators.get(0)).tagName);
+        assertTrue(orEvaluator.evaluators.get(1) instanceof Evaluator.Tag);
+        assertEquals("span", ((Evaluator.Tag) orEvaluator.evaluators.get(1)).tagName);
+    }
+
+    @Test
+    public void testParseById() {
+        Evaluator evaluator = QueryParser.parse("#id");
+        assertTrue(evaluator instanceof Evaluator.Id);
+        assertEquals("id", ((Evaluator.Id) evaluator).id);
+    }
+
+    @Test
+    public void testParseByClass() {
+        Evaluator evaluator = QueryParser.parse(".class");
+        assertTrue(evaluator instanceof Evaluator.Class);
+        assertEquals("class", ((Evaluator.Class) evaluator).className);
+    }
+
+    @Test
+    public void testParseByTag() {
+        Evaluator evaluator = QueryParser.parse("div");
+        assertTrue(evaluator instanceof Evaluator.Tag);
+        assertEquals("div", ((Evaluator.Tag) evaluator).tagName);
+    }
+
+    @Test
+    public void testParseByAttribute() {
+        Evaluator evaluator = QueryParser.parse("[attr=value]");
+        assertTrue(evaluator instanceof Evaluator.AttributeWithValue);
+        assertEquals("attr", ((Evaluator.AttributeWithValue) evaluator).key);
+        assertEquals("value", ((Evaluator.AttributeWithValue) evaluator).value);
+    }
+
+    @Test
+    public void testParseAllElements() {
+        Evaluator evaluator = QueryParser.parse("*");
+        assertTrue(evaluator instanceof Evaluator.AllElements);
+    }
+
+    @Test
+    public void testParseIndexLessThan() {
+        Evaluator evaluator = QueryParser.parse(":lt(5)");
+        assertTrue(evaluator instanceof Evaluator.IndexLessThan);
+        assertEquals(5, ((Evaluator.IndexLessThan) evaluator).index);
+    }
+
+    @Test
+    public void testParseIndexGreaterThan() {
+        Evaluator evaluator = QueryParser.parse(":gt(5)");
+        assertTrue(evaluator instanceof Evaluator.IndexGreaterThan);
+        assertEquals(5, ((Evaluator.IndexGreaterThan) evaluator).index);
+    }
+
+    @Test
+    public void testParseIndexEquals() {
+        Evaluator evaluator = QueryParser.parse(":eq(5)");
+        assertTrue(evaluator instanceof Evaluator.IndexEquals);
+        assertEquals(5, ((Evaluator.IndexEquals) evaluator).index);
+    }
+
+    @Test
+    public void testParseHas() {
+        Evaluator evaluator = QueryParser.parse(":has(div)");
+        assertTrue(evaluator instanceof StructuralEvaluator.Has);
+        assertTrue(((StructuralEvaluator.Has) evaluator).evaluator instanceof Evaluator.Tag);
+        assertEquals("div", ((Evaluator.Tag) ((StructuralEvaluator.Has) evaluator).evaluator).tagName);
+    }
+
+    @Test
+    public void testParseContains() {
+        Evaluator evaluator = QueryParser.parse(":contains(text)");
+        assertTrue(evaluator instanceof Evaluator.ContainsText);
+        assertEquals("text", ((Evaluator.ContainsText) evaluator).searchText);
+    }
+
+    @Test
+    public void testParseContainsOwn() {
+        Evaluator evaluator = QueryParser.parse(":containsOwn(text)");
+        assertTrue(evaluator instanceof Evaluator.ContainsOwnText);
+        assertEquals("text", ((Evaluator.ContainsOwnText) evaluator).searchText);
+    }
+
+    @Test
+    public void testParseMatches() {
+        Evaluator evaluator = QueryParser.parse(":matches(regex)");
+        assertTrue(evaluator instanceof Evaluator.Matches);
+        assertEquals("regex", ((Evaluator.Matches) evaluator).pattern.pattern());
+    }
+
+    @Test
+    public void testParseMatchesOwn() {
+        Evaluator evaluator = QueryParser.parse(":matchesOwn(regex)");
+        assertTrue(evaluator instanceof Evaluator.MatchesOwn);
+        assertEquals("regex", ((Evaluator.MatchesOwn) evaluator).pattern.pattern());
+    }
+
+    @Test
+    public void testParseNot() {
+        Evaluator evaluator = QueryParser.parse(":not(div)");
+        assertTrue(evaluator instanceof StructuralEvaluator.Not);
+        assertTrue(((StructuralEvaluator.Not) evaluator).evaluator instanceof Evaluator.Tag);
+        assertEquals("div", ((Evaluator.Tag) ((StructuralEvaluator.Not) evaluator).evaluator).tagName);
+    }
+
+    @Test(expected = Selector.SelectorParseException.class)
+    public void testParseInvalidQuery() {
+        QueryParser.parse("invalid query");
+    }
+}
+```

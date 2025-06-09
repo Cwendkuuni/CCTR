@@ -1,0 +1,549 @@
+package org.apache.commons.lang3;
+
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.util.*;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class ValidateTest {
+
+    @Test
+    public void testIsTrue_Long() {
+        Validate.isTrue(true, "Test message %d", 10L);
+        try {
+            Validate.isTrue(false, "Test message %d", 10L);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Test message 10", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testIsTrue_Double() {
+        Validate.isTrue(true, "Test message %f", 10.5);
+        try {
+            Validate.isTrue(false, "Test message %f", 10.5);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Test message 10.500000", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testIsTrue_Varargs() {
+        Validate.isTrue(true, "Test message %s %d", "value", 10);
+        try {
+            Validate.isTrue(false, "Test message %s %d", "value", 10);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Test message value 10", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testIsTrue() {
+        Validate.isTrue(true);
+        try {
+            Validate.isTrue(false);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The validated expression is false", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotNull() {
+        String obj = "test";
+        assertSame(obj, Validate.notNull(obj));
+        try {
+            Validate.notNull(null);
+            fail("Expected NullPointerException");
+        } catch (NullPointerException e) {
+            assertEquals("The validated object is null", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotNull_Message() {
+        String obj = "test";
+        assertSame(obj, Validate.notNull(obj, "Custom message %s", "test"));
+        try {
+            Validate.notNull(null, "Custom message %s", "test");
+            fail("Expected NullPointerException");
+        } catch (NullPointerException e) {
+            assertEquals("Custom message test", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotEmpty_Array() {
+        String[] array = {"test"};
+        assertSame(array, Validate.notEmpty(array));
+        try {
+            Validate.notEmpty(new String[0]);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The validated array is empty", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotEmpty_Array_Message() {
+        String[] array = {"test"};
+        assertSame(array, Validate.notEmpty(array, "Custom message"));
+        try {
+            Validate.notEmpty(new String[0], "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotEmpty_Collection() {
+        List<String> collection = new ArrayList<>();
+        collection.add("test");
+        assertSame(collection, Validate.notEmpty(collection));
+        try {
+            Validate.notEmpty(new ArrayList<>());
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The validated collection is empty", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotEmpty_Collection_Message() {
+        List<String> collection = new ArrayList<>();
+        collection.add("test");
+        assertSame(collection, Validate.notEmpty(collection, "Custom message"));
+        try {
+            Validate.notEmpty(new ArrayList<>(), "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotEmpty_Map() {
+        Map<String, String> map = new HashMap<>();
+        map.put("key", "value");
+        assertSame(map, Validate.notEmpty(map));
+        try {
+            Validate.notEmpty(new HashMap<>());
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The validated map is empty", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotEmpty_Map_Message() {
+        Map<String, String> map = new HashMap<>();
+        map.put("key", "value");
+        assertSame(map, Validate.notEmpty(map, "Custom message"));
+        try {
+            Validate.notEmpty(new HashMap<>(), "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotEmpty_CharSequence() {
+        String chars = "test";
+        assertSame(chars, Validate.notEmpty(chars));
+        try {
+            Validate.notEmpty("");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The validated character sequence is empty", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotEmpty_CharSequence_Message() {
+        String chars = "test";
+        assertSame(chars, Validate.notEmpty(chars, "Custom message"));
+        try {
+            Validate.notEmpty("", "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotBlank() {
+        String chars = "test";
+        assertSame(chars, Validate.notBlank(chars));
+        try {
+            Validate.notBlank(" ");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The validated character sequence is blank", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNotBlank_Message() {
+        String chars = "test";
+        assertSame(chars, Validate.notBlank(chars, "Custom message"));
+        try {
+            Validate.notBlank(" ", "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNoNullElements_Array() {
+        String[] array = {"test"};
+        assertSame(array, Validate.noNullElements(array));
+        try {
+            Validate.noNullElements(new String[]{null});
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The validated array contains null element at index: 0", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNoNullElements_Array_Message() {
+        String[] array = {"test"};
+        assertSame(array, Validate.noNullElements(array, "Custom message %d"));
+        try {
+            Validate.noNullElements(new String[]{null}, "Custom message %d");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message 0", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNoNullElements_Iterable() {
+        List<String> list = new ArrayList<>();
+        list.add("test");
+        assertSame(list, Validate.noNullElements(list));
+        try {
+            Validate.noNullElements(Arrays.asList((String) null));
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The validated collection contains null element at index: 0", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testNoNullElements_Iterable_Message() {
+        List<String> list = new ArrayList<>();
+        list.add("test");
+        assertSame(list, Validate.noNullElements(list, "Custom message %d"));
+        try {
+            Validate.noNullElements(Arrays.asList((String) null), "Custom message %d");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message 0", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testValidIndex_Array() {
+        String[] array = {"test"};
+        assertSame(array, Validate.validIndex(array, 0));
+        try {
+            Validate.validIndex(array, 1);
+            fail("Expected IndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+            assertEquals("The validated array index is invalid: 1", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testValidIndex_Array_Message() {
+        String[] array = {"test"};
+        assertSame(array, Validate.validIndex(array, 0, "Custom message %d"));
+        try {
+            Validate.validIndex(array, 1, "Custom message %d");
+            fail("Expected IndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+            assertEquals("Custom message 1", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testValidIndex_Collection() {
+        List<String> list = new ArrayList<>();
+        list.add("test");
+        assertSame(list, Validate.validIndex(list, 0));
+        try {
+            Validate.validIndex(list, 1);
+            fail("Expected IndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+            assertEquals("The validated collection index is invalid: 1", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testValidIndex_Collection_Message() {
+        List<String> list = new ArrayList<>();
+        list.add("test");
+        assertSame(list, Validate.validIndex(list, 0, "Custom message %d"));
+        try {
+            Validate.validIndex(list, 1, "Custom message %d");
+            fail("Expected IndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+            assertEquals("Custom message 1", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testValidIndex_CharSequence() {
+        String chars = "test";
+        assertSame(chars, Validate.validIndex(chars, 0));
+        try {
+            Validate.validIndex(chars, 4);
+            fail("Expected IndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+            assertEquals("The validated character sequence index is invalid: 4", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testValidIndex_CharSequence_Message() {
+        String chars = "test";
+        assertSame(chars, Validate.validIndex(chars, 0, "Custom message %d"));
+        try {
+            Validate.validIndex(chars, 4, "Custom message %d");
+            fail("Expected IndexOutOfBoundsException");
+        } catch (IndexOutOfBoundsException e) {
+            assertEquals("Custom message 4", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testValidState() {
+        Validate.validState(true);
+        try {
+            Validate.validState(false);
+            fail("Expected IllegalStateException");
+        } catch (IllegalStateException e) {
+            assertEquals("The validated state is false", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testValidState_Message() {
+        Validate.validState(true, "Custom message");
+        try {
+            Validate.validState(false, "Custom message");
+            fail("Expected IllegalStateException");
+        } catch (IllegalStateException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testMatchesPattern() {
+        Validate.matchesPattern("test", "test");
+        try {
+            Validate.matchesPattern("test", "wrong");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The string test does not match the pattern wrong", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testMatchesPattern_Message() {
+        Validate.matchesPattern("test", "test", "Custom message");
+        try {
+            Validate.matchesPattern("test", "wrong", "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testInclusiveBetween_Comparable() {
+        Validate.inclusiveBetween(1, 3, 2);
+        try {
+            Validate.inclusiveBetween(1, 3, 4);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The value 4 is not in the specified inclusive range of 1 to 3", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testInclusiveBetween_Comparable_Message() {
+        Validate.inclusiveBetween(1, 3, 2, "Custom message");
+        try {
+            Validate.inclusiveBetween(1, 3, 4, "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testInclusiveBetween_Long() {
+        Validate.inclusiveBetween(1L, 3L, 2L);
+        try {
+            Validate.inclusiveBetween(1L, 3L, 4L);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The value 4 is not in the specified inclusive range of 1 to 3", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testInclusiveBetween_Long_Message() {
+        Validate.inclusiveBetween(1L, 3L, 2L, "Custom message");
+        try {
+            Validate.inclusiveBetween(1L, 3L, 4L, "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testInclusiveBetween_Double() {
+        Validate.inclusiveBetween(1.0, 3.0, 2.0);
+        try {
+            Validate.inclusiveBetween(1.0, 3.0, 4.0);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The value 4.0 is not in the specified inclusive range of 1.0 to 3.0", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testInclusiveBetween_Double_Message() {
+        Validate.inclusiveBetween(1.0, 3.0, 2.0, "Custom message");
+        try {
+            Validate.inclusiveBetween(1.0, 3.0, 4.0, "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExclusiveBetween_Comparable() {
+        Validate.exclusiveBetween(1, 3, 2);
+        try {
+            Validate.exclusiveBetween(1, 3, 3);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The value 3 is not in the specified exclusive range of 1 to 3", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExclusiveBetween_Comparable_Message() {
+        Validate.exclusiveBetween(1, 3, 2, "Custom message");
+        try {
+            Validate.exclusiveBetween(1, 3, 3, "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExclusiveBetween_Long() {
+        Validate.exclusiveBetween(1L, 3L, 2L);
+        try {
+            Validate.exclusiveBetween(1L, 3L, 3L);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The value 3 is not in the specified exclusive range of 1 to 3", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExclusiveBetween_Long_Message() {
+        Validate.exclusiveBetween(1L, 3L, 2L, "Custom message");
+        try {
+            Validate.exclusiveBetween(1L, 3L, 3L, "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExclusiveBetween_Double() {
+        Validate.exclusiveBetween(1.0, 3.0, 2.0);
+        try {
+            Validate.exclusiveBetween(1.0, 3.0, 3.0);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("The value 3.0 is not in the specified exclusive range of 1.0 to 3.0", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testExclusiveBetween_Double_Message() {
+        Validate.exclusiveBetween(1.0, 3.0, 2.0, "Custom message");
+        try {
+            Validate.exclusiveBetween(1.0, 3.0, 3.0, "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testIsInstanceOf() {
+        Validate.isInstanceOf(String.class, "test");
+        try {
+            Validate.isInstanceOf(Integer.class, "test");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Expected type: java.lang.Integer, actual: java.lang.String", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testIsInstanceOf_Message() {
+        Validate.isInstanceOf(String.class, "test", "Custom message");
+        try {
+            Validate.isInstanceOf(Integer.class, "test", "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testIsAssignableFrom() {
+        Validate.isAssignableFrom(Number.class, Integer.class);
+        try {
+            Validate.isAssignableFrom(String.class, Integer.class);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Cannot assign a java.lang.Integer to a java.lang.String", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testIsAssignableFrom_Message() {
+        Validate.isAssignableFrom(Number.class, Integer.class, "Custom message");
+        try {
+            Validate.isAssignableFrom(String.class, Integer.class, "Custom message");
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Custom message", e.getMessage());
+        }
+    }
+}

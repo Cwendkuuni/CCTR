@@ -1,0 +1,94 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.exceptions.Reporter;
+import org.mockito.internal.configuration.injection.filter.FinalMockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.OngoingInjecter;
+import org.mockito.internal.util.reflection.BeanPropertySetter;
+import org.mockito.internal.util.reflection.FieldSetter;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class FinalMockCandidateFilterTest {
+
+    private FinalMockCandidateFilter filter;
+    private Field field;
+    private Object fieldInstance;
+
+    @Before
+    public void setUp() throws Exception {
+        filter = new FinalMockCandidateFilter();
+        field = getClass().getDeclaredField("fieldInstance");
+        fieldInstance = new Object();
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMock() throws Exception {
+        Collection<Object> mocks = Collections.singletonList(new Object());
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+
+        Object mock = mocks.iterator().next();
+        BeanPropertySetter beanPropertySetter = mock(BeanPropertySetter.class);
+        FieldSetter fieldSetter = mock(FieldSetter.class);
+
+        when(beanPropertySetter.set(mock)).thenReturn(true);
+
+        assertNotNull(injecter.thenInject());
+        verify(beanPropertySetter).set(mock);
+        verify(fieldSetter, never()).set(mock);
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMockUsingFieldSetter() throws Exception {
+        Collection<Object> mocks = Collections.singletonList(new Object());
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+
+        Object mock = mocks.iterator().next();
+        BeanPropertySetter beanPropertySetter = mock(BeanPropertySetter.class);
+        FieldSetter fieldSetter = mock(FieldSetter.class);
+
+        when(beanPropertySetter.set(mock)).thenReturn(false);
+
+        assertNotNull(injecter.thenInject());
+        verify(beanPropertySetter).set(mock);
+        verify(fieldSetter).set(mock);
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMockThrowsException() throws Exception {
+        Collection<Object> mocks = Collections.singletonList(new Object());
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+
+        Object mock = mocks.iterator().next();
+        BeanPropertySetter beanPropertySetter = mock(BeanPropertySetter.class);
+        FieldSetter fieldSetter = mock(FieldSetter.class);
+
+        when(beanPropertySetter.set(mock)).thenThrow(new RuntimeException());
+
+        try {
+            injecter.thenInject();
+            fail("Expected Reporter exception");
+        } catch (RuntimeException e) {
+            // Expected
+        }
+
+        verify(beanPropertySetter).set(mock);
+        verify(fieldSetter, never()).set(mock);
+    }
+
+    @Test
+    public void testFilterCandidateWithMultipleMocks() throws Exception {
+        Collection<Object> mocks = Arrays.asList(new Object(), new Object());
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+
+        assertNull(injecter.thenInject());
+    }
+}
+```

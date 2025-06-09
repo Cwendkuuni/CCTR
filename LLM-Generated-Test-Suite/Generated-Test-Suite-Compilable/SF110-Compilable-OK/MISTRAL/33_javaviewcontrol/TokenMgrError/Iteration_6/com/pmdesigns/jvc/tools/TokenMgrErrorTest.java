@@ -1,0 +1,55 @@
+package com.pmdesigns.jvc.tools;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class TokenMgrErrorTest {
+
+    @Test
+    public void testAddEscapes() {
+        assertEquals("\\b\\t\\n\\f\\r\\\"\\'\\\\", TokenMgrError.addEscapes("\b\t\n\f\r\"\'\\"));
+        assertEquals("\\u0000", TokenMgrError.addEscapes("\0"));
+        assertEquals("A", TokenMgrError.addEscapes("A"));
+        assertEquals("\\u00e9", TokenMgrError.addEscapes("\u00e9")); // é
+    }
+
+    @Test
+    public void testLexicalError() {
+        String expected = "Lexical error at line 1, column 1.  Encountered: \"\\t\" (9), after : \"\"";
+        assertEquals(expected, TokenMgrError.LexicalError(false, 0, 1, 1, "", '\t'));
+
+        expected = "Lexical error at line 2, column 3.  Encountered: \"\\\"\" (34), after : \"abc\"";
+        assertEquals(expected, TokenMgrError.LexicalError(false, 0, 2, 3, "abc", '\"'));
+
+        expected = "Lexical error at line 3, column 4.  Encountered: <EOF> , after : \"def\"";
+        assertEquals(expected, TokenMgrError.LexicalError(true, 0, 3, 4, "def", '\0'));
+    }
+
+    @Test
+    public void testGetMessage() {
+        TokenMgrError error = new TokenMgrError("Test Message", 0);
+        assertEquals("Test Message", error.getMessage());
+    }
+
+    @Test
+    public void testConstructorWithMessageAndReason() {
+        TokenMgrError error = new TokenMgrError("Test Message", 1);
+        assertEquals("Test Message", error.getMessage());
+        assertEquals(1, error.errorCode);
+    }
+
+    @Test
+    public void testConstructorWithLexicalError() {
+        TokenMgrError error = new TokenMgrError(false, 0, 1, 1, "", '\t', 2);
+        String expectedMessage = "Lexical error at line 1, column 1.  Encountered: \"\\t\" (9), after : \"\"";
+        assertEquals(expectedMessage, error.getMessage());
+        assertEquals(2, error.errorCode);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        TokenMgrError error = new TokenMgrError();
+        assertNull(error.getMessage());
+        assertEquals(0, error.errorCode); // Default value for int is 0
+    }
+}

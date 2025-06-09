@@ -1,0 +1,128 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.List;
+
+public class TypeInfoFactoryTest {
+
+    @Test
+    public void testGetTypeInfoForArray() {
+        Type arrayType = new TypeUtils.GenericArrayTypeImpl(String.class);
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(arrayType);
+        assertNotNull(typeInfoArray);
+        assertEquals(arrayType, typeInfoArray.getType());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArrayWithNonArrayType() {
+        Type nonArrayType = String.class;
+        TypeInfoFactory.getTypeInfoForArray(nonArrayType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField() throws NoSuchFieldException {
+        class TestClass<T> {
+            T field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeDefiningF = new TypeUtils.ParameterizedTypeImpl(TestClass.class, new Type[]{String.class}, null);
+
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+        assertNotNull(typeInfo);
+        assertEquals(String.class, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithGenericArrayType() throws NoSuchFieldException {
+        class TestClass<T> {
+            T[] field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeDefiningF = new TypeUtils.ParameterizedTypeImpl(TestClass.class, new Type[]{String.class}, null);
+
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+        assertNotNull(typeInfo);
+        assertEquals(new TypeUtils.GenericArrayTypeImpl(String.class), typeInfo.getType());
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithTypeVariable() throws NoSuchFieldException {
+        class TestClass<T> {
+            T field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeDefiningF = new TypeUtils.ParameterizedTypeImpl(TestClass.class, new Type[]{String.class}, null);
+
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+        assertNotNull(typeInfo);
+        assertEquals(String.class, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetTypeInfoForFieldWithWildcardType() throws NoSuchFieldException {
+        class TestClass<T> {
+            List<? extends T> field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeDefiningF = new TypeUtils.ParameterizedTypeImpl(TestClass.class, new Type[]{String.class}, null);
+
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+        assertNotNull(typeInfo);
+        assertEquals(new TypeUtils.ParameterizedTypeImpl(List.class, new Type[]{String.class}, null), typeInfo.getType());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetTypeInfoForFieldWithUnsupportedTypeVariable() throws NoSuchFieldException {
+        class TestClass<T> {
+            T field;
+        }
+
+        Field field = TestClass.class.getDeclaredField("field");
+        Type typeDefiningF = TestClass.class; // Not a ParameterizedType
+
+        TypeInfoFactory.getTypeInfoForField(field, typeDefiningF);
+    }
+
+    @Test
+    public void testExtractRealTypes() {
+        Type[] actualTypeArguments = new Type[]{String.class, Integer.class};
+        Type parentType = new TypeUtils.ParameterizedTypeImpl(List.class, actualTypeArguments, null);
+        Class<?> rawParentClass = List.class;
+
+        Type[] realTypes = TypeInfoFactory.extractRealTypes(actualTypeArguments, parentType, rawParentClass);
+        assertNotNull(realTypes);
+        assertEquals(2, realTypes.length);
+        assertEquals(String.class, realTypes[0]);
+        assertEquals(Integer.class, realTypes[1]);
+    }
+
+    @Test
+    public void testGetIndex() {
+        TypeVariable<?>[] types = TestClass.class.getTypeParameters();
+        TypeVariable<?> type = types[0];
+
+        int index = TypeInfoFactory.getIndex(types, type);
+        assertEquals(0, index);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetIndexWithNonExistentTypeVariable() {
+        TypeVariable<?>[] types = TestClass.class.getTypeParameters();
+        TypeVariable<?> type = new TypeUtils.TypeVariableImpl(types[0].getName(), new Type[]{});
+
+        TypeInfoFactory.getIndex(types, type);
+    }
+
+    private static class TestClass<T> {
+        T field;
+    }
+}
+```

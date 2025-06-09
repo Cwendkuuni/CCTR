@@ -1,0 +1,183 @@
+```java
+package org.apache.commons.cli2.commandline;
+
+import static org.junit.Assert.*;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
+import java.util.Set;
+
+import org.apache.commons.cli2.Argument;
+import org.apache.commons.cli2.Option;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.apache.commons.cli2.option.PropertyOption;
+import org.junit.Before;
+import org.junit.Test;
+
+public class WriteableCommandLineImplTest {
+
+    private WriteableCommandLineImpl commandLine;
+    private Option rootOption;
+    private List<String> arguments;
+
+    @Before
+    public void setUp() {
+        rootOption = new PropertyOption();
+        arguments = new ArrayList<>(Arrays.asList("arg1", "arg2", "arg3"));
+        commandLine = new WriteableCommandLineImpl(rootOption, arguments);
+    }
+
+    @Test
+    public void testAddOption() {
+        Option option = new PropertyOption();
+        commandLine.addOption(option);
+        assertTrue(commandLine.hasOption(option));
+    }
+
+    @Test
+    public void testAddValue() {
+        Option option = new PropertyOption();
+        commandLine.addValue(option, "value1");
+        List<Object> values = commandLine.getValues(option, null);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test
+    public void testAddSwitch() {
+        Option option = new PropertyOption();
+        commandLine.addSwitch(option, true);
+        assertTrue(commandLine.getSwitch(option, null));
+    }
+
+    @Test
+    public void testHasOption() {
+        Option option = new PropertyOption();
+        commandLine.addOption(option);
+        assertTrue(commandLine.hasOption(option));
+    }
+
+    @Test
+    public void testGetOption() {
+        Option option = new PropertyOption();
+        option.setPreferredName("testOption");
+        commandLine.addOption(option);
+        assertEquals(option, commandLine.getOption("testOption"));
+    }
+
+    @Test
+    public void testGetValues() {
+        Option option = new PropertyOption();
+        commandLine.addValue(option, "value1");
+        List<Object> values = commandLine.getValues(option, null);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test
+    public void testGetUndefaultedValues() {
+        Option option = new PropertyOption();
+        commandLine.addValue(option, "value1");
+        List<Object> values = commandLine.getUndefaultedValues(option);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test
+    public void testGetSwitch() {
+        Option option = new PropertyOption();
+        commandLine.addSwitch(option, true);
+        assertTrue(commandLine.getSwitch(option, null));
+    }
+
+    @Test
+    public void testGetProperty() {
+        Option option = new PropertyOption();
+        commandLine.addProperty(option, "key", "value");
+        assertEquals("value", commandLine.getProperty(option, "key", null));
+    }
+
+    @Test
+    public void testAddProperty() {
+        Option option = new PropertyOption();
+        commandLine.addProperty(option, "key", "value");
+        Properties properties = (Properties) commandLine.getProperties(option);
+        assertEquals("value", properties.getProperty("key"));
+    }
+
+    @Test
+    public void testGetProperties() {
+        Option option = new PropertyOption();
+        commandLine.addProperty(option, "key1", "value1");
+        commandLine.addProperty(option, "key2", "value2");
+        Set<Object> properties = commandLine.getProperties(option);
+        assertEquals(2, properties.size());
+        assertTrue(properties.contains("key1"));
+        assertTrue(properties.contains("key2"));
+    }
+
+    @Test
+    public void testLooksLikeOption() {
+        rootOption.setPrefixes(new HashSet<>(Arrays.asList("-", "--")));
+        assertTrue(commandLine.looksLikeOption("-option"));
+        assertTrue(commandLine.looksLikeOption("--option"));
+        assertFalse(commandLine.looksLikeOption("option"));
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("arg1 arg2 arg3", commandLine.toString());
+    }
+
+    @Test
+    public void testGetOptions() {
+        Option option = new PropertyOption();
+        commandLine.addOption(option);
+        List<Option> options = commandLine.getOptions();
+        assertEquals(1, options.size());
+        assertEquals(option, options.get(0));
+    }
+
+    @Test
+    public void testGetOptionTriggers() {
+        Option option = new PropertyOption();
+        option.setPreferredName("testOption");
+        commandLine.addOption(option);
+        Set<Object> triggers = commandLine.getOptionTriggers();
+        assertTrue(triggers.contains("testOption"));
+    }
+
+    @Test
+    public void testSetDefaultValues() {
+        Option option = new PropertyOption();
+        List<String> defaults = Arrays.asList("default1", "default2");
+        commandLine.setDefaultValues(option, defaults);
+        List<Object> values = commandLine.getValues(option, null);
+        assertEquals(2, values.size());
+        assertEquals("default1", values.get(0));
+        assertEquals("default2", values.get(1));
+    }
+
+    @Test
+    public void testSetDefaultSwitch() {
+        Option option = new PropertyOption();
+        commandLine.setDefaultSwitch(option, true);
+        assertTrue(commandLine.getSwitch(option, null));
+    }
+
+    @Test
+    public void testGetNormalised() {
+        List<String> normalised = commandLine.getNormalised();
+        assertEquals(3, normalised.size());
+        assertEquals("arg1", normalised.get(0));
+        assertEquals("arg2", normalised.get(1));
+        assertEquals("arg3", normalised.get(2));
+    }
+}
+```

@@ -1,0 +1,79 @@
+package org.apache.commons.lang3.time;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+import org.apache.commons.lang3.time.DurationFormatUtils;
+import java.util.TimeZone;
+
+public class DurationFormatUtilsTest {
+
+    @Test
+    public void testFormatDurationHMS() {
+        assertEquals("0:00:00.000", DurationFormatUtils.formatDurationHMS(0));
+        assertEquals("0:00:01.000", DurationFormatUtils.formatDurationHMS(1000));
+        assertEquals("1:00:00.000", DurationFormatUtils.formatDurationHMS(3600000));
+        assertEquals("1:01:01.001", DurationFormatUtils.formatDurationHMS(3661001));
+    }
+
+    @Test
+    public void testFormatDurationISO() {
+        assertEquals("P0Y0M0DT0H0M0.000S", DurationFormatUtils.formatDurationISO(0));
+        assertEquals("P0Y0M0DT0H0M1.000S", DurationFormatUtils.formatDurationISO(1000));
+        assertEquals("P0Y0M0DT1H0M0.000S", DurationFormatUtils.formatDurationISO(3600000));
+    }
+
+    @Test
+    public void testFormatDuration() {
+        assertEquals("0:00:00.000", DurationFormatUtils.formatDuration(0, "H:mm:ss.SSS"));
+        assertEquals("0:00:01.000", DurationFormatUtils.formatDuration(1000, "H:mm:ss.SSS"));
+        assertEquals("1:00:00.000", DurationFormatUtils.formatDuration(3600000, "H:mm:ss.SSS"));
+    }
+
+    @Test
+    public void testFormatDurationWithPadding() {
+        assertEquals("00:00:00.000", DurationFormatUtils.formatDuration(0, "HH:mm:ss.SSS", true));
+        assertEquals("00:00:01.000", DurationFormatUtils.formatDuration(1000, "HH:mm:ss.SSS", true));
+        assertEquals("01:00:00.000", DurationFormatUtils.formatDuration(3600000, "HH:mm:ss.SSS", true));
+    }
+
+    @Test
+    public void testFormatDurationWords() {
+        assertEquals("0 days 0 hours 0 minutes 0 seconds", DurationFormatUtils.formatDurationWords(0, false, false));
+        assertEquals("1 second", DurationFormatUtils.formatDurationWords(1000, true, true));
+        assertEquals("1 hour 1 minute 1 second", DurationFormatUtils.formatDurationWords(3661000, true, true));
+    }
+
+    @Test
+    public void testFormatPeriodISO() {
+        long start = System.currentTimeMillis();
+        long end = start + 3600000; // 1 hour later
+        assertEquals("P0Y0M0DT1H0M0.000S", DurationFormatUtils.formatPeriodISO(start, end));
+    }
+
+    @Test
+    public void testFormatPeriod() {
+        long start = System.currentTimeMillis();
+        long end = start + 3600000; // 1 hour later
+        assertEquals("1:00:00.000", DurationFormatUtils.formatPeriod(start, end, "H:mm:ss.SSS"));
+    }
+
+    @Test
+    public void testFormatPeriodWithPadding() {
+        long start = System.currentTimeMillis();
+        long end = start + 3600000; // 1 hour later
+        assertEquals("01:00:00.000", DurationFormatUtils.formatPeriod(start, end, "HH:mm:ss.SSS", true, TimeZone.getDefault()));
+    }
+
+    @Test
+    public void testLexx() {
+        DurationFormatUtils.Token[] tokens = DurationFormatUtils.lexx("H:mm:ss.SSS");
+        assertEquals(7, tokens.length);
+        assertEquals("H", tokens[0].getValue());
+        assertEquals(":", tokens[1].getValue().toString());
+        assertEquals("mm", tokens[2].toString());
+        assertEquals(":", tokens[3].getValue().toString());
+        assertEquals("ss", tokens[4].toString());
+        assertEquals(".", tokens[5].getValue().toString());
+        assertEquals("SSS", tokens[6].toString());
+    }
+}

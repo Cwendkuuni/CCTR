@@ -1,0 +1,106 @@
+To create a comprehensive JUnit 4 test suite for the `Menu` class, we need to test each method in the class. Since the class interacts with the file system and external processes, we'll need to mock these interactions. We'll use the Mockito framework to mock dependencies like the `GUI` class and file operations.
+
+Here's a complete JUnit 4 test suite for the `Menu` class:
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.*;
+
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class MenuTest {
+
+    @Mock
+    private GUI mockGUI;
+
+    @Mock
+    private File mockFile;
+
+    @Mock
+    private BufferedReader mockBufferedReader;
+
+    @Mock
+    private BufferedWriter mockBufferedWriter;
+
+    @Mock
+    private Process mockProcess;
+
+    @InjectMocks
+    private Menu menu;
+
+    @Before
+    public void setUp() {
+        when(mockGUI.strOutputDir).thenReturn("/mock/output/dir");
+        when(mockGUI.txtTextFile).thenReturn(mockFile);
+    }
+
+    @Test
+    public void testInit() throws Exception {
+        when(mockGUI.ErrorCheck(anyString())).thenReturn(false);
+        menu = new Menu("Title", "/path/to/textfile", true, mockGUI);
+        boolean result = menu.init();
+        Assert.assertFalse(result);
+    }
+
+    @Test
+    public void testRun() {
+        menu = new Menu("Title", "/path/to/textfile", true, mockGUI);
+        menu.run();
+        // Verify that DVDMainMenu is called
+        // Since DVDMainMenu is a void method, we can only verify interactions
+        verify(mockGUI, atLeastOnce()).strOutputDir;
+    }
+
+    @Test
+    public void testDVDMainMenu() throws Exception {
+        when(mockFile.getText()).thenReturn("/path/to/textfile");
+        when(mockBufferedReader.readLine()).thenReturn("Title1", "Title2", "DONE", null);
+        when(mockGUI.MessageBox(anyString(), anyInt())).thenReturn(null);
+
+        menu = new Menu("Title", "/path/to/textfile", true, mockGUI);
+        menu.DVDMainMenu();
+
+        verify(mockGUI, atLeastOnce()).strOutputDir;
+        verify(mockGUI, atLeastOnce()).MessageBox(anyString(), anyInt());
+    }
+
+    @Test
+    public void testCreateXML() throws Exception {
+        when(mockFile.exists()).thenReturn(true);
+        when(mockFile.isDirectory()).thenReturn(true);
+        when(mockBufferedWriter.write(anyString())).thenReturn(null);
+
+        menu = new Menu("Title", "/path/to/textfile", true, mockGUI);
+        boolean result = menu.createXML();
+
+        Assert.assertFalse(result);
+        verify(mockBufferedWriter, atLeastOnce()).write(anyString());
+    }
+
+    @After
+    public void tearDown() {
+        // Clean up resources if needed
+    }
+}
+```
+
+### Explanation:
+
+1. **Mocking Dependencies**: We use Mockito to mock the `GUI` class and other file-related operations. This allows us to isolate the `Menu` class and test its logic without relying on actual file I/O or GUI operations.
+
+2. **Testing `init` Method**: We test the `init` method by verifying that it returns the expected boolean value based on the mocked `ErrorCheck` method of the `GUI`.
+
+3. **Testing `run` Method**: Since `run` calls `DVDMainMenu`, we verify that the method is executed by checking interactions with the `GUI`.
+
+4. **Testing `DVDMainMenu` Method**: We simulate reading from a text file and verify that the method processes the file correctly and interacts with the `GUI`.
+
+5. **Testing `createXML` Method**: We mock file operations to test the XML creation logic and verify that the method writes the expected content.
+
+6. **Setup and Teardown**: We use `@Before` and `@After` annotations to set up and clean up resources before and after each test.
+
+This test suite provides a basic structure for testing the `Menu` class. You may need to adjust the tests based on the actual behavior of the `GUI` class and other dependencies.

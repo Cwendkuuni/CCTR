@@ -1,0 +1,122 @@
+Certainly! Below is a JUnit 4 test suite for the `ReflectionSearch` class. This suite aims to cover the various methods and their functionalities. Note that some methods depend on external classes and interfaces, so mock objects or assumptions are made where necessary.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+import net.sourceforge.beanbin.reflect.ReflectionSearch;
+import net.sourceforge.beanbin.search.WildcardSearch;
+import net.sourceforge.beanbin.query.Conditional;
+import net.sourceforge.beanbin.query.Criteria;
+import net.sourceforge.beanbin.query.MethodReflectionCriteria;
+import net.sourceforge.beanbin.query.Query;
+import net.sourceforge.beanbin.query.ReflectionCriteria;
+import net.sourceforge.beanbin.query.SearchType;
+import net.sourceforge.beanbin.BeanBinException;
+import net.sourceforge.beanbin.ReflectionShelf;
+
+public class ReflectionSearchTest {
+
+    private ReflectionSearch reflectionSearch;
+    private Class<?> testClass;
+
+    @Before
+    public void setUp() {
+        testClass = TestClass.class;
+        reflectionSearch = new ReflectionSearch(testClass);
+    }
+
+    @Test
+    public void testHasAnnotationWithExactMatch() {
+        assertTrue(reflectionSearch.hasAnnotation("@TestAnnotation"));
+    }
+
+    @Test
+    public void testHasAnnotationWithWildcardMatch() {
+        assertTrue(reflectionSearch.hasAnnotation("@Test*"));
+    }
+
+    @Test
+    public void testHasAnnotationWithNoMatch() {
+        assertFalse(reflectionSearch.hasAnnotation("@NonExistent"));
+    }
+
+    @Test
+    public void testMethodsThatHave() throws BeanBinException {
+        ReflectionSearch result = reflectionSearch.methodsThatHave("testMethod");
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testMethodsThatDontHave() throws BeanBinException {
+        ReflectionSearch result = reflectionSearch.methodsThatDontHave("nonExistentMethod");
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testAnd() {
+        ReflectionSearch result = reflectionSearch.and();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testOr() {
+        ReflectionSearch result = reflectionSearch.or();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testGetMethods() throws BeanBinException {
+        List<Method> methods = reflectionSearch.getMethods();
+        assertNotNull(methods);
+    }
+
+    @Test
+    public void testIntersect() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        Method[] methods = testClass.getDeclaredMethods();
+        master.add(methods[0]);
+        toAdd.add(methods[0]);
+        toAdd.add(methods[1]);
+
+        reflectionSearch.intersect(master, toAdd);
+        assertEquals(1, master.size());
+    }
+
+    @Test
+    public void testUnion() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        Method[] methods = testClass.getDeclaredMethods();
+        master.add(methods[0]);
+        toAdd.add(methods[1]);
+
+        reflectionSearch.union(master, toAdd);
+        assertEquals(2, master.size());
+    }
+
+    // Mock class and annotation for testing
+    @Retention(RetentionPolicy.RUNTIME)
+    @interface TestAnnotation {}
+
+    @TestAnnotation
+    private static class TestClass {
+        public void testMethod() {}
+        public void anotherMethod() {}
+    }
+}
+```
+
+### Explanation:
+- **Annotations and Mock Classes**: A mock annotation `TestAnnotation` and a mock class `TestClass` are used to simulate the presence of annotations and methods.
+- **Test Methods**: Each method in `ReflectionSearch` is tested for expected behavior. For example, `hasAnnotation` is tested with exact matches, wildcard matches, and non-matches.
+- **Setup**: The `setUp` method initializes the `ReflectionSearch` object with the mock class.
+- **Assertions**: Various assertions are used to verify the expected outcomes of method calls.
+
+This test suite assumes that the `ReflectionShelf`, `WildcardSearch`, and other dependencies are correctly implemented and available in the classpath. Adjustments may be necessary based on the actual implementations of these dependencies.

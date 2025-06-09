@@ -1,0 +1,55 @@
+```java
+package com.google.common.base;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+public class Utf8Test {
+
+    @Test
+    public void testEncodedLength() {
+        assertEquals(5, Utf8.encodedLength("hello"));
+        assertEquals(5, Utf8.encodedLength("world"));
+        assertEquals(10, Utf8.encodedLength("hello world"));
+        assertEquals(2, Utf8.encodedLength("€")); // Euro sign
+        assertEquals(3, Utf8.encodedLength("𝌆")); // Mathematical bold capital A
+
+        try {
+            Utf8.encodedLength(new StringBuilder().appendCodePoint(0xD800)); // Unpaired surrogate
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testIsWellFormed() {
+        byte[] wellFormedBytes = "hello".getBytes();
+        assertTrue(Utf8.isWellFormed(wellFormedBytes));
+
+        byte[] malformedBytes = {(byte) 0xC0, (byte) 0x80}; // Overlong encoding
+        assertFalse(Utf8.isWellFormed(malformedBytes));
+
+        byte[] wellFormedBytesWithOffset = "hello world".getBytes();
+        assertTrue(Utf8.isWellFormed(wellFormedBytesWithOffset, 6, 5)); // "world"
+
+        byte[] malformedBytesWithOffset = {(byte) 0xE0, (byte) 0x80, (byte) 0x80}; // Overlong encoding
+        assertFalse(Utf8.isWellFormed(malformedBytesWithOffset, 0, 3));
+    }
+
+    @Test
+    public void testIsWellFormedSlowPath() {
+        byte[] wellFormedBytes = "hello".getBytes();
+        assertTrue(Utf8.isWellFormedSlowPath(wellFormedBytes, 0, wellFormedBytes.length));
+
+        byte[] malformedBytes = {(byte) 0xC0, (byte) 0x80}; // Overlong encoding
+        assertFalse(Utf8.isWellFormedSlowPath(malformedBytes, 0, malformedBytes.length));
+
+        byte[] wellFormedBytesWithOffset = "hello world".getBytes();
+        assertTrue(Utf8.isWellFormedSlowPath(wellFormedBytesWithOffset, 6, 5)); // "world"
+
+        byte[] malformedBytesWithOffset = {(byte) 0xE0, (byte) 0x80, (byte) 0x80}; // Overlong encoding
+        assertFalse(Utf8.isWellFormedSlowPath(malformedBytesWithOffset, 0, 3));
+    }
+}
+```

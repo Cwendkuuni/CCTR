@@ -1,0 +1,132 @@
+```java
+package org.jdom2.transform;
+
+import org.jdom2.*;
+import org.jdom2.input.sax.DefaultSAXBuilder;
+import org.jdom2.input.sax.SAXBuilder;
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.ContentHandler;
+import org.xml.sax.ext.LexicalHandler;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class JDOMResultTest {
+
+    private JDOMResult jdomResult;
+    private Document document;
+    private List<Content> contentList;
+
+    @Before
+    public void setUp() throws Exception {
+        jdomResult = new JDOMResult();
+        document = new Document();
+        contentList = new ArrayList<>();
+    }
+
+    @Test
+    public void testSetResult() {
+        jdomResult.setResult(contentList);
+        assertEquals(contentList, jdomResult.getResult());
+    }
+
+    @Test
+    public void testGetResult() {
+        List<Content> result = jdomResult.getResult();
+        assertTrue(result.isEmpty());
+
+        contentList.add(new Element("test"));
+        jdomResult.setResult(contentList);
+        result = jdomResult.getResult();
+        assertEquals(contentList, result);
+    }
+
+    @Test
+    public void testSetDocument() {
+        jdomResult.setDocument(document);
+        assertEquals(document, jdomResult.getDocument());
+    }
+
+    @Test
+    public void testGetDocument() {
+        Document result = jdomResult.getDocument();
+        assertNull(result);
+
+        jdomResult.setDocument(document);
+        result = jdomResult.getDocument();
+        assertEquals(document, result);
+    }
+
+    @Test
+    public void testSetFactory() {
+        JDOMFactory factory = new DefaultJDOMFactory();
+        jdomResult.setFactory(factory);
+        assertEquals(factory, jdomResult.getFactory());
+    }
+
+    @Test
+    public void testGetFactory() {
+        assertNull(jdomResult.getFactory());
+
+        JDOMFactory factory = new DefaultJDOMFactory();
+        jdomResult.setFactory(factory);
+        assertEquals(factory, jdomResult.getFactory());
+    }
+
+    @Test
+    public void testSetHandler() {
+        ContentHandler handler = new DefaultSAXBuilder().getContentHandler();
+        jdomResult.setHandler(handler);
+        // No direct way to verify, but ensure no exceptions are thrown
+    }
+
+    @Test
+    public void testSetLexicalHandler() {
+        LexicalHandler handler = new DefaultSAXBuilder().getLexicalHandler();
+        jdomResult.setLexicalHandler(handler);
+        // No direct way to verify, but ensure no exceptions are thrown
+    }
+
+    @Test
+    public void testRetrieveResult() {
+        // Indirectly tested through getResult and getDocument methods
+        List<Content> result = jdomResult.getResult();
+        assertTrue(result.isEmpty());
+
+        contentList.add(new Element("test"));
+        jdomResult.setResult(contentList);
+        result = jdomResult.getResult();
+        assertEquals(contentList, result);
+    }
+
+    @Test
+    public void testFragmentHandler() {
+        JDOMResult.FragmentHandler handler = new JDOMResult.FragmentHandler(new DefaultJDOMFactory());
+        List<Content> result = handler.getResult();
+        assertTrue(result.isEmpty());
+
+        handler.startElement(null, "test", "test", null);
+        handler.endElement(null, "test", "test");
+        result = handler.getResult();
+        assertEquals(1, result.size());
+        assertTrue(result.get(0) instanceof Element);
+    }
+
+    @Test
+    public void testDocumentBuilder() {
+        JDOMResult.DocumentBuilder builder = new JDOMResult.DocumentBuilder();
+        List<Content> result = builder.getResult();
+        assertNull(result);
+
+        builder.startDocument();
+        builder.startElement(null, "test", "test", null);
+        builder.endElement(null, "test", "test");
+        result = builder.getResult();
+        assertEquals(1, result.size());
+        assertTrue(result.get(0) instanceof Element);
+    }
+}
+```

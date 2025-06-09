@@ -1,0 +1,111 @@
+package org.apache.commons.cli;
+
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.assertArrayEquals;
+
+public class PosixParserTest {
+
+    private PosixParser parser;
+    private Options options;
+
+    @Before
+    public void setUp() {
+        parser = new PosixParser();
+        options = new Options();
+        options.addOption("a", false, "Option a");
+        options.addOption("b", true, "Option b");
+        options.addOption("c", false, "Option c");
+        options.addOption("d", false, "Option d");
+        options.addOption("e", true, "Option e");
+        options.addOption("long", false, "Long option");
+    }
+
+    @Test
+    public void testSingleHyphen() {
+        String[] args = {"-"};
+        String[] expected = {"-"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testDoubleHyphen() {
+        String[] args = {"--"};
+        String[] expected = {"--"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testLongOption() {
+        String[] args = {"--long"};
+        String[] expected = {"--long"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testLongOptionWithEquals() {
+        String[] args = {"--long=value"};
+        String[] expected = {"--long", "value"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testUnknownLongOption() {
+        String[] args = {"--unknown"};
+        String[] expected = {"--", "--unknown"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testShortOption() {
+        String[] args = {"-a"};
+        String[] expected = {"-a"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testShortOptionWithArgument() {
+        String[] args = {"-b", "value"};
+        String[] expected = {"-b", "value"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testBurstToken() {
+        String[] args = {"-abc"};
+        String[] expected = {"-a", "-b", "c"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testStopAtNonOption() {
+        String[] args = {"-a", "non-option", "-b"};
+        String[] expected = {"-a", "--", "non-option", "-b"};
+        assertArrayEquals(expected, parser.flatten(options, args, true));
+    }
+
+    @Test
+    public void testNoStopAtNonOption() {
+        String[] args = {"-a", "non-option", "-b"};
+        String[] expected = {"-a", "non-option", "-b"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testMixedOptions() {
+        String[] args = {"-a", "--long", "-b", "value", "non-option", "-c"};
+        String[] expected = {"-a", "--long", "-b", "value", "non-option", "-c"};
+        assertArrayEquals(expected, parser.flatten(options, args, false));
+    }
+
+    @Test
+    public void testMixedOptionsWithStop() {
+        String[] args = {"-a", "--long", "-b", "value", "non-option", "-c"};
+        String[] expected = {"-a", "--long", "-b", "value", "--", "non-option", "-c"};
+        assertArrayEquals(expected, parser.flatten(options, args, true));
+    }
+}

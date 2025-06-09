@@ -1,0 +1,256 @@
+```java
+import org.apache.commons.cli.ParseException;
+import org.apache.commons.cli.TypeHandler;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import org.junit.Assert;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Date;
+
+public class TypeHandlerTest {
+
+    @Before
+    public void setUp() {
+        // Set up any necessary preconditions
+    }
+
+    @After
+    public void tearDown() {
+        // Clean up any resources if necessary
+    }
+
+    @Test
+    public void testCreateValueString() throws ParseException {
+        String str = "testString";
+        Object result = TypeHandler.createValue(str, String.class);
+        Assert.assertEquals(str, result);
+    }
+
+    @Test
+    public void testCreateValueObject() throws ParseException {
+        String className = "java.util.Date";
+        Object result = TypeHandler.createValue(className, Object.class);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result instanceof Date);
+    }
+
+    @Test
+    public void testCreateValueNumber() throws ParseException {
+        String numberStr = "123.45";
+        Object result = TypeHandler.createValue(numberStr, Number.class);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result instanceof Double);
+        Assert.assertEquals(Double.valueOf(numberStr), result);
+
+        numberStr = "123";
+        result = TypeHandler.createValue(numberStr, Number.class);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result instanceof Long);
+        Assert.assertEquals(Long.valueOf(numberStr), result);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testCreateValueNumberInvalid() throws ParseException {
+        String numberStr = "invalidNumber";
+        TypeHandler.createValue(numberStr, Number.class);
+    }
+
+    @Test
+    public void testCreateValueDate() {
+        String dateStr = "2023-10-01";
+        try {
+            TypeHandler.createValue(dateStr, Date.class);
+            Assert.fail("Expected UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // Expected
+        } catch (ParseException e) {
+            Assert.fail("Unexpected ParseException");
+        }
+    }
+
+    @Test
+    public void testCreateValueClass() throws ParseException {
+        String className = "java.util.Date";
+        Object result = TypeHandler.createValue(className, Class.class);
+        Assert.assertNotNull(result);
+        Assert.assertEquals(Date.class, result);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testCreateValueClassInvalid() throws ParseException {
+        String className = "invalid.Class";
+        TypeHandler.createValue(className, Class.class);
+    }
+
+    @Test
+    public void testCreateValueFile() {
+        String filePath = "testFile.txt";
+        Object result = TypeHandler.createValue(filePath, File.class);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result instanceof File);
+        Assert.assertEquals(new File(filePath), result);
+    }
+
+    @Test
+    public void testCreateValueExistingFile() throws ParseException {
+        String filePath = "testFile.txt";
+        try {
+            Object result = TypeHandler.createValue(filePath, FileInputStream.class);
+            Assert.assertNotNull(result);
+            Assert.assertTrue(result instanceof FileInputStream);
+        } catch (FileNotFoundException e) {
+            // Expected if the file does not exist
+        }
+    }
+
+    @Test(expected = ParseException.class)
+    public void testCreateValueExistingFileInvalid() throws ParseException {
+        String filePath = "invalidFile.txt";
+        TypeHandler.createValue(filePath, FileInputStream.class);
+    }
+
+    @Test
+    public void testCreateValueFiles() {
+        String filePaths = "file1.txt,file2.txt";
+        try {
+            TypeHandler.createValue(filePaths, File[].class);
+            Assert.fail("Expected UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // Expected
+        } catch (ParseException e) {
+            Assert.fail("Unexpected ParseException");
+        }
+    }
+
+    @Test
+    public void testCreateValueURL() throws ParseException {
+        String urlStr = "http://example.com";
+        Object result = TypeHandler.createValue(urlStr, URL.class);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result instanceof URL);
+        Assert.assertEquals(new URL(urlStr), result);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testCreateValueURLInvalid() throws ParseException {
+        String urlStr = "invalidURL";
+        TypeHandler.createValue(urlStr, URL.class);
+    }
+
+    @Test
+    public void testCreateObject() throws ParseException {
+        String className = "java.util.Date";
+        Object result = TypeHandler.createObject(className);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result instanceof Date);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testCreateObjectInvalid() throws ParseException {
+        String className = "invalid.Class";
+        TypeHandler.createObject(className);
+    }
+
+    @Test
+    public void testCreateNumber() throws ParseException {
+        String numberStr = "123.45";
+        Number result = TypeHandler.createNumber(numberStr);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result instanceof Double);
+        Assert.assertEquals(Double.valueOf(numberStr), result);
+
+        numberStr = "123";
+        result = TypeHandler.createNumber(numberStr);
+        Assert.assertNotNull(result);
+        Assert.assertTrue(result instanceof Long);
+        Assert.assertEquals(Long.valueOf(numberStr), result);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testCreateNumberInvalid() throws ParseException {
+        String numberStr = "invalidNumber";
+        TypeHandler.createNumber(numberStr);
+    }
+
+    @Test
+    public void testCreateClass() throws ParseException {
+        String className = "java.util.Date";
+        Class<?> result = TypeHandler.createClass(className);
+        Assert.assertNotNull(result);
+        Assert.assertEquals(Date.class, result);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testCreateClassInvalid() throws ParseException {
+        String className = "invalid.Class";
+        TypeHandler.createClass(className);
+    }
+
+    @Test
+    public void testCreateDate() {
+        String dateStr = "2023-10-01";
+        try {
+            TypeHandler.createDate(dateStr);
+            Assert.fail("Expected UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testCreateURL() throws ParseException {
+        String urlStr = "http://example.com";
+        URL result = TypeHandler.createURL(urlStr);
+        Assert.assertNotNull(result);
+        Assert.assertEquals(new URL(urlStr), result);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testCreateURLInvalid() throws ParseException {
+        String urlStr = "invalidURL";
+        TypeHandler.createURL(urlStr);
+    }
+
+    @Test
+    public void testCreateFile() {
+        String filePath = "testFile.txt";
+        File result = TypeHandler.createFile(filePath);
+        Assert.assertNotNull(result);
+        Assert.assertEquals(new File(filePath), result);
+    }
+
+    @Test
+    public void testOpenFile() throws ParseException {
+        String filePath = "testFile.txt";
+        try {
+            FileInputStream result = TypeHandler.openFile(filePath);
+            Assert.assertNotNull(result);
+        } catch (FileNotFoundException e) {
+            // Expected if the file does not exist
+        }
+    }
+
+    @Test(expected = ParseException.class)
+    public void testOpenFileInvalid() throws ParseException {
+        String filePath = "invalidFile.txt";
+        TypeHandler.openFile(filePath);
+    }
+
+    @Test
+    public void testCreateFiles() {
+        String filePaths = "file1.txt,file2.txt";
+        try {
+            TypeHandler.createFiles(filePaths);
+            Assert.fail("Expected UnsupportedOperationException");
+        } catch (UnsupportedOperationException e) {
+            // Expected
+        }
+    }
+}
+```

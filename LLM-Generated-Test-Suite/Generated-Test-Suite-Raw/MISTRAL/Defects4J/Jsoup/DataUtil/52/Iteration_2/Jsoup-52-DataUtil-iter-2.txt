@@ -1,0 +1,121 @@
+```java
+package org.jsoup.helper;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.nio.ByteBuffer;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.util.Random;
+
+import static org.junit.Assert.*;
+
+public class DataUtilTest {
+
+    private static final String TEST_HTML = "<html><head><meta charset=\"UTF-8\"></head><body>Test</body></html>";
+    private static final String TEST_XML = "<?xml version=\"1.0\" encoding=\"UTF-8\"?><root>Test</root>";
+    private static final String TEST_CHARSET = "UTF-8";
+    private static final String TEST_BASE_URI = "http://example.com";
+
+    private File testFile;
+
+    @Before
+    public void setUp() throws IOException {
+        testFile = File.createTempFile("test", ".html");
+        try (ByteArrayOutputStream out = new ByteArrayOutputStream()) {
+            out.write(TEST_HTML.getBytes(StandardCharsets.UTF_8));
+            out.writeTo(new java.io.FileOutputStream(testFile));
+        }
+    }
+
+    @Test
+    public void testLoadFile() throws IOException {
+        Document doc = DataUtil.load(testFile, TEST_CHARSET, TEST_BASE_URI);
+        assertNotNull(doc);
+        assertEquals("Test", doc.body().text());
+    }
+
+    @Test
+    public void testLoadInputStream() throws IOException {
+        InputStream in = new ByteArrayInputStream(TEST_HTML.getBytes(StandardCharsets.UTF_8));
+        Document doc = DataUtil.load(in, TEST_CHARSET, TEST_BASE_URI);
+        assertNotNull(doc);
+        assertEquals("Test", doc.body().text());
+    }
+
+    @Test
+    public void testLoadInputStreamWithParser() throws IOException {
+        InputStream in = new ByteArrayInputStream(TEST_XML.getBytes(StandardCharsets.UTF_8));
+        Document doc = DataUtil.load(in, TEST_CHARSET, TEST_BASE_URI, Parser.xmlParser());
+        assertNotNull(doc);
+        assertEquals("Test", doc.select("root").text());
+    }
+
+    @Test
+    public void testCrossStreams() throws IOException {
+        ByteArrayInputStream in = new ByteArrayInputStream(TEST_HTML.getBytes(StandardCharsets.UTF_8));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        DataUtil.crossStreams(in, out);
+        assertEquals(TEST_HTML, out.toString(StandardCharsets.UTF_8.name()));
+    }
+
+    @Test
+    public void testReadToByteBuffer() throws IOException {
+        InputStream in = new ByteArrayInputStream(TEST_HTML.getBytes(StandardCharsets.UTF_8));
+        ByteBuffer buffer = DataUtil.readToByteBuffer(in);
+        assertNotNull(buffer);
+        assertEquals(TEST_HTML, StandardCharsets.UTF_8.decode(buffer).toString());
+    }
+
+    @Test
+    public void testReadToByteBufferWithMaxSize() throws IOException {
+        InputStream in = new ByteArrayInputStream(TEST_HTML.getBytes(StandardCharsets.UTF_8));
+        ByteBuffer buffer = DataUtil.readToByteBuffer(in, TEST_HTML.length());
+        assertNotNull(buffer);
+        assertEquals(TEST_HTML, StandardCharsets.UTF_8.decode(buffer).toString());
+    }
+
+    @Test
+    public void testReadFileToByteBuffer() throws IOException {
+        ByteBuffer buffer = DataUtil.readFileToByteBuffer(testFile);
+        assertNotNull(buffer);
+        assertEquals(TEST_HTML, StandardCharsets.UTF_8.decode(buffer).toString());
+    }
+
+    @Test
+    public void testEmptyByteBuffer() {
+        ByteBuffer buffer = DataUtil.emptyByteBuffer();
+        assertNotNull(buffer);
+        assertEquals(0, buffer.capacity());
+    }
+
+    @Test
+    public void testGetCharsetFromContentType() {
+        String contentType = "text/html; charset=UTF-8";
+        String charset = DataUtil.getCharsetFromContentType(contentType);
+        assertEquals("UTF-8", charset);
+    }
+
+    @Test
+    public void testMimeBoundary() {
+        String boundary = DataUtil.mimeBoundary();
+        assertNotNull(boundary);
+        assertEquals(DataUtil.boundaryLength, boundary.length());
+    }
+
+    @Test
+    public void testDetectCharsetFromBom() {
+        ByteBuffer buffer = ByteBuffer.wrap(new byte[]{(byte) 0xEF, (byte) 0xBB, (byte) 0xBF});
+        String charset = DataUtil.detectCharsetFromBom(buffer, null);
+        assertEquals("UTF-8", charset);
+    }
+}
+```

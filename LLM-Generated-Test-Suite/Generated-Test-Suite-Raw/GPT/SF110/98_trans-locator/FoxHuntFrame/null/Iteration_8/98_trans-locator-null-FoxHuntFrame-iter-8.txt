@@ -1,0 +1,138 @@
+To create a comprehensive JUnit 4 test suite for the `FoxHuntFrame` class, we need to focus on testing the public methods and any significant private methods that can be accessed indirectly. The main methods to test are `addPoint()` and `actionPerformed()`, as well as ensuring the GUI components are initialized correctly. Since `FoxHuntFrame` is a GUI class, testing will involve checking the state of the GUI components after certain actions.
+
+Here's a JUnit 4 test suite for the `FoxHuntFrame` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame foxHuntFrame;
+
+    @Before
+    public void setUp() {
+        foxHuntFrame = new FoxHuntFrame();
+    }
+
+    @Test
+    public void testAddPoint() {
+        // Set up the text fields with valid data
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+
+        // Call the method to test
+        foxHuntFrame.addPoint();
+
+        // Verify that a point was added
+        assertEquals(1, foxHuntFrame.points.size());
+        assertEquals(0, foxHuntFrame.fox.size());
+
+        // Add another point to test fox calculation
+        foxHuntFrame.theta.setText("90");
+        foxHuntFrame.lat.setText("36.7783");
+        foxHuntFrame.lon.setText("-119.4179");
+        foxHuntFrame.addPoint();
+
+        // Verify that a fox point was added
+        assertEquals(2, foxHuntFrame.points.size());
+        assertEquals(1, foxHuntFrame.fox.size());
+    }
+
+    @Test
+    public void testActionPerformed() {
+        // Mock an ActionEvent
+        ActionEvent mockEvent = Mockito.mock(ActionEvent.class);
+
+        // Set up the text fields with valid data
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+
+        // Call the method to test
+        foxHuntFrame.actionPerformed(mockEvent);
+
+        // Verify that a point was added
+        assertEquals(1, foxHuntFrame.points.size());
+    }
+
+    @Test
+    public void testLoadLandmarksFileNotFound() {
+        // Temporarily rename the landmarks file if it exists
+        File landmarksFile = new File("./landmarks.cfg");
+        File tempFile = new File("./landmarks_temp.cfg");
+        if (landmarksFile.exists()) {
+            landmarksFile.renameTo(tempFile);
+        }
+
+        try {
+            // Call the method to test
+            foxHuntFrame.loadLandmarks();
+
+            // Verify that no landmarks were loaded
+            assertEquals(0, foxHuntFrame.display.getLandmarks().size());
+        } finally {
+            // Restore the landmarks file
+            if (tempFile.exists()) {
+                tempFile.renameTo(landmarksFile);
+            }
+        }
+    }
+
+    @Test
+    public void testLoadLandmarks() throws IOException {
+        // Create a temporary landmarks file
+        File landmarksFile = new File("./landmarks.cfg");
+        try (FileWriter writer = new FileWriter(landmarksFile)) {
+            writer.write("NUM4\n");
+            writer.write("FILEicon1.png\n");
+            writer.write("LAT34.0522\n");
+            writer.write("LON-118.2437\n");
+            writer.write("FILEicon2.png\n");
+            writer.write("LAT36.7783\n");
+            writer.write("LON-119.4179\n");
+        }
+
+        try {
+            // Call the method to test
+            foxHuntFrame.loadLandmarks();
+
+            // Verify that landmarks were loaded
+            assertEquals(2, foxHuntFrame.display.getLandmarks().size());
+        } finally {
+            // Clean up the temporary file
+            landmarksFile.delete();
+        }
+    }
+
+    @Test
+    public void testErrorDialog() {
+        // Mock JOptionPane to simulate user interaction
+        JOptionPane pane = Mockito.mock(JOptionPane.class);
+        Mockito.when(pane.showOptionDialog(Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any())).thenReturn(1);
+
+        // Call the error method
+        foxHuntFrame.error("Test Error");
+
+        // Verify that the dialog was shown
+        Mockito.verify(pane).showOptionDialog(Mockito.any(), Mockito.anyString(), Mockito.anyString(), Mockito.anyInt(), Mockito.anyInt(), Mockito.any(), Mockito.any(), Mockito.any());
+    }
+}
+```
+
+### Notes:
+- **Mocking**: We use Mockito to mock `ActionEvent` and `JOptionPane` interactions.
+- **File Handling**: We handle file operations carefully to avoid side effects, such as renaming the landmarks file if it exists.
+- **GUI Testing**: Since `FoxHuntFrame` is a GUI class, testing focuses on verifying the state of the GUI components after actions are performed.
+- **Error Handling**: We simulate user interaction with error dialogs using mocked `JOptionPane`.
+
+This test suite provides a basic structure for testing the `FoxHuntFrame` class. Depending on the actual implementation of `FoxCalc`, `TrigPoint`, `HuntDisplay`, and `Landmark`, additional tests might be necessary to ensure full coverage.

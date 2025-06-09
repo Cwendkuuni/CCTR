@@ -1,0 +1,210 @@
+```java
+package dsachat.server;
+
+import dsachat.share.*;
+import dsachat.share.hero.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.io.IOException;
+import java.util.Vector;
+
+public class HandlerTest {
+
+    private Handler handler;
+    private ConnectionEndpoint mockConnection;
+    private Entry mockEntry;
+
+    @Before
+    public void setUp() {
+        handler = new Handler();
+        mockConnection = new MockConnectionEndpoint();
+        mockEntry = new Entry();
+        mockEntry.ce = mockConnection;
+        mockEntry.name = "TestUser";
+    }
+
+    @Test
+    public void testAddConnection() {
+        handler.addConnection(mockConnection);
+        assertEquals(1, handler.clients.size());
+        assertEquals(mockConnection, handler.clients.firstElement().ce);
+    }
+
+    @Test
+    public void testRemoveConnection() {
+        handler.clients.add(mockEntry);
+        handler.removeConnection(mockConnection);
+        assertEquals(0, handler.clients.size());
+    }
+
+    @Test
+    public void testHandleInputString() {
+        InputEvent event = new InputEvent(mockConnection, "Hello World");
+        handler.clients.add(mockEntry);
+        handler.handleInput(event);
+        // Assuming sendAllStr sends a message to all clients
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testHandleInputCommand() {
+        InputEvent event = new InputEvent(mockConnection, "/whisper TestUser2 Hello");
+        handler.clients.add(mockEntry);
+        handler.handleInput(event);
+        // Assuming whisper sends a message to the specified user
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testHandleInputChallenge() {
+        Challenge challenge = new Challenge();
+        InputEvent event = new InputEvent(mockConnection, challenge);
+        handler.clients.add(mockEntry);
+        handler.handleInput(event);
+        // Assuming sendAllStr sends a message to all clients
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testHandleInputChallReq() {
+        ChallReq challReq = new ChallReq();
+        challReq.setTo("TestUser2");
+        InputEvent event = new InputEvent(mockConnection, challReq);
+        handler.clients.add(mockEntry);
+        handler.handleInput(event);
+        // Assuming the challenge request is sent to the specified user
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testHandleInputHero() {
+        Hero hero = new Hero();
+        hero.setName("TestHero");
+        InputEvent event = new InputEvent(mockConnection, hero);
+        handler.clients.add(mockEntry);
+        handler.handleInput(event);
+        // Assuming updateHero updates the hero and sends a welcome message
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testHandleInputUserEvent() {
+        UserEvent userEvent = new UserEvent(false, "Gamemaster");
+        InputEvent event = new InputEvent(mockConnection, userEvent);
+        handler.clients.add(mockEntry);
+        handler.handleInput(event);
+        // Assuming the user event is handled and a welcome message is sent
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testSendHeros() {
+        Hero hero = new Hero();
+        hero.setName("TestHero");
+        mockEntry.hero = hero;
+        handler.clients.add(mockEntry);
+        handler.sendHeros(mockConnection);
+        // Assuming sendHeros sends the list of heroes to the client
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testIsGmConnected() {
+        mockEntry.name = "Gamemaster";
+        handler.clients.add(mockEntry);
+        assertTrue(handler.isGmConnected());
+    }
+
+    @Test
+    public void testSendOneSystemMsg() {
+        handler.sendOneSystemMsg(mockConnection, "Test Message");
+        // Assuming sendOneSystemMsg sends a message to the client
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testSendAllSystemMsg() {
+        handler.clients.add(mockEntry);
+        handler.sendAllSystemMsg("Test Message");
+        // Assuming sendAllSystemMsg sends a message to all clients
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testWhisper() {
+        handler.clients.add(mockEntry);
+        handler.whisper(mockConnection, "TestUser2 Hello");
+        // Assuming whisper sends a message to the specified user
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testRollDice() {
+        handler.clients.add(mockEntry);
+        handler.rollDice(mockConnection, "1d6");
+        // Assuming rollDice sends the dice roll result to all clients
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testSendToOneStr() {
+        handler.clients.add(mockEntry);
+        handler.sendToOneStr(mockConnection, "TestUser2", "Hello");
+        // Assuming sendToOneStr sends a message to the specified user
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testUpdateHero() {
+        Hero hero = new Hero();
+        hero.setName("TestHero");
+        handler.clients.add(mockEntry);
+        String result = handler.updateHero(mockConnection, hero);
+        assertEquals("TestHero", result);
+    }
+
+    @Test
+    public void testSendAllStr() {
+        handler.clients.add(mockEntry);
+        handler.sendAllStr(mockConnection, "Hello World");
+        // Assuming sendAllStr sends a message to all clients
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testSendAllObj() {
+        Object obj = new Object();
+        handler.clients.add(mockEntry);
+        handler.sendAllObj(obj);
+        // Assuming sendAllObj sends the object to all clients
+        assertTrue(((MockConnectionEndpoint) mockConnection).messageSent);
+    }
+
+    @Test
+    public void testGetName() {
+        handler.clients.add(mockEntry);
+        String name = handler.getName(mockConnection);
+        assertEquals("TestUser", name);
+    }
+
+    private class MockConnectionEndpoint extends ConnectionEndpoint {
+        public boolean messageSent = false;
+
+        @Override
+        public void send(Object o) throws IOException {
+            messageSent = true;
+        }
+
+        @Override
+        public boolean isConnected() {
+            return true;
+        }
+
+        @Override
+        public int getClientPort() {
+            return 12345;
+        }
+    }
+}
+```

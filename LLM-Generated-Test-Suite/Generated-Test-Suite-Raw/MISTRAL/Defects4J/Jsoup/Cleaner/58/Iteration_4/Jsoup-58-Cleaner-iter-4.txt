@@ -1,0 +1,124 @@
+```java
+package org.jsoup.safety;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.select.Elements;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class CleanerTest {
+
+    private Cleaner cleaner;
+    private Whitelist whitelist;
+
+    @Before
+    public void setUp() {
+        whitelist = Whitelist.basic();
+        cleaner = new Cleaner(whitelist);
+    }
+
+    @Test
+    public void testClean_ValidDocument() {
+        String html = "<div><p>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertEquals("Hello World", cleanDocument.body().text());
+        Elements elements = cleanDocument.body().children();
+        assertEquals(1, elements.size());
+        assertEquals("div", elements.get(0).tagName());
+    }
+
+    @Test
+    public void testClean_InvalidDocument() {
+        String html = "<div><script>alert('xss')</script></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertEquals("", cleanDocument.body().text());
+        Elements elements = cleanDocument.body().children();
+        assertEquals(1, elements.size());
+        assertEquals("div", elements.get(0).tagName());
+    }
+
+    @Test
+    public void testIsValid_ValidDocument() {
+        String html = "<div><p>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+
+        assertTrue(cleaner.isValid(dirtyDocument));
+    }
+
+    @Test
+    public void testIsValid_InvalidDocument() {
+        String html = "<div><script>alert('xss')</script></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+
+        assertFalse(cleaner.isValid(dirtyDocument));
+    }
+
+    @Test
+    public void testCopySafeNodes_ValidNodes() {
+        String html = "<div><p>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Element source = dirtyDocument.body();
+        Element dest = Document.createShell(dirtyDocument.baseUri()).body();
+
+        int numDiscarded = cleaner.copySafeNodes(source, dest);
+
+        assertEquals(0, numDiscarded);
+        assertEquals("Hello World", dest.text());
+        Elements elements = dest.children();
+        assertEquals(1, elements.size());
+        assertEquals("div", elements.get(0).tagName());
+    }
+
+    @Test
+    public void testCopySafeNodes_InvalidNodes() {
+        String html = "<div><script>alert('xss')</script></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Element source = dirtyDocument.body();
+        Element dest = Document.createShell(dirtyDocument.baseUri()).body();
+
+        int numDiscarded = cleaner.copySafeNodes(source, dest);
+
+        assertEquals(1, numDiscarded);
+        assertEquals("", dest.text());
+        Elements elements = dest.children();
+        assertEquals(1, elements.size());
+        assertEquals("div", elements.get(0).tagName());
+    }
+
+    @Test
+    public void testCreateSafeElement_ValidElement() {
+        String html = "<div id='safe' class='safe-class'>Hello World</div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Element sourceEl = dirtyDocument.body().child(0);
+
+        Cleaner.ElementMeta elementMeta = cleaner.createSafeElement(sourceEl);
+
+        assertEquals("div", elementMeta.el.tagName());
+        assertEquals("safe", elementMeta.el.attr("id"));
+        assertEquals("safe-class", elementMeta.el.attr("class"));
+        assertEquals(0, elementMeta.numAttribsDiscarded);
+    }
+
+    @Test
+    public void testCreateSafeElement_InvalidElement() {
+        String html = "<div onmouseover='alert(1)'>Hello World</div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Element sourceEl = dirtyDocument.body().child(0);
+
+        Cleaner.ElementMeta elementMeta = cleaner.createSafeElement(sourceEl);
+
+        assertEquals("div", elementMeta.el.tagName());
+        assertFalse(elementMeta.el.hasAttr("onmouseover"));
+        assertEquals(1, elementMeta.numAttribsDiscarded);
+    }
+}
+```

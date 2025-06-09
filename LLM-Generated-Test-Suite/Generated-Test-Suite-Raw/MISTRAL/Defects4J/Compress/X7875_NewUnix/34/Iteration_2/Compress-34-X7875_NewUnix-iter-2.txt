@@ -1,0 +1,151 @@
+```java
+package org.apache.commons.compress.archivers.zip;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.Assert;
+
+import java.math.BigInteger;
+import java.util.zip.ZipException;
+
+public class X7875_NewUnixTest {
+
+    private X7875_NewUnix x7875NewUnix;
+
+    @Before
+    public void setUp() {
+        x7875NewUnix = new X7875_NewUnix();
+    }
+
+    @Test
+    public void testGetHeaderId() {
+        Assert.assertEquals(new ZipShort(0x7875), x7875NewUnix.getHeaderId());
+    }
+
+    @Test
+    public void testGetUID() {
+        x7875NewUnix.setUID(12345L);
+        Assert.assertEquals(12345L, x7875NewUnix.getUID());
+    }
+
+    @Test
+    public void testGetGID() {
+        x7875NewUnix.setGID(67890L);
+        Assert.assertEquals(67890L, x7875NewUnix.getGID());
+    }
+
+    @Test
+    public void testSetUID() {
+        x7875NewUnix.setUID(12345L);
+        Assert.assertEquals(BigInteger.valueOf(12345L), x7875NewUnix.uid);
+    }
+
+    @Test
+    public void testSetGID() {
+        x7875NewUnix.setGID(67890L);
+        Assert.assertEquals(BigInteger.valueOf(67890L), x7875NewUnix.gid);
+    }
+
+    @Test
+    public void testGetLocalFileDataLength() {
+        x7875NewUnix.setUID(12345L);
+        x7875NewUnix.setGID(67890L);
+        ZipShort expectedLength = new ZipShort(3 + 4 + 4); // version + uidSize + gidSize + uidBytes + gidBytes
+        Assert.assertEquals(expectedLength, x7875NewUnix.getLocalFileDataLength());
+    }
+
+    @Test
+    public void testGetCentralDirectoryLength() {
+        x7875NewUnix.setUID(12345L);
+        x7875NewUnix.setGID(67890L);
+        ZipShort expectedLength = new ZipShort(3 + 4 + 4); // version + uidSize + gidSize + uidBytes + gidBytes
+        Assert.assertEquals(expectedLength, x7875NewUnix.getCentralDirectoryLength());
+    }
+
+    @Test
+    public void testGetLocalFileDataData() {
+        x7875NewUnix.setUID(12345L);
+        x7875NewUnix.setGID(67890L);
+        byte[] data = x7875NewUnix.getLocalFileDataData();
+        Assert.assertNotNull(data);
+        Assert.assertEquals(11, data.length); // 3 (version, uidSize, gidSize) + 4 (uid) + 4 (gid)
+    }
+
+    @Test
+    public void testGetCentralDirectoryData() {
+        byte[] data = x7875NewUnix.getCentralDirectoryData();
+        Assert.assertNotNull(data);
+        Assert.assertEquals(0, data.length);
+    }
+
+    @Test
+    public void testParseFromLocalFileData() throws ZipException {
+        byte[] data = new byte[]{
+                1, // version
+                4, // uidSize
+                0x39, 0x30, 0x01, 0x00, // uid (12345 in little-endian)
+                4, // gidSize
+                0x0A, 0x3D, 0x01, 0x00  // gid (67890 in little-endian)
+        };
+        x7875NewUnix.parseFromLocalFileData(data, 0, data.length);
+        Assert.assertEquals(12345L, x7875NewUnix.getUID());
+        Assert.assertEquals(67890L, x7875NewUnix.getGID());
+    }
+
+    @Test
+    public void testParseFromCentralDirectoryData() throws ZipException {
+        byte[] data = new byte[]{};
+        x7875NewUnix.parseFromCentralDirectoryData(data, 0, data.length);
+        // No assertions needed as the method does nothing
+    }
+
+    @Test
+    public void testReset() {
+        x7875NewUnix.setUID(12345L);
+        x7875NewUnix.setGID(67890L);
+        x7875NewUnix.reset();
+        Assert.assertEquals(BigInteger.valueOf(1000L), x7875NewUnix.uid);
+        Assert.assertEquals(BigInteger.valueOf(1000L), x7875NewUnix.gid);
+    }
+
+    @Test
+    public void testToString() {
+        x7875NewUnix.setUID(12345L);
+        x7875NewUnix.setGID(67890L);
+        String expected = "0x7875 Zip Extra Field: UID=12345 GID=67890";
+        Assert.assertEquals(expected, x7875NewUnix.toString());
+    }
+
+    @Test
+    public void testClone() throws CloneNotSupportedException {
+        X7875_NewUnix clone = (X7875_NewUnix) x7875NewUnix.clone();
+        Assert.assertNotSame(x7875NewUnix, clone);
+        Assert.assertEquals(x7875NewUnix, clone);
+    }
+
+    @Test
+    public void testEquals() {
+        X7875_NewUnix other = new X7875_NewUnix();
+        other.setUID(12345L);
+        other.setGID(67890L);
+        x7875NewUnix.setUID(12345L);
+        x7875NewUnix.setGID(67890L);
+        Assert.assertEquals(x7875NewUnix, other);
+    }
+
+    @Test
+    public void testHashCode() {
+        x7875NewUnix.setUID(12345L);
+        x7875NewUnix.setGID(67890L);
+        int expectedHashCode = -1234567 * 1 ^ Integer.rotateLeft(BigInteger.valueOf(12345L).hashCode(), 16) ^ BigInteger.valueOf(67890L).hashCode();
+        Assert.assertEquals(expectedHashCode, x7875NewUnix.hashCode());
+    }
+
+    @Test
+    public void testTrimLeadingZeroesForceMinLength() {
+        byte[] array = new byte[]{0, 0, 1, 2, 3};
+        byte[] trimmedArray = X7875_NewUnix.trimLeadingZeroesForceMinLength(array);
+        Assert.assertArrayEquals(new byte[]{1, 2, 3}, trimmedArray);
+    }
+}
+```

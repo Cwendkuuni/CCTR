@@ -1,0 +1,143 @@
+```java
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVParser;
+import org.apache.commons.csv.CSVRecord;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.URL;
+import java.nio.charset.StandardCharsets;
+import java.util.List;
+import java.util.Map;
+import java.util.NoSuchElementException;
+
+import static org.junit.Assert.*;
+
+public class CSVParserTest {
+
+    private CSVParser parser;
+    private String csvData;
+
+    @Before
+    public void setUp() throws Exception {
+        csvData = "name,age\nJohn,30\nJane,25";
+        parser = new CSVParser(new StringReader(csvData), CSVFormat.DEFAULT.withHeader());
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        if (parser != null) {
+            parser.close();
+        }
+    }
+
+    @Test
+    public void testParseFile() throws IOException {
+        File tempFile = File.createTempFile("test", ".csv");
+        tempFile.deleteOnExit();
+        CSVParser fileParser = CSVParser.parse(tempFile, CSVFormat.DEFAULT);
+        assertNotNull(fileParser);
+        fileParser.close();
+    }
+
+    @Test
+    public void testParseString() throws IOException {
+        CSVParser stringParser = CSVParser.parse(csvData, CSVFormat.DEFAULT.withHeader());
+        assertNotNull(stringParser);
+        List<CSVRecord> records = stringParser.getRecords();
+        assertEquals(2, records.size());
+        stringParser.close();
+    }
+
+    @Test
+    public void testParseURL() throws IOException {
+        URL url = new URL("https://example.com/test.csv");
+        CSVParser urlParser = CSVParser.parse(url, StandardCharsets.UTF_8, CSVFormat.DEFAULT);
+        assertNotNull(urlParser);
+        urlParser.close();
+    }
+
+    @Test
+    public void testGetCurrentLineNumber() throws IOException {
+        assertEquals(0, parser.getCurrentLineNumber());
+        parser.getRecords();
+        assertEquals(3, parser.getCurrentLineNumber());
+    }
+
+    @Test
+    public void testGetHeaderMap() {
+        Map<String, Integer> headerMap = parser.getHeaderMap();
+        assertNotNull(headerMap);
+        assertEquals(2, headerMap.size());
+        assertTrue(headerMap.containsKey("name"));
+        assertTrue(headerMap.containsKey("age"));
+    }
+
+    @Test
+    public void testGetRecordNumber() throws IOException {
+        assertEquals(0, parser.getRecordNumber());
+        parser.getRecords();
+        assertEquals(2, parser.getRecordNumber());
+    }
+
+    @Test
+    public void testGetRecords() throws IOException {
+        List<CSVRecord> records = parser.getRecords();
+        assertEquals(2, records.size());
+        assertEquals("John", records.get(0).get("name"));
+        assertEquals("30", records.get(0).get("age"));
+    }
+
+    @Test
+    public void testIsClosed() throws IOException {
+        assertFalse(parser.isClosed());
+        parser.close();
+        assertTrue(parser.isClosed());
+    }
+
+    @Test
+    public void testIterator() {
+        Iterator<CSVRecord> iterator = parser.iterator();
+        assertTrue(iterator.hasNext());
+        CSVRecord record = iterator.next();
+        assertEquals("John", record.get("name"));
+        assertEquals("30", record.get("age"));
+    }
+
+    @Test(expected = NoSuchElementException.class)
+    public void testIteratorNoSuchElementException() {
+        Iterator<CSVRecord> iterator = parser.iterator();
+        while (iterator.hasNext()) {
+            iterator.next();
+        }
+        iterator.next(); // Should throw NoSuchElementException
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testIteratorRemove() {
+        Iterator<CSVRecord> iterator = parser.iterator();
+        iterator.remove(); // Should throw UnsupportedOperationException
+    }
+
+    @Test
+    public void testNextRecord() throws IOException {
+        CSVRecord record = parser.nextRecord();
+        assertNotNull(record);
+        assertEquals("John", record.get("name"));
+        assertEquals("30", record.get("age"));
+    }
+
+    @Test
+    public void testNextRecordEndOfFile() throws IOException {
+        parser.getRecords(); // Read all records
+        CSVRecord record = parser.nextRecord();
+        assertNull(record);
+    }
+}
+```
+
+This JUnit 4 test suite covers the main functionalities of the `CSVParser` class, including parsing from different sources, retrieving records, and handling exceptions. Each test method is designed to validate a specific aspect of the `CSVParser` class.

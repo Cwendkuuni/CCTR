@@ -1,0 +1,152 @@
+```java
+package corina.formats;
+
+import corina.ui.*;
+import corina.*;
+import corina.util.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.*;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+
+    @Mock
+    private Sample sample;
+
+    @Mock
+    private BufferedReader bufferedReader;
+
+    @Mock
+    private BufferedWriter bufferedWriter;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        tucsonSimple = new TucsonSimple();
+    }
+
+    @Test
+    public void testToString() {
+        String expected = I18n.getText("format.tucsonsimple");
+        String actual = tucsonSimple.toString();
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        String expected = ".RWL";
+        String actual = tucsonSimple.getDefaultExtension();
+        assertEquals(expected, actual);
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        tucsonSimple.load(bufferedReader);
+    }
+
+    @Test
+    public void testMake6digitCode() {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "123456789");
+        when(sample.getMeta()).thenReturn(meta);
+
+        String expected = "123456";
+        String actual = tucsonSimple.make6digitCode(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testMake6digitCodeWithNoId() {
+        Map<String, Object> meta = new HashMap<>();
+        when(sample.getMeta()).thenReturn(meta);
+
+        String expected = "000000";
+        String actual = tucsonSimple.make6digitCode(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testMake6digitCodeWithShortId() {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "123");
+        when(sample.getMeta()).thenReturn(meta);
+
+        String expected = "123   ";
+        String actual = tucsonSimple.make6digitCode(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testSaveRowHeader() throws IOException {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "123456");
+        when(sample.getMeta()).thenReturn(meta);
+        when(sample.getRange()).thenReturn(new Range(new Year(2000), new Year(2010)));
+
+        tucsonSimple.saveRowHeader(bufferedWriter, sample, "123456", 6, new Year(2000));
+
+        verify(bufferedWriter).write("123456 2000");
+    }
+
+    @Test
+    public void testSaveData() throws IOException {
+        Map<String, Object> meta = new HashMap<>();
+        meta.put("id", "123456");
+        when(sample.getMeta()).thenReturn(meta);
+        when(sample.getRange()).thenReturn(new Range(new Year(2000), new Year(2010)));
+        when(sample.getData()).thenReturn(new HashMap<Year, Integer>() {{
+            put(new Year(2000), 100);
+            put(new Year(2001), 200);
+        }});
+        when(sample.getCount()).thenReturn(new HashMap<Year, Integer>() {{
+            put(new Year(2000), 1);
+            put(new Year(2001), 2);
+        }});
+
+        tucsonSimple.saveData(sample, bufferedWriter);
+
+        verify(bufferedWriter).write("123456 2000");
+        verify(bufferedWriter).write("   100");
+        verify(bufferedWriter).write("   200");
+        verify(bufferedWriter).newLine();
+    }
+
+    @Test
+    public void testComputeRange() {
+        when(sample.getRange()).thenReturn(new Range(new Year(1), new Year(10)));
+
+        Range expected = new Range(new Year(1), new Year(10));
+        Range actual = tucsonSimple.computeRange(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testComputeRangeWithNegativeStart() {
+        when(sample.getRange()).thenReturn(new Range(new Year(-1000), new Year(10)));
+
+        Range expected = new Range(new Year(1001), new Year(10));
+        Range actual = tucsonSimple.computeRange(sample);
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        tucsonSimple.save(sample, bufferedWriter);
+
+        verify(tucsonSimple).saveData(sample, bufferedWriter);
+    }
+}
+```

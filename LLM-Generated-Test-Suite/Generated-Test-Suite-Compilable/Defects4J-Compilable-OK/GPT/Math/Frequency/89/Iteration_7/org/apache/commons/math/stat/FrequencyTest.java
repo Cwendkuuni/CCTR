@@ -1,0 +1,180 @@
+package org.apache.commons.math.stat;
+
+import org.apache.commons.math.stat.Frequency;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Iterator;
+
+import static org.junit.Assert.*;
+
+public class FrequencyTest {
+
+    private Frequency frequency;
+
+    @Before
+    public void setUp() {
+        frequency = new Frequency();
+    }
+
+    @Test
+    public void testAddValueObject() {
+        frequency.addValue("test");
+        assertEquals(1, frequency.getCount("test"));
+    }
+
+    @Test
+    public void testAddValueComparable() {
+        frequency.addValue((Comparable<?>) "test");
+        assertEquals(1, frequency.getCount("test"));
+    }
+
+    @Test
+    public void testAddValueInt() {
+        frequency.addValue(5);
+        assertEquals(1, frequency.getCount(5));
+    }
+
+    @Test
+    public void testAddValueInteger() {
+        frequency.addValue(Integer.valueOf(5));
+        assertEquals(1, frequency.getCount(5));
+    }
+
+    @Test
+    public void testAddValueLong() {
+        frequency.addValue(5L);
+        assertEquals(1, frequency.getCount(5L));
+    }
+
+    @Test
+    public void testAddValueChar() {
+        frequency.addValue('a');
+        assertEquals(1, frequency.getCount('a'));
+    }
+
+    @Test
+    public void testClear() {
+        frequency.addValue(5);
+        frequency.clear();
+        assertEquals(0, frequency.getCount(5));
+    }
+
+    @Test
+    public void testValuesIterator() {
+        frequency.addValue(5);
+        Iterator<?> iterator = frequency.valuesIterator();
+        assertTrue(iterator.hasNext());
+        assertEquals(Long.valueOf(5), iterator.next());
+    }
+
+    @Test
+    public void testGetSumFreq() {
+        frequency.addValue(5);
+        frequency.addValue(5);
+        assertEquals(2, frequency.getSumFreq());
+    }
+
+    @Test
+    public void testGetCountObject() {
+        frequency.addValue("test");
+        assertEquals(1, frequency.getCount("test"));
+    }
+
+    @Test
+    public void testGetCountInt() {
+        frequency.addValue(5);
+        assertEquals(1, frequency.getCount(5));
+    }
+
+    @Test
+    public void testGetCountLong() {
+        frequency.addValue(5L);
+        assertEquals(1, frequency.getCount(5L));
+    }
+
+    @Test
+    public void testGetCountChar() {
+        frequency.addValue('a');
+        assertEquals(1, frequency.getCount('a'));
+    }
+
+    @Test
+    public void testGetPctObject() {
+        frequency.addValue("test");
+        assertEquals(1.0, frequency.getPct("test"), 0.001);
+    }
+
+    @Test
+    public void testGetPctInt() {
+        frequency.addValue(5);
+        assertEquals(1.0, frequency.getPct(5), 0.001);
+    }
+
+    @Test
+    public void testGetPctLong() {
+        frequency.addValue(5L);
+        assertEquals(1.0, frequency.getPct(5L), 0.001);
+    }
+
+    @Test
+    public void testGetPctChar() {
+        frequency.addValue('a');
+        assertEquals(1.0, frequency.getPct('a'), 0.001);
+    }
+
+    @Test
+    public void testGetCumFreqObject() {
+        frequency.addValue("test");
+        assertEquals(1, frequency.getCumFreq("test"));
+    }
+
+    @Test
+    public void testGetCumFreqInt() {
+        frequency.addValue(5);
+        assertEquals(1, frequency.getCumFreq(5));
+    }
+
+    @Test
+    public void testGetCumFreqLong() {
+        frequency.addValue(5L);
+        assertEquals(1, frequency.getCumFreq(5L));
+    }
+
+    @Test
+    public void testGetCumFreqChar() {
+        frequency.addValue('a');
+        assertEquals(1, frequency.getCumFreq('a'));
+    }
+
+    @Test
+    public void testGetCumPctObject() {
+        frequency.addValue("test");
+        assertEquals(1.0, frequency.getCumPct("test"), 0.001);
+    }
+
+    @Test
+    public void testGetCumPctInt() {
+        frequency.addValue(5);
+        assertEquals(1.0, frequency.getCumPct(5), 0.001);
+    }
+
+    @Test
+    public void testGetCumPctLong() {
+        frequency.addValue(5L);
+        assertEquals(1.0, frequency.getCumPct(5L), 0.001);
+    }
+
+    @Test
+    public void testGetCumPctChar() {
+        frequency.addValue('a');
+        assertEquals(1.0, frequency.getCumPct('a'), 0.001);
+    }
+
+    @Test
+    public void testToString() {
+        frequency.addValue(5);
+        String expected = "Value \t Freq. \t Pct. \t Cum Pct. \n5\t1\t100%\t100%\n";
+        assertEquals(expected, frequency.toString());
+    }
+}

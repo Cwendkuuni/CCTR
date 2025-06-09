@@ -1,0 +1,145 @@
+package org.apache.commons.math.stat;
+
+import org.apache.commons.math.stat.Frequency;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Iterator;
+
+import static org.junit.Assert.*;
+
+public class FrequencyTest {
+
+    private Frequency frequency;
+
+    @Before
+    public void setUp() {
+        frequency = new Frequency();
+    }
+
+    @Test
+    public void testAddValueAndGetCount() {
+        frequency.addValue(1);
+        frequency.addValue(1);
+        frequency.addValue(2);
+
+        assertEquals(2, frequency.getCount(1));
+        assertEquals(1, frequency.getCount(2));
+        assertEquals(0, frequency.getCount(3));
+    }
+
+    @Test
+    public void testAddValueWithDifferentTypes() {
+        frequency.addValue(1);
+        frequency.addValue(1L);
+        frequency.addValue(new Integer(1));
+        frequency.addValue(new Long(1));
+
+        assertEquals(4, frequency.getCount(1));
+    }
+
+    @Test
+    public void testAddValueChar() {
+        frequency.addValue('a');
+        frequency.addValue('b');
+        frequency.addValue('a');
+
+        assertEquals(2, frequency.getCount('a'));
+        assertEquals(1, frequency.getCount('b'));
+        assertEquals(0, frequency.getCount('c'));
+    }
+
+    @Test
+    public void testClear() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.clear();
+
+        assertEquals(0, frequency.getCount(1));
+        assertEquals(0, frequency.getCount(2));
+    }
+
+    @Test
+    public void testGetSumFreq() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+
+        assertEquals(3, frequency.getSumFreq());
+    }
+
+    @Test
+    public void testGetPct() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+
+        assertEquals(1.0 / 3.0, frequency.getPct(1), 0.0001);
+        assertEquals(2.0 / 3.0, frequency.getPct(2), 0.0001);
+        assertTrue(Double.isNaN(frequency.getPct(3)));
+    }
+
+    @Test
+    public void testGetCumFreq() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+        frequency.addValue(3);
+
+        assertEquals(1, frequency.getCumFreq(1));
+        assertEquals(3, frequency.getCumFreq(2));
+        assertEquals(4, frequency.getCumFreq(3));
+        assertEquals(0, frequency.getCumFreq(0));
+    }
+
+    @Test
+    public void testGetCumPct() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+        frequency.addValue(3);
+
+        assertEquals(1.0 / 4.0, frequency.getCumPct(1), 0.0001);
+        assertEquals(3.0 / 4.0, frequency.getCumPct(2), 0.0001);
+        assertEquals(1.0, frequency.getCumPct(3), 0.0001);
+        assertEquals(0.0, frequency.getCumPct(0), 0.0001);
+    }
+
+    @Test
+    public void testValuesIterator() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+
+        Iterator iterator = frequency.valuesIterator();
+        assertTrue(iterator.hasNext());
+        assertEquals(1L, iterator.next());
+        assertTrue(iterator.hasNext());
+        assertEquals(2L, iterator.next());
+        assertFalse(iterator.hasNext());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddValueIncompatibleTypes() {
+        frequency.addValue(1);
+        frequency.addValue("string");
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddValueIncompatibleTypesWithChar() {
+        frequency.addValue('a');
+        frequency.addValue(1);
+    }
+
+    @Test
+    public void testToString() {
+        frequency.addValue(1);
+        frequency.addValue(2);
+        frequency.addValue(2);
+
+        String expected = "Value \t Freq. \t Pct. \t Cum Pct. \n" +
+                          "1\t1\t33%\t25%\n" +
+                          "2\t2\t67%\t75%\n";
+        assertEquals(expected, frequency.toString());
+    }
+}

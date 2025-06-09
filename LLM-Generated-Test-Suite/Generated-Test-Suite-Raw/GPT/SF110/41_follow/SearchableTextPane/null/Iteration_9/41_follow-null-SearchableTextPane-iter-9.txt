@@ -1,0 +1,114 @@
+To create a comprehensive JUnit 4 test suite for the `SearchableTextPane` class, we need to test each public method and ensure that the class behaves as expected. Below is a test suite that covers the methods in the `SearchableTextPane` class. Note that this test suite assumes the existence of `LineResult`, `WordResult`, and `SearchEngine` classes, which are referenced in the `SearchableTextPane` class.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.text.*;
+import java.awt.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.logging.Logger;
+
+public class SearchableTextPaneTest {
+
+    private SearchableTextPane textPane;
+    private Font font;
+    private int tabSize;
+
+    @Before
+    public void setUp() {
+        font = new Font("Arial", Font.PLAIN, 12);
+        tabSize = 4;
+        textPane = new SearchableTextPane(font, tabSize);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertEquals(font, textPane.getFont());
+        assertEquals(tabSize, textPane.getTabSize());
+        assertNotNull(textPane.getHighlighter());
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth() {
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+        
+        // Mocking parent component and UI
+        Component parent = mock(Component.class);
+        ComponentUI ui = mock(ComponentUI.class);
+        
+        when(parent.getSize()).thenReturn(new Dimension(100, 100));
+        when(ui.getPreferredSize(textPane)).thenReturn(new Dimension(200, 100));
+        
+        textPane.setUI(ui);
+        textPane.setParent(parent);
+        
+        assertFalse(textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testHighlight() throws BadLocationException {
+        String text = "This is a test text for highlighting.";
+        textPane.setText(text);
+        
+        // Mocking SearchEngine and its behavior
+        SearchEngine searchEngine = mock(SearchEngine.class);
+        List<WordResult> wordResults = new ArrayList<>();
+        wordResults.add(new WordResult(0, 4)); // "This"
+        
+        when(searchEngine.search("This", text)).thenReturn(wordResults);
+        
+        List<LineResult> lineResults = textPane.highlight("This", 0);
+        
+        assertEquals(1, lineResults.size());
+        assertEquals(1, lineResults.get(0).getWordResults().size());
+    }
+
+    @Test
+    public void testRemoveHighlights() throws BadLocationException {
+        textPane.setText("Highlight this text.");
+        textPane.highlight("Highlight", 0);
+        
+        Highlighter highlighter = textPane.getHighlighter();
+        assertTrue(highlighter.getHighlights().length > 0);
+        
+        textPane.removeHighlights();
+        assertEquals(0, highlighter.getHighlights().length);
+    }
+
+    @Test
+    public void testSearch() {
+        textPane.setText("Searchable text pane test.");
+        
+        int pos = textPane.search("text");
+        assertEquals(11, pos);
+        
+        pos = textPane.search("nonexistent");
+        assertEquals(-1, pos);
+    }
+
+    @Test
+    public void testSearchWithStartPos() {
+        textPane.setText("Searchable text pane test.");
+        
+        int pos = textPane.search("text", 0);
+        assertEquals(11, pos);
+        
+        pos = textPane.search("text", 12);
+        assertEquals(-1, pos);
+    }
+}
+```
+
+### Notes:
+- **Mocking**: The test suite uses mocking for components like `SearchEngine` and `ComponentUI` to simulate their behavior without needing their actual implementations.
+- **Assertions**: Each test method includes assertions to verify that the class behaves as expected.
+- **Setup**: The `setUp` method initializes a `SearchableTextPane` instance before each test.
+- **Test Coverage**: The suite covers the constructor, `getScrollableTracksViewportWidth`, `highlight`, `removeHighlights`, `search`, and `search` with a starting position.
+
+This test suite assumes that the `LineResult`, `WordResult`, and `SearchEngine` classes are implemented elsewhere in the codebase. If these classes are not available, you would need to create mock or stub implementations for them to run the tests successfully.

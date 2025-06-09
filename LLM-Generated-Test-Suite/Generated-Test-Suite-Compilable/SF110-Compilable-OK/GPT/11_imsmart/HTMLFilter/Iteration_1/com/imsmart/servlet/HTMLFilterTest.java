@@ -1,0 +1,81 @@
+package com.imsmart.servlet;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
+import org.junit.Test;
+
+public class HTMLFilterTest {
+
+    @Test
+    public void testFilterWithNullInput() {
+        // Test case for null input
+        String input = null;
+        String expectedOutput = null;
+        assertEquals(expectedOutput, HTMLFilter.filter(input));
+    }
+
+    @Test
+    public void testFilterWithEmptyString() {
+        // Test case for empty string input
+        String input = "";
+        String expectedOutput = "";
+        assertEquals(expectedOutput, HTMLFilter.filter(input));
+    }
+
+    @Test
+    public void testFilterWithNoSpecialCharacters() {
+        // Test case for input with no special characters
+        String input = "Hello World";
+        String expectedOutput = "Hello World";
+        assertEquals(expectedOutput, HTMLFilter.filter(input));
+    }
+
+    @Test
+    public void testFilterWithLessThanCharacter() {
+        // Test case for input with '<' character
+        String input = "a < b";
+        String expectedOutput = "a &lt; b";
+        assertEquals(expectedOutput, HTMLFilter.filter(input));
+    }
+
+    @Test
+    public void testFilterWithGreaterThanCharacter() {
+        // Test case for input with '>' character
+        String input = "a > b";
+        String expectedOutput = "a &gt; b";
+        assertEquals(expectedOutput, HTMLFilter.filter(input));
+    }
+
+    @Test
+    public void testFilterWithAmpersandCharacter() {
+        // Test case for input with '&' character
+        String input = "a & b";
+        String expectedOutput = "a &amp; b";
+        assertEquals(expectedOutput, HTMLFilter.filter(input));
+    }
+
+    @Test
+    public void testFilterWithDoubleQuoteCharacter() {
+        // Test case for input with '\"' character
+        String input = "a \"quote\" b";
+        String expectedOutput = "a &quot;quote&quot; b";
+        assertEquals(expectedOutput, HTMLFilter.filter(input));
+    }
+
+    @Test
+    public void testFilterWithAllSpecialCharacters() {
+        // Test case for input with all special characters
+        String input = "<html> & \"text\"";
+        String expectedOutput = "&lt;html&gt; &amp; &quot;text&quot;";
+        assertEquals(expectedOutput, HTMLFilter.filter(input));
+    }
+
+    @Test
+    public void testFilterWithRepeatedSpecialCharacters() {
+        // Test case for input with repeated special characters
+        String input = "<<>>&&\"\"";
+        String expectedOutput = "&lt;&lt;&gt;&gt;&amp;&amp;&quot;&quot;";
+        assertEquals(expectedOutput, HTMLFilter.filter(input));
+    }
+}

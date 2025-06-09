@@ -1,0 +1,172 @@
+package org.jsoup.helper;
+
+import org.jsoup.helper.StringUtil;
+import org.junit.Test;
+
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+
+public class StringUtilTest {
+
+    @Test
+    public void testJoinCollection() {
+        Collection<String> strings = Arrays.asList("a", "b", "c");
+        String result = StringUtil.join(strings, ",");
+        assertEquals("a,b,c", result);
+
+        strings = Collections.emptyList();
+        result = StringUtil.join(strings, ",");
+        assertEquals("", result);
+    }
+
+    @Test
+    public void testJoinIterator() {
+        Collection<String> strings = Arrays.asList("a", "b", "c");
+        String result = StringUtil.join(strings.iterator(), ",");
+        assertEquals("a,b,c", result);
+
+        strings = Collections.emptyList();
+        result = StringUtil.join(strings.iterator(), ",");
+        assertEquals("", result);
+    }
+
+    @Test
+    public void testJoinArray() {
+        String[] strings = {"a", "b", "c"};
+        String result = StringUtil.join(strings, ",");
+        assertEquals("a,b,c", result);
+
+        strings = new String[]{};
+        result = StringUtil.join(strings, ",");
+        assertEquals("", result);
+    }
+
+    @Test
+    public void testPadding() {
+        assertEquals("", StringUtil.padding(0));
+        assertEquals(" ", StringUtil.padding(1));
+        assertEquals("     ", StringUtil.padding(5));
+        assertEquals("                    ", StringUtil.padding(20));
+        assertEquals("                         ", StringUtil.padding(25));
+
+        try {
+            StringUtil.padding(-1);
+            fail("Expected IllegalArgumentException for negative width");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testIsBlank() {
+        assertTrue(StringUtil.isBlank(null));
+        assertTrue(StringUtil.isBlank(""));
+        assertTrue(StringUtil.isBlank(" "));
+        assertTrue(StringUtil.isBlank("\n"));
+        assertTrue(StringUtil.isBlank("\t"));
+        assertFalse(StringUtil.isBlank("a"));
+    }
+
+    @Test
+    public void testIsNumeric() {
+        assertFalse(StringUtil.isNumeric(null));
+        assertFalse(StringUtil.isNumeric(""));
+        assertTrue(StringUtil.isNumeric("123"));
+        assertFalse(StringUtil.isNumeric("123a"));
+    }
+
+    @Test
+    public void testIsWhitespace() {
+        assertTrue(StringUtil.isWhitespace(' '));
+        assertTrue(StringUtil.isWhitespace('\t'));
+        assertTrue(StringUtil.isWhitespace('\n'));
+        assertTrue(StringUtil.isWhitespace('\f'));
+        assertTrue(StringUtil.isWhitespace('\r'));
+        assertFalse(StringUtil.isWhitespace('a'));
+    }
+
+    @Test
+    public void testIsActuallyWhitespace() {
+        assertTrue(StringUtil.isActuallyWhitespace(' '));
+        assertTrue(StringUtil.isActuallyWhitespace('\t'));
+        assertTrue(StringUtil.isActuallyWhitespace('\n'));
+        assertTrue(StringUtil.isActuallyWhitespace('\f'));
+        assertTrue(StringUtil.isActuallyWhitespace('\r'));
+        assertTrue(StringUtil.isActuallyWhitespace(160)); // non-breaking space
+        assertFalse(StringUtil.isActuallyWhitespace('a'));
+    }
+
+    @Test
+    public void testNormaliseWhitespace() {
+        assertEquals("a b c", StringUtil.normaliseWhitespace("a  b   c"));
+        assertEquals("a b c", StringUtil.normaliseWhitespace("a\nb\tc"));
+        assertEquals("", StringUtil.normaliseWhitespace(""));
+    }
+
+    @Test
+    public void testAppendNormalisedWhitespace() {
+        StringBuilder sb = new StringBuilder();
+        StringUtil.appendNormalisedWhitespace(sb, "a  b   c", false);
+        assertEquals("a b c", sb.toString());
+
+        sb = new StringBuilder();
+        StringUtil.appendNormalisedWhitespace(sb, "  a  b   c", true);
+        assertEquals("a b c", sb.toString());
+    }
+
+    @Test
+    public void testIn() {
+        assertTrue(StringUtil.in("a", "a", "b", "c"));
+        assertFalse(StringUtil.in("d", "a", "b", "c"));
+    }
+
+    @Test
+    public void testInSorted() {
+        String[] haystack = {"a", "b", "c"};
+        assertTrue(StringUtil.inSorted("a", haystack));
+        assertFalse(StringUtil.inSorted("d", haystack));
+    }
+
+    @Test
+    public void testResolveURL() throws MalformedURLException {
+        URL base = new URL("http://example.com");
+        URL resolved = StringUtil.resolve(base, "/test");
+        assertEquals("http://example.com/test", resolved.toString());
+
+        resolved = StringUtil.resolve(base, "http://example.org");
+        assertEquals("http://example.org", resolved.toString());
+    }
+
+    @Test
+    public void testResolveString() {
+        String baseUrl = "http://example.com";
+        String relUrl = "/test";
+        String resolved = StringUtil.resolve(baseUrl, relUrl);
+        assertEquals("http://example.com/test", resolved);
+
+        relUrl = "http://example.org";
+        resolved = StringUtil.resolve(baseUrl, relUrl);
+        assertEquals("http://example.org", resolved);
+
+        baseUrl = "invalid-url";
+        resolved = StringUtil.resolve(baseUrl, relUrl);
+        assertEquals("http://example.org", resolved);
+
+        baseUrl = "http://example.com";
+        relUrl = "invalid-url";
+        resolved = StringUtil.resolve(baseUrl, relUrl);
+        assertEquals("", resolved);
+    }
+
+    @Test
+    public void testStringBuilder() {
+        StringBuilder sb = StringUtil.stringBuilder();
+        assertNotNull(sb);
+        assertEquals(0, sb.length());
+    }
+}

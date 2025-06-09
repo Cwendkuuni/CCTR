@@ -1,0 +1,144 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import java.io.*;
+
+public class TFloatDoubleHashTest {
+
+    private TFloatDoubleHash hash;
+
+    @Before
+    public void setUp() {
+        hash = Mockito.mock(TFloatDoubleHash.class, Mockito.CALLS_REAL_METHODS);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertEquals(0.0f, hash.getNoEntryKey(), 0.0);
+        assertEquals(0.0, hash.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacity() {
+        hash = Mockito.mock(TFloatDoubleHash.class, Mockito.withSettings().useConstructor(10).defaultAnswer(Mockito.CALLS_REAL_METHODS));
+        assertEquals(0.0f, hash.getNoEntryKey(), 0.0);
+        assertEquals(0.0, hash.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacityAndLoadFactor() {
+        hash = Mockito.mock(TFloatDoubleHash.class, Mockito.withSettings().useConstructor(10, 0.5f).defaultAnswer(Mockito.CALLS_REAL_METHODS));
+        assertEquals(0.0f, hash.getNoEntryKey(), 0.0);
+        assertEquals(0.0, hash.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testConstructorWithAllParameters() {
+        hash = Mockito.mock(TFloatDoubleHash.class, Mockito.withSettings().useConstructor(10, 0.5f, 1.0f, 2.0).defaultAnswer(Mockito.CALLS_REAL_METHODS));
+        assertEquals(1.0f, hash.getNoEntryKey(), 0.0);
+        assertEquals(2.0, hash.getNoEntryValue(), 0.0);
+    }
+
+    @Test
+    public void testSetUp() {
+        int capacity = hash.setUp(10);
+        assertNotNull(hash._set);
+        assertEquals(capacity, hash._set.length);
+    }
+
+    @Test
+    public void testContains() {
+        Mockito.when(hash.index(1.0f)).thenReturn(1);
+        assertTrue(hash.contains(1.0f));
+
+        Mockito.when(hash.index(2.0f)).thenReturn(-1);
+        assertFalse(hash.contains(2.0f));
+    }
+
+    @Test
+    public void testForEach() {
+        TFloatProcedure procedure = Mockito.mock(TFloatProcedure.class);
+        Mockito.when(procedure.execute(Mockito.anyFloat())).thenReturn(true);
+
+        hash._states = new byte[]{1, 1, 0};
+        hash._set = new float[]{1.0f, 2.0f, 0.0f};
+
+        assertTrue(hash.forEach(procedure));
+
+        Mockito.when(procedure.execute(2.0f)).thenReturn(false);
+        assertFalse(hash.forEach(procedure));
+    }
+
+    @Test
+    public void testRemoveAt() {
+        hash._set = new float[]{1.0f, 2.0f, 3.0f};
+        hash.no_entry_key = -1.0f;
+        hash.removeAt(1);
+        assertEquals(-1.0f, hash._set[1], 0.0);
+    }
+
+    @Test
+    public void testIndex() {
+        hash._states = new byte[]{1, 0, 1};
+        hash._set = new float[]{1.0f, 0.0f, 2.0f};
+
+        Mockito.when(hash.indexRehashed(2.0f, 0, 0, (byte) 1)).thenReturn(2);
+        assertEquals(2, hash.index(2.0f));
+
+        Mockito.when(hash.indexRehashed(3.0f, 0, 0, (byte) 1)).thenReturn(-1);
+        assertEquals(-1, hash.index(3.0f));
+    }
+
+    @Test
+    public void testInsertKey() {
+        hash._states = new byte[]{0, 1, 2};
+        hash._set = new float[]{0.0f, 1.0f, 0.0f};
+
+        assertEquals(0, hash.insertKey(2.0f));
+        assertTrue(hash.consumeFreeSlot);
+
+        assertEquals(-1, hash.insertKey(1.0f));
+        assertFalse(hash.consumeFreeSlot);
+
+        Mockito.when(hash.insertKeyRehash(3.0f, 1, 0, (byte) 1)).thenReturn(2);
+        assertEquals(2, hash.insertKey(3.0f));
+    }
+
+    @Test
+    public void testWriteExternal() throws IOException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutput out = new ObjectOutputStream(bos);
+
+        hash.no_entry_key = 1.0f;
+        hash.no_entry_value = 2.0;
+        hash.writeExternal(out);
+
+        out.flush();
+        byte[] bytes = bos.toByteArray();
+        assertTrue(bytes.length > 0);
+    }
+
+    @Test
+    public void testReadExternal() throws IOException, ClassNotFoundException {
+        ByteArrayOutputStream bos = new ByteArrayOutputStream();
+        ObjectOutput out = new ObjectOutputStream(bos);
+
+        out.writeByte(0);
+        out.writeFloat(1.0f);
+        out.writeDouble(2.0);
+        out.flush();
+
+        ByteArrayInputStream bis = new ByteArrayInputStream(bos.toByteArray());
+        ObjectInput in = new ObjectInputStream(bis);
+
+        hash.readExternal(in);
+
+        assertEquals(1.0f, hash.getNoEntryKey(), 0.0);
+        assertEquals(2.0, hash.getNoEntryValue(), 0.0);
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to test the `TFloatDoubleHash` class. It covers the constructors, methods, and serialization/deserialization logic. Note that some methods are abstract or rely on external dependencies, so Mockito is used to mock or simulate their behavior where necessary.

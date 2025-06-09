@@ -1,0 +1,169 @@
+Certainly! Below is a complete JUnit 4 test suite to comprehensively test all methods in the `Lexer` class.
+
+```java
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.ExtendedBufferedReader;
+import org.apache.commons.csv.Lexer;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.IOException;
+import java.io.StringReader;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class LexerTest {
+
+    private Lexer lexer;
+    private ExtendedBufferedReader mockReader;
+    private CSVFormat format;
+
+    @Before
+    public void setUp() {
+        format = CSVFormat.DEFAULT;
+        mockReader = Mockito.mock(ExtendedBufferedReader.class);
+        lexer = new Lexer(format, mockReader) {
+            @Override
+            Token nextToken(Token reusableToken) throws IOException {
+                return null;
+            }
+        };
+    }
+
+    @Test
+    public void testGetLineNumber() throws IOException {
+        when(mockReader.getLineNumber()).thenReturn(42L);
+        assertEquals(42L, lexer.getLineNumber());
+    }
+
+    @Test
+    public void testReadEscape() throws IOException {
+        when(mockReader.read()).thenReturn((int) 'n');
+        assertEquals(LF, lexer.readEscape());
+
+        when(mockReader.read()).thenReturn((int) 'r');
+        assertEquals(CR, lexer.readEscape());
+
+        when(mockReader.read()).thenReturn((int) 't');
+        assertEquals(TAB, lexer.readEscape());
+
+        when(mockReader.read()).thenReturn((int) 'b');
+        assertEquals(BACKSPACE, lexer.readEscape());
+
+        when(mockReader.read()).thenReturn((int) 'f');
+        assertEquals(FF, lexer.readEscape());
+
+        when(mockReader.read()).thenReturn(CR);
+        assertEquals(CR, lexer.readEscape());
+
+        when(mockReader.read()).thenReturn(LF);
+        assertEquals(LF, lexer.readEscape());
+
+        when(mockReader.read()).thenReturn(FF);
+        assertEquals(FF, lexer.readEscape());
+
+        when(mockReader.read()).thenReturn(TAB);
+        assertEquals(TAB, lexer.readEscape());
+
+        when(mockReader.read()).thenReturn(BACKSPACE);
+        assertEquals(BACKSPACE, lexer.readEscape());
+
+        when(mockReader.read()).thenReturn(END_OF_STREAM);
+        try {
+            lexer.readEscape();
+            fail("Expected IOException");
+        } catch (IOException e) {
+            assertEquals("EOF whilst processing escape sequence", e.getMessage());
+        }
+
+        when(mockReader.read()).thenReturn((int) 'x');
+        assertEquals('x', lexer.readEscape());
+    }
+
+    @Test
+    public void testTrimTrailingSpaces() {
+        StringBuilder buffer = new StringBuilder("test   ");
+        lexer.trimTrailingSpaces(buffer);
+        assertEquals("test", buffer.toString());
+
+        buffer = new StringBuilder("   test   ");
+        lexer.trimTrailingSpaces(buffer);
+        assertEquals("   test", buffer.toString());
+
+        buffer = new StringBuilder("test");
+        lexer.trimTrailingSpaces(buffer);
+        assertEquals("test", buffer.toString());
+    }
+
+    @Test
+    public void testReadEndOfLine() throws IOException {
+        when(mockReader.lookAhead()).thenReturn(LF);
+        when(mockReader.read()).thenReturn(LF);
+        assertTrue(lexer.readEndOfLine(CR));
+
+        when(mockReader.lookAhead()).thenReturn(CR);
+        when(mockReader.read()).thenReturn(CR);
+        assertTrue(lexer.readEndOfLine(CR));
+
+        when(mockReader.lookAhead()).thenReturn(LF);
+        when(mockReader.read()).thenReturn(LF);
+        assertTrue(lexer.readEndOfLine(LF));
+
+        when(mockReader.lookAhead()).thenReturn(CR);
+        when(mockReader.read()).thenReturn(CR);
+        assertTrue(lexer.readEndOfLine(LF));
+
+        when(mockReader.lookAhead()).thenReturn('a');
+        assertFalse(lexer.readEndOfLine('a'));
+    }
+
+    @Test
+    public void testIsWhitespace() {
+        assertTrue(lexer.isWhitespace(' '));
+        assertTrue(lexer.isWhitespace('\t'));
+        assertFalse(lexer.isWhitespace(','));
+    }
+
+    @Test
+    public void testIsStartOfLine() {
+        assertTrue(lexer.isStartOfLine(LF));
+        assertTrue(lexer.isStartOfLine(CR));
+        assertTrue(lexer.isStartOfLine(UNDEFINED));
+        assertFalse(lexer.isStartOfLine('a'));
+    }
+
+    @Test
+    public void testIsEndOfFile() {
+        assertTrue(lexer.isEndOfFile(END_OF_STREAM));
+        assertFalse(lexer.isEndOfFile('a'));
+    }
+
+    @Test
+    public void testIsDelimiter() {
+        assertTrue(lexer.isDelimiter(','));
+        assertFalse(lexer.isDelimiter(';'));
+    }
+
+    @Test
+    public void testIsEscape() {
+        assertTrue(lexer.isEscape('\\'));
+        assertFalse(lexer.isEscape('a'));
+    }
+
+    @Test
+    public void testIsQuoteChar() {
+        assertTrue(lexer.isQuoteChar('"'));
+        assertFalse(lexer.isQuoteChar('a'));
+    }
+
+    @Test
+    public void testIsCommentStart() {
+        assertTrue(lexer.isCommentStart('#'));
+        assertFalse(lexer.isCommentStart('a'));
+    }
+}
+```
+
+This test suite uses JUnit 4 and Mockito to mock the `ExtendedBufferedReader` and test the methods of the `Lexer` class. Each method in the `Lexer` class is tested with various scenarios to ensure comprehensive coverage.

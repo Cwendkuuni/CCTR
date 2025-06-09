@@ -1,0 +1,69 @@
+package com.ib.client;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import com.ib.client.ExecutionFilter;
+
+public class ExecutionFilterTest {
+
+    private ExecutionFilter defaultFilter;
+    private ExecutionFilter parameterizedFilter;
+    private ExecutionFilter identicalFilter;
+    private ExecutionFilter differentFilter;
+
+    @Before
+    public void setUp() {
+        defaultFilter = new ExecutionFilter();
+        parameterizedFilter = new ExecutionFilter(1, "ACC123", "2023-10-01", "AAPL", "STK", "NYSE", "BUY");
+        identicalFilter = new ExecutionFilter(1, "ACC123", "2023-10-01", "AAPL", "STK", "NYSE", "BUY");
+        differentFilter = new ExecutionFilter(2, "ACC456", "2023-10-02", "GOOG", "OPT", "NASDAQ", "SELL");
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertEquals(0, defaultFilter.m_clientId);
+        assertNull(defaultFilter.m_acctCode);
+        assertNull(defaultFilter.m_time);
+        assertNull(defaultFilter.m_symbol);
+        assertNull(defaultFilter.m_secType);
+        assertNull(defaultFilter.m_exchange);
+        assertNull(defaultFilter.m_side);
+    }
+
+    @Test
+    public void testParameterizedConstructor() {
+        assertEquals(1, parameterizedFilter.m_clientId);
+        assertEquals("ACC123", parameterizedFilter.m_acctCode);
+        assertEquals("2023-10-01", parameterizedFilter.m_time);
+        assertEquals("AAPL", parameterizedFilter.m_symbol);
+        assertEquals("STK", parameterizedFilter.m_secType);
+        assertEquals("NYSE", parameterizedFilter.m_exchange);
+        assertEquals("BUY", parameterizedFilter.m_side);
+    }
+
+    @Test
+    public void testEqualsSameObject() {
+        assertTrue(parameterizedFilter.equals(parameterizedFilter));
+    }
+
+    @Test
+    public void testEqualsIdenticalObject() {
+        assertTrue(parameterizedFilter.equals(identicalFilter));
+    }
+
+    @Test
+    public void testEqualsDifferentObject() {
+        assertFalse(parameterizedFilter.equals(differentFilter));
+    }
+
+    @Test
+    public void testEqualsNullObject() {
+        assertFalse(parameterizedFilter.equals(null));
+    }
+
+    @Test
+    public void testEqualsDifferentClass() {
+        assertFalse(parameterizedFilter.equals("Some String"));
+    }
+}

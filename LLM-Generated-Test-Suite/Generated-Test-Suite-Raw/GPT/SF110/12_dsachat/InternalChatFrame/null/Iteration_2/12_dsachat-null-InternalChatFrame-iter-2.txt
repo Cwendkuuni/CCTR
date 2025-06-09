@@ -1,0 +1,123 @@
+Certainly! Below is a JUnit 4 test suite for the `InternalChatFrame` class. This test suite aims to cover the main functionalities of the class, including adding and deleting users, adding text, and handling actions and mouse events.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+import java.awt.event.MouseEvent;
+
+import javax.swing.text.BadLocationException;
+import javax.swing.text.StyledDocument;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+public class InternalChatFrameTest {
+
+    private InternalChatFrame chatFrame;
+    private MainFrame mockParent;
+    private StyledDocument mockDoc;
+
+    @Before
+    public void setUp() {
+        mockParent = mock(MainFrame.class);
+        when(mockParent.getSize()).thenReturn(new java.awt.Dimension(800, 600));
+        chatFrame = new InternalChatFrame(mockParent);
+        mockDoc = chatFrame.showTxt.getStyledDocument();
+    }
+
+    @Test
+    public void testAddUser() {
+        chatFrame.addUser("User1");
+        String[] users = chatFrame.getUserlist();
+        assertEquals(1, users.length);
+        assertEquals("User1", users[0]);
+    }
+
+    @Test
+    public void testDeleteUser() {
+        chatFrame.addUser("User1");
+        chatFrame.deleteUser("User1");
+        String[] users = chatFrame.getUserlist();
+        assertEquals(0, users.length);
+    }
+
+    @Test
+    public void testAddText() throws BadLocationException {
+        chatFrame.addText("User1: Hello");
+        String chatLog = chatFrame.getChatlog();
+        assertTrue(chatLog.contains("User1: Hello"));
+    }
+
+    @Test
+    public void testAddTextWithStyles() throws BadLocationException {
+        chatFrame.addText("User1: *italic* +bold+");
+        String chatLog = chatFrame.getChatlog();
+        assertTrue(chatLog.contains("User1: italic bold"));
+    }
+
+    @Test
+    public void testActionPerformedChooseColor() {
+        chatFrame.addUser("User1");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame, ActionEvent.ACTION_PERFORMED, "chooseColor");
+        chatFrame.actionPerformed(event);
+        // Since JColorChooser is a dialog, we cannot test the color change directly without user interaction.
+        // We can verify the method call using a mock or spy if needed.
+    }
+
+    @Test
+    public void testActionPerformedBgColor() {
+        chatFrame.addUser("User1");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame, ActionEvent.ACTION_PERFORMED, "bgColor");
+        chatFrame.actionPerformed(event);
+        // Similar to chooseColor, we cannot directly test the color change without user interaction.
+    }
+
+    @Test
+    public void testActionPerformedWhisper() {
+        chatFrame.addUser("User1");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame, ActionEvent.ACTION_PERFORMED, "whisper");
+        chatFrame.actionPerformed(event);
+        assertEquals("/w User1 ", chatFrame.txtInput.getText());
+    }
+
+    @Test
+    public void testMousePressedShowsPopup() {
+        MouseEvent mockEvent = mock(MouseEvent.class);
+        when(mockEvent.isPopupTrigger()).thenReturn(true);
+        when(mockEvent.getSource()).thenReturn(chatFrame.list);
+        chatFrame.mousePressed(mockEvent);
+        // Verify that the popup menu is shown
+        // This would require a UI test framework to fully verify
+    }
+
+    @Test
+    public void testMouseReleasedShowsPopup() {
+        MouseEvent mockEvent = mock(MouseEvent.class);
+        when(mockEvent.isPopupTrigger()).thenReturn(true);
+        when(mockEvent.getSource()).thenReturn(chatFrame.showTxt);
+        chatFrame.mouseReleased(mockEvent);
+        // Verify that the popup menu is shown
+        // This would require a UI test framework to fully verify
+    }
+
+    @Test
+    public void testGetChatlog() {
+        chatFrame.addText("User1: Hello");
+        String chatLog = chatFrame.getChatlog();
+        assertNotNull(chatLog);
+        assertTrue(chatLog.contains("User1: Hello"));
+    }
+}
+```
+
+### Notes:
+- The test suite uses Mockito to mock dependencies and interactions that are not directly testable, such as GUI components.
+- Some tests, like those involving color selection dialogs, are difficult to test without user interaction and may require a UI testing framework for full verification.
+- The test suite assumes that the `MainFrame` class and its methods are correctly implemented and available for use.

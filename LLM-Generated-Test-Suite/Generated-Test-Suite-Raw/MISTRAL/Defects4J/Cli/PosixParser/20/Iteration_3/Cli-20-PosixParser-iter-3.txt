@@ -1,0 +1,155 @@
+```java
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.Option;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class PosixParserTest {
+
+    private PosixParser parser;
+    private Options options;
+
+    @Before
+    public void setUp() {
+        parser = new PosixParser();
+        options = new Options();
+        options.addOption(new Option("a", "alpha"));
+        options.addOption(new Option("b", "beta"));
+        options.addOption(new Option("c", "charlie"));
+    }
+
+    @Test
+    public void testFlattenWithLongOptions() {
+        String[] args = {"--alpha", "--beta=value", "--charlie"};
+        String[] expected = {"--alpha", "--beta", "value", "--charlie"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithShortOptions() {
+        String[] args = {"-a", "-b", "-c"};
+        String[] expected = {"-a", "-b", "-c"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithBursting() {
+        String[] args = {"-abc"};
+        String[] expected = {"-a", "-b", "-c"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithStopAtNonOption() {
+        String[] args = {"-a", "value", "nonOption"};
+        String[] expected = {"-a", "value", "nonOption"};
+        String[] result = parser.flatten(options, args, true);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithSingleHyphen() {
+        String[] args = {"-", "value"};
+        String[] expected = {"-", "value"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithDoubleHyphen() {
+        String[] args = {"--", "value"};
+        String[] expected = {"--", "value"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithInvalidOption() {
+        String[] args = {"-d"};
+        String[] expected = {"-d"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testFlattenWithInvalidOptionAndStopAtNonOption() {
+        String[] args = {"-d", "value"};
+        String[] expected = {"-d", "value"};
+        String[] result = parser.flatten(options, args, true);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testBurstToken() {
+        String token = "-abc";
+        parser.burstToken(token, false);
+        String[] expected = {"-a", "-b", "-c"};
+        String[] result = (String[]) parser.tokens.toArray(new String[parser.tokens.size()]);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testBurstTokenWithStopAtNonOption() {
+        String token = "-abc";
+        parser.burstToken(token, true);
+        String[] expected = {"-a", "-b", "-c"};
+        String[] result = (String[]) parser.tokens.toArray(new String[parser.tokens.size()]);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testProcessOptionToken() {
+        String token = "-a";
+        parser.processOptionToken(token, false);
+        String[] expected = {"-a"};
+        String[] result = (String[]) parser.tokens.toArray(new String[parser.tokens.size()]);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testProcessOptionTokenWithStopAtNonOption() {
+        String token = "-d";
+        parser.processOptionToken(token, true);
+        String[] expected = {"-d"};
+        String[] result = (String[]) parser.tokens.toArray(new String[parser.tokens.size()]);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testProcess() {
+        parser.currentOption = options.getOption("a");
+        String value = "value";
+        parser.process(value);
+        String[] expected = {"value"};
+        String[] result = (String[]) parser.tokens.toArray(new String[parser.tokens.size()]);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testProcessWithoutCurrentOption() {
+        String value = "value";
+        parser.process(value);
+        String[] expected = {"--", "value"};
+        String[] result = (String[]) parser.tokens.toArray(new String[parser.tokens.size()]);
+        assertArrayEquals(expected, result);
+    }
+
+    @Test
+    public void testGobble() {
+        List<String> tokens = new ArrayList<>();
+        tokens.add("token1");
+        tokens.add("token2");
+        parser.tokens = tokens;
+        parser.eatTheRest = true;
+        Iterator<String> iter = Arrays.asList("value1", "value2").iterator();
+        parser.gobble(iter);
+        String[] expected = {"token1", "token2", "value1", "value2"};
+        String[] result = (String[]) parser.tokens.toArray(new String[parser.tokens.size()]);
+        assertArrayEquals(expected, result);
+    }
+}
+```

@@ -1,0 +1,139 @@
+To create a comprehensive JUnit 4 test suite for the `LagoonCLI` class, we need to consider testing the `main`, `getProperty`, and `showTime` methods. However, testing the `main` method can be challenging due to its reliance on command-line arguments and system properties. We can use a library like System Rules to help with this. Additionally, we need to mock or simulate the behavior of external dependencies like `LagoonProcessor`.
+
+Here's a test suite that covers these aspects:
+
+```java
+import nu.staldal.lagoon.LagoonCLI;
+import nu.staldal.lagoon.core.LagoonException;
+import nu.staldal.lagoon.core.LagoonProcessor;
+import org.junit.*;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
+import org.junit.contrib.java.lang.system.TextFromStandardInputStream;
+import org.mockito.Mockito;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class LagoonCLITest {
+
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
+
+    @Rule
+    public final TextFromStandardInputStream systemInMock = TextFromStandardInputStream.emptyStandardInputStream();
+
+    @Before
+    public void setUp() {
+        systemOutRule.clearLog();
+        systemErrRule.clearLog();
+    }
+
+    @Test
+    public void testMainWithNoArguments() {
+        LagoonCLI.main(new String[]{});
+        assertTrue(systemOutRule.getLog().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainWithInvalidInterval() {
+        LagoonCLI.main(new String[]{"test.properties", "invalid"});
+        assertTrue(systemOutRule.getLog().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainWithValidInterval() {
+        LagoonProcessor mockProcessor = mock(LagoonProcessor.class);
+        try {
+            when(mockProcessor.build(false)).thenReturn(true);
+        } catch (IOException e) {
+            fail("IOException should not occur in mock setup");
+        }
+
+        LagoonCLI.main(new String[]{"test.sitemap", "10"});
+        assertTrue(systemOutRule.getLog().contains("Lagoon initialized successfully"));
+    }
+
+    @Test
+    public void testMainWithBuildCommand() {
+        LagoonProcessor mockProcessor = mock(LagoonProcessor.class);
+        try {
+            when(mockProcessor.build(false)).thenReturn(true);
+        } catch (IOException e) {
+            fail("IOException should not occur in mock setup");
+        }
+
+        LagoonCLI.main(new String[]{"test.sitemap", "build"});
+        assertTrue(systemOutRule.getLog().contains("Building website..."));
+    }
+
+    @Test
+    public void testMainWithForceCommand() {
+        LagoonProcessor mockProcessor = mock(LagoonProcessor.class);
+        try {
+            when(mockProcessor.build(true)).thenReturn(true);
+        } catch (IOException e) {
+            fail("IOException should not occur in mock setup");
+        }
+
+        LagoonCLI.main(new String[]{"test.sitemap", "force"});
+        assertTrue(systemOutRule.getLog().contains("Force building website..."));
+    }
+
+    @Test
+    public void testGetProperty() throws LagoonException {
+        Properties properties = new Properties();
+        properties.setProperty("testKey", "testValue");
+        LagoonCLI.properties = properties;
+
+        String value = LagoonCLI.getProperty("testKey");
+        assertEquals("testValue", value);
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyThrowsException() throws LagoonException {
+        Properties properties = new Properties();
+        LagoonCLI.properties = properties;
+
+        LagoonCLI.getProperty("nonExistentKey");
+    }
+
+    @Test
+    public void testShowTimeInMilliseconds() {
+        LagoonCLI.showTime(5000);
+        assertTrue(systemOutRule.getLog().contains("in 5000 ms"));
+    }
+
+    @Test
+    public void testShowTimeInSeconds() {
+        LagoonCLI.showTime(15000);
+        assertTrue(systemOutRule.getLog().contains("in 15 s"));
+    }
+}
+```
+
+### Explanation:
+
+1. **System Rules**: We use `SystemOutRule`, `SystemErrRule`, and `ExpectedSystemExit` from the System Rules library to capture and assert console output and handle system exits.
+
+2. **Mocking**: We use Mockito to mock the `LagoonProcessor` class, which is an external dependency. This allows us to simulate its behavior without needing the actual implementation.
+
+3. **Testing `main` Method**: We test various scenarios for the `main` method, including no arguments, invalid interval, valid interval, build command, and force command.
+
+4. **Testing `getProperty` Method**: We test both the successful retrieval of a property and the exception case when a property is not found.
+
+5. **Testing `showTime` Method**: We test the output for both milliseconds and seconds to ensure the method formats time correctly.
+
+This test suite provides a comprehensive approach to testing the `LagoonCLI` class, covering different scenarios and edge cases.

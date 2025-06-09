@@ -1,0 +1,110 @@
+```java
+import static org.junit.Assert.*;
+
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.util.Date;
+import java.util.Locale;
+import java.util.TimeZone;
+
+import org.junit.Before;
+import org.junit.Test;
+
+import com.fasterxml.jackson.databind.util.StdDateFormat;
+
+public class StdDateFormatTest {
+
+    private StdDateFormat stdDateFormat;
+
+    @Before
+    public void setUp() {
+        stdDateFormat = new StdDateFormat();
+    }
+
+    @Test
+    public void testDefaultTimeZone() {
+        assertEquals(TimeZone.getTimeZone("GMT"), StdDateFormat.getDefaultTimeZone());
+    }
+
+    @Test
+    public void testWithTimeZone() {
+        TimeZone tz = TimeZone.getTimeZone("PST");
+        StdDateFormat newFormat = stdDateFormat.withTimeZone(tz);
+        assertNotSame(stdDateFormat, newFormat);
+        assertEquals(tz, newFormat._timezone);
+    }
+
+    @Test
+    public void testWithLocale() {
+        Locale locale = Locale.FRANCE;
+        StdDateFormat newFormat = stdDateFormat.withLocale(locale);
+        assertNotSame(stdDateFormat, newFormat);
+        assertEquals(locale, newFormat._locale);
+    }
+
+    @Test
+    public void testClone() {
+        StdDateFormat clonedFormat = stdDateFormat.clone();
+        assertNotSame(stdDateFormat, clonedFormat);
+        assertEquals(stdDateFormat._locale, clonedFormat._locale);
+        assertEquals(stdDateFormat._timezone, clonedFormat._timezone);
+    }
+
+    @Test
+    public void testParseISO8601() throws ParseException {
+        String dateStr = "2023-10-01T12:45:30.000Z";
+        Date date = stdDateFormat.parse(dateStr);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testParseRFC1123() throws ParseException {
+        String dateStr = "Sun, 01 Oct 2023 12:45:30 GMT";
+        Date date = stdDateFormat.parse(dateStr);
+        assertNotNull(date);
+    }
+
+    @Test
+    public void testParsePlainDate() throws ParseException {
+        String dateStr = "2023-10-01";
+        Date date = stdDateFormat.parse(dateStr);
+        assertNotNull(date);
+    }
+
+    @Test(expected = ParseException.class)
+    public void testParseInvalidDate() throws ParseException {
+        String dateStr = "Invalid Date";
+        stdDateFormat.parse(dateStr);
+    }
+
+    @Test
+    public void testFormat() {
+        Date date = new Date(0); // Epoch time
+        StringBuffer buffer = new StringBuffer();
+        stdDateFormat.format(date, buffer, new java.text.FieldPosition(0));
+        assertTrue(buffer.toString().startsWith("1970-01-01T00:00:00.000"));
+    }
+
+    @Test
+    public void testToString() {
+        String str = stdDateFormat.toString();
+        assertTrue(str.contains("DateFormat"));
+        assertTrue(str.contains("timezone"));
+        assertTrue(str.contains("locale"));
+    }
+
+    @Test
+    public void testLooksLikeISO8601() {
+        assertTrue(stdDateFormat.looksLikeISO8601("2023-10-01T12:45:30.000Z"));
+        assertFalse(stdDateFormat.looksLikeISO8601("Sun, 01 Oct 2023 12:45:30 GMT"));
+    }
+
+    @Test
+    public void testHasTimeZone() {
+        assertTrue(StdDateFormat.hasTimeZone("2023-10-01T12:45:30+0200"));
+        assertFalse(StdDateFormat.hasTimeZone("2023-10-01T12:45:30"));
+    }
+}
+```
+
+This test suite covers the main functionalities of the `StdDateFormat` class, including parsing and formatting dates, handling time zones and locales, and checking string formats. Each test method is designed to verify a specific aspect of the class's behavior.

@@ -1,0 +1,127 @@
+```java
+package net.sourceforge.beanbin.reflect;
+
+import net.sourceforge.beanbin.search.*;
+import net.sourceforge.beanbin.*;
+import net.sourceforge.beanbin.query.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class ReflectionSearchTest {
+
+    private ReflectionSearch reflectionSearch;
+
+    @Mock
+    private Query query;
+
+    @Mock
+    private ReflectionShelf reflectionShelf;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        reflectionSearch = new ReflectionSearch(TestClass.class);
+        reflectionSearch.query = query;
+        ReflectionShelf.setInstance(reflectionShelf);
+    }
+
+    @Test
+    public void testHasAnnotation() {
+        Annotation annotation = mock(Annotation.class);
+        when(annotation.annotationType()).thenReturn(TestAnnotation.class);
+        when(TestClass.class.getAnnotations()).thenReturn(new Annotation[]{annotation});
+
+        assertTrue(reflectionSearch.hasAnnotation("TestAnnotation"));
+        assertFalse(reflectionSearch.hasAnnotation("NonExistentAnnotation"));
+    }
+
+    @Test
+    public void testHasWildcard() {
+        assertTrue(reflectionSearch.hasWildcard("Test*"));
+        assertFalse(reflectionSearch.hasWildcard("Test"));
+    }
+
+    @Test
+    public void testMethodsThatHave() throws BeanBinException {
+        reflectionSearch.methodsThatHave("testMethod");
+        verify(query).add(any(MethodReflectionCriteria.class));
+    }
+
+    @Test
+    public void testMethodsThatDontHave() throws BeanBinException {
+        reflectionSearch.methodsThatDontHave("testMethod");
+        verify(query).add(any(MethodReflectionCriteria.class));
+    }
+
+    @Test
+    public void testAnd() {
+        reflectionSearch.and();
+        verify(query).setNextConditional(Conditional.AND);
+    }
+
+    @Test
+    public void testOr() {
+        reflectionSearch.or();
+        verify(query).setNextConditional(Conditional.OR);
+    }
+
+    @Test
+    public void testGetMethods() throws BeanBinException {
+        List<Method> methods = new ArrayList<>();
+        when(reflectionShelf.get(query)).thenReturn(methods);
+
+        List<Method> result = reflectionSearch.getMethods();
+        assertEquals(methods, result);
+    }
+
+    @Test
+    public void testIntersect() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+
+        Method method1 = mock(Method.class);
+        Method method2 = mock(Method.class);
+
+        master.add(method1);
+        toAdd.add(method2);
+
+        reflectionSearch.intersect(master, toAdd);
+        assertTrue(master.isEmpty());
+    }
+
+    @Test
+    public void testUnion() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+
+        Method method1 = mock(Method.class);
+        Method method2 = mock(Method.class);
+
+        master.add(method1);
+        toAdd.add(method2);
+
+        reflectionSearch.union(master, toAdd);
+        assertEquals(2, master.size());
+    }
+
+    @TestAnnotation
+    private static class TestClass {
+        public void testMethod() {}
+    }
+
+    private @interface TestAnnotation {}
+}
+```

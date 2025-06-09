@@ -1,0 +1,94 @@
+package com.lts.swing.combobox;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class SimpleComboBoxTest {
+
+    private SimpleComboBox simpleComboBox;
+    private SimpleComboBoxModel model;
+
+    @Before
+    public void setUp() {
+        model = new SimpleComboBoxModel();
+        simpleComboBox = new SimpleComboBox(model);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(simpleComboBox);
+        assertEquals(model, simpleComboBox.getModel());
+    }
+
+    @Test
+    public void testSetModel() {
+        SimpleComboBoxModel newModel = new SimpleComboBoxModel();
+        simpleComboBox.setModel(newModel);
+        assertEquals(newModel, simpleComboBox.getModel());
+    }
+
+    @Test
+    public void testGetSelectedValue() {
+        model.setSelectedValue(10);
+        assertEquals(10, simpleComboBox.getSelectedValue());
+    }
+
+    @Test
+    public void testSetSelectedValue() {
+        simpleComboBox.setSelectedValue(20);
+        assertEquals(20, model.getSelectedValue());
+    }
+
+    @Test
+    public void testGetSelectedInt() {
+        model.setSelectedValue(30);
+        assertEquals(30, simpleComboBox.getSelectedInt());
+
+        model.setSelectedValue(40L);
+        assertEquals(40, simpleComboBox.getSelectedInt());
+
+        model.setSelectedValue((short) 50);
+        assertEquals(50, simpleComboBox.getSelectedInt());
+
+        model.setSelectedValue((byte) 60);
+        assertEquals(60, simpleComboBox.getSelectedInt());
+
+        model.setSelectedValue(null);
+        assertEquals(-1, simpleComboBox.getSelectedInt());
+
+        try {
+            model.setSelectedValue("invalid");
+            simpleComboBox.getSelectedInt();
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testGetSelectedLong() {
+        model.setSelectedValue(30);
+        assertEquals(30L, simpleComboBox.getSelectedLong());
+
+        model.setSelectedValue(40L);
+        assertEquals(40L, simpleComboBox.getSelectedLong());
+
+        model.setSelectedValue((short) 50);
+        assertEquals(50L, simpleComboBox.getSelectedLong());
+
+        model.setSelectedValue((byte) 60);
+        assertEquals(60L, simpleComboBox.getSelectedLong());
+
+        model.setSelectedValue(null);
+        assertEquals(-1L, simpleComboBox.getSelectedLong());
+
+        try {
+            model.setSelectedValue("invalid");
+            simpleComboBox.getSelectedLong();
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+}

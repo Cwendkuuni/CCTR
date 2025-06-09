@@ -1,0 +1,106 @@
+```java
+import org.junit.*;
+import org.junit.contrib.java.lang.system.ExpectedSystemExit;
+import org.junit.contrib.java.lang.system.SystemErrRule;
+import org.junit.contrib.java.lang.system.SystemOutRule;
+import java.io.*;
+import java.util.Properties;
+import nu.staldal.lagoon.LagoonCLI;
+import nu.staldal.lagoon.core.LagoonException;
+
+public class LagoonCLITest {
+
+    @Rule
+    public final ExpectedSystemExit exit = ExpectedSystemExit.none();
+
+    @Rule
+    public final SystemOutRule systemOutRule = new SystemOutRule().enableLog();
+
+    @Rule
+    public final SystemErrRule systemErrRule = new SystemErrRule().enableLog();
+
+    @Before
+    public void setUp() {
+        // Reset static properties before each test
+        LagoonCLI.DEBUG = false;
+        LagoonCLI.properties = new Properties();
+    }
+
+    @Test
+    public void testMainNoArguments() {
+        LagoonCLI.main(new String[]{});
+        Assert.assertTrue(systemOutRule.getLog().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainInvalidInterval() {
+        LagoonCLI.main(new String[]{"test.properties", "invalid"});
+        Assert.assertTrue(systemOutRule.getLog().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainNegativeInterval() {
+        LagoonCLI.main(new String[]{"test.properties", "-1"});
+        Assert.assertTrue(systemOutRule.getLog().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainFileNotFound() {
+        LagoonCLI.main(new String[]{"nonexistent.properties"});
+        Assert.assertTrue(systemErrRule.getLog().contains("File not found"));
+    }
+
+    @Test
+    public void testMainAuthenticationMissing() throws IOException {
+        File tempFile = File.createTempFile("test", ".properties");
+        tempFile.deleteOnExit();
+        try (FileWriter writer = new FileWriter(tempFile)) {
+            writer.write("targetURL=http://example.com\n");
+            writer.write("sitemapFile=test.sitemap\n");
+            writer.write("sourceDir=.\n");
+        }
+        LagoonCLI.main(new String[]{tempFile.getAbsolutePath()});
+        Assert.assertTrue(systemErrRule.getLog().contains("Password is required but not specified"));
+    }
+
+    @Test
+    public void testGetPropertyThrowsException() {
+        try {
+            LagoonCLI.getProperty("nonexistent");
+            Assert.fail("Expected LagoonException");
+        } catch (LagoonException e) {
+            Assert.assertEquals("Property nonexistent not specified", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testShowTimeMilliseconds() {
+        LagoonCLI.showTime(5000);
+        Assert.assertTrue(systemOutRule.getLog().contains("in 5000 ms"));
+    }
+
+    @Test
+    public void testShowTimeSeconds() {
+        LagoonCLI.showTime(15000);
+        Assert.assertTrue(systemOutRule.getLog().contains("in 15 s"));
+    }
+}
+```
+
+### Explanation:
+- **JUnit 4**: The test suite uses JUnit 4 annotations and rules.
+- **System Rules**: The `SystemOutRule` and `SystemErrRule` are used to capture and assert output to `System.out` and `System.err`.
+- **ExpectedSystemExit**: This rule is used to handle and test for `System.exit` calls.
+- **Test Cases**:
+  - **testMainNoArguments**: Tests the behavior when no arguments are provided.
+  - **testMainInvalidInterval**: Tests the behavior when an invalid interval is provided.
+  - **testMainNegativeInterval**: Tests the behavior when a negative interval is provided.
+  - **testMainFileNotFound**: Tests the behavior when a non-existent properties file is provided.
+  - **testMainAuthenticationMissing**: Tests the behavior when the properties file is missing the password.
+  - **testGetPropertyThrowsException**: Tests the `getProperty` method for a non-existent property.
+  - **testShowTimeMilliseconds**: Tests the `showTime` method for a time less than 10 seconds.
+  - **testShowTimeSeconds**: Tests the `showTime` method for a time greater than 10 seconds.
+
+### Note:
+- The test suite assumes the presence of the `LagoonProcessor` and other dependencies, which are not provided in the original code snippet. The tests focus on the logic within the `LagoonCLI` class itself.
+- The test suite uses temporary files and mock data where necessary to simulate different scenarios.

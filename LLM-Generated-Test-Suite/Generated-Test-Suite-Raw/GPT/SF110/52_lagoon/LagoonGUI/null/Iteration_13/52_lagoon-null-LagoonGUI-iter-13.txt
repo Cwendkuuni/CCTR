@@ -1,0 +1,171 @@
+To create a comprehensive JUnit 4 test suite for the `LagoonGUI` class, we need to consider the various methods and their functionalities. The test suite will focus on testing the public and private methods using reflection where necessary. Note that GUI components and event-driven methods are challenging to test with JUnit alone, so we will focus on the logic and state changes.
+
+Here's a basic test suite:
+
+```java
+import nu.staldal.lagoon.LagoonGUI;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.awt.event.WindowEvent;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.Method;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class LagoonGUITest {
+
+    private LagoonGUI lagoonGUI;
+
+    @Before
+    public void setUp() {
+        lagoonGUI = new LagoonGUI();
+    }
+
+    @Test
+    public void testWindowClosing() {
+        WindowEvent mockEvent = mock(WindowEvent.class);
+        lagoonGUI.windowClosing(mockEvent);
+        // Since exit() calls System.exit(0), we can't directly test it.
+        // We assume if windowClosing is called, exit() will be triggered.
+    }
+
+    @Test
+    public void testBuildMethod() throws Exception {
+        Method buildMethod = LagoonGUI.class.getDeclaredMethod("build", boolean.class);
+        buildMethod.setAccessible(true);
+
+        // Mock dependencies and set initial state
+        lagoonGUI.sitemapFile.setValue("testSitemap.xml");
+        lagoonGUI.sourceDir.setValue("testSourceDir");
+        lagoonGUI.targetURL.setValue("http://testTargetURL");
+
+        // Call the build method with force = false
+        buildMethod.invoke(lagoonGUI, false);
+
+        // Verify the state changes or method calls
+        assertEquals("Ready", lagoonGUI.statusLabel.getText());
+    }
+
+    @Test
+    public void testExitMethod() throws Exception {
+        Method exitMethod = LagoonGUI.class.getDeclaredMethod("exit");
+        exitMethod.setAccessible(true);
+
+        // Mock LagoonProcessor to avoid actual exit
+        lagoonGUI.processor = mock(LagoonProcessor.class);
+
+        // Call the exit method
+        exitMethod.invoke(lagoonGUI);
+
+        // Verify processor.destroy() is called
+        verify(lagoonGUI.processor, times(1)).destroy();
+    }
+
+    @Test
+    public void testInitMethod() throws Exception {
+        Method initMethod = LagoonGUI.class.getDeclaredMethod("init");
+        initMethod.setAccessible(true);
+
+        // Set initial state
+        lagoonGUI.sitemapFile.setValue("testSitemap.xml");
+        lagoonGUI.sourceDir.setValue("testSourceDir");
+        lagoonGUI.targetURL.setValue("http://testTargetURL");
+
+        // Call the init method
+        initMethod.invoke(lagoonGUI);
+
+        // Verify the state changes
+        assertNotNull(lagoonGUI.processor);
+        assertEquals("Ready", lagoonGUI.statusLabel.getText());
+    }
+
+    @Test
+    public void testLoadProperties() throws Exception {
+        Method loadPropertiesMethod = LagoonGUI.class.getDeclaredMethod("loadProperties", File.class);
+        loadPropertiesMethod.setAccessible(true);
+
+        // Create a temporary properties file
+        File tempFile = File.createTempFile("testProperties", ".properties");
+        tempFile.deleteOnExit();
+
+        // Call the loadProperties method
+        loadPropertiesMethod.invoke(lagoonGUI, tempFile);
+
+        // Verify the properties are loaded correctly
+        assertEquals("", lagoonGUI.sitemapFile.getValue());
+        assertEquals(".", lagoonGUI.sourceDir.getValue());
+        assertEquals(".", lagoonGUI.targetURL.getValue());
+    }
+
+    @Test
+    public void testSavePropertyFile() throws Exception {
+        Method savePropertyFileMethod = LagoonGUI.class.getDeclaredMethod("savePropertyFile");
+        savePropertyFileMethod.setAccessible(true);
+
+        // Set initial state
+        lagoonGUI.sitemapFile.setValue("testSitemap.xml");
+        lagoonGUI.sourceDir.setValue("testSourceDir");
+        lagoonGUI.targetURL.setValue("http://testTargetURL");
+
+        // Call the savePropertyFile method
+        savePropertyFileMethod.invoke(lagoonGUI);
+
+        // Verify the status label is updated
+        assertEquals("Properties saved", lagoonGUI.statusLabel.getText());
+    }
+
+    @Test
+    public void testGetProperty() throws Exception {
+        Method getPropertyMethod = LagoonGUI.class.getDeclaredMethod("getProperty", Properties.class, String.class);
+        getPropertyMethod.setAccessible(true);
+
+        Properties properties = new Properties();
+        properties.setProperty("testKey", "testValue");
+
+        // Call the getProperty method
+        String value = (String) getPropertyMethod.invoke(null, properties, "testKey");
+
+        // Verify the returned value
+        assertEquals("testValue", value);
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyThrowsException() throws Exception {
+        Method getPropertyMethod = LagoonGUI.class.getDeclaredMethod("getProperty", Properties.class, String.class);
+        getPropertyMethod.setAccessible(true);
+
+        Properties properties = new Properties();
+
+        // Call the getProperty method with a non-existent key
+        getPropertyMethod.invoke(null, properties, "nonExistentKey");
+    }
+
+    @Test
+    public void testShowTime() throws Exception {
+        Method showTimeMethod = LagoonGUI.class.getDeclaredMethod("showTime", long.class);
+        showTimeMethod.setAccessible(true);
+
+        // Call the showTime method
+        String result = (String) showTimeMethod.invoke(null, 5000L);
+
+        // Verify the returned value
+        assertEquals("in 5000 ms", result);
+
+        result = (String) showTimeMethod.invoke(null, 15000L);
+        assertEquals("in 15 s", result);
+    }
+}
+```
+
+### Explanation:
+- **Reflection**: Used to access private methods (`build`, `exit`, `init`, `loadProperties`, `savePropertyFile`, `getProperty`, `showTime`) for testing.
+- **Mocking**: Used `Mockito` to mock dependencies like `LagoonProcessor` to avoid actual system exits or file operations.
+- **Assertions**: Used to verify state changes and method outcomes.
+- **Exception Testing**: Checked for exceptions using `expected` in `@Test`.
+
+This test suite provides a basic structure and coverage for the `LagoonGUI` class. You may need to adjust the tests based on the actual behavior and dependencies of the class.

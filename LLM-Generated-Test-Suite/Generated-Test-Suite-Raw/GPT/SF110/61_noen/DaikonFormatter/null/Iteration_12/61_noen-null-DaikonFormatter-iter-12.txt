@@ -1,0 +1,150 @@
+To create a comprehensive JUnit 4 test suite for the `DaikonFormatter` class, we need to test all public methods and constructors. This includes testing the behavior of the class under different conditions, such as when the `simple` flag is set to true or false, and when different inputs are provided. We will also need to mock or stub dependencies like `InterfaceParser`, `ProgramRun`, and `Event` to isolate the tests.
+
+Below is a JUnit 4 test suite for the `DaikonFormatter` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+
+@RunWith(MockitoJUnitRunner.class)
+public class DaikonFormatterTest {
+
+    @Mock
+    private ProgramRun mockProgramRun;
+    
+    @Mock
+    private Event mockEvent;
+    
+    @Mock
+    private Event mockPreviousEvent;
+    
+    @Mock
+    private EventAttribute mockEventAttribute;
+    
+    private DaikonFormatter daikonFormatterSimple;
+    private DaikonFormatter daikonFormatterComplex;
+    
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        
+        // Mocking InterfaceParser.methodNames to return a collection of strings
+        when(InterfaceParser.methodNames(any())).thenReturn(Arrays.asList("method1", "method2"));
+        
+        // Initialize DaikonFormatter instances
+        daikonFormatterSimple = new DaikonFormatter("testfile.dtrace", true);
+        daikonFormatterComplex = new DaikonFormatter("testfile.dtrace", Arrays.asList("method1", "method2"));
+    }
+    
+    @Test
+    public void testConstructorSimple() throws IOException {
+        assertNotNull(daikonFormatterSimple);
+        assertNull(daikonFormatterSimple.inputs);
+        assertTrue(daikonFormatterSimple.simple);
+    }
+    
+    @Test
+    public void testConstructorComplex() throws IOException {
+        assertNotNull(daikonFormatterComplex);
+        assertNotNull(daikonFormatterComplex.inputs);
+        assertFalse(daikonFormatterComplex.simple);
+    }
+    
+    @Test
+    public void testHeader() {
+        String expectedHeader = "decl-version 2.0\nvar-comparability implicit\n";
+        assertEquals(expectedHeader, daikonFormatterSimple.header());
+    }
+    
+    @Test
+    public void testFooter() {
+        assertEquals("", daikonFormatterSimple.footer());
+    }
+    
+    @Test
+    public void testFileNameExtension() {
+        assertEquals("dtrace", daikonFormatterSimple.fileNameExtension());
+    }
+    
+    @Test
+    public void testObservationsSimple() {
+        when(mockProgramRun.iterator()).thenReturn(Arrays.asList(mockEvent).iterator());
+        when(mockEvent.getName()).thenReturn("eventName");
+        when(mockEvent.isExit()).thenReturn(false);
+        
+        String observations = daikonFormatterSimple.observations(mockProgramRun);
+        assertNotNull(observations);
+        assertTrue(observations.contains("eventName:::ENTER"));
+    }
+    
+    @Test
+    public void testObservationsComplex() {
+        when(mockProgramRun.iterator()).thenReturn(Arrays.asList(mockPreviousEvent, mockEvent).iterator());
+        when(mockPreviousEvent.getName()).thenReturn("method1");
+        when(mockEvent.getName()).thenReturn("method2");
+        when(mockPreviousEvent.isExit()).thenReturn(false);
+        when(mockEvent.isExit()).thenReturn(false);
+        
+        String observations = daikonFormatterComplex.observations(mockProgramRun);
+        assertNotNull(observations);
+        assertTrue(observations.contains("method1,method2:::ENTER"));
+    }
+    
+    @Test
+    public void testSimplePoint() {
+        OutputBuffer out = new OutputBuffer();
+        when(mockEvent.getName()).thenReturn("eventName");
+        when(mockEvent.isExit()).thenReturn(false);
+        when(mockEvent.attributes()).thenReturn(Arrays.asList(mockEventAttribute).iterator());
+        when(mockEventAttribute.getName()).thenReturn("attrName");
+        when(mockEventAttribute.getType()).thenReturn("int");
+        when(mockEventAttribute.getValue()).thenReturn("42");
+        
+        daikonFormatterSimple.simplePoint(mockEvent, "10", out);
+        
+        String output = out.toString();
+        assertTrue(output.contains("eventName:::ENTER"));
+        assertTrue(output.contains("attrName"));
+        assertTrue(output.contains("42"));
+    }
+    
+    @Test
+    public void testPoint() {
+        OutputBuffer out = new OutputBuffer();
+        when(mockEvent.getName()).thenReturn("eventName");
+        when(mockEvent.isExit()).thenReturn(false);
+        when(mockEvent.attributes()).thenReturn(Arrays.asList(mockEventAttribute).iterator());
+        when(mockEventAttribute.getName()).thenReturn("attrName");
+        when(mockEventAttribute.getType()).thenReturn("int");
+        when(mockEventAttribute.getValue()).thenReturn("42");
+        
+        daikonFormatterComplex.point("eventName", mockEvent, "11", out);
+        
+        String output = out.toString();
+        assertTrue(output.contains("eventName:::ENTER"));
+        assertTrue(output.contains("attrName"));
+        assertTrue(output.contains("42"));
+    }
+}
+```
+
+### Explanation:
+- **Mocks and Stubs**: We use Mockito to mock dependencies like `ProgramRun`, `Event`, and `EventAttribute`. This allows us to simulate different scenarios without relying on actual implementations.
+- **Test Setup**: The `setUp` method initializes the `DaikonFormatter` instances and mocks necessary methods.
+- **Test Methods**: Each test method checks a specific functionality of the `DaikonFormatter` class, ensuring that it behaves as expected under different conditions.
+- **Assertions**: We use assertions to verify that the output of each method matches the expected results.
+
+This test suite should cover the main functionalities of the `DaikonFormatter` class. Adjustments may be needed based on the actual behavior of the dependencies and the environment.

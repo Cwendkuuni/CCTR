@@ -1,0 +1,139 @@
+Certainly! Below is a JUnit 4 test suite for the `TucsonSimple` class. This test suite aims to cover all the methods in the class, including both public and private methods. Note that testing private methods directly is not a common practice, but for the sake of completeness, we can use reflection to test them.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.io.BufferedReader;
+import java.io.BufferedWriter;
+import java.io.IOException;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.lang.reflect.Method;
+
+@RunWith(JUnit4.class)
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+
+    @Before
+    public void setUp() {
+        tucsonSimple = new TucsonSimple();
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("format.tucsonsimple", tucsonSimple.toString());
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        assertEquals(".RWL", tucsonSimple.getDefaultExtension());
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        BufferedReader reader = new BufferedReader(new StringReader(""));
+        tucsonSimple.load(reader);
+    }
+
+    @Test
+    public void testMake6digitCode() throws Exception {
+        Sample sample = new Sample();
+        sample.meta.put("id", "123456789");
+
+        Method method = TucsonSimple.class.getDeclaredMethod("make6digitCode", Sample.class);
+        method.setAccessible(true);
+
+        String code = (String) method.invoke(tucsonSimple, sample);
+        assertEquals("123456", code);
+
+        sample.meta.put("id", "123");
+        code = (String) method.invoke(tucsonSimple, sample);
+        assertEquals("123   ", code);
+
+        sample.meta.remove("id");
+        code = (String) method.invoke(tucsonSimple, sample);
+        assertEquals("000000", code);
+    }
+
+    @Test
+    public void testSaveRowHeader() throws Exception {
+        Sample sample = new Sample();
+        sample.range = new Range(new Year(2000), new Year(2010));
+        StringWriter writer = new StringWriter();
+        BufferedWriter bufferedWriter = new BufferedWriter(writer);
+
+        Method method = TucsonSimple.class.getDeclaredMethod("saveRowHeader", BufferedWriter.class, Sample.class, String.class, int.class, Year.class);
+        method.setAccessible(true);
+
+        method.invoke(tucsonSimple, bufferedWriter, sample, "123456", 6, new Year(2000));
+        bufferedWriter.flush();
+
+        assertEquals("1234562000", writer.toString());
+    }
+
+    @Test
+    public void testSaveData() throws Exception {
+        Sample sample = new Sample();
+        sample.range = new Range(new Year(2000), new Year(2001));
+        sample.data.add(100);
+        sample.data.add(200);
+
+        StringWriter writer = new StringWriter();
+        BufferedWriter bufferedWriter = new BufferedWriter(writer);
+
+        Method method = TucsonSimple.class.getDeclaredMethod("saveData", Sample.class, BufferedWriter.class);
+        method.setAccessible(true);
+
+        method.invoke(tucsonSimple, sample, bufferedWriter);
+        bufferedWriter.flush();
+
+        String expectedOutput = "1234562000 100\n1234562001 200\n   999\n";
+        assertEquals(expectedOutput, writer.toString());
+    }
+
+    @Test
+    public void testComputeRange() throws Exception {
+        Sample sample = new Sample();
+        sample.range = new Range(new Year(2000), new Year(2010));
+
+        Method method = TucsonSimple.class.getDeclaredMethod("computeRange", Sample.class);
+        method.setAccessible(true);
+
+        Range range = (Range) method.invoke(tucsonSimple, sample);
+        assertEquals(sample.range, range);
+
+        sample.range = new Range(new Year(-5000), new Year(-4990));
+        range = (Range) method.invoke(tucsonSimple, sample);
+        assertEquals(new Range(new Year(3000), new Year(3010)), range);
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        Sample sample = new Sample();
+        sample.range = new Range(new Year(2000), new Year(2001));
+        sample.data.add(100);
+        sample.data.add(200);
+
+        StringWriter writer = new StringWriter();
+        BufferedWriter bufferedWriter = new BufferedWriter(writer);
+
+        tucsonSimple.save(sample, bufferedWriter);
+        bufferedWriter.flush();
+
+        String expectedOutput = "1234562000 100\n1234562001 200\n   999\n";
+        assertEquals(expectedOutput, writer.toString());
+    }
+}
+```
+
+### Notes:
+- **Reflection**: Private methods are tested using reflection. This is generally not recommended for production code but can be useful for thorough testing in certain scenarios.
+- **Mocks and Stubs**: The `Sample`, `Range`, `Year`, and `WrongFiletypeException` classes are assumed to be part of the codebase. You may need to create mock or stub implementations if they are not available.
+- **I18n.getText**: The `toString` method assumes that `I18n.getText("format.tucsonsimple")` returns `"format.tucsonsimple"`. Adjust the expected value based on the actual implementation of `I18n`.
+
+Ensure that the necessary classes and methods are available in your test environment for the test suite to work correctly.

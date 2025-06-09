@@ -1,0 +1,115 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.NameBasedCandidateFilter;
+import org.mockito.internal.util.MockUtil;
+
+import java.lang.reflect.Field;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class NameBasedCandidateFilterTest {
+
+    @Mock
+    private MockCandidateFilter nextFilter;
+
+    @Mock
+    private Field field;
+
+    @Mock
+    private MockUtil mockUtil;
+
+    private NameBasedCandidateFilter nameBasedCandidateFilter;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        nameBasedCandidateFilter = new NameBasedCandidateFilter(nextFilter);
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMock() throws Exception {
+        // Arrange
+        Collection<Object> mocks = Arrays.asList(mock(Object.class));
+        Object fieldInstance = new Object();
+
+        // Act
+        nameBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        // Assert
+        verify(nextFilter).filterCandidate(mocks, field, fieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidateWithMultipleMocksNoNameMatch() throws Exception {
+        // Arrange
+        Object mock1 = mock(Object.class);
+        Object mock2 = mock(Object.class);
+        Collection<Object> mocks = Arrays.asList(mock1, mock2);
+        Object fieldInstance = new Object();
+
+        when(field.getName()).thenReturn("mockName");
+        when(mockUtil.getMockName(mock1)).thenReturn("differentName");
+        when(mockUtil.getMockName(mock2)).thenReturn("anotherName");
+
+        // Act
+        nameBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        // Assert
+        verify(nextFilter).filterCandidate(mocks, field, fieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidateWithMultipleMocksNameMatch() throws Exception {
+        // Arrange
+        Object mock1 = mock(Object.class);
+        Object mock2 = mock(Object.class);
+        Collection<Object> mocks = Arrays.asList(mock1, mock2);
+        Object fieldInstance = new Object();
+
+        when(field.getName()).thenReturn("mockName");
+        when(mockUtil.getMockName(mock1)).thenReturn("mockName");
+        when(mockUtil.getMockName(mock2)).thenReturn("anotherName");
+
+        List<Object> expectedMocks = new ArrayList<>();
+        expectedMocks.add(mock1);
+
+        // Act
+        nameBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        // Assert
+        verify(nextFilter).filterCandidate(expectedMocks, field, fieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidateWithMultipleMocksMultipleNameMatches() throws Exception {
+        // Arrange
+        Object mock1 = mock(Object.class);
+        Object mock2 = mock(Object.class);
+        Collection<Object> mocks = Arrays.asList(mock1, mock2);
+        Object fieldInstance = new Object();
+
+        when(field.getName()).thenReturn("mockName");
+        when(mockUtil.getMockName(mock1)).thenReturn("mockName");
+        when(mockUtil.getMockName(mock2)).thenReturn("mockName");
+
+        List<Object> expectedMocks = new ArrayList<>();
+        expectedMocks.add(mock1);
+        expectedMocks.add(mock2);
+
+        // Act
+        nameBasedCandidateFilter.filterCandidate(mocks, field, fieldInstance);
+
+        // Assert
+        verify(nextFilter).filterCandidate(expectedMocks, field, fieldInstance);
+    }
+}
+```

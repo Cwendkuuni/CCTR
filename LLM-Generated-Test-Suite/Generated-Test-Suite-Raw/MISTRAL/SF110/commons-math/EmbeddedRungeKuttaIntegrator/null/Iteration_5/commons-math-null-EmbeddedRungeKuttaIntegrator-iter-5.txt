@@ -1,0 +1,116 @@
+```java
+package org.apache.commons.math3.ode.nonstiff;
+
+import org.apache.commons.math3.ode.*;
+import org.apache.commons.math3.util.*;
+import org.apache.commons.math3.ode.sampling.*;
+import org.apache.commons.math3.exception.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class EmbeddedRungeKuttaIntegratorTest {
+
+    private EmbeddedRungeKuttaIntegrator integrator;
+    private double[] c;
+    private double[][] a;
+    private double[] b;
+    private RungeKuttaStepInterpolator prototype;
+
+    @Before
+    public void setUp() {
+        c = new double[]{0.0, 0.5, 1.0};
+        a = new double[][]{{0.0, 0.0, 0.0}, {0.5, 0.0, 0.0}, {-1.0, 2.0, 0.0}};
+        b = new double[]{1.0 / 6.0, 2.0 / 3.0, 1.0 / 6.0};
+        prototype = new RungeKuttaStepInterpolator();
+        integrator = new EmbeddedRungeKuttaIntegrator("TestIntegrator", true, c, a, b, prototype, 0.01, 1.0, 1e-10, 1e-10) {
+            @Override
+            public int getOrder() {
+                return 3;
+            }
+
+            @Override
+            protected double estimateError(double[][] p0, double[] p1, double[] p2, double p3) {
+                return 0.0; // Dummy implementation
+            }
+        };
+    }
+
+    @Test
+    public void testGetOrder() {
+        assertEquals(3, integrator.getOrder());
+    }
+
+    @Test
+    public void testGetSafety() {
+        assertEquals(0.9, integrator.getSafety(), 0.0);
+    }
+
+    @Test
+    public void testSetSafety() {
+        integrator.setSafety(0.8);
+        assertEquals(0.8, integrator.getSafety(), 0.0);
+    }
+
+    @Test
+    public void testGetMinReduction() {
+        assertEquals(0.2, integrator.getMinReduction(), 0.0);
+    }
+
+    @Test
+    public void testSetMinReduction() {
+        integrator.setMinReduction(0.1);
+        assertEquals(0.1, integrator.getMinReduction(), 0.0);
+    }
+
+    @Test
+    public void testGetMaxGrowth() {
+        assertEquals(10.0, integrator.getMaxGrowth(), 0.0);
+    }
+
+    @Test
+    public void testSetMaxGrowth() {
+        integrator.setMaxGrowth(5.0);
+        assertEquals(5.0, integrator.getMaxGrowth(), 0.0);
+    }
+
+    @Test
+    public void testIntegrate() throws Exception {
+        ExpandableStatefulODE equations = new ExpandableStatefulODE(new FirstOrderDifferentialEquations() {
+            @Override
+            public int getDimension() {
+                return 1;
+            }
+
+            @Override
+            public void computeDerivatives(double t, double[] y, double[] yDot) {
+                yDot[0] = y[0]; // Simple exponential growth
+            }
+        });
+
+        equations.init(0.0, new double[]{1.0});
+        integrator.integrate(equations, 1.0);
+
+        assertEquals(1.0, equations.getTime(), 1e-10);
+        assertEquals(Math.exp(1.0), equations.getCompleteState()[0], 1e-10);
+    }
+
+    @Test(expected = NumberIsTooSmallException.class)
+    public void testIntegrateException() throws Exception {
+        ExpandableStatefulODE equations = new ExpandableStatefulODE(new FirstOrderDifferentialEquations() {
+            @Override
+            public int getDimension() {
+                return 1;
+            }
+
+            @Override
+            public void computeDerivatives(double t, double[] y, double[] yDot) {
+                yDot[0] = y[0]; // Simple exponential growth
+            }
+        });
+
+        equations.init(0.0, new double[]{1.0});
+        integrator.integrate(equations, -1.0); // Invalid time
+    }
+}
+```

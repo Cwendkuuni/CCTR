@@ -1,0 +1,128 @@
+To create a comprehensive JUnit 4 test suite for the `Convert` class, we need to consider the various methods and their functionalities. The test suite will include tests for the constructors, `init`, `run`, `Transcode`, and `matrix` methods. Since the `Convert` class interacts with a GUI and file system, we'll need to mock these interactions to isolate the tests. Below is a JUnit 4 test suite for the `Convert` class:
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class ConvertTest {
+
+    @Mock
+    private GUI mockGUI;
+
+    private Convert convert;
+
+    @Before
+    public void setUp() {
+        // Set up default behavior for the mock GUI
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(false);
+        when(mockGUI.ErrorCheck(anyString())).thenReturn(false);
+        when(mockGUI.spnMinutes.getValue()).thenReturn(0);
+        when(mockGUI.spnSeconds.getValue()).thenReturn(0);
+    }
+
+    @Test
+    public void testConstructorWithFormatAndAspectRatio() {
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+        Assert.assertEquals(29.97, convert.m_fps, 0.01);
+        Assert.assertEquals("dvd-ntsc", convert.m_Format);
+        Assert.assertEquals("16:9", convert.m_AspectRatio);
+    }
+
+    @Test
+    public void testConstructorWithQualityFormatAndAspectRatio() {
+        convert = new Convert(1, "dvd-pal", "4:3", mockGUI);
+        Assert.assertEquals(25.0, convert.m_fps, 0.01);
+        Assert.assertEquals("dvd-pal", convert.m_Format);
+        Assert.assertEquals("4:3", convert.m_AspectRatio);
+        Assert.assertEquals(1, convert.m_Quality);
+    }
+
+    @Test
+    public void testInitWithThreadSelected() throws InterruptedException {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(true);
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+        boolean result = convert.init();
+        Assert.assertFalse(result);
+        verify(mockGUI, times(1)).ErrorCheck(anyString());
+    }
+
+    @Test
+    public void testInitWithoutThreadSelected() {
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+        boolean result = convert.init();
+        Assert.assertFalse(result);
+        verify(mockGUI, times(1)).ErrorCheck(anyString());
+    }
+
+    @Test
+    public void testRun() {
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+        convert.run();
+        // Verify that Transcode method is called
+        // Since Transcode is private, we can't directly verify its call
+        // But we can verify the side effects or interactions it causes
+        verify(mockGUI, times(1)).lblConvert.setEnabled(true);
+    }
+
+    @Test
+    public void testMatrix() {
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+        convert.matrix();
+        File matrixFile = new File(mockGUI.strOutputDir + "/matrix.txt");
+        Assert.assertTrue(matrixFile.exists());
+        // Clean up the created file
+        matrixFile.delete();
+    }
+
+    @Test
+    public void testTranscodeWithQualityZero() {
+        convert = new Convert(0, "dvd-ntsc", "16:9", mockGUI);
+        convert.Transcode();
+        Assert.assertTrue(convert.m_transcode.contains("-q 2"));
+    }
+
+    @Test
+    public void testTranscodeWithQualityOne() {
+        convert = new Convert(1, "dvd-ntsc", "16:9", mockGUI);
+        convert.Transcode();
+        Assert.assertTrue(convert.m_transcode.contains("-q 4"));
+    }
+
+    @Test
+    public void testTranscodeWithQualityTwo() {
+        convert = new Convert(2, "dvd-ntsc", "16:9", mockGUI);
+        convert.Transcode();
+        Assert.assertTrue(convert.m_transcode.contains("-q 6"));
+    }
+
+    @Test
+    public void testTranscodeHandlesIOException() {
+        convert = new Convert("dvd-ntsc", "16:9", mockGUI);
+        // Simulate IOException
+        doThrow(new IOException()).when(mockGUI).MessageBox(anyString(), anyInt());
+        convert.Transcode();
+        Assert.assertTrue(convert.m_Error);
+    }
+}
+```
+
+### Explanation:
+- **Mockito** is used to mock the `GUI` class, which allows us to simulate interactions with the GUI without needing an actual GUI implementation.
+- **Test Methods**: Each method tests a specific functionality or scenario:
+  - Constructors are tested to ensure they set the correct initial state.
+  - `init` is tested for both scenarios where the thread is selected and not selected.
+  - `run` is tested indirectly by verifying interactions that occur as a result of calling `Transcode`.
+  - `matrix` is tested to ensure it creates the expected file.
+  - `Transcode` is tested for different quality settings and to handle exceptions.
+- **Assertions**: Various assertions are used to verify the expected state or behavior after method execution.
+- **File Cleanup**: The test for `matrix` includes cleanup to remove the created file after the test.
+
+This test suite provides a comprehensive set of tests for the `Convert` class, focusing on its public methods and interactions.

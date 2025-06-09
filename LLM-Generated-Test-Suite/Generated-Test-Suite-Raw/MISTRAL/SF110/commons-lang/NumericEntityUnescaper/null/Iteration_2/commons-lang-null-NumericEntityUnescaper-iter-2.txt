@@ -1,0 +1,110 @@
+```java
+package org.apache.commons.lang3.text.translate;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.util.EnumSet;
+
+public class NumericEntityUnescaperTest {
+
+    private NumericEntityUnescaper unescaper;
+
+    @Before
+    public void setUp() {
+        unescaper = new NumericEntityUnescaper();
+    }
+
+    @Test
+    public void testConstructorWithOptions() {
+        NumericEntityUnescaper customUnescaper = new NumericEntityUnescaper(NumericEntityUnescaper.OPTION.semiColonOptional);
+        assertTrue(customUnescaper.isSet(NumericEntityUnescaper.OPTION.semiColonOptional));
+        assertFalse(customUnescaper.isSet(NumericEntityUnescaper.OPTION.semiColonRequired));
+    }
+
+    @Test
+    public void testConstructorWithoutOptions() {
+        assertTrue(unescaper.isSet(NumericEntityUnescaper.OPTION.semiColonRequired));
+    }
+
+    @Test
+    public void testIsSet() {
+        assertTrue(unescaper.isSet(NumericEntityUnescaper.OPTION.semiColonRequired));
+        assertFalse(unescaper.isSet(NumericEntityUnescaper.OPTION.semiColonOptional));
+    }
+
+    @Test
+    public void testTranslateDecimalWithSemiColon() throws IOException {
+        StringWriter out = new StringWriter();
+        int translated = unescaper.translate("&#65;", 0, out);
+        assertEquals(5, translated);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateDecimalWithoutSemiColon() throws IOException {
+        StringWriter out = new StringWriter();
+        int translated = unescaper.translate("&#65", 0, out);
+        assertEquals(0, translated);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateHexWithSemiColon() throws IOException {
+        StringWriter out = new StringWriter();
+        int translated = unescaper.translate("&#x41;", 0, out);
+        assertEquals(6, translated);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateHexWithoutSemiColon() throws IOException {
+        StringWriter out = new StringWriter();
+        int translated = unescaper.translate("&#x41", 0, out);
+        assertEquals(0, translated);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateWithInvalidNumber() throws IOException {
+        StringWriter out = new StringWriter();
+        int translated = unescaper.translate("&#xG1;", 0, out);
+        assertEquals(0, translated);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateWithErrorIfNoSemiColon() {
+        NumericEntityUnescaper errorUnescaper = new NumericEntityUnescaper(NumericEntityUnescaper.OPTION.errorIfNoSemiColon);
+        StringWriter out = new StringWriter();
+        try {
+            errorUnescaper.translate("&#65", 0, out);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Semi-colon required at end of numeric entity", e.getMessage());
+        } catch (IOException e) {
+            fail("Unexpected IOException");
+        }
+    }
+
+    @Test
+    public void testTranslateWithSemiColonOptional() throws IOException {
+        NumericEntityUnescaper optionalUnescaper = new NumericEntityUnescaper(NumericEntityUnescaper.OPTION.semiColonOptional);
+        StringWriter out = new StringWriter();
+        int translated = optionalUnescaper.translate("&#65", 0, out);
+        assertEquals(4, translated);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateWithLargeValue() throws IOException {
+        StringWriter out = new StringWriter();
+        int translated = unescaper.translate("&#x10FFFF;", 0, out);
+        assertEquals(9, translated);
+        assertEquals("\uD83D\uDFFF", out.toString());
+    }
+}
+```

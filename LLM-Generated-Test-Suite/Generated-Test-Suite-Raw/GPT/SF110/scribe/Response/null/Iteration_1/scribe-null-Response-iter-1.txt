@@ -1,0 +1,144 @@
+Certainly! Below is a complete JUnit 4 test suite for the `Response` class. This test suite aims to cover all the methods in the class, including both public and private methods. Note that testing private methods directly is not a common practice, but for the sake of completeness, I'll include tests for them by using reflection.
+
+```java
+import org.junit.*;
+import org.mockito.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ResponseTest {
+
+    @Mock
+    private HttpURLConnection mockConnection;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void testResponseConstructorSuccess() throws Exception {
+        InputStream mockInputStream = new ByteArrayInputStream("response body".getBytes());
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getInputStream()).thenReturn(mockInputStream);
+        when(mockConnection.getHeaderFields()).thenReturn(Collections.singletonMap("Content-Type", Arrays.asList("application/json")));
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(200, response.getCode());
+        assertEquals("response body", response.getBody());
+        assertEquals("application/json", response.getHeader("Content-Type"));
+    }
+
+    @Test
+    public void testResponseConstructorError() throws Exception {
+        InputStream mockErrorStream = new ByteArrayInputStream("error body".getBytes());
+        when(mockConnection.getResponseCode()).thenReturn(404);
+        when(mockConnection.getErrorStream()).thenReturn(mockErrorStream);
+        when(mockConnection.getHeaderFields()).thenReturn(Collections.singletonMap("Content-Type", Arrays.asList("application/json")));
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("error body", response.getBody());
+        assertEquals("application/json", response.getHeader("Content-Type"));
+    }
+
+    @Test
+    public void testResponseConstructorUnknownHostException() throws Exception {
+        when(mockConnection.connect()).thenThrow(new UnknownHostException());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("", response.getBody());
+    }
+
+    @Test
+    public void testGetBody() throws Exception {
+        InputStream mockInputStream = new ByteArrayInputStream("response body".getBytes());
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getInputStream()).thenReturn(mockInputStream);
+
+        Response response = new Response(mockConnection);
+
+        assertEquals("response body", response.getBody());
+    }
+
+    @Test
+    public void testGetStream() throws Exception {
+        InputStream mockInputStream = new ByteArrayInputStream("response body".getBytes());
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getInputStream()).thenReturn(mockInputStream);
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(mockInputStream, response.getStream());
+    }
+
+    @Test
+    public void testGetCode() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(200);
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(200, response.getCode());
+    }
+
+    @Test
+    public void testGetHeaders() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getHeaderFields()).thenReturn(Collections.singletonMap("Content-Type", Arrays.asList("application/json")));
+
+        Response response = new Response(mockConnection);
+
+        assertEquals("application/json", response.getHeaders().get("Content-Type"));
+    }
+
+    @Test
+    public void testGetHeader() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getHeaderFields()).thenReturn(Collections.singletonMap("Content-Type", Arrays.asList("application/json")));
+
+        Response response = new Response(mockConnection);
+
+        assertEquals("application/json", response.getHeader("Content-Type"));
+    }
+
+    // Private method testing using reflection
+    @Test
+    public void testParseHeaders() throws Exception {
+        when(mockConnection.getHeaderFields()).thenReturn(Collections.singletonMap("Content-Type", Arrays.asList("application/json")));
+
+        Response response = new Response(mockConnection);
+
+        Method parseHeadersMethod = Response.class.getDeclaredMethod("parseHeaders", HttpURLConnection.class);
+        parseHeadersMethod.setAccessible(true);
+        Map<String, String> headers = (Map<String, String>) parseHeadersMethod.invoke(response, mockConnection);
+
+        assertEquals("application/json", headers.get("Content-Type"));
+    }
+
+    @Test
+    public void testWasSuccessful() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(200);
+
+        Response response = new Response(mockConnection);
+
+        Method wasSuccessfulMethod = Response.class.getDeclaredMethod("wasSuccessful");
+        wasSuccessfulMethod.setAccessible(true);
+        boolean wasSuccessful = (boolean) wasSuccessfulMethod.invoke(response);
+
+        assertTrue(wasSuccessful);
+    }
+}
+```
+
+### Explanation:
+- **Mockito** is used to mock the `HttpURLConnection` object, allowing us to simulate different scenarios without making actual network calls.
+- **Reflection** is used to test private methods like `parseHeaders` and `wasSuccessful`. This is generally not recommended for production code but can be useful for thorough testing.
+- The test suite covers various scenarios, including successful responses, error responses, and exceptions like `UnknownHostException`.

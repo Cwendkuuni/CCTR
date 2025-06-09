@@ -1,0 +1,220 @@
+```java
+package org.scribe.model;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.scribe.exceptions.OAuthException;
+import org.scribe.utils.URLUtils;
+
+import java.io.IOException;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.nio.charset.Charset;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class RequestTest {
+
+    private Request request;
+    private Verb verb;
+    private String url;
+
+    @Before
+    public void setUp() {
+        verb = Verb.GET;
+        url = "http://example.com";
+        request = new Request(verb, url);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(request);
+        assertEquals(verb, request.getVerb());
+        assertEquals(url, request.getUrl());
+        assertNotNull(request.getQueryStringParams());
+        assertNotNull(request.getBodyParams());
+        assertNotNull(request.getHeaders());
+    }
+
+    @Test
+    public void testSend() {
+        HttpURLConnection mockConnection = mock(HttpURLConnection.class);
+        request.setConnection(mockConnection);
+
+        Response response = request.send();
+        assertNotNull(response);
+    }
+
+    @Test(expected = OAuthException.class)
+    public void testSendException() throws IOException {
+        HttpURLConnection mockConnection = mock(HttpURLConnection.class);
+        when(mockConnection.getResponseCode()).thenThrow(new IOException());
+        request.setConnection(mockConnection);
+
+        request.send();
+    }
+
+    @Test
+    public void testCreateConnection() throws IOException {
+        request.createConnection();
+        assertNotNull(request.getConnection());
+    }
+
+    @Test
+    public void testDoSend() throws IOException {
+        HttpURLConnection mockConnection = mock(HttpURLConnection.class);
+        request.setConnection(mockConnection);
+
+        Response response = request.doSend();
+        assertNotNull(response);
+    }
+
+    @Test
+    public void testAddHeaders() {
+        HttpURLConnection mockConnection = mock(HttpURLConnection.class);
+        request.addHeader("Key", "Value");
+        request.addHeaders(mockConnection);
+
+        verify(mockConnection).setRequestProperty("Key", "Value");
+    }
+
+    @Test
+    public void testAddBody() throws IOException {
+        HttpURLConnection mockConnection = mock(HttpURLConnection.class);
+        byte[] content = "TestContent".getBytes();
+        request.addBody(mockConnection, content);
+
+        verify(mockConnection).setRequestProperty("Content-Length", String.valueOf(content.length));
+        verify(mockConnection).setDoOutput(true);
+    }
+
+    @Test
+    public void testAddHeader() {
+        request.addHeader("Key", "Value");
+        assertEquals("Value", request.getHeaders().get("Key"));
+    }
+
+    @Test
+    public void testAddBodyParameter() {
+        request.addBodyParameter("Key", "Value");
+        assertEquals("Value", request.getBodyParams().get("Key"));
+    }
+
+    @Test
+    public void testAddQuerystringParameter() {
+        request.addQuerystringParameter("Key", "Value");
+        assertEquals("Value", request.getQueryStringParams().get("Key"));
+    }
+
+    @Test
+    public void testAddPayloadString() {
+        request.addPayload("Payload");
+        assertEquals("Payload", request.getPayload());
+    }
+
+    @Test
+    public void testAddPayloadByteArray() {
+        byte[] payload = "Payload".getBytes();
+        request.addPayload(payload);
+        assertArrayEquals(payload, request.getBytePayload());
+    }
+
+    @Test
+    public void testGetQueryStringParams() {
+        request.addQuerystringParameter("Key", "Value");
+        Map<String, String> params = request.getQueryStringParams();
+        assertEquals("Value", params.get("Key"));
+    }
+
+    @Test
+    public void testGetBodyParams() {
+        request.addBodyParameter("Key", "Value");
+        Map<String, String> params = request.getBodyParams();
+        assertEquals("Value", params.get("Key"));
+    }
+
+    @Test
+    public void testGetUrl() {
+        assertEquals(url, request.getUrl());
+    }
+
+    @Test
+    public void testGetSanitizedUrl() {
+        String sanitizedUrl = request.getSanitizedUrl();
+        assertEquals("http://example.com", sanitizedUrl);
+    }
+
+    @Test
+    public void testGetBodyContents() {
+        request.addPayload("Payload");
+        String bodyContents = request.getBodyContents();
+        assertEquals("Payload", bodyContents);
+    }
+
+    @Test
+    public void testGetByteBodyContents() {
+        request.addPayload("Payload");
+        byte[] byteBodyContents = request.getByteBodyContents();
+        assertArrayEquals("Payload".getBytes(), byteBodyContents);
+    }
+
+    @Test
+    public void testGetVerb() {
+        assertEquals(verb, request.getVerb());
+    }
+
+    @Test
+    public void testGetHeaders() {
+        request.addHeader("Key", "Value");
+        Map<String, String> headers = request.getHeaders();
+        assertEquals("Value", headers.get("Key"));
+    }
+
+    @Test
+    public void testGetCharset() {
+        String charset = request.getCharset();
+        assertEquals(Charset.defaultCharset().name(), charset);
+    }
+
+    @Test
+    public void testSetConnectTimeout() {
+        HttpURLConnection mockConnection = mock(HttpURLConnection.class);
+        request.setConnection(mockConnection);
+        request.setConnectTimeout(10, TimeUnit.SECONDS);
+
+        verify(mockConnection).setConnectTimeout(10000);
+    }
+
+    @Test
+    public void testSetReadTimeout() {
+        HttpURLConnection mockConnection = mock(HttpURLConnection.class);
+        request.setConnection(mockConnection);
+        request.setReadTimeout(10, TimeUnit.SECONDS);
+
+        verify(mockConnection).setReadTimeout(10000);
+    }
+
+    @Test
+    public void testSetCharset() {
+        request.setCharset("UTF-8");
+        assertEquals("UTF-8", request.getCharset());
+    }
+
+    @Test
+    public void testSetConnectionKeepAlive() {
+        request.setConnectionKeepAlive(true);
+        assertTrue(request.isConnectionKeepAlive());
+    }
+
+    @Test
+    public void testToString() {
+        String toString = request.toString();
+        assertEquals("@Request(GET http://example.com)", toString);
+    }
+}
+```

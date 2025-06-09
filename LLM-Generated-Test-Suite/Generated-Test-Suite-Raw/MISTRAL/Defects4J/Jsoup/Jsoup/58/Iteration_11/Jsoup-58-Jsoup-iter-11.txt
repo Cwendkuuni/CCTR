@@ -1,0 +1,141 @@
+```java
+package org.jsoup;
+
+import org.jsoup.nodes.Document;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Cleaner;
+import org.jsoup.safety.Whitelist;
+import org.jsoup.helper.DataUtil;
+import org.jsoup.helper.HttpConnection;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+
+import static org.junit.Assert.*;
+
+public class JsoupTest {
+
+    private static final String HTML = "<html><head><title>Test</title></head><body><p>Hello World</p></body></html>";
+    private static final String BODY_HTML = "<p>Hello World</p>";
+    private static final String BASE_URI = "http://example.com";
+    private static final String FILE_PATH = "test.html";
+    private static final String URL_STRING = "http://example.com";
+    private static final Whitelist WHITELIST = Whitelist.basic();
+
+    @Before
+    public void setUp() throws IOException {
+        // Create a test file for file-based tests
+        File file = new File(FILE_PATH);
+        if (!file.exists()) {
+            file.createNewFile();
+        }
+    }
+
+    @Test
+    public void testParseHtmlStringBaseUri() {
+        Document doc = Jsoup.parse(HTML, BASE_URI);
+        assertNotNull(doc);
+        assertEquals("Test", doc.title());
+    }
+
+    @Test
+    public void testParseHtmlStringBaseUriParser() {
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(HTML, BASE_URI, parser);
+        assertNotNull(doc);
+        assertEquals("Test", doc.title());
+    }
+
+    @Test
+    public void testParseHtmlString() {
+        Document doc = Jsoup.parse(HTML);
+        assertNotNull(doc);
+        assertEquals("Test", doc.title());
+    }
+
+    @Test
+    public void testConnect() {
+        HttpConnection.Connection connection = Jsoup.connect(URL_STRING);
+        assertNotNull(connection);
+    }
+
+    @Test
+    public void testParseFileCharsetNameBaseUri() throws IOException {
+        Document doc = Jsoup.parse(new File(FILE_PATH), "UTF-8", BASE_URI);
+        assertNotNull(doc);
+    }
+
+    @Test
+    public void testParseFileCharsetName() throws IOException {
+        Document doc = Jsoup.parse(new File(FILE_PATH), "UTF-8");
+        assertNotNull(doc);
+    }
+
+    @Test
+    public void testParseInputStreamCharsetNameBaseUri() throws IOException {
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(FILE_PATH);
+        Document doc = Jsoup.parse(inputStream, "UTF-8", BASE_URI);
+        assertNotNull(doc);
+    }
+
+    @Test
+    public void testParseInputStreamCharsetNameBaseUriParser() throws IOException {
+        InputStream inputStream = getClass().getClassLoader().getResourceAsStream(FILE_PATH);
+        Parser parser = Parser.xmlParser();
+        Document doc = Jsoup.parse(inputStream, "UTF-8", BASE_URI, parser);
+        assertNotNull(doc);
+    }
+
+    @Test
+    public void testParseBodyFragmentStringBaseUri() {
+        Document doc = Jsoup.parseBodyFragment(BODY_HTML, BASE_URI);
+        assertNotNull(doc);
+        assertEquals(BODY_HTML, doc.body().html());
+    }
+
+    @Test
+    public void testParseBodyFragmentString() {
+        Document doc = Jsoup.parseBodyFragment(BODY_HTML);
+        assertNotNull(doc);
+        assertEquals(BODY_HTML, doc.body().html());
+    }
+
+    @Test
+    public void testParseUrlTimeoutMillis() throws IOException {
+        Document doc = Jsoup.parse(new URL(URL_STRING), 10000);
+        assertNotNull(doc);
+    }
+
+    @Test
+    public void testCleanStringBaseUriWhitelist() {
+        String cleanHtml = Jsoup.clean(BODY_HTML, BASE_URI, WHITELIST);
+        assertNotNull(cleanHtml);
+        assertEquals(BODY_HTML, cleanHtml);
+    }
+
+    @Test
+    public void testCleanStringWhitelist() {
+        String cleanHtml = Jsoup.clean(BODY_HTML, WHITELIST);
+        assertNotNull(cleanHtml);
+        assertEquals(BODY_HTML, cleanHtml);
+    }
+
+    @Test
+    public void testCleanStringBaseUriWhitelistOutputSettings() {
+        Document.OutputSettings outputSettings = new Document.OutputSettings();
+        String cleanHtml = Jsoup.clean(BODY_HTML, BASE_URI, WHITELIST, outputSettings);
+        assertNotNull(cleanHtml);
+        assertEquals(BODY_HTML, cleanHtml);
+    }
+
+    @Test
+    public void testIsValidStringWhitelist() {
+        boolean isValid = Jsoup.isValid(BODY_HTML, WHITELIST);
+        assertTrue(isValid);
+    }
+}
+```

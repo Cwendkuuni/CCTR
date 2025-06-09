@@ -1,0 +1,134 @@
+```java
+package ioproject.server.network;
+
+import ioproject.common.network.Client;
+import ioproject.common.network.ClientHandler;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.util.Iterator;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ClientGroupTest {
+
+    private ClientGroup clientGroup;
+    private Client client;
+    private ClientHandler handler;
+
+    @Before
+    public void setUp() {
+        clientGroup = new ClientGroup(null);
+        client = mock(Client.class);
+        handler = mock(ClientHandler.class);
+    }
+
+    @Test
+    public void testParentGroup() {
+        ClientGroup parentGroup = new ClientGroup(null);
+        ClientGroup childGroup = new ClientGroup(parentGroup);
+        assertSame(parentGroup, childGroup.parentGroup());
+    }
+
+    @Test
+    public void testNotifyMessageSent() {
+        clientGroup.add(client);
+        clientGroup.addClientHandler(handler);
+
+        assertTrue(clientGroup.notifyMessageSent(client, "message"));
+        verify(handler).messageSent(client, "message");
+    }
+
+    @Test
+    public void testNotifyMessageSent_ClientNotInGroup() {
+        assertFalse(clientGroup.notifyMessageSent(client, "message"));
+    }
+
+    @Test
+    public void testNotifyMessageReceived() {
+        clientGroup.add(client);
+        clientGroup.addClientHandler(handler);
+
+        assertTrue(clientGroup.notifyMessageReceived(client, "message"));
+        verify(handler).messageReceived(client, "message");
+    }
+
+    @Test
+    public void testNotifyMessageReceived_ClientNotInGroup() {
+        assertFalse(clientGroup.notifyMessageReceived(client, "message"));
+    }
+
+    @Test
+    public void testNotifyExceptionCaught() {
+        clientGroup.add(client);
+        clientGroup.addClientHandler(handler);
+
+        assertTrue(clientGroup.notifyExceptionCaught(client, new Exception("test")));
+        verify(handler).exceptionCaught(client, any(Throwable.class));
+    }
+
+    @Test
+    public void testNotifyExceptionCaught_ClientNotInGroup() {
+        assertFalse(clientGroup.notifyExceptionCaught(client, new Exception("test")));
+    }
+
+    @Test
+    public void testIterator() {
+        clientGroup.add(client);
+        Iterator<Client> iterator = clientGroup.iterator();
+        assertTrue(iterator.hasNext());
+        assertSame(client, iterator.next());
+    }
+
+    @Test
+    public void testContains() {
+        clientGroup.add(client);
+        assertTrue(clientGroup.contains(client));
+    }
+
+    @Test
+    public void testSize() {
+        clientGroup.add(client);
+        assertEquals(1, clientGroup.size());
+    }
+
+    @Test
+    public void testAdd() {
+        assertTrue(clientGroup.add(client));
+        assertTrue(clientGroup.contains(client));
+        verify(handler, never()).clientAdded(client);
+
+        clientGroup.addClientHandler(handler);
+        clientGroup.add(client);
+        verify(handler).clientAdded(client);
+    }
+
+    @Test
+    public void testRemove() {
+        clientGroup.add(client);
+        assertTrue(clientGroup.remove(client));
+        assertFalse(clientGroup.contains(client));
+        verify(handler, never()).clientRemoved(client);
+
+        clientGroup.addClientHandler(handler);
+        clientGroup.add(client);
+        clientGroup.remove(client);
+        verify(handler).clientRemoved(client);
+    }
+
+    @Test
+    public void testCreateSubGroup() {
+        ClientGroup subGroup = clientGroup.createSubGroup();
+        assertNotNull(subGroup);
+        assertSame(clientGroup, subGroup.parentGroup());
+    }
+
+    @Test
+    public void testAddClientHandler() {
+        clientGroup.addClientHandler(handler);
+        assertSame(handler, clientGroup.handler);
+    }
+}
+```

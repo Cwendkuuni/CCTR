@@ -1,0 +1,167 @@
+```java
+package fr.unice.gfarce.dao;
+
+import fr.unice.gfarce.identity.*;
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.InjectMocks;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.persistence.*;
+import java.util.Calendar;
+import java.util.List;
+
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class OracleIdentiteDaoTest {
+
+    @InjectMocks
+    private OracleIdentiteDao oracleIdentiteDao;
+
+    @Mock
+    private EntityManagerFactory emf;
+
+    @Mock
+    private EntityManager em;
+
+    @Mock
+    private EntityTransaction tx;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        when(emf.createEntityManager()).thenReturn(em);
+        when(em.getTransaction()).thenReturn(tx);
+    }
+
+    @Test
+    public void testInsert() {
+        Identite identite = mock(Identite.class);
+        Calendar dateLimite = mock(Calendar.class);
+
+        oracleIdentiteDao.insert(identite, "nomForm", dateLimite);
+
+        verify(em).persist(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testInsertRollback() {
+        Identite identite = mock(Identite.class);
+        Calendar dateLimite = mock(Calendar.class);
+
+        doThrow(new RuntimeException()).when(em).persist(identite);
+
+        oracleIdentiteDao.insert(identite, "nomForm", dateLimite);
+
+        verify(tx).begin();
+        verify(tx).rollback();
+    }
+
+    @Test
+    public void testUpdate() {
+        Identite identite = mock(Identite.class);
+        when(identite.getId()).thenReturn(1L);
+        when(identite.getEmail()).thenReturn("email");
+        when(identite.getNom()).thenReturn("nom");
+        when(identite.getPrenom()).thenReturn("prenom");
+        when(identite.getSex()).thenReturn("sex");
+        when(identite.getType()).thenReturn(Identite.TypeIdentite.CANDIDAT);
+
+        Identite foundIdentite = mock(Identite.class);
+        when(em.find(Identite.class, 1L)).thenReturn(foundIdentite);
+
+        oracleIdentiteDao.update(identite);
+
+        verify(foundIdentite).setEmail("email");
+        verify(foundIdentite).setNom("nom");
+        verify(foundIdentite).setPrenom("prenom");
+        verify(foundIdentite).setSex("sex");
+        verify(foundIdentite).setType(Identite.TypeIdentite.CANDIDAT);
+        verify(em).merge(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testUpdateRollback() {
+        Identite identite = mock(Identite.class);
+        when(identite.getId()).thenReturn(1L);
+
+        doThrow(new RuntimeException()).when(em).merge(identite);
+
+        oracleIdentiteDao.update(identite);
+
+        verify(tx).begin();
+        verify(tx).rollback();
+    }
+
+    @Test
+    public void testDelete() {
+        Identite identite = mock(Identite.class);
+        when(identite.getId()).thenReturn(1L);
+
+        Identite foundIdentite = mock(Identite.class);
+        when(em.find(Identite.class, 1L)).thenReturn(foundIdentite);
+
+        oracleIdentiteDao.delete(identite);
+
+        verify(em).remove(foundIdentite);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testDeleteRollback() {
+        Identite identite = mock(Identite.class);
+        when(identite.getId()).thenReturn(1L);
+
+        doThrow(new RuntimeException()).when(em).remove(identite);
+
+        oracleIdentiteDao.delete(identite);
+
+        verify(tx).begin();
+        verify(tx).rollback();
+    }
+
+    @Test
+    public void testFind() {
+        List<Identite> identites = mock(List.class);
+        when(em.createQuery(anyString()).getResultList()).thenReturn(identites);
+
+        List<Identite> result = oracleIdentiteDao.find("nom", "prenom", "sex", "email", Identite.TypeIdentite.CANDIDAT);
+
+        Assert.assertEquals(identites, result);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testFindCandidat() {
+        List<Identite> identites = mock(List.class);
+        when(em.createQuery(anyString()).getResultList()).thenReturn(identites);
+
+        Candidat[] result = oracleIdentiteDao.findCandidat("nom", "prenom", "sex", "email");
+
+        Assert.assertNotNull(result);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testFindRespForm() {
+        List<Identite> identites = mock(List.class);
+        when(em.createQuery(anyString()).getResultList()).thenReturn(identites);
+
+        RespFormation[] result = oracleIdentiteDao.findRespForm("nom", "prenom", "sex", "email");
+
+        Assert.assertNotNull(result);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+}
+```

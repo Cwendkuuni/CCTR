@@ -1,0 +1,128 @@
+Certainly! Below is a JUnit 4 test suite for the `Response` class. This test suite aims to cover all the methods in the class, including both public and private methods. Note that testing private methods directly is not a common practice; instead, we test them indirectly through the public methods that use them.
+
+```java
+import org.junit.*;
+import org.mockito.*;
+import java.io.*;
+import java.net.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ResponseTest {
+
+    @Mock
+    private HttpURLConnection mockConnection;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void testResponseConstructorSuccessfulConnection() throws Exception {
+        InputStream mockInputStream = new ByteArrayInputStream("response body".getBytes());
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getInputStream()).thenReturn(mockInputStream);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(200, response.getCode());
+        assertEquals("response body", response.getBody());
+        assertEquals("value1", response.getHeader("header1"));
+        assertEquals("value2", response.getHeader("header2"));
+    }
+
+    @Test
+    public void testResponseConstructorErrorConnection() throws Exception {
+        InputStream mockErrorStream = new ByteArrayInputStream("error body".getBytes());
+        when(mockConnection.getResponseCode()).thenReturn(404);
+        when(mockConnection.getErrorStream()).thenReturn(mockErrorStream);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("error body", response.getBody());
+        assertEquals("value1", response.getHeader("header1"));
+        assertEquals("value2", response.getHeader("header2"));
+    }
+
+    @Test
+    public void testResponseConstructorUnknownHostException() throws Exception {
+        when(mockConnection.connect()).thenThrow(new UnknownHostException());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(404, response.getCode());
+        assertEquals("", response.getBody());
+    }
+
+    @Test
+    public void testGetBodyWhenBodyIsAlreadyParsed() throws Exception {
+        InputStream mockInputStream = new ByteArrayInputStream("response body".getBytes());
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getInputStream()).thenReturn(mockInputStream);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+        response.getBody(); // parse body
+
+        assertEquals("response body", response.getBody()); // should return cached body
+    }
+
+    @Test
+    public void testGetStream() throws Exception {
+        InputStream mockInputStream = new ByteArrayInputStream("response body".getBytes());
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getInputStream()).thenReturn(mockInputStream);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals(mockInputStream, response.getStream());
+    }
+
+    @Test
+    public void testGetHeaders() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        Map<String, String> headers = response.getHeaders();
+        assertEquals("value1", headers.get("header1"));
+        assertEquals("value2", headers.get("header2"));
+    }
+
+    @Test
+    public void testGetHeader() throws Exception {
+        when(mockConnection.getResponseCode()).thenReturn(200);
+        when(mockConnection.getHeaderFields()).thenReturn(createMockHeaders());
+
+        Response response = new Response(mockConnection);
+
+        assertEquals("value1", response.getHeader("header1"));
+        assertEquals("value2", response.getHeader("header2"));
+        assertNull(response.getHeader("nonexistent"));
+    }
+
+    private Map<String, List<String>> createMockHeaders() {
+        Map<String, List<String>> headers = new HashMap<>();
+        headers.put("header1", Collections.singletonList("value1"));
+        headers.put("header2", Collections.singletonList("value2"));
+        return headers;
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock the `HttpURLConnection` object to simulate different scenarios such as successful connections, error connections, and exceptions.
+- **Test Cases**:
+  - **Constructor Tests**: We test the constructor for different scenarios: successful connection, error connection, and `UnknownHostException`.
+  - **Method Tests**: We test each public method (`getBody`, `getStream`, `getHeaders`, `getHeader`) to ensure they return the expected results.
+- **Utility Method**: `createMockHeaders` is a helper method to create mock headers for testing purposes.
+
+This test suite should provide comprehensive coverage for the `Response` class.

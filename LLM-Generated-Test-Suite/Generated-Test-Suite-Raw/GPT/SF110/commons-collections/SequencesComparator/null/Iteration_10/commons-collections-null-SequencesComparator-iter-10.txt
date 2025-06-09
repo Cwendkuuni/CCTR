@@ -1,0 +1,91 @@
+To create a comprehensive JUnit 4 test suite for the `SequencesComparator` class, we need to test the public methods and ensure that the internal logic is functioning correctly. The primary method to test is `getScript()`, which relies on the internal methods `buildSnake`, `getMiddleSnake`, and `buildScript`. We'll create test cases to cover various scenarios, including edge cases.
+
+Here's a complete JUnit 4 test suite for the `SequencesComparator` class:
+
+```java
+import org.apache.commons.collections4.sequence.EditScript;
+import org.apache.commons.collections4.sequence.SequencesComparator;
+import org.apache.commons.collections4.functors.DefaultEquator;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class SequencesComparatorTest {
+
+    private List<String> sequence1;
+    private List<String> sequence2;
+    private SequencesComparator<String> comparator;
+
+    @Before
+    public void setUp() {
+        sequence1 = Arrays.asList("A", "B", "C", "D");
+        sequence2 = Arrays.asList("A", "C", "E", "D");
+        comparator = new SequencesComparator<>(sequence1, sequence2);
+    }
+
+    @Test
+    public void testGetScriptWithIdenticalSequences() {
+        List<String> identicalSequence = Arrays.asList("A", "B", "C", "D");
+        SequencesComparator<String> identicalComparator = new SequencesComparator<>(identicalSequence, identicalSequence);
+        EditScript<String> script = identicalComparator.getScript();
+        assertEquals(4, script.getModifications());
+        assertTrue(script.getModifications() == 4); // All should be KeepCommands
+    }
+
+    @Test
+    public void testGetScriptWithDifferentSequences() {
+        EditScript<String> script = comparator.getScript();
+        assertEquals(5, script.getModifications());
+        // Expected script: Keep A, Delete B, Keep C, Insert E, Keep D
+    }
+
+    @Test
+    public void testGetScriptWithEmptySequences() {
+        SequencesComparator<String> emptyComparator = new SequencesComparator<>(Collections.emptyList(), Collections.emptyList());
+        EditScript<String> script = emptyComparator.getScript();
+        assertEquals(0, script.getModifications());
+    }
+
+    @Test
+    public void testGetScriptWithOneEmptySequence() {
+        SequencesComparator<String> emptySequence1Comparator = new SequencesComparator<>(Collections.emptyList(), sequence2);
+        EditScript<String> script1 = emptySequence1Comparator.getScript();
+        assertEquals(4, script1.getModifications()); // All should be InsertCommands
+
+        SequencesComparator<String> emptySequence2Comparator = new SequencesComparator<>(sequence1, Collections.emptyList());
+        EditScript<String> script2 = emptySequence2Comparator.getScript();
+        assertEquals(4, script2.getModifications()); // All should be DeleteCommands
+    }
+
+    @Test
+    public void testGetScriptWithCustomEquator() {
+        SequencesComparator<String> customEquatorComparator = new SequencesComparator<>(sequence1, sequence2, new DefaultEquator<String>() {
+            @Override
+            public boolean equate(String o1, String o2) {
+                return o1.equalsIgnoreCase(o2);
+            }
+        });
+        EditScript<String> script = customEquatorComparator.getScript();
+        assertEquals(5, script.getModifications());
+        // Expected script: Keep A, Delete B, Keep C, Insert E, Keep D
+    }
+}
+```
+
+### Explanation:
+
+1. **Setup**: The `setUp` method initializes common test data used across multiple test cases.
+
+2. **Test Cases**:
+   - **Identical Sequences**: Tests that the script contains only `KeepCommand` when both sequences are identical.
+   - **Different Sequences**: Tests the script for sequences with differences, ensuring the correct number of modifications.
+   - **Empty Sequences**: Tests behavior when both sequences are empty.
+   - **One Empty Sequence**: Tests behavior when one sequence is empty, expecting all operations to be either insertions or deletions.
+   - **Custom Equator**: Tests the comparator with a custom equator to ensure it respects custom equality logic.
+
+This test suite should cover the primary functionality of the `SequencesComparator` class.

@@ -1,0 +1,115 @@
+```java
+package org.objectweb.asm.jip.commons;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.objectweb.asm.Opcodes;
+import org.objectweb.asm.Type;
+import org.objectweb.asm.jip.MethodAdapter;
+import org.objectweb.asm.jip.MethodVisitor;
+import org.objectweb.asm.jip.Label;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class LocalVariablesSorterTest {
+
+    private MethodVisitor mockMethodVisitor;
+    private LocalVariablesSorter localVariablesSorter;
+
+    @Before
+    public void setUp() {
+        mockMethodVisitor = mock(MethodVisitor.class);
+        localVariablesSorter = new LocalVariablesSorter(Opcodes.ACC_PUBLIC, "(I)V", mockMethodVisitor);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertEquals(1, localVariablesSorter.firstLocal);
+        assertEquals(1, localVariablesSorter.nextLocal);
+        assertNotNull(localVariablesSorter.mapping);
+        assertNotNull(localVariablesSorter.newLocals);
+    }
+
+    @Test
+    public void testVisitVarInsn() {
+        localVariablesSorter.visitVarInsn(Opcodes.ILOAD, 1);
+        verify(mockMethodVisitor).visitVarInsn(Opcodes.ILOAD, 1);
+
+        localVariablesSorter.visitVarInsn(Opcodes.LLOAD, 2);
+        verify(mockMethodVisitor).visitVarInsn(Opcodes.LLOAD, 2);
+    }
+
+    @Test
+    public void testVisitIincInsn() {
+        localVariablesSorter.visitIincInsn(1, 2);
+        verify(mockMethodVisitor).visitIincInsn(1, 2);
+    }
+
+    @Test
+    public void testVisitMaxs() {
+        localVariablesSorter.visitMaxs(1, 2);
+        verify(mockMethodVisitor).visitMaxs(1, 1);
+    }
+
+    @Test
+    public void testVisitLocalVariable() {
+        Label start = new Label();
+        Label end = new Label();
+        localVariablesSorter.visitLocalVariable("name", "I", null, start, end, 1);
+        verify(mockMethodVisitor).visitLocalVariable("name", "I", null, start, end, 1);
+    }
+
+    @Test
+    public void testVisitFrame() {
+        Object[] local = new Object[]{Opcodes.INTEGER};
+        Object[] stack = new Object[]{Opcodes.INTEGER};
+
+        localVariablesSorter.visitFrame(Opcodes.F_NEW, 1, local, 1, stack);
+        verify(mockMethodVisitor).visitFrame(Opcodes.F_NEW, 1, local, 1, stack);
+    }
+
+    @Test
+    public void testNewLocal() {
+        int local = localVariablesSorter.newLocal(Type.INT_TYPE);
+        assertEquals(1, local);
+        assertEquals(2, localVariablesSorter.nextLocal);
+
+        local = localVariablesSorter.newLocal(Type.LONG_TYPE);
+        assertEquals(2, local);
+        assertEquals(4, localVariablesSorter.nextLocal);
+    }
+
+    @Test
+    public void testSetLocalType() {
+        localVariablesSorter.setLocalType(1, Type.INT_TYPE);
+        // No assertions as the method is empty
+    }
+
+    @Test
+    public void testSetFrameLocal() {
+        localVariablesSorter.setFrameLocal(1, Opcodes.INTEGER);
+        assertEquals(Opcodes.INTEGER, localVariablesSorter.newLocals[1]);
+    }
+
+    @Test
+    public void testRemap() {
+        int remapped = localVariablesSorter.remap(1, Type.INT_TYPE);
+        assertEquals(1, remapped);
+
+        remapped = localVariablesSorter.remap(2, Type.LONG_TYPE);
+        assertEquals(2, remapped);
+    }
+
+    @Test
+    public void testNewLocalMapping() {
+        int local = localVariablesSorter.newLocalMapping(Type.INT_TYPE);
+        assertEquals(1, local);
+        assertEquals(2, localVariablesSorter.nextLocal);
+
+        local = localVariablesSorter.newLocalMapping(Type.LONG_TYPE);
+        assertEquals(2, local);
+        assertEquals(4, localVariablesSorter.nextLocal);
+    }
+}
+```

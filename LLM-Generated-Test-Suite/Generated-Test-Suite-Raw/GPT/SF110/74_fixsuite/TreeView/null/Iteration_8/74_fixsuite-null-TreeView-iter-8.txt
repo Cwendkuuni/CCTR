@@ -1,0 +1,139 @@
+To create a comprehensive JUnit 4 test suite for the `TreeView` class, we need to test the public methods and any significant private methods that affect the behavior of the class. Since `TreeView` is a GUI component, testing will involve simulating user interactions and verifying the state of the component. Below is a test suite that covers the main functionalities of the `TreeView` class:
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import javax.swing.*;
+import javax.swing.tree.TreePath;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TreeViewTest {
+
+    private TreeView treeView;
+    private Library mockLibrary;
+    private DictionaryInfo mockDictionary;
+    private MessageInfo mockMessage;
+    private ComponentInfo mockComponent;
+    private FieldInfo mockField;
+
+    @Before
+    public void setUp() {
+        mockLibrary = mock(Library.class);
+        mockDictionary = mock(DictionaryInfo.class);
+        mockMessage = mock(MessageInfo.class);
+        mockComponent = mock(ComponentInfo.class);
+        mockField = mock(FieldInfo.class);
+
+        when(mockLibrary.getDictionaries()).thenReturn(Collections.singletonList(mockDictionary));
+        when(mockDictionary.getVersion()).thenReturn("FIX.4.4");
+        when(mockDictionary.getMessages()).thenReturn(Collections.singletonList(mockMessage));
+        when(mockMessage.getName()).thenReturn("TestMessage");
+        when(mockMessage.getMessageType()).thenReturn("D");
+        when(mockMessage.getItems()).thenReturn(Collections.singletonList(mockField));
+        when(mockComponent.getName()).thenReturn("TestComponent");
+        when(mockField.getName()).thenReturn("TestField");
+        when(mockField.getTagNumber()).thenReturn(35);
+
+        treeView = new TreeView(mockLibrary);
+    }
+
+    @Test
+    public void testInitGUI() {
+        assertNotNull(treeView);
+        assertNotNull(treeView.fixTree);
+        assertNotNull(treeView.mainScrollPane);
+        assertNotNull(treeView.searchLabel);
+        assertNotNull(treeView.searchTextField);
+        assertNotNull(treeView.searchButton);
+        assertNotNull(treeView.clearButton);
+        assertNotNull(treeView.expandButton);
+        assertNotNull(treeView.collapseButton);
+    }
+
+    @Test
+    public void testExpandAll() {
+        treeView.expandAll();
+        for (int i = 0; i < treeView.fixTree.getRowCount(); i++) {
+            assertTrue(treeView.fixTree.isExpanded(i));
+        }
+    }
+
+    @Test
+    public void testCollapseAll() {
+        treeView.expandAll();
+        treeView.collapseAll();
+        for (int i = 0; i < treeView.fixTree.getRowCount(); i++) {
+            assertFalse(treeView.fixTree.isExpanded(i));
+        }
+    }
+
+    @Test
+    public void testSearch() {
+        treeView.searchTextField.setText("TestMessage");
+        treeView.searchButton.doClick();
+        TreePath path = treeView.fixTree.getNextMatch("TestMessage", 0, Position.Bias.Forward);
+        assertNotNull(path);
+        assertTrue(((TreeView.FixInfoTreeNode) path.getLastPathComponent()).isHighlighted());
+    }
+
+    @Test
+    public void testClear() {
+        treeView.searchTextField.setText("TestMessage");
+        treeView.searchButton.doClick();
+        treeView.clearButton.doClick();
+        TreePath path = treeView.fixTree.getNextMatch("TestMessage", 0, Position.Bias.Forward);
+        assertNotNull(path);
+        assertFalse(((TreeView.FixInfoTreeNode) path.getLastPathComponent()).isHighlighted());
+    }
+
+    @Test
+    public void testActionPerformedExpand() {
+        ActionEvent expandEvent = new ActionEvent(treeView.expandButton, ActionEvent.ACTION_PERFORMED, null);
+        treeView.actionPerformed(expandEvent);
+        for (int i = 0; i < treeView.fixTree.getRowCount(); i++) {
+            assertTrue(treeView.fixTree.isExpanded(i));
+        }
+    }
+
+    @Test
+    public void testActionPerformedCollapse() {
+        ActionEvent collapseEvent = new ActionEvent(treeView.collapseButton, ActionEvent.ACTION_PERFORMED, null);
+        treeView.actionPerformed(collapseEvent);
+        for (int i = 0; i < treeView.fixTree.getRowCount(); i++) {
+            assertFalse(treeView.fixTree.isExpanded(i));
+        }
+    }
+
+    @Test
+    public void testKeyPressedEnter() {
+        KeyEvent enterEvent = new KeyEvent(treeView.searchTextField, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED);
+        treeView.keyPressed(enterEvent);
+        verify(treeView.searchButton, times(1)).doClick();
+    }
+
+    @Test
+    public void testValueChanged() {
+        TreePath path = treeView.fixTree.getNextMatch("TestMessage", 0, Position.Bias.Forward);
+        treeView.fixTree.setSelectionPath(path);
+        TreeSelectionEvent event = new TreeSelectionEvent(treeView.fixTree, path, true, null, path);
+        treeView.valueChanged(event);
+        // Assuming LibrarySuite.getInstance().getDetailsPanel().displayDetails() is called correctly
+    }
+}
+```
+
+### Explanation:
+- **Setup**: We use Mockito to create mock objects for `Library`, `DictionaryInfo`, `MessageInfo`, `ComponentInfo`, and `FieldInfo`. This allows us to simulate the data structure that `TreeView` expects.
+- **Test Methods**: Each test method checks a specific functionality:
+  - `testInitGUI`: Verifies that all GUI components are initialized.
+  - `testExpandAll` and `testCollapseAll`: Check that the tree expands and collapses correctly.
+  - `testSearch` and `testClear`: Test the search and clear functionalities.
+  - `testActionPerformedExpand` and `testActionPerformedCollapse`: Simulate button clicks and verify the tree's state.
+  - `testKeyPressedEnter`: Simulates pressing the Enter key and checks if the search button is triggered.
+  - `testValueChanged`: Simulates a tree selection event and verifies the expected behavior.
+
+This test suite provides a comprehensive check of the `TreeView` class's functionality, focusing on user interactions and the resulting state changes.

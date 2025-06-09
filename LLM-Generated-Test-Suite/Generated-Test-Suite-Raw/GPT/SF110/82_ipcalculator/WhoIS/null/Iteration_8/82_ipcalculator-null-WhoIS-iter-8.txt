@@ -1,0 +1,130 @@
+To create a comprehensive JUnit 4 test suite for the `WhoIS` class, we need to test the main functionalities of the class, including the action listeners, query construction, and reset functionality. Below is a test suite that covers these aspects:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.event.ActionEvent;
+import java.io.IOException;
+import java.net.UnknownHostException;
+
+import javax.swing.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+public class WhoISTest {
+
+    private WhoIS whoIS;
+    private JTextField queryTextField;
+    private JButton queryButton;
+    private JButton resetButton;
+    private JCheckBox lowercaseD;
+    private JRadioButton lowercaseL;
+    private JRadioButton uppercaseL;
+    private JRadioButton lowercaseM;
+    private JRadioButton uppercaseM;
+    private JRadioButton lowercaseX;
+    private JRadioButton resetRadioButton;
+    private JComboBox inverseQueries;
+    private JList miscList;
+
+    @Before
+    public void setUp() {
+        whoIS = new WhoIS();
+        queryTextField = whoIS.queryTextField;
+        queryButton = whoIS.queryButton;
+        resetButton = whoIS.resetButton;
+        lowercaseD = whoIS.lowercaseD;
+        lowercaseL = whoIS.lowercaseL;
+        uppercaseL = whoIS.uppercaseL;
+        lowercaseM = whoIS.lowercaseM;
+        uppercaseM = whoIS.uppercaseM;
+        lowercaseX = whoIS.lowercaseX;
+        resetRadioButton = whoIS.resetRadioButton;
+        inverseQueries = whoIS.inverseQueries;
+        miscList = whoIS.miscList;
+    }
+
+    @Test
+    public void testInitialValues() {
+        assertEquals("APNIC", whoIS.WHOIS_NAME);
+        assertEquals("whois.apnic.net", whoIS.WHOIS_ADDRESS);
+        assertEquals(43, whoIS.WHOIS_PORT);
+    }
+
+    @Test
+    public void testQueryButtonAction() {
+        queryTextField.setText("testQuery");
+        ActionEvent event = new ActionEvent(queryButton, ActionEvent.ACTION_PERFORMED, "Query");
+        whoIS.actionPerformed(event);
+
+        // Verify that the query method is called with the correct query
+        ArgumentCaptor<String> captor = ArgumentCaptor.forClass(String.class);
+        verify(whoIS, times(1)).query(captor.capture());
+        assertEquals("testQuery", captor.getValue());
+    }
+
+    @Test
+    public void testResetButtonAction() {
+        queryTextField.setText("testQuery");
+        lowercaseD.setSelected(true);
+        lowercaseL.setSelected(true);
+        inverseQueries.setSelectedIndex(1);
+        miscList.setSelectedIndex(1);
+
+        ActionEvent event = new ActionEvent(resetButton, ActionEvent.ACTION_PERFORMED, "Reset");
+        whoIS.actionPerformed(event);
+
+        assertEquals("", queryTextField.getText());
+        assertTrue(resetRadioButton.isSelected());
+        assertFalse(lowercaseD.isSelected());
+        assertEquals(0, inverseQueries.getSelectedIndex());
+        assertEquals(0, miscList.getSelectedIndex());
+    }
+
+    @Test
+    public void testGetQuery() {
+        queryTextField.setText("testQuery");
+        lowercaseL.setSelected(true);
+        inverseQueries.setSelectedIndex(1); // admin-c
+
+        String query = whoIS.getQuery();
+        assertEquals("-i admin-c -l testQuery", query);
+    }
+
+    @Test
+    public void testDisplayError() {
+        whoIS.displayError("Test Error");
+        // Assuming displayError uses JOptionPane, we can't directly test it without a UI testing framework.
+        // However, we can verify that the method is called with the correct parameters.
+        verify(whoIS, times(1)).displayError("Test Error");
+    }
+
+    @Test
+    public void testQueryUnknownHostException() throws IOException {
+        doThrow(new UnknownHostException()).when(whoIS).query(anyString());
+        whoIS.query("testQuery");
+        verify(whoIS, times(1)).displayError("Unknown Whois host: " + whoIS.WHOIS_ADDRESS);
+    }
+
+    @Test
+    public void testQueryIOException() throws IOException {
+        doThrow(new IOException()).when(whoIS).query(anyString());
+        whoIS.query("testQuery");
+        verify(whoIS, times(1)).displayError("Whois server could not be contacted.\nPlease check your internet connection.");
+    }
+}
+```
+
+### Explanation:
+- **Initial Setup**: The `setUp` method initializes the `WhoIS` object and its components before each test.
+- **Test Initial Values**: Verifies that the initial values of the WHOIS server details are set correctly.
+- **Test Query Button Action**: Simulates a click on the query button and verifies that the `query` method is called with the correct query string.
+- **Test Reset Button Action**: Simulates a click on the reset button and checks that all fields are reset to their default values.
+- **Test Get Query**: Tests the construction of the query string based on selected options.
+- **Test Display Error**: Verifies that the `displayError` method is called with the correct error message.
+- **Test Query Exceptions**: Tests the handling of `UnknownHostException` and `IOException` during the query process.
+
+Note: The test suite uses Mockito for mocking and verifying method calls. You may need to adjust the test cases based on the actual implementation details and dependencies of the `WhoIS` class.

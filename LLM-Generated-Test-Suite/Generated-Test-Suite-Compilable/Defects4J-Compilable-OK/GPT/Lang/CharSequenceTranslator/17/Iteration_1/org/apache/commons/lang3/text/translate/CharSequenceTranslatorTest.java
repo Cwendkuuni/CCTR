@@ -1,0 +1,85 @@
+package org.apache.commons.lang3.text.translate;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+
+public class CharSequenceTranslatorTest {
+
+    private CharSequenceTranslator translator;
+
+    @Before
+    public void setUp() {
+        // Create a simple implementation of CharSequenceTranslator for testing
+        translator = new CharSequenceTranslator() {
+            @Override
+            public int translate(CharSequence input, int index, Writer out) throws IOException {
+                // Simple translation: convert each character to its uppercase equivalent
+                char c = input.charAt(index);
+                out.write(Character.toUpperCase(c));
+                return 1;
+            }
+        };
+    }
+
+    @Test
+    public void testTranslateCharSequence() {
+        String input = "hello";
+        String expected = "HELLO";
+        String result = translator.translate(input);
+        assertEquals(expected, result);
+    }
+
+    @Test
+    public void testTranslateCharSequenceNullInput() {
+        assertNull(translator.translate(null));
+    }
+
+    @Test
+    public void testTranslateWriter() throws IOException {
+        String input = "world";
+        String expected = "WORLD";
+        StringWriter writer = new StringWriter();
+        translator.translate(input, writer);
+        assertEquals(expected, writer.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testTranslateWriterNullWriter() throws IOException {
+        translator.translate("test", null);
+    }
+
+    @Test
+    public void testTranslateWriterNullInput() throws IOException {
+        StringWriter writer = new StringWriter();
+        translator.translate(null, writer);
+        assertEquals("", writer.toString());
+    }
+
+    @Test
+    public void testWith() {
+        CharSequenceTranslator additionalTranslator = new CharSequenceTranslator() {
+            @Override
+            public int translate(CharSequence input, int index, Writer out) throws IOException {
+                // Simple translation: convert each character to its lowercase equivalent
+                char c = input.charAt(index);
+                out.write(Character.toLowerCase(c));
+                return 1;
+            }
+        };
+
+        CharSequenceTranslator combinedTranslator = translator.with(additionalTranslator);
+        assertNotNull(combinedTranslator);
+        assertTrue(combinedTranslator instanceof AggregateTranslator);
+    }
+
+    @Test
+    public void testHex() {
+        assertEquals("41", CharSequenceTranslator.hex(65)); // 'A'
+        assertEquals("7A", CharSequenceTranslator.hex(122)); // 'z'
+        assertEquals("1F600", CharSequenceTranslator.hex(0x1F600)); // 😀
+    }
+}

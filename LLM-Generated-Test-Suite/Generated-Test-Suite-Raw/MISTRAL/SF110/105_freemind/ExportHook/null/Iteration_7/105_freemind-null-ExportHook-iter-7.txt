@@ -1,0 +1,140 @@
+```java
+package freemind.extensions;
+
+import freemind.view.mindmapview.MapView;
+import freemind.modes.ModeController;
+import freemind.main.Tools;
+import freemind.main.Resources;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+import java.text.MessageFormat;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ExportHookTest {
+
+    private ExportHook exportHook;
+    private ModeController mockController;
+    private MapView mockView;
+
+    @Before
+    public void setUp() {
+        exportHook = new ExportHook();
+        mockController = mock(ModeController.class);
+        mockView = mock(MapView.class);
+        when(mockController.getView()).thenReturn(mockView);
+        exportHook.setController(mockController);
+    }
+
+    @Test
+    public void testChooseFile() {
+        String type = "png";
+        String description = "PNG Image";
+        String nameExtension = ".png";
+
+        File mockFile = mock(File.class);
+        when(mockController.getFileChooser(any(FileFilter.class))).thenReturn(mock(FreeMindFileDialog.class));
+        when(mockController.getMap().getFile()).thenReturn(mockFile);
+        when(mockFile.getAbsolutePath()).thenReturn("/path/to/file.mm");
+
+        File result = exportHook.chooseFile(type, description, nameExtension);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testChooseImageFile() {
+        String type = "png";
+        String description = "PNG Image";
+        String nameExtension = ".png";
+
+        File mockFile = mock(File.class);
+        when(mockController.getFileChooser(any(FileFilter.class))).thenReturn(mock(FreeMindFileDialog.class));
+        when(mockController.getMap().getFile()).thenReturn(mockFile);
+        when(mockFile.getAbsolutePath()).thenReturn("/path/to/file.mm");
+
+        File result = ExportHook.chooseImageFile(type, description, nameExtension, mockController);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testGetTranslatableResourceString() {
+        String resourceName = "%test";
+        when(exportHook.getResourceString(resourceName)).thenReturn(resourceName);
+        when(mockController.getText("test")).thenReturn("Test String");
+
+        String result = exportHook.getTranslatableResourceString(resourceName);
+        assertEquals("Test String", result);
+    }
+
+    @Test
+    public void testCreateBufferedImage() {
+        when(mockView.getInnerBounds()).thenReturn(new Rectangle(0, 0, 100, 100));
+        when(mockView.createImage(100, 100)).thenReturn(new BufferedImage(100, 100, BufferedImage.TYPE_INT_ARGB));
+
+        BufferedImage result = exportHook.createBufferedImage();
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testCopyFromResource() {
+        String prefix = "prefix/";
+        String fileName = "test.txt";
+        String destinationDirectory = "/destination";
+
+        URL mockURL = mock(URL.class);
+        when(exportHook.getResource(prefix + fileName)).thenReturn(mockURL);
+
+        try {
+            when(mockURL.openStream()).thenReturn(mock(InputStream.class));
+            exportHook.copyFromResource(prefix, fileName, destinationDirectory);
+        } catch (Exception e) {
+            fail("Exception should not be thrown");
+        }
+    }
+
+    @Test
+    public void testCopyFromFile() {
+        String dir = "/source";
+        String fileName = "test.txt";
+        String destinationDirectory = "/destination";
+
+        File mockFile = mock(File.class);
+        when(new File(dir, fileName)).thenReturn(mockFile);
+
+        try {
+            when(new FileInputStream(mockFile)).thenReturn(mock(InputStream.class));
+            exportHook.copyFromFile(dir, fileName, destinationDirectory);
+        } catch (Exception e) {
+            fail("Exception should not be thrown");
+        }
+    }
+
+    @Test
+    public void testImageFilterAccept() {
+        File mockFile = mock(File.class);
+        when(mockFile.isDirectory()).thenReturn(false);
+        when(mockFile.getName()).thenReturn("test.png");
+
+        ExportHook.ImageFilter imageFilter = new ExportHook.ImageFilter("png", "PNG Image");
+        assertTrue(imageFilter.accept(mockFile));
+    }
+
+    @Test
+    public void testImageFilterGetDescription() {
+        ExportHook.ImageFilter imageFilter = new ExportHook.ImageFilter("png", "PNG Image");
+        assertEquals("PNG Image", imageFilter.getDescription());
+    }
+}
+```

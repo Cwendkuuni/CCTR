@@ -1,0 +1,211 @@
+```java
+package com.mentorgen.tools.profile.runtime;
+
+import com.mentorgen.tools.profile.*;
+import com.mentorgen.tools.profile.output.ProfileDump;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class ProfileTest {
+
+    @Before
+    public void setUp() {
+        Profile.init();
+    }
+
+    @After
+    public void tearDown() {
+        Profile.clear();
+    }
+
+    @Test
+    public void testInitProfiler() {
+        Profile.initProfiler();
+        assertNotNull(Profile._controller);
+        if (Controller._remote) {
+            assertNotNull(Profile._controllerThread);
+        }
+    }
+
+    @Test
+    public void testInit() {
+        Profile.init();
+        assertNotNull(Profile._threadActiveFrame);
+        assertNotNull(Profile._threadDictionary);
+        assertNotNull(Profile._methodDictionary);
+        assertNotNull(Profile._frameList);
+        assertNotNull(Profile._lock);
+        assertNotNull(Profile._allocList);
+    }
+
+    @Test
+    public void testClear() {
+        Profile.init();
+        Profile.clear();
+        assertNotNull(Profile._threadActiveFrame);
+        assertNotNull(Profile._threadDictionary);
+        assertNotNull(Profile._methodDictionary);
+        assertNotNull(Profile._frameList);
+        assertNotNull(Profile._lock);
+        assertNotNull(Profile._allocList);
+    }
+
+    @Test
+    public void testStart() {
+        Profile.init();
+        Profile.start();
+        assertTrue(Controller._profile);
+    }
+
+    @Test
+    public void testStop() {
+        Profile.init();
+        Profile.stop();
+        assertFalse(Controller._profile);
+    }
+
+    @Test
+    public void testSetFileName() {
+        Profile.init();
+        String fileName = "testFile.txt";
+        Profile.setFileName(fileName);
+        assertEquals(fileName, Profile._controller.getFileName());
+    }
+
+    @Test
+    public void testShutdown() {
+        Profile.init();
+        Profile.shutdown();
+        assertFalse(Controller._profile);
+    }
+
+    @Test
+    public void testThreads() {
+        Profile.init();
+        Iterable<Long> threads = Profile.threads();
+        assertNotNull(threads);
+    }
+
+    @Test
+    public void testInteractions() {
+        Profile.init();
+        long threadId = Thread.currentThread().getId();
+        Iterable<Frame> interactions = Profile.interactions(threadId);
+        assertNotNull(interactions);
+    }
+
+    @Test
+    public void testFrameList() {
+        Profile.init();
+        Iterable<Frame> frameList = Profile.frameList();
+        assertNotNull(frameList);
+    }
+
+    @Test
+    public void testAllocations() {
+        Profile.init();
+        Iterable<ClassAllocation> allocations = Profile.allocations();
+        assertNotNull(allocations);
+    }
+
+    @Test
+    public void testGetThreadTotalTime() {
+        Profile.init();
+        long threadId = Thread.currentThread().getId();
+        long totalTime = Profile.getThreadTotalTime(threadId);
+        assertEquals(0, totalTime);
+    }
+
+    @Test
+    public void testSortFrameList() {
+        Profile.init();
+        Comparator<Frame> comp = (f1, f2) -> Long.compare(f1.getBeginTime(), f2.getBeginTime());
+        Profile.sortFrameList(comp);
+        List<Frame> sortedList = new ArrayList<>(Profile._frameList);
+        for (int i = 0; i < sortedList.size() - 1; i++) {
+            assertTrue(sortedList.get(i).getBeginTime() <= sortedList.get(i + 1).getBeginTime());
+        }
+    }
+
+    @Test
+    public void testStartMethod() {
+        Profile.init();
+        Profile.start("ProfileTest", "testStartMethod");
+        long threadId = Thread.currentThread().getId();
+        Frame frame = Profile._threadActiveFrame.get(threadId);
+        assertNotNull(frame);
+        assertEquals("ProfileTest", frame.getClassName());
+        assertEquals("testStartMethod", frame.getMethodName());
+    }
+
+    @Test
+    public void testEndMethod() {
+        Profile.init();
+        Profile.start("ProfileTest", "testEndMethod");
+        Profile.end("ProfileTest", "testEndMethod");
+        long threadId = Thread.currentThread().getId();
+        Frame frame = Profile._threadActiveFrame.get(threadId);
+        assertNull(frame);
+    }
+
+    @Test
+    public void testBeginWait() {
+        Profile.init();
+        Profile.start("ProfileTest", "testBeginWait");
+        Profile.beginWait("ProfileTest", "testBeginWait");
+        long threadId = Thread.currentThread().getId();
+        Frame frame = Profile._threadActiveFrame.get(threadId);
+        assertNotNull(frame);
+        assertTrue(frame.getWaitTime() > 0);
+    }
+
+    @Test
+    public void testEndWait() {
+        Profile.init();
+        Profile.start("ProfileTest", "testEndWait");
+        Profile.beginWait("ProfileTest", "testEndWait");
+        Profile.endWait("ProfileTest", "testEndWait");
+        long threadId = Thread.currentThread().getId();
+        Frame frame = Profile._threadActiveFrame.get(threadId);
+        assertNotNull(frame);
+        assertTrue(frame.getWaitTime() > 0);
+    }
+
+    @Test
+    public void testUnwind() {
+        Profile.init();
+        Profile.start("ProfileTest", "testUnwind");
+        Profile.unwind("ProfileTest", "testUnwind", "TestException");
+        long threadId = Thread.currentThread().getId();
+        Frame frame = Profile._threadActiveFrame.get(threadId);
+        assertNotNull(frame);
+    }
+
+    @Test
+    public void testAlloc() {
+        Profile.init();
+        Profile.alloc("ProfileTest");
+        ClassAllocation ca = Profile._allocList.get("ProfileTest");
+        assertNotNull(ca);
+        assertEquals(1, ca.getAllocCount());
+    }
+
+    @Test
+    public void testRun() {
+        Profile.init();
+        Profile profile = new Profile();
+        profile.run();
+        assertFalse(Controller._profile);
+    }
+}
+```

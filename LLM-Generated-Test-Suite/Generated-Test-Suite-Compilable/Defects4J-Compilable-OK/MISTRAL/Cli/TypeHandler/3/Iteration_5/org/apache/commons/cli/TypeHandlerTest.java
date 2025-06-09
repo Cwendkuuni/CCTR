@@ -1,0 +1,122 @@
+package org.apache.commons.cli;
+
+import org.junit.Test;
+import org.junit.Before;
+import static org.junit.Assert.*;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.util.Date;
+
+public class TypeHandlerTest {
+
+    private TypeHandler typeHandler;
+
+    @Before
+    public void setUp() {
+        typeHandler = new TypeHandler();
+    }
+
+    @Test
+    public void testCreateValueString() {
+        String str = "testString";
+        Object obj = String.class;
+        Object result = TypeHandler.createValue(str, obj);
+        assertEquals(str, result);
+    }
+
+    @Test
+    public void testCreateValueClass() {
+        String str = "testString";
+        Class clazz = String.class;
+        Object result = TypeHandler.createValue(str, clazz);
+        assertEquals(str, result);
+    }
+
+    @Test
+    public void testCreateObject() {
+        String str = "java.util.Date";
+        Object result = TypeHandler.createObject(str);
+        assertNotNull(result);
+        assertTrue(result instanceof Date);
+    }
+
+    @Test
+    public void testCreateObjectInvalidClass() {
+        String str = "InvalidClass";
+        Object result = TypeHandler.createObject(str);
+        assertNull(result);
+    }
+
+    @Test
+    public void testCreateNumber() {
+        String str = "123.45";
+        Number result = TypeHandler.createNumber(str);
+        assertNotNull(result);
+        assertEquals(Double.valueOf(123.45), result);
+    }
+
+    @Test
+    public void testCreateNumberInvalid() {
+        String str = "invalidNumber";
+        Number result = TypeHandler.createNumber(str);
+        assertNull(result);
+    }
+
+    @Test
+    public void testCreateClass() {
+        String str = "java.util.Date";
+        Class result = TypeHandler.createClass(str);
+        assertNotNull(result);
+        assertEquals(Date.class, result);
+    }
+
+    @Test
+    public void testCreateClassInvalid() {
+        String str = "InvalidClass";
+        Class result = TypeHandler.createClass(str);
+        assertNull(result);
+    }
+
+    @Test
+    public void testCreateDate() {
+        String str = "2023-10-01";
+        Date result = TypeHandler.createDate(str);
+        assertNull(result); // Since createDate always returns null in the provided code
+    }
+
+    @Test
+    public void testCreateURL() {
+        String str = "http://example.com";
+        URL result = TypeHandler.createURL(str);
+        assertNotNull(result);
+        try {
+            assertEquals(new URL(str), result);
+        } catch (MalformedURLException e) {
+            fail("Unexpected MalformedURLException");
+        }
+    }
+
+    @Test
+    public void testCreateURLInvalid() {
+        String str = "invalidURL";
+        URL result = TypeHandler.createURL(str);
+        assertNull(result);
+    }
+
+    @Test
+    public void testCreateFile() {
+        String str = "/path/to/file";
+        File result = TypeHandler.createFile(str);
+        assertNotNull(result);
+        assertEquals(new File(str), result);
+    }
+
+    @Test
+    public void testCreateFiles() {
+        String str = "/path/to/files";
+        File[] result = TypeHandler.createFiles(str);
+        assertNull(result); // Since createFiles always returns null in the provided code
+    }
+}

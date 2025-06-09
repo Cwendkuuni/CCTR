@@ -1,0 +1,91 @@
+To create a comprehensive JUnit 4 test suite for the `BrentOptimizer` class, we need to test the constructors, the `doOptimize` method, and any edge cases or exceptions that might be thrown. Below is a test suite that covers these aspects:
+
+```java
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
+import org.apache.commons.math3.exception.NumberIsTooSmallException;
+import org.apache.commons.math3.optim.GoalType;
+import org.apache.commons.math3.optim.univariate.BrentOptimizer;
+import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
+import org.apache.commons.math3.optim.ConvergenceChecker;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class BrentOptimizerTest {
+
+    private static final double RELATIVE_THRESHOLD = 1e-8;
+    private static final double ABSOLUTE_THRESHOLD = 1e-8;
+
+    private BrentOptimizer optimizer;
+
+    @Before
+    public void setUp() {
+        optimizer = new BrentOptimizer(RELATIVE_THRESHOLD, ABSOLUTE_THRESHOLD);
+    }
+
+    @Test(expected = NumberIsTooSmallException.class)
+    public void testConstructorThrowsNumberIsTooSmallException() {
+        new BrentOptimizer(1e-16, ABSOLUTE_THRESHOLD);
+    }
+
+    @Test(expected = NotStrictlyPositiveException.class)
+    public void testConstructorThrowsNotStrictlyPositiveException() {
+        new BrentOptimizer(RELATIVE_THRESHOLD, 0.0);
+    }
+
+    @Test
+    public void testConstructorWithValidParameters() {
+        BrentOptimizer optimizer = new BrentOptimizer(RELATIVE_THRESHOLD, ABSOLUTE_THRESHOLD);
+        assertNotNull(optimizer);
+    }
+
+    @Test
+    public void testDoOptimizeMinimization() {
+        optimizer = new BrentOptimizer(RELATIVE_THRESHOLD, ABSOLUTE_THRESHOLD, new SimpleConvergenceChecker());
+        optimizer.setGoalType(GoalType.MINIMIZE);
+        optimizer.setMin(0);
+        optimizer.setMax(4);
+        optimizer.setStartValue(2);
+
+        UnivariatePointValuePair result = optimizer.optimize();
+        assertNotNull(result);
+        assertEquals(0, result.getPoint(), ABSOLUTE_THRESHOLD);
+    }
+
+    @Test
+    public void testDoOptimizeMaximization() {
+        optimizer = new BrentOptimizer(RELATIVE_THRESHOLD, ABSOLUTE_THRESHOLD, new SimpleConvergenceChecker());
+        optimizer.setGoalType(GoalType.MAXIMIZE);
+        optimizer.setMin(0);
+        optimizer.setMax(4);
+        optimizer.setStartValue(2);
+
+        UnivariatePointValuePair result = optimizer.optimize();
+        assertNotNull(result);
+        assertEquals(4, result.getPoint(), ABSOLUTE_THRESHOLD);
+    }
+
+    // A simple convergence checker for testing purposes
+    private static class SimpleConvergenceChecker implements ConvergenceChecker<UnivariatePointValuePair> {
+        @Override
+        public boolean converged(int iteration, UnivariatePointValuePair previous, UnivariatePointValuePair current) {
+            return Math.abs(previous.getValue() - current.getValue()) < ABSOLUTE_THRESHOLD;
+        }
+    }
+}
+```
+
+### Explanation:
+
+1. **Constructor Tests**:
+   - We test the constructor to ensure it throws exceptions when the relative threshold is too small or the absolute threshold is not strictly positive.
+   - We also test a valid constructor to ensure it initializes correctly.
+
+2. **Optimization Tests**:
+   - We test the `doOptimize` method for both minimization and maximization goals. These tests assume a simple quadratic function where the minimum is at 0 and the maximum is at 4. The `SimpleConvergenceChecker` is used to determine convergence based on a simple threshold.
+
+3. **Convergence Checker**:
+   - A simple convergence checker is implemented to facilitate testing. It checks if the change in value between iterations is below a certain threshold.
+
+This test suite provides a basic framework for testing the `BrentOptimizer` class. Depending on the actual implementation details and the context in which this optimizer is used, additional tests might be necessary to cover more specific cases or edge conditions.

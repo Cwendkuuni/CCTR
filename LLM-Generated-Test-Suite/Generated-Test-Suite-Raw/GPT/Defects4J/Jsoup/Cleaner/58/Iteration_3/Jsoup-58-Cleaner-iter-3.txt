@@ -1,0 +1,104 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `Cleaner` class. This suite includes tests for the constructor, `clean`, and `isValid` methods. Note that this test suite assumes the existence of a `Whitelist` class with appropriate methods, as referenced in the `Cleaner` class.
+
+```java
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.parser.Parser;
+import org.jsoup.safety.Cleaner;
+import org.jsoup.safety.Whitelist;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class CleanerTest {
+
+    private Whitelist whitelist;
+    private Cleaner cleaner;
+
+    @Before
+    public void setUp() {
+        whitelist = mock(Whitelist.class);
+        cleaner = new Cleaner(whitelist);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithNullWhitelist() {
+        new Cleaner(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCleanWithNullDocument() {
+        cleaner.clean(null);
+    }
+
+    @Test
+    public void testCleanWithEmptyDocument() {
+        Document dirtyDoc = Parser.parse("", "");
+        Document cleanDoc = cleaner.clean(dirtyDoc);
+
+        assertNotNull(cleanDoc);
+        assertEquals("", cleanDoc.body().html());
+    }
+
+    @Test
+    public void testCleanWithSafeElement() {
+        when(whitelist.isSafeTag("p")).thenReturn(true);
+        when(whitelist.isSafeAttribute(eq("p"), any(Element.class), any())).thenReturn(true);
+
+        Document dirtyDoc = Parser.parse("<p>Safe content</p>", "");
+        Document cleanDoc = cleaner.clean(dirtyDoc);
+
+        assertNotNull(cleanDoc);
+        assertEquals("<p>Safe content</p>", cleanDoc.body().html());
+    }
+
+    @Test
+    public void testCleanWithUnsafeElement() {
+        when(whitelist.isSafeTag("p")).thenReturn(false);
+
+        Document dirtyDoc = Parser.parse("<p>Unsafe content</p>", "");
+        Document cleanDoc = cleaner.clean(dirtyDoc);
+
+        assertNotNull(cleanDoc);
+        assertEquals("", cleanDoc.body().html());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIsValidWithNullDocument() {
+        cleaner.isValid(null);
+    }
+
+    @Test
+    public void testIsValidWithValidDocument() {
+        when(whitelist.isSafeTag("p")).thenReturn(true);
+        when(whitelist.isSafeAttribute(eq("p"), any(Element.class), any())).thenReturn(true);
+
+        Document dirtyDoc = Parser.parse("<p>Valid content</p>", "");
+        assertTrue(cleaner.isValid(dirtyDoc));
+    }
+
+    @Test
+    public void testIsValidWithInvalidDocument() {
+        when(whitelist.isSafeTag("p")).thenReturn(false);
+
+        Document dirtyDoc = Parser.parse("<p>Invalid content</p>", "");
+        assertFalse(cleaner.isValid(dirtyDoc));
+    }
+}
+```
+
+### Explanation:
+
+- **Setup**: The `setUp` method initializes a mock `Whitelist` and a `Cleaner` instance before each test.
+- **Constructor Tests**: Tests for the constructor ensure that passing a `null` whitelist throws an `IllegalArgumentException`.
+- **Clean Method Tests**:
+  - Tests for `clean` with a `null` document ensure it throws an `IllegalArgumentException`.
+  - Tests for `clean` with an empty document ensure it returns an empty body.
+  - Tests for `clean` with safe and unsafe elements verify that only safe elements are retained.
+- **isValid Method Tests**:
+  - Tests for `isValid` with a `null` document ensure it throws an `IllegalArgumentException`.
+  - Tests for `isValid` with valid and invalid documents verify the method's correctness based on the whitelist.
+
+This test suite uses Mockito to mock the `Whitelist` class, allowing for controlled testing of the `Cleaner` class behavior.

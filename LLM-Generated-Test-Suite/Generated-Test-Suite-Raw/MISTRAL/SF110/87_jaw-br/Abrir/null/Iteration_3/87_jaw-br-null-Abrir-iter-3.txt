@@ -1,0 +1,144 @@
+```java
+package jaw.entrada;
+
+import jaw.gui.*;
+import jaw.*;
+import javax.swing.filechooser.*;
+import java.awt.*;
+import javax.swing.*;
+import java.io.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class AbrirTest {
+
+    private ProcessarEntidades mockForm;
+    private Main mockMain;
+    private Serializacao mockSerializacao;
+    private SerializacaoXML mockSerializacaoXML;
+
+    @Before
+    public void setUp() {
+        mockForm = mock(ProcessarEntidades.class);
+        mockMain = mock(Main.class);
+        mockSerializacao = mock(Serializacao.class);
+        mockSerializacaoXML = mock(SerializacaoXML.class);
+
+        Main.configuracao = mock(Configuracao.class);
+        Main.janelaPrincipal = mockMain;
+    }
+
+    @Test
+    public void testConstructorWithXMLFile() {
+        String arquivo = "test.jaw.xml";
+        Abrir abrir = new Abrir(mockForm, arquivo);
+
+        verify(mockForm).setNomeArquivoSalvo(arquivo);
+        verify(mockSerializacaoXML).xml2Entidades(any(Reader.class));
+    }
+
+    @Test
+    public void testConstructorWithSerializedFile() {
+        String arquivo = "test.jaw";
+        Abrir abrir = new Abrir(mockForm, arquivo);
+
+        verify(mockForm).setNomeArquivoSalvo(arquivo);
+        verify(mockSerializacao).abrir(arquivo);
+    }
+
+    @Test
+    public void testConstructorWithFileChooserXML() {
+        JFileChooser mockFileChooser = mock(JFileChooser.class);
+        File mockFile = mock(File.class);
+        when(mockFileChooser.getSelectedFile()).thenReturn(mockFile);
+        when(mockFile.getAbsolutePath()).thenReturn("test.jaw.xml");
+
+        Abrir abrir = new Abrir(mockForm, Abrir.ABRIR_XML) {
+            @Override
+            JFileChooser createFileChooser() {
+                return mockFileChooser;
+            }
+        };
+
+        verify(mockForm).setNomeArquivoSalvo("test.jaw.xml");
+        verify(mockSerializacaoXML).xml2Entidades(any(Reader.class));
+    }
+
+    @Test
+    public void testConstructorWithFileChooserSerialized() {
+        JFileChooser mockFileChooser = mock(JFileChooser.class);
+        File mockFile = mock(File.class);
+        when(mockFileChooser.getSelectedFile()).thenReturn(mockFile);
+        when(mockFile.getAbsolutePath()).thenReturn("test.jaw");
+
+        Abrir abrir = new Abrir(mockForm, Abrir.ABRIR) {
+            @Override
+            JFileChooser createFileChooser() {
+                return mockFileChooser;
+            }
+        };
+
+        verify(mockForm).setNomeArquivoSalvo("test.jaw");
+        verify(mockSerializacao).abrir("test.jaw");
+    }
+
+    @Test
+    public void testAbrirSerializadoWithValidFile() throws Exception {
+        String arquivo = "test.jaw";
+        Abrir abrir = new Abrir(mockForm, arquivo);
+
+        abrir.abrirSerializado(arquivo);
+
+        verify(mockForm).setNomeArquivoSalvo(arquivo);
+        verify(mockSerializacao).abrir(arquivo);
+    }
+
+    @Test
+    public void testAbrirSerializadoWithInvalidFile() {
+        String arquivo = "test.invalid";
+        Abrir abrir = new Abrir(mockForm, arquivo);
+
+        abrir.abrirSerializado(arquivo);
+
+        verify(mockMain).log(anyString());
+    }
+
+    @Test
+    public void testAbrirXMLWithValidFile() throws Exception {
+        String arquivo = "test.jaw.xml";
+        Abrir abrir = new Abrir(mockForm, arquivo);
+
+        abrir.abrirXML(arquivo);
+
+        verify(mockForm).setNomeArquivoSalvo(arquivo);
+        verify(mockSerializacaoXML).xml2Entidades(any(Reader.class));
+    }
+
+    @Test
+    public void testAbrirXMLWithInvalidFile() {
+        String arquivo = "test.invalid";
+        Abrir abrir = new Abrir(mockForm, arquivo);
+
+        abrir.abrirXML(arquivo);
+
+        verify(mockMain).log(anyString());
+    }
+
+    @Test
+    public void testFiltro2Accept() {
+        Abrir.Filtro2 filtro2 = new Abrir(mockForm, "").new Filtro2();
+
+        assertTrue(filtro2.accept(new File("test.jaw.xml")));
+        assertFalse(filtro2.accept(new File("test.jaw")));
+    }
+
+    @Test
+    public void testFiltroAccept() {
+        Abrir.Filtro filtro = new Abrir(mockForm, "").new Filtro();
+
+        assertTrue(filtro.accept(new File("test.jaw")));
+        assertFalse(filtro.accept(new File("test.jaw.xml")));
+    }
+}
+```

@@ -1,0 +1,85 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.Assert;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+
+public class ExtendedBufferedReaderTest {
+
+    private ExtendedBufferedReader reader;
+
+    @Before
+    public void setUp() {
+        String data = "Hello\nWorld\r\nTest";
+        Reader stringReader = new StringReader(data);
+        reader = new ExtendedBufferedReader(stringReader);
+    }
+
+    @Test
+    public void testRead() throws IOException {
+        int c;
+        StringBuilder result = new StringBuilder();
+        while ((c = reader.read()) != -1) {
+            result.append((char) c);
+        }
+        Assert.assertEquals("Hello\nWorld\r\nTest", result.toString());
+        Assert.assertEquals(ExtendedBufferedReader.END_OF_STREAM, reader.readAgain());
+    }
+
+    @Test
+    public void testReadAgain() throws IOException {
+        reader.read(); // Read 'H'
+        Assert.assertEquals('H', reader.readAgain());
+        reader.read(); // Read 'e'
+        Assert.assertEquals('e', reader.readAgain());
+    }
+
+    @Test
+    public void testReadArray() throws IOException {
+        char[] buffer = new char[5];
+        int len = reader.read(buffer, 0, 5);
+        Assert.assertEquals(5, len);
+        Assert.assertEquals("Hello", new String(buffer, 0, 5));
+        Assert.assertEquals('o', reader.readAgain());
+    }
+
+    @Test
+    public void testReadLine() throws IOException {
+        String line = reader.readLine();
+        Assert.assertEquals("Hello", line);
+        Assert.assertEquals(1, reader.getLineNumber());
+        line = reader.readLine();
+        Assert.assertEquals("World", line);
+        Assert.assertEquals(2, reader.getLineNumber());
+        line = reader.readLine();
+        Assert.assertEquals("Test", line);
+        Assert.assertEquals(3, reader.getLineNumber());
+        line = reader.readLine();
+        Assert.assertNull(line);
+        Assert.assertEquals(ExtendedBufferedReader.END_OF_STREAM, reader.readAgain());
+    }
+
+    @Test
+    public void testLookAhead() throws IOException {
+        Assert.assertEquals('H', reader.lookAhead());
+        Assert.assertEquals('H', reader.read());
+        Assert.assertEquals('e', reader.lookAhead());
+        Assert.assertEquals('e', reader.read());
+    }
+
+    @Test
+    public void testGetLineNumber() throws IOException {
+        reader.readLine(); // Reads "Hello"
+        Assert.assertEquals(1, reader.getLineNumber());
+        reader.readLine(); // Reads "World"
+        Assert.assertEquals(2, reader.getLineNumber());
+        reader.readLine(); // Reads "Test"
+        Assert.assertEquals(3, reader.getLineNumber());
+        reader.readLine(); // Reaches EOF
+        Assert.assertEquals(3, reader.getLineNumber());
+    }
+}
+```

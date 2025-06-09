@@ -1,0 +1,164 @@
+```java
+package org.jsoup.parser;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.jsoup.nodes.Attributes;
+
+import static org.junit.Assert.*;
+
+public class TokenTest {
+
+    private Token.Doctype doctype;
+    private Token.StartTag startTag;
+    private Token.EndTag endTag;
+    private Token.Comment comment;
+    private Token.Character character;
+    private Token.EOF eof;
+
+    @Before
+    public void setUp() {
+        doctype = new Token.Doctype();
+        startTag = new Token.StartTag();
+        endTag = new Token.EndTag();
+        comment = new Token.Comment();
+        character = new Token.Character();
+        eof = new Token.EOF();
+    }
+
+    @Test
+    public void testTokenType() {
+        assertEquals("Doctype", doctype.tokenType());
+        assertEquals("StartTag", startTag.tokenType());
+        assertEquals("EndTag", endTag.tokenType());
+        assertEquals("Comment", comment.tokenType());
+        assertEquals("Character", character.tokenType());
+        assertEquals("EOF", eof.tokenType());
+    }
+
+    @Test
+    public void testReset() {
+        doctype.name.append("html");
+        doctype.reset();
+        assertEquals("", doctype.name.toString());
+
+        startTag.tagName = "div";
+        startTag.reset();
+        assertNull(startTag.tagName);
+
+        comment.data.append("comment");
+        comment.reset();
+        assertEquals("", comment.data.toString());
+
+        character.data = "text";
+        character.reset();
+        assertNull(character.data);
+
+        eof.reset();
+        // EOF reset does nothing, just ensure no exceptions
+    }
+
+    @Test
+    public void testDoctype() {
+        doctype.name.append("html");
+        doctype.publicIdentifier.append("public");
+        doctype.systemIdentifier.append("system");
+        doctype.forceQuirks = true;
+
+        assertEquals("html", doctype.getName());
+        assertEquals("public", doctype.getPublicIdentifier());
+        assertEquals("system", doctype.getSystemIdentifier());
+        assertTrue(doctype.isForceQuirks());
+
+        doctype.reset();
+        assertEquals("", doctype.getName());
+        assertEquals("", doctype.getPublicIdentifier());
+        assertEquals("", doctype.getSystemIdentifier());
+        assertFalse(doctype.isForceQuirks());
+    }
+
+    @Test
+    public void testStartTag() {
+        startTag.name("div");
+        startTag.appendTagName("span");
+        startTag.appendAttributeName("id");
+        startTag.appendAttributeValue("main");
+        startTag.newAttribute();
+        startTag.finaliseTag();
+
+        assertEquals("divspan", startTag.name());
+        assertEquals("divspan", startTag.normalName());
+        assertEquals(1, startTag.getAttributes().size());
+        assertEquals("main", startTag.getAttributes().get("id"));
+
+        startTag.reset();
+        assertNull(startTag.tagName);
+        assertNull(startTag.normalName);
+        assertNull(startTag.attributes);
+    }
+
+    @Test
+    public void testEndTag() {
+        endTag.name("div");
+        assertEquals("div", endTag.name());
+        assertEquals("div", endTag.normalName());
+
+        endTag.reset();
+        assertNull(endTag.tagName);
+        assertNull(endTag.normalName);
+    }
+
+    @Test
+    public void testComment() {
+        comment.data.append("This is a comment");
+        assertEquals("This is a comment", comment.getData());
+
+        comment.reset();
+        assertEquals("", comment.getData());
+    }
+
+    @Test
+    public void testCharacter() {
+        character.data("text");
+        assertEquals("text", character.getData());
+
+        character.reset();
+        assertNull(character.data);
+    }
+
+    @Test
+    public void testEOF() {
+        eof.reset();
+        // EOF reset does nothing, just ensure no exceptions
+    }
+
+    @Test
+    public void testTokenTypeChecks() {
+        assertTrue(doctype.isDoctype());
+        assertFalse(doctype.isStartTag());
+
+        assertTrue(startTag.isStartTag());
+        assertFalse(startTag.isEndTag());
+
+        assertTrue(endTag.isEndTag());
+        assertFalse(endTag.isComment());
+
+        assertTrue(comment.isComment());
+        assertFalse(comment.isCharacter());
+
+        assertTrue(character.isCharacter());
+        assertFalse(character.isEOF());
+
+        assertTrue(eof.isEOF());
+    }
+
+    @Test
+    public void testTokenCasting() {
+        assertEquals(doctype, doctype.asDoctype());
+        assertEquals(startTag, startTag.asStartTag());
+        assertEquals(endTag, endTag.asEndTag());
+        assertEquals(comment, comment.asComment());
+        assertEquals(character, character.asCharacter());
+    }
+}
+```

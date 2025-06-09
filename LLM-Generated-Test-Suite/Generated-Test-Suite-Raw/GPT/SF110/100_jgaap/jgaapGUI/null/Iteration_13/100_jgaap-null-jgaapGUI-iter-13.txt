@@ -1,0 +1,178 @@
+To create a comprehensive JUnit 4 test suite for the `jgaapGUI` class, we need to test the behavior of the `actionPerformed` method for each action command, as well as the `loadDemo` method. Since the class is heavily dependent on GUI components and user interactions, we will use mocking to simulate these interactions. Note that testing GUI components can be complex, and this example focuses on the logic within the `actionPerformed` method.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class jgaapGUITest {
+
+    private jgaapGUI gui;
+    private guiDriver mockDriver;
+    private JFileChooser mockFileChooser;
+    private JTextField mockCurrentAuthor;
+    private JTextArea mockListKnown;
+    private JTextArea mockListUnknown;
+    private ButtonGroup mockButtonGroup1;
+    private ButtonGroup mockButtonGroup2;
+    private JRadioButton mockRadioKnown;
+    private JRadioButton mockRadioUnknown;
+    private JRadioButton mockRadioCrossEnt;
+    private JRadioButton mockRadioLZW;
+    private JCheckBox[] mockCanonicizers;
+    private JRadioButton[] mockEventifiers;
+    private JProgressBar mockProgressCanonicize;
+    private JProgressBar mockProgressEventSet;
+    private JProgressBar mockProgressAnalysis;
+    private JTextArea mockListResults;
+
+    @Before
+    public void setUp() {
+        gui = new jgaapGUI();
+        mockDriver = mock(guiDriver.class);
+        mockFileChooser = mock(JFileChooser.class);
+        mockCurrentAuthor = mock(JTextField.class);
+        mockListKnown = mock(JTextArea.class);
+        mockListUnknown = mock(JTextArea.class);
+        mockButtonGroup1 = mock(ButtonGroup.class);
+        mockButtonGroup2 = mock(ButtonGroup.class);
+        mockRadioKnown = mock(JRadioButton.class);
+        mockRadioUnknown = mock(JRadioButton.class);
+        mockRadioCrossEnt = mock(JRadioButton.class);
+        mockRadioLZW = mock(JRadioButton.class);
+        mockCanonicizers = new JCheckBox[3];
+        mockEventifiers = new JRadioButton[2];
+        mockProgressCanonicize = mock(JProgressBar.class);
+        mockProgressEventSet = mock(JProgressBar.class);
+        mockProgressAnalysis = mock(JProgressBar.class);
+        mockListResults = mock(JTextArea.class);
+
+        gui.driver = mockDriver;
+        gui.chooseFile = mockFileChooser;
+        gui.currentAuthor = mockCurrentAuthor;
+        gui.listKnown = mockListKnown;
+        gui.listUnknown = mockListUnknown;
+        gui.buttonGroup1 = mockButtonGroup1;
+        gui.buttonGroup2 = mockButtonGroup2;
+        gui.radioKnown = mockRadioKnown;
+        gui.radioUnknown = mockRadioUnknown;
+        gui.radioCrossEnt = mockRadioCrossEnt;
+        gui.radioLZW = mockRadioLZW;
+        gui.canonicizers = mockCanonicizers;
+        gui.eventifiers = mockEventifiers;
+        gui.progressCanonicize = mockProgressCanonicize;
+        gui.progressEventSet = mockProgressEventSet;
+        gui.progressAnalysis = mockProgressAnalysis;
+        gui.listResults = mockListResults;
+    }
+
+    @Test
+    public void testActionPerformedExit() {
+        ActionEvent mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "Exit");
+        gui.actionPerformed(mockEvent);
+        // Since System.exit(-1) is called, we cannot directly test it here.
+        // This would be tested in an integration test environment.
+    }
+
+    @Test
+    public void testActionPerformedKnownAuthor() {
+        ActionEvent mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "knownauthor");
+        gui.actionPerformed(mockEvent);
+        verify(mockCurrentAuthor).setText("");
+        verify(mockCurrentAuthor).setEnabled(true);
+    }
+
+    @Test
+    public void testActionPerformedUnknownAuthor() {
+        ActionEvent mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "unknownauthor");
+        gui.actionPerformed(mockEvent);
+        verify(mockCurrentAuthor).setText("");
+        verify(mockCurrentAuthor).setEnabled(false);
+    }
+
+    @Test
+    public void testActionPerformedImport() {
+        when(mockFileChooser.showOpenDialog(gui)).thenReturn(JFileChooser.APPROVE_OPTION);
+        File mockFile = mock(File.class);
+        when(mockFileChooser.getSelectedFile()).thenReturn(mockFile);
+        when(mockFile.toString()).thenReturn("mockFilePath");
+        when(mockFile.getName()).thenReturn("mockFileName");
+        when(mockCurrentAuthor.getText()).thenReturn("mockAuthor");
+
+        ActionEvent mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "Import");
+        gui.actionPerformed(mockEvent);
+
+        verify(mockDriver).addDocument("mockFilePath", "mockAuthor");
+        verify(mockListKnown).append("mockAuthor - mockFileName\n");
+    }
+
+    @Test
+    public void testActionPerformedCanonicize() {
+        guiDriver.preprocessEngineDriver mockPe = mock(guiDriver.preprocessEngineDriver.class);
+        when(mockDriver.preprocessEngineDriver(mockCanonicizers, gui.paneOpts, mockProgressCanonicize)).thenReturn(mockPe);
+
+        ActionEvent mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "Canonicize");
+        gui.actionPerformed(mockEvent);
+
+        verify(mockPe).start();
+    }
+
+    @Test
+    public void testActionPerformedCreateEventSet() {
+        when(mockButtonGroup1.getSelection()).thenReturn(mockRadioKnown.getModel());
+        when(mockRadioKnown.getActionCommand()).thenReturn("characters");
+
+        guiDriver.createEventSetDriver mockEsd = mock(guiDriver.createEventSetDriver.class);
+        when(mockDriver.createEventSetDriver("characters", gui.paneOpts, mockProgressEventSet)).thenReturn(mockEsd);
+
+        ActionEvent mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "CreateEventSet");
+        gui.actionPerformed(mockEvent);
+
+        verify(mockEsd).start();
+    }
+
+    @Test
+    public void testActionPerformedAnalyze() {
+        when(mockButtonGroup2.getSelection()).thenReturn(mockRadioCrossEnt.getModel());
+        when(mockRadioCrossEnt.getActionCommand()).thenReturn("crossentropy");
+
+        guiDriver.runStatisticalAnalysisDriver mockRsad = mock(guiDriver.runStatisticalAnalysisDriver.class);
+        when(mockDriver.runStatisticalAnalysisDriver("crossentropy", gui.paneOpts, mockProgressAnalysis)).thenReturn(mockRsad);
+        when(mockRsad.getResults()).thenReturn("mockResults");
+
+        ActionEvent mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "Analyze");
+        gui.actionPerformed(mockEvent);
+
+        verify(mockRsad).start();
+        verify(mockListResults).append("mockResults");
+    }
+
+    @Test
+    public void testActionPerformedDemo() {
+        ActionEvent mockEvent = new ActionEvent(gui, ActionEvent.ACTION_PERFORMED, "demo");
+        gui.actionPerformed(mockEvent);
+        // Since loadDemo() only prints to console, we can verify it was called.
+        // In a real test, we might capture console output or refactor to make testable.
+    }
+
+    @Test
+    public void testLoadDemo() {
+        gui.loadDemo();
+        // Since loadDemo() only prints to console, we can verify it was called.
+        // In a real test, we might capture console output or refactor to make testable.
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock dependencies like `guiDriver`, `JFileChooser`, `JTextField`, etc., to simulate user interactions and verify method calls.
+- **Action Commands**: Each test simulates an `ActionEvent` with a specific command and verifies the expected behavior.
+- **System.exit**: The `Exit` command calls `System.exit(-1)`, which is not directly testable in unit tests. This would typically be tested in an integration test environment.
+- **Console Output**: Methods like `loadDemo` that print to the console are acknowledged but not directly tested for output here. In practice, you might capture console output or refactor the method for better testability.

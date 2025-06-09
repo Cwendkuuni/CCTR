@@ -1,0 +1,123 @@
+package JSci.maths.symbolic;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.Assert;
+
+import java.io.IOException;
+import java.io.Reader;
+import java.io.StringReader;
+
+public class SimpleCharStreamTest {
+
+    private SimpleCharStream charStream;
+    private Reader reader;
+
+    @Before
+    public void setUp() {
+        reader = new StringReader("Test data for SimpleCharStream");
+        charStream = new SimpleCharStream(reader);
+    }
+
+    @Test
+    public void testBeginToken() throws IOException {
+        charStream.BeginToken();
+        Assert.assertEquals(0, SimpleCharStream.tokenBegin);
+    }
+
+    @Test
+    public void testReadChar() throws IOException {
+        char c = charStream.readChar();
+        Assert.assertEquals('T', c);
+        c = charStream.readChar();
+        Assert.assertEquals('e', c);
+    }
+
+    @Test
+    public void testGetColumn() throws IOException {
+        charStream.readChar();
+        Assert.assertEquals(1, SimpleCharStream.getColumn());
+    }
+
+    @Test
+    public void testGetLine() throws IOException {
+        charStream.readChar();
+        Assert.assertEquals(1, SimpleCharStream.getLine());
+    }
+
+    @Test
+    public void testGetEndColumn() throws IOException {
+        charStream.readChar();
+        Assert.assertEquals(1, SimpleCharStream.getEndColumn());
+    }
+
+    @Test
+    public void testGetEndLine() throws IOException {
+        charStream.readChar();
+        Assert.assertEquals(1, SimpleCharStream.getEndLine());
+    }
+
+    @Test
+    public void testGetBeginColumn() throws IOException {
+        charStream.BeginToken();
+        charStream.readChar();
+        Assert.assertEquals(1, SimpleCharStream.getBeginColumn());
+    }
+
+    @Test
+    public void testGetBeginLine() throws IOException {
+        charStream.BeginToken();
+        charStream.readChar();
+        Assert.assertEquals(1, SimpleCharStream.getBeginLine());
+    }
+
+    @Test
+    public void testBackup() throws IOException {
+        charStream.readChar();
+        charStream.backup(1);
+        Assert.assertEquals(0, SimpleCharStream.bufpos);
+    }
+
+    @Test
+    public void testReInit() {
+        Reader newReader = new StringReader("New data for SimpleCharStream");
+        charStream.ReInit(newReader);
+        Assert.assertEquals(1, SimpleCharStream.line);
+        Assert.assertEquals(0, SimpleCharStream.column);
+    }
+
+    @Test
+    public void testGetImage() throws IOException {
+        charStream.BeginToken();
+        charStream.readChar();
+        charStream.readChar();
+        String image = SimpleCharStream.GetImage();
+        Assert.assertEquals("Te", image);
+    }
+
+    @Test
+    public void testGetSuffix() throws IOException {
+        charStream.readChar();
+        charStream.readChar();
+        char[] suffix = SimpleCharStream.GetSuffix(2);
+        Assert.assertArrayEquals(new char[]{'e', 's'}, suffix);
+    }
+
+    @Test
+    public void testDone() {
+        SimpleCharStream.Done();
+        Assert.assertNull(SimpleCharStream.buffer);
+        Assert.assertNull(SimpleCharStream.bufline);
+        Assert.assertNull(SimpleCharStream.bufcolumn);
+    }
+
+    @Test
+    public void testAdjustBeginLineColumn() throws IOException {
+        charStream.BeginToken();
+        charStream.readChar();
+        charStream.readChar();
+        SimpleCharStream.adjustBeginLineColumn(2, 5);
+        Assert.assertEquals(2, SimpleCharStream.getBeginLine());
+        Assert.assertEquals(5, SimpleCharStream.getBeginColumn());
+    }
+}

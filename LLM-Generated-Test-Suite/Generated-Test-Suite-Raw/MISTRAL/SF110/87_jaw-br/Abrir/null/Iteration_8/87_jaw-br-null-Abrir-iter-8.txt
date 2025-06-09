@@ -1,0 +1,143 @@
+```java
+package jaw.entrada;
+
+import jaw.gui.*;
+import jaw.*;
+import javax.swing.filechooser.*;
+import java.awt.*;
+import javax.swing.*;
+import java.io.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class AbrirTest {
+
+    private ProcessarEntidades form;
+    private Main main;
+    private Serializacao serializacao;
+    private SerializacaoXML serializacaoXML;
+
+    @Before
+    public void setUp() {
+        form = mock(ProcessarEntidades.class);
+        main = mock(Main.class);
+        serializacao = mock(Serializacao.class);
+        serializacaoXML = mock(SerializacaoXML.class);
+
+        Main.configuracao = mock(Configuracao.class);
+        Main.janelaPrincipal = mock(JanelaPrincipal.class);
+    }
+
+    @Test
+    public void testConstructorWithXMLFile() {
+        String arquivo = "test.jaw.xml";
+        Abrir abrir = new Abrir(form, arquivo);
+
+        verify(form).setNomeArquivoSalvo(arquivo);
+        verify(form).setEntidades(any());
+    }
+
+    @Test
+    public void testConstructorWithSerializedFile() {
+        String arquivo = "test.jaw";
+        Abrir abrir = new Abrir(form, arquivo);
+
+        verify(form).setNomeArquivoSalvo(arquivo);
+        verify(form).setEntidades(any());
+    }
+
+    @Test
+    public void testConstructorWithTypeABRIR_XML() {
+        when(Main.configuracao.getCaminhoDosProjetos()).thenReturn("testPath");
+        Abrir abrir = new Abrir(form, Abrir.ABRIR_XML);
+
+        // Mocking JFileChooser behavior
+        JFileChooser fileChooser = mock(JFileChooser.class);
+        when(fileChooser.showOpenDialog(null)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(fileChooser.getSelectedFile()).thenReturn(new File("test.jaw.xml"));
+
+        // Simulating file selection
+        abrir.abrirXML("test.jaw.xml");
+
+        verify(form).setNomeArquivoSalvo("test.jaw.xml");
+        verify(form).setEntidades(any());
+    }
+
+    @Test
+    public void testConstructorWithTypeABRIR() {
+        when(Main.configuracao.getCaminhoDosProjetos()).thenReturn("testPath");
+        Abrir abrir = new Abrir(form, Abrir.ABRIR);
+
+        // Mocking JFileChooser behavior
+        JFileChooser fileChooser = mock(JFileChooser.class);
+        when(fileChooser.showOpenDialog(null)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(fileChooser.getSelectedFile()).thenReturn(new File("test.jaw"));
+
+        // Simulating file selection
+        abrir.abrirSerializado("test.jaw");
+
+        verify(form).setNomeArquivoSalvo("test.jaw");
+        verify(form).setEntidades(any());
+    }
+
+    @Test
+    public void testAbrirSerializadoWithValidFile() throws Exception {
+        Abrir abrir = new Abrir(form, "test.jaw");
+        when(serializacao.abrir("test.jaw")).thenReturn(new Entidades());
+
+        abrir.abrirSerializado("test.jaw");
+
+        verify(form).setNomeArquivoSalvo("test.jaw");
+        verify(form).setEntidades(any());
+    }
+
+    @Test
+    public void testAbrirSerializadoWithInvalidFile() {
+        Abrir abrir = new Abrir(form, "test.invalid");
+
+        abrir.abrirSerializado("test.invalid");
+
+        verify(Main.janelaPrincipal).log(anyString());
+    }
+
+    @Test
+    public void testAbrirXMLWithValidFile() throws Exception {
+        Abrir abrir = new Abrir(form, "test.jaw.xml");
+        when(serializacaoXML.xml2Entidades(any(Reader.class))).thenReturn(new Entidades());
+
+        abrir.abrirXML("test.jaw.xml");
+
+        verify(form).setNomeArquivoSalvo("test.jaw.xml");
+        verify(form).setEntidades(any());
+    }
+
+    @Test
+    public void testAbrirXMLWithInvalidFile() {
+        Abrir abrir = new Abrir(form, "test.invalid.xml");
+
+        abrir.abrirXML("test.invalid.xml");
+
+        verify(Main.janelaPrincipal).log(anyString());
+    }
+
+    @Test
+    public void testFiltro2Accept() {
+        Abrir abrir = new Abrir(form, "test.jaw.xml");
+        Abrir.Filtro2 filtro2 = abrir.new Filtro2();
+
+        assertTrue(filtro2.accept(new File("test.jaw.xml")));
+        assertFalse(filtro2.accept(new File("test.jaw")));
+    }
+
+    @Test
+    public void testFiltroAccept() {
+        Abrir abrir = new Abrir(form, "test.jaw");
+        Abrir.Filtro filtro = abrir.new Filtro();
+
+        assertTrue(filtro.accept(new File("test.jaw")));
+        assertFalse(filtro.accept(new File("test.jaw.xml")));
+    }
+}
+```

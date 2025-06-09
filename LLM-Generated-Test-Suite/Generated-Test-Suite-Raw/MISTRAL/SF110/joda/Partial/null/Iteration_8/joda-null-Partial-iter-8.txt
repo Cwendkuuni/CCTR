@@ -1,0 +1,211 @@
+```java
+package org.joda.time;
+
+import org.joda.time.base.AbstractPartial;
+import org.joda.time.chrono.ISOChronology;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+import org.joda.time.field.DateTimeFieldType;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class PartialTest {
+
+    private Partial partial;
+    private Chronology chronology;
+    private DateTimeFieldType[] types;
+    private int[] values;
+
+    @Before
+    public void setUp() {
+        chronology = ISOChronology.getInstanceUTC();
+        types = new DateTimeFieldType[]{DateTimeFieldType.year(), DateTimeFieldType.monthOfYear(), DateTimeFieldType.dayOfMonth()};
+        values = new int[]{2023, 10, 5};
+        partial = new Partial(types, values, chronology);
+    }
+
+    @Test
+    public void testConstructorWithChronology() {
+        Partial p = new Partial(chronology);
+        assertEquals(chronology, p.getChronology());
+        assertEquals(0, p.size());
+    }
+
+    @Test
+    public void testConstructorWithDateTimeFieldTypeAndValue() {
+        Partial p = new Partial(DateTimeFieldType.year(), 2023, chronology);
+        assertEquals(chronology, p.getChronology());
+        assertEquals(1, p.size());
+        assertEquals(DateTimeFieldType.year(), p.getFieldType(0));
+        assertEquals(2023, p.getValue(0));
+    }
+
+    @Test
+    public void testConstructorWithDateTimeFieldTypeArrayAndValueArray() {
+        Partial p = new Partial(types, values, chronology);
+        assertEquals(chronology, p.getChronology());
+        assertEquals(types.length, p.size());
+        for (int i = 0; i < types.length; i++) {
+            assertEquals(types[i], p.getFieldType(i));
+            assertEquals(values[i], p.getValue(i));
+        }
+    }
+
+    @Test
+    public void testConstructorWithReadablePartial() {
+        Partial p = new Partial(partial);
+        assertEquals(partial.getChronology(), p.getChronology());
+        assertEquals(partial.size(), p.size());
+        for (int i = 0; i < partial.size(); i++) {
+            assertEquals(partial.getFieldType(i), p.getFieldType(i));
+            assertEquals(partial.getValue(i), p.getValue(i));
+        }
+    }
+
+    @Test
+    public void testSize() {
+        assertEquals(types.length, partial.size());
+    }
+
+    @Test
+    public void testGetChronology() {
+        assertEquals(chronology, partial.getChronology());
+    }
+
+    @Test
+    public void testGetFieldType() {
+        for (int i = 0; i < types.length; i++) {
+            assertEquals(types[i], partial.getFieldType(i));
+        }
+    }
+
+    @Test
+    public void testGetFieldTypes() {
+        assertArrayEquals(types, partial.getFieldTypes());
+    }
+
+    @Test
+    public void testGetValue() {
+        for (int i = 0; i < values.length; i++) {
+            assertEquals(values[i], partial.getValue(i));
+        }
+    }
+
+    @Test
+    public void testGetValues() {
+        assertArrayEquals(values, partial.getValues());
+    }
+
+    @Test
+    public void testWithChronologyRetainFields() {
+        Chronology newChronology = ISOChronology.getInstance();
+        Partial p = partial.withChronologyRetainFields(newChronology);
+        assertEquals(newChronology, p.getChronology());
+        assertEquals(partial.size(), p.size());
+        for (int i = 0; i < partial.size(); i++) {
+            assertEquals(partial.getFieldType(i), p.getFieldType(i));
+            assertEquals(partial.getValue(i), p.getValue(i));
+        }
+    }
+
+    @Test
+    public void testWith() {
+        Partial p = partial.with(DateTimeFieldType.dayOfMonth(), 10);
+        assertEquals(10, p.getValue(2));
+    }
+
+    @Test
+    public void testWithout() {
+        Partial p = partial.without(DateTimeFieldType.dayOfMonth());
+        assertEquals(2, p.size());
+        assertEquals(DateTimeFieldType.year(), p.getFieldType(0));
+        assertEquals(DateTimeFieldType.monthOfYear(), p.getFieldType(1));
+    }
+
+    @Test
+    public void testWithField() {
+        Partial p = partial.withField(DateTimeFieldType.dayOfMonth(), 10);
+        assertEquals(10, p.getValue(2));
+    }
+
+    @Test
+    public void testWithFieldAdded() {
+        Partial p = partial.withFieldAdded(DateTimeFieldType.dayOfMonth().getDurationType(), 5);
+        assertEquals(10, p.getValue(2));
+    }
+
+    @Test
+    public void testWithFieldAddWrapped() {
+        Partial p = partial.withFieldAddWrapped(DateTimeFieldType.dayOfMonth().getDurationType(), 5);
+        assertEquals(10, p.getValue(2));
+    }
+
+    @Test
+    public void testWithPeriodAdded() {
+        Partial p = partial.withPeriodAdded(new Period(0, 0, 0, 5), 1);
+        assertEquals(10, p.getValue(2));
+    }
+
+    @Test
+    public void testPlus() {
+        Partial p = partial.plus(new Period(0, 0, 0, 5));
+        assertEquals(10, p.getValue(2));
+    }
+
+    @Test
+    public void testMinus() {
+        Partial p = partial.minus(new Period(0, 0, 0, 5));
+        assertEquals(0, p.getValue(2));
+    }
+
+    @Test
+    public void testProperty() {
+        Partial.Property property = partial.property(DateTimeFieldType.dayOfMonth());
+        assertEquals(5, property.get());
+    }
+
+    @Test
+    public void testIsMatchReadableInstant() {
+        DateTime dt = new DateTime(2023, 10, 5, 0, 0, chronology);
+        assertTrue(partial.isMatch(dt));
+    }
+
+    @Test
+    public void testIsMatchReadablePartial() {
+        Partial p = new Partial(types, values, chronology);
+        assertTrue(partial.isMatch(p));
+    }
+
+    @Test
+    public void testGetFormatter() {
+        DateTimeFormatter formatter = partial.getFormatter();
+        assertNotNull(formatter);
+    }
+
+    @Test
+    public void testToString() {
+        String str = partial.toString();
+        assertNotNull(str);
+    }
+
+    @Test
+    public void testToStringList() {
+        String str = partial.toStringList();
+        assertNotNull(str);
+    }
+
+    @Test
+    public void testToStringWithPattern() {
+        String str = partial.toString("yyyy-MM-dd");
+        assertEquals("2023-10-05", str);
+    }
+
+    @Test
+    public void testToStringWithPatternAndLocale() {
+        String str = partial.toString("yyyy-MM-dd", Locale.ENGLISH);
+        assertEquals("2023-10-05", str);
+    }
+}
+```

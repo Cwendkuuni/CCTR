@@ -1,0 +1,60 @@
+```java
+package com.google.common.base;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+public class Utf8Test {
+
+    @Test
+    public void testEncodedLength() {
+        assertEquals(4, Utf8.encodedLength("test"));
+        assertEquals(5, Utf8.encodedLength("tést"));
+        assertEquals(6, Utf8.encodedLength("测试"));
+
+        try {
+            Utf8.encodedLength(new StringBuilder().appendCodePoint(0xD800));
+            fail("Expected IllegalArgumentException for unpaired surrogate");
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testIsWellFormed() {
+        byte[] wellFormedBytes = "test".getBytes();
+        assertTrue(Utf8.isWellFormed(wellFormedBytes));
+
+        byte[] malformedBytes = {(byte) 0xF0, (byte) 0x90, (byte) 0x80};
+        assertFalse(Utf8.isWellFormed(malformedBytes));
+
+        byte[] wellFormedBytesWithOffset = "test".getBytes();
+        assertTrue(Utf8.isWellFormed(wellFormedBytesWithOffset, 1, 3));
+
+        byte[] malformedBytesWithOffset = {(byte) 0xF0, (byte) 0x90, (byte) 0x80};
+        assertFalse(Utf8.isWellFormed(malformedBytesWithOffset, 0, 3));
+    }
+
+    @Test
+    public void testIsWellFormedSlowPath() {
+        byte[] wellFormedBytes = "test".getBytes();
+        assertTrue(Utf8.isWellFormedSlowPath(wellFormedBytes, 0, wellFormedBytes.length));
+
+        byte[] malformedBytes = {(byte) 0xF0, (byte) 0x90, (byte) 0x80};
+        assertFalse(Utf8.isWellFormedSlowPath(malformedBytes, 0, malformedBytes.length));
+    }
+
+    @Test
+    public void testEncodedLengthGeneral() {
+        assertEquals(5, Utf8.encodedLengthGeneral("tést", 1));
+        assertEquals(6, Utf8.encodedLengthGeneral("测试", 0));
+
+        try {
+            Utf8.encodedLengthGeneral(new StringBuilder().appendCodePoint(0xD800), 0);
+            fail("Expected IllegalArgumentException for unpaired surrogate");
+        } catch (IllegalArgumentException e) {
+            // Expected
+        }
+    }
+}
+```

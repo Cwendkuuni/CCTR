@@ -1,0 +1,71 @@
+package org.joda.time.field;
+
+import org.joda.time.Chronology;
+import org.joda.time.DateTimeField;
+import org.joda.time.chrono.ISOChronology;
+import org.joda.time.field.LenientDateTimeField;
+import org.joda.time.field.StrictDateTimeField;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class LenientDateTimeFieldTest {
+
+    private Chronology chronology;
+    private DateTimeField strictField;
+    private DateTimeField lenientField;
+
+    @Before
+    public void setUp() {
+        chronology = ISOChronology.getInstanceUTC();
+        strictField = new StrictDateTimeField(chronology.dayOfMonth());
+        lenientField = LenientDateTimeField.getInstance(strictField, chronology);
+    }
+
+    @Test
+    public void testGetInstance_NullField() {
+        assertNull(LenientDateTimeField.getInstance(null, chronology));
+    }
+
+    @Test
+    public void testGetInstance_AlreadyLenient() {
+        DateTimeField alreadyLenientField = LenientDateTimeField.getInstance(strictField, chronology);
+        assertSame(alreadyLenientField, LenientDateTimeField.getInstance(alreadyLenientField, chronology));
+    }
+
+    @Test
+    public void testGetInstance_StrictField() {
+        assertTrue(LenientDateTimeField.getInstance(strictField, chronology) instanceof LenientDateTimeField);
+    }
+
+    @Test
+    public void testIsLenient() {
+        assertTrue(lenientField.isLenient());
+    }
+
+    @Test
+    public void testSet_InBounds() {
+        long instant = chronology.dayOfMonth().roundFloor(System.currentTimeMillis());
+        int value = 15; // Assuming 15 is a valid day of the month
+        long newInstant = lenientField.set(instant, value);
+        assertEquals(value, lenientField.get(newInstant));
+    }
+
+    @Test
+    public void testSet_OutOfBounds() {
+        long instant = chronology.dayOfMonth().roundFloor(System.currentTimeMillis());
+        int value = 35; // Assuming 35 is out of bounds for day of the month
+        long newInstant = lenientField.set(instant, value);
+        // Expecting the value to wrap around or adjust accordingly
+        assertEquals(4, lenientField.get(newInstant)); // Assuming it wraps to the 4th of the next month
+    }
+
+    @Test
+    public void testSet_NegativeValue() {
+        long instant = chronology.dayOfMonth().roundFloor(System.currentTimeMillis());
+        int value = -5; // Assuming -5 is out of bounds for day of the month
+        long newInstant = lenientField.set(instant, value);
+        // Expecting the value to adjust to a valid date
+        assertEquals(26, lenientField.get(newInstant)); // Assuming it adjusts to the 26th of the previous month
+    }
+}

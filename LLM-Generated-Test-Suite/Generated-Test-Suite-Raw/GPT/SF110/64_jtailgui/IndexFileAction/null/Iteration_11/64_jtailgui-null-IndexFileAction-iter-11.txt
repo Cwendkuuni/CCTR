@@ -1,0 +1,118 @@
+To create a comprehensive JUnit 4 test suite for the `IndexFileAction` class, we need to test the `actionPerformed` and `update` methods. The test suite will mock dependencies and verify the behavior of these methods under various conditions. Below is the test suite:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Observable;
+
+@RunWith(MockitoJUnitRunner.class)
+public class IndexFileActionTest {
+
+    @Mock
+    private JTailMainModel jTailMainModel;
+
+    @Mock
+    private OpenFileModel openFileModel;
+
+    @Mock
+    private ActionEvent actionEvent;
+
+    @Mock
+    private Component component;
+
+    @InjectMocks
+    private IndexFileAction indexFileAction;
+
+    @Before
+    public void setUp() {
+        when(actionEvent.getSource()).thenReturn(component);
+        when(component.getParent()).thenReturn(component); // Mocking parent to be the same component for simplicity
+    }
+
+    @Test
+    public void testActionPerformed_noFileSelected() {
+        when(openFileModel.getFile()).thenReturn(null);
+
+        indexFileAction.actionPerformed(actionEvent);
+
+        verify(component).setVisible(false);
+        // Verify that InformationHandler.handle is called with correct parameters
+        // This requires a static method mocking library like PowerMockito
+    }
+
+    @Test
+    public void testActionPerformed_fileNotFound() throws Exception {
+        File mockFile = mock(File.class);
+        when(openFileModel.getFile()).thenReturn(mockFile);
+        when(openFileModel.getIndexType()).thenReturn(IndexType.MEMORY_BASED);
+        when(mockFile.getName()).thenReturn("testFile");
+
+        // Mock FileIndexer to throw FileNotFoundException
+        try (MockedConstruction<FileIndexer> mocked = mockConstruction(FileIndexer.class,
+                (mock, context) -> {
+                    when(mock.getFile()).thenThrow(new FileNotFoundException());
+                })) {
+
+            indexFileAction.actionPerformed(actionEvent);
+
+            verify(component).setVisible(false);
+            // Verify that ExceptionHandler.handle is called with correct parameters
+            // This requires a static method mocking library like PowerMockito
+        }
+    }
+
+    @Test
+    public void testActionPerformed_successfulExecution() throws Exception {
+        File mockFile = mock(File.class);
+        when(openFileModel.getFile()).thenReturn(mockFile);
+        when(openFileModel.getIndexType()).thenReturn(IndexType.MEMORY_BASED);
+
+        try (MockedConstruction<FileIndexer> mocked = mockConstruction(FileIndexer.class,
+                (mock, context) -> {
+                    when(mock.getFile()).thenReturn(mockFile);
+                })) {
+
+            indexFileAction.actionPerformed(actionEvent);
+
+            verify(component).setVisible(false);
+            // Verify that FileIndexerWorker is executed
+            // This requires a static method mocking library like PowerMockito
+        }
+    }
+
+    @Test
+    public void testUpdate_notificationReceived() throws Exception {
+        Observable observable = mock(Observable.class);
+        FileIndexer fileIndexer = mock(FileIndexer.class);
+        File mockFile = mock(File.class);
+        LineReader lineReader = mock(LineReader.class);
+
+        when(observable instanceof FileIndexer).thenReturn(true);
+        when(fileIndexer.getFile()).thenReturn(mockFile);
+        when(fileIndexer.getIndex()).thenReturn(mock(LineReader.class));
+
+        indexFileAction.update(observable, 100);
+
+        verify(jTailMainModel).add(any(JTailModel.class));
+        // Verify that no exceptions are thrown and the model is added
+    }
+}
+```
+
+### Notes:
+- The test suite uses Mockito for mocking dependencies and verifying interactions.
+- The `actionPerformed` method is tested for scenarios where no file is selected, a file is not found, and successful execution.
+- The `update` method is tested to ensure it correctly processes notifications.
+- Static method calls like `InformationHandler.handle` and `ExceptionHandler.handle` would require a library like PowerMockito to mock, which is not shown here due to its complexity and setup requirements.
+- The `FileIndexer` and `FileIndexerWorker` are mocked to simulate their behavior without executing actual file operations.

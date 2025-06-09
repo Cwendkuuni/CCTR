@@ -1,0 +1,80 @@
+package com.ib.client;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import com.ib.client.ComboLeg;
+
+public class ComboLegTest {
+
+    private ComboLeg comboLeg1;
+    private ComboLeg comboLeg2;
+    private ComboLeg comboLeg3;
+
+    @Before
+    public void setUp() {
+        comboLeg1 = new ComboLeg(1, 100, "BUY", "NYSE", ComboLeg.OPEN, 0, "Location1");
+        comboLeg2 = new ComboLeg(1, 100, "BUY", "NYSE", ComboLeg.OPEN, 0, "Location1");
+        comboLeg3 = new ComboLeg(2, 200, "SELL", "NASDAQ", ComboLeg.CLOSE, 1, "Location2");
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        ComboLeg defaultComboLeg = new ComboLeg();
+        assertEquals(0, defaultComboLeg.m_conId);
+        assertEquals(0, defaultComboLeg.m_ratio);
+        assertNull(defaultComboLeg.m_action);
+        assertNull(defaultComboLeg.m_exchange);
+        assertEquals(0, defaultComboLeg.m_openClose);
+        assertEquals(0, defaultComboLeg.m_shortSaleSlot);
+        assertNull(defaultComboLeg.m_designatedLocation);
+    }
+
+    @Test
+    public void testPartialConstructor() {
+        ComboLeg partialComboLeg = new ComboLeg(1, 100, "BUY", "NYSE", ComboLeg.OPEN);
+        assertEquals(1, partialComboLeg.m_conId);
+        assertEquals(100, partialComboLeg.m_ratio);
+        assertEquals("BUY", partialComboLeg.m_action);
+        assertEquals("NYSE", partialComboLeg.m_exchange);
+        assertEquals(ComboLeg.OPEN, partialComboLeg.m_openClose);
+        assertEquals(0, partialComboLeg.m_shortSaleSlot);
+        assertNull(partialComboLeg.m_designatedLocation);
+    }
+
+    @Test
+    public void testFullConstructor() {
+        assertEquals(1, comboLeg1.m_conId);
+        assertEquals(100, comboLeg1.m_ratio);
+        assertEquals("BUY", comboLeg1.m_action);
+        assertEquals("NYSE", comboLeg1.m_exchange);
+        assertEquals(ComboLeg.OPEN, comboLeg1.m_openClose);
+        assertEquals(0, comboLeg1.m_shortSaleSlot);
+        assertEquals("Location1", comboLeg1.m_designatedLocation);
+    }
+
+    @Test
+    public void testEqualsSameObject() {
+        assertTrue(comboLeg1.equals(comboLeg1));
+    }
+
+    @Test
+    public void testEqualsNull() {
+        assertFalse(comboLeg1.equals(null));
+    }
+
+    @Test
+    public void testEqualsDifferentType() {
+        assertFalse(comboLeg1.equals("Some String"));
+    }
+
+    @Test
+    public void testEqualsEqualObjects() {
+        assertTrue(comboLeg1.equals(comboLeg2));
+    }
+
+    @Test
+    public void testEqualsDifferentObjects() {
+        assertFalse(comboLeg1.equals(comboLeg3));
+    }
+}

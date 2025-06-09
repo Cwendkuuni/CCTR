@@ -1,0 +1,146 @@
+```java
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class CSVPrinterTest {
+
+    private StringWriter stringWriter;
+    private CSVPrinter csvPrinter;
+    private CSVFormat csvFormat;
+
+    @Before
+    public void setUp() {
+        stringWriter = new StringWriter();
+        csvFormat = CSVFormat.DEFAULT;
+        csvPrinter = new CSVPrinter(stringWriter, csvFormat);
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        csvPrinter.close();
+    }
+
+    @Test
+    public void testPrint() throws IOException {
+        csvPrinter.print("value1");
+        csvPrinter.print("value2");
+        csvPrinter.println();
+        assertEquals("value1,value2\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintNull() throws IOException {
+        csvPrinter.print(null);
+        csvPrinter.println();
+        assertEquals("\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecord() throws IOException {
+        csvPrinter.printRecord("value1", "value2");
+        assertEquals("value1,value2\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordIterable() throws IOException {
+        List<String> values = Arrays.asList("value1", "value2");
+        csvPrinter.printRecord(values);
+        assertEquals("value1,value2\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecords() throws IOException {
+        List<String> values1 = Arrays.asList("value1", "value2");
+        List<String> values2 = Arrays.asList("value3", "value4");
+        csvPrinter.printRecords(Arrays.asList(values1, values2));
+        assertEquals("value1,value2\nvalue3,value4\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordsArray() throws IOException {
+        String[] values1 = {"value1", "value2"};
+        String[] values2 = {"value3", "value4"};
+        csvPrinter.printRecords(new Object[]{values1, values2});
+        assertEquals("value1,value2\nvalue3,value4\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintComment() throws IOException {
+        csvPrinter.printComment("This is a comment");
+        assertEquals("# This is a comment\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintCommentWithNewLine() throws IOException {
+        csvPrinter.printComment("This is a comment\nwith a new line");
+        assertEquals("# This is a comment\n# with a new line\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordsResultSet() throws IOException, SQLException {
+        ResultSet resultSet = new MockResultSet();
+        csvPrinter.printRecords(resultSet);
+        assertEquals("value1,value2\nvalue3,value4\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testGetOut() {
+        assertEquals(stringWriter, csvPrinter.getOut());
+    }
+
+    @Test
+    public void testClose() throws IOException {
+        csvPrinter.close();
+        assertTrue(stringWriter.toString().isEmpty());
+    }
+
+    @Test
+    public void testFlush() throws IOException {
+        csvPrinter.flush();
+        assertTrue(stringWriter.toString().isEmpty());
+    }
+
+    private static class MockResultSet implements ResultSet {
+        private int row = 0;
+        private final String[][] data = {{"value1", "value2"}, {"value3", "value4"}};
+
+        @Override
+        public boolean next() {
+            return row++ < data.length;
+        }
+
+        @Override
+        public String getString(int columnIndex) {
+            return data[row - 1][columnIndex - 1];
+        }
+
+        @Override
+        public java.sql.ResultSetMetaData getMetaData() {
+            return new MockResultSetMetaData();
+        }
+
+        // Other methods not implemented for brevity
+
+        private static class MockResultSetMetaData implements java.sql.ResultSetMetaData {
+            @Override
+            public int getColumnCount() {
+                return 2;
+            }
+
+            // Other methods not implemented for brevity
+        }
+    }
+}
+```

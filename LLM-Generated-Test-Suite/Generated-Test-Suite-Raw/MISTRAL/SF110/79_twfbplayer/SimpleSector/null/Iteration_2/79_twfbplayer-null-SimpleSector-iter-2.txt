@@ -1,0 +1,161 @@
+```java
+package de.outstare.fortbattleplayer.model.impl;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import de.outstare.fortbattleplayer.model.*;
+import java.util.HashSet;
+import java.util.Set;
+
+public class SimpleSectorTest {
+
+    private SimpleSector sector;
+    private CombatantSide side;
+    private CharacterClass charClass;
+    private Area area;
+    private SectorObserver observer;
+
+    @Before
+    public void setUp() {
+        side = CombatantSide.ATTACKER;
+        charClass = CharacterClass.WARRIOR;
+        area = new AreaImpl(); // Assuming AreaImpl is a concrete implementation of Area
+        observer = new SectorObserverImpl(); // Assuming SectorObserverImpl is a concrete implementation of SectorObserver
+        sector = new SimpleSector(10, true, false, 5, 3, true, 2, charClass);
+    }
+
+    @Test
+    public void testFree() {
+        sector.gainControl(side);
+        sector.free();
+        assertEquals(0, sector.getOccupierCount());
+        assertNull(sector.getOccupier());
+    }
+
+    @Test
+    public void testGainControl() {
+        sector.gainControl(side);
+        assertEquals(1, sector.getOccupierCount());
+        assertEquals(side, sector.getOccupier());
+    }
+
+    @Test
+    public void testGetOccupier() {
+        assertNull(sector.getOccupier());
+        sector.gainControl(side);
+        assertEquals(side, sector.getOccupier());
+    }
+
+    @Test
+    public void testIsOccupied() {
+        assertFalse(sector.isOccupied());
+        sector.gainControl(side);
+        assertTrue(sector.isOccupied());
+    }
+
+    @Test
+    public void testGetHeight() {
+        assertEquals(10, sector.getHeight());
+    }
+
+    @Test
+    public void testIsDefenderSpawn() {
+        assertTrue(sector.isDefenderSpawn());
+    }
+
+    @Test
+    public void testIsAttackerSpawn() {
+        assertFalse(sector.isAttackerSpawn());
+    }
+
+    @Test
+    public void testIsFlag() {
+        assertTrue(sector.isFlag());
+    }
+
+    @Test
+    public void testGetBonus() {
+        SectorBonus bonus = sector.getBonus(charClass);
+        assertEquals(7, bonus.getAttackBonus()); // 5 (attackBonus) + 2 (classBonus)
+        assertEquals(5, bonus.getDefenseBonus()); // 3 (defendBonus) + 2 (classBonus)
+        assertEquals(0, bonus.getDamageBonus()); // Assuming no weapon bonus
+    }
+
+    @Test
+    public void testGetAreas() {
+        assertTrue(sector.getAreas().isEmpty());
+        sector._addArea(area);
+        assertEquals(1, sector.getAreas().size());
+        assertTrue(sector.getAreas().contains(area));
+    }
+
+    @Test
+    public void testAddArea() {
+        sector._addArea(area);
+        assertEquals(1, sector.getAreas().size());
+        assertTrue(sector.getAreas().contains(area));
+    }
+
+    @Test
+    public void testHashCode() {
+        SimpleSector anotherSector = new SimpleSector(10, true, false, 5, 3, true, 2, charClass);
+        assertEquals(sector.hashCode(), anotherSector.hashCode());
+    }
+
+    @Test
+    public void testEquals() {
+        SimpleSector anotherSector = new SimpleSector(10, true, false, 5, 3, true, 2, charClass);
+        assertTrue(sector.equals(anotherSector));
+        assertFalse(sector.equals(null));
+        assertFalse(sector.equals(new Object()));
+    }
+
+    @Test
+    public void testAddObserver() {
+        sector.addObserver(observer);
+        assertTrue(sector.getObservers().contains(observer));
+    }
+
+    @Test
+    public void testRemoveObserver() {
+        sector.addObserver(observer);
+        sector.removeObserver(observer);
+        assertFalse(sector.getObservers().contains(observer));
+    }
+
+    private Set<SectorObserver> getObservers(SimpleSector sector) {
+        // This method is a workaround to access the private observers field for testing purposes
+        try {
+            java.lang.reflect.Field field = SimpleSector.class.getDeclaredField("observers");
+            field.setAccessible(true);
+            return (Set<SectorObserver>) field.get(sector);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private int getOccupierCount(SimpleSector sector) {
+        // This method is a workaround to access the private occupierCount field for testing purposes
+        try {
+            java.lang.reflect.Field field = SimpleSector.class.getDeclaredField("occupierCount");
+            field.setAccessible(true);
+            return (int) field.get(sector);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```
+
+### Notes:
+1. **Assumptions**:
+   - `AreaImpl` and `SectorObserverImpl` are assumed to be concrete implementations of `Area` and `SectorObserver` respectively.
+   - The `getObservers` and `getOccupierCount` methods use reflection to access private fields for testing purposes.
+
+2. **Reflection**:
+   - Reflection is used to access private fields (`observers` and `occupierCount`) for testing purposes. This is generally not recommended for production code but can be useful in tests.
+
+3. **Test Coverage**:
+   - The test suite covers all public methods and some private methods indirectly through public methods.
+   - Additional tests can be added based on specific requirements and edge cases.

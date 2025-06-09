@@ -1,0 +1,106 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.After;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.Vector;
+import net.sf.xbus.base.core.reflection.XBUSClassLoader;
+
+public class XBUSClassLoaderTest {
+
+    private static final String TEMP_DIR = "temp_test_dir";
+    private static final String LIB_DIR = TEMP_DIR + "/lib";
+    private static final String RUNTIME_DIR = TEMP_DIR + "/lib/runtime";
+    private static final String PLUGIN_DIR = TEMP_DIR + "/plugin/lib";
+    private static final String TEST_DIR = TEMP_DIR + "/test/lib";
+
+    @Before
+    public void setUp() throws IOException {
+        // Set up temporary directories and files for testing
+        createTestDirectories();
+        createTestJarFiles();
+        Constants.XBUS_HOME = TEMP_DIR;
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        // Clean up temporary directories and files
+        deleteTestDirectories();
+    }
+
+    @Test
+    public void testGetInstance() {
+        ClassLoader parentClassLoader = getClass().getClassLoader();
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parentClassLoader);
+        assertNotNull("ClassLoader instance should not be null", classLoader);
+        assertEquals("ClassLoader should be a singleton", classLoader, XBUSClassLoader.getInstance(parentClassLoader));
+    }
+
+    @Test
+    public void testCreateClassLoader() {
+        ClassLoader parentClassLoader = getClass().getClassLoader();
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(parentClassLoader);
+        assertNotNull("ClassLoader instance should not be null", classLoader);
+        assertTrue("ClassLoader should be an instance of URLClassLoader", classLoader instanceof URLClassLoader);
+    }
+
+    @Test
+    public void testAddUrls() {
+        Vector<URL> urls = new Vector<>();
+        XBUSClassLoader.addUrls(urls, LIB_DIR);
+        assertFalse("URLs should not be empty after adding", urls.isEmpty());
+    }
+
+    private void createTestDirectories() throws IOException {
+        Files.createDirectories(Paths.get(LIB_DIR));
+        Files.createDirectories(Paths.get(RUNTIME_DIR));
+        Files.createDirectories(Paths.get(PLUGIN_DIR));
+        Files.createDirectories(Paths.get(TEST_DIR));
+    }
+
+    private void createTestJarFiles() throws IOException {
+        createTestJarFile(LIB_DIR + "/test1.jar");
+        createTestJarFile(RUNTIME_DIR + "/test2.jar");
+        createTestJarFile(PLUGIN_DIR + "/test3.jar");
+        createTestJarFile(TEST_DIR + "/test4.jar");
+    }
+
+    private void createTestJarFile(String path) throws IOException {
+        Path filePath = Paths.get(path);
+        Files.createFile(filePath);
+    }
+
+    private void deleteTestDirectories() throws IOException {
+        deleteDirectory(Paths.get(TEMP_DIR));
+    }
+
+    private void deleteDirectory(Path path) throws IOException {
+        if (Files.exists(path)) {
+            Files.walk(path)
+                .sorted((a, b) -> b.compareTo(a))
+                .forEach(p -> {
+                    try {
+                        Files.delete(p);
+                    } catch (IOException e) {
+                        e.printStackTrace();
+                    }
+                });
+        }
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: The `setUp` method creates temporary directories and files to simulate the environment expected by `XBUSClassLoader`. The `tearDown` method cleans up these resources after tests are run.
+- **Test Methods**:
+  - `testGetInstance`: Verifies that the `getInstance` method returns a non-null singleton instance.
+  - `testCreateClassLoader`: Ensures that the `createClassLoader` method returns a valid `URLClassLoader` instance.
+  - `testAddUrls`: Checks that URLs are correctly added to the vector when valid jar files are present in the directory.
+- **Utility Methods**: Helper methods are used to create and delete test directories and files, ensuring the test environment is correctly set up and torn down.

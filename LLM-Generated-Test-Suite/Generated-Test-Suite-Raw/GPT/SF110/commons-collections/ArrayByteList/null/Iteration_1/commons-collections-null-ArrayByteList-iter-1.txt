@@ -1,0 +1,136 @@
+Certainly! Below is a JUnit 4 test suite for the `ArrayByteList` class. This test suite aims to cover the various methods and scenarios, including edge cases and exceptions.
+
+```java
+import org.apache.commons.collections.primitives.ArrayByteList;
+import org.apache.commons.collections.primitives.ByteCollection;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.*;
+
+import static org.junit.Assert.*;
+
+public class ArrayByteListTest {
+
+    private ArrayByteList list;
+
+    @Before
+    public void setUp() {
+        list = new ArrayByteList();
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacity() {
+        ArrayByteList listWithCapacity = new ArrayByteList(10);
+        assertEquals(0, listWithCapacity.size());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testConstructorWithNegativeCapacity() {
+        new ArrayByteList(-1);
+    }
+
+    @Test
+    public void testConstructorWithByteCollection() {
+        ByteCollection collection = new ByteCollection() {
+            public boolean add(byte element) { return false; }
+            public boolean addAll(ByteCollection c) { return false; }
+            public void clear() {}
+            public boolean contains(byte element) { return false; }
+            public boolean containsAll(ByteCollection c) { return false; }
+            public boolean isEmpty() { return false; }
+            public boolean removeAll(ByteCollection c) { return false; }
+            public boolean removeElement(byte element) { return false; }
+            public boolean retainAll(ByteCollection c) { return false; }
+            public int size() { return 3; }
+            public byte[] toArray() { return new byte[]{1, 2, 3}; }
+            public byte[] toArray(byte[] a) { return new byte[]{1, 2, 3}; }
+        };
+        ArrayByteList listFromCollection = new ArrayByteList(collection);
+        assertEquals(3, listFromCollection.size());
+    }
+
+    @Test
+    public void testAddAndGet() {
+        list.add(0, (byte) 10);
+        assertEquals(1, list.size());
+        assertEquals(10, list.get(0));
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testGetWithInvalidIndex() {
+        list.get(0);
+    }
+
+    @Test
+    public void testRemoveElementAt() {
+        list.add(0, (byte) 10);
+        list.add(1, (byte) 20);
+        byte removed = list.removeElementAt(0);
+        assertEquals(10, removed);
+        assertEquals(1, list.size());
+        assertEquals(20, list.get(0));
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testRemoveElementAtWithInvalidIndex() {
+        list.removeElementAt(0);
+    }
+
+    @Test
+    public void testSet() {
+        list.add(0, (byte) 10);
+        byte oldVal = list.set(0, (byte) 20);
+        assertEquals(10, oldVal);
+        assertEquals(20, list.get(0));
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testSetWithInvalidIndex() {
+        list.set(0, (byte) 10);
+    }
+
+    @Test
+    public void testEnsureCapacity() {
+        list.ensureCapacity(20);
+        assertTrue(list.size() <= 20);
+    }
+
+    @Test
+    public void testTrimToSize() {
+        list.add(0, (byte) 10);
+        list.trimToSize();
+        assertEquals(1, list.size());
+    }
+
+    @Test
+    public void testSerialization() throws IOException, ClassNotFoundException {
+        list.add(0, (byte) 10);
+        ByteArrayOutputStream byteOut = new ByteArrayOutputStream();
+        ObjectOutputStream out = new ObjectOutputStream(byteOut);
+        out.writeObject(list);
+
+        ByteArrayInputStream byteIn = new ByteArrayInputStream(byteOut.toByteArray());
+        ObjectInputStream in = new ObjectInputStream(byteIn);
+        ArrayByteList deserializedList = (ArrayByteList) in.readObject();
+
+        assertEquals(1, deserializedList.size());
+        assertEquals(10, deserializedList.get(0));
+    }
+
+    @Test(expected = IndexOutOfBoundsException.class)
+    public void testAddWithInvalidIndex() {
+        list.add(1, (byte) 10);
+    }
+}
+```
+
+This test suite covers the following:
+
+- Constructors with different parameters.
+- Basic operations like `add`, `get`, `set`, and `removeElementAt`.
+- Capacity management with `ensureCapacity` and `trimToSize`.
+- Serialization and deserialization.
+- Exception handling for invalid indices.
+
+Make sure to have the necessary dependencies and imports for JUnit 4 in your project to run these tests.

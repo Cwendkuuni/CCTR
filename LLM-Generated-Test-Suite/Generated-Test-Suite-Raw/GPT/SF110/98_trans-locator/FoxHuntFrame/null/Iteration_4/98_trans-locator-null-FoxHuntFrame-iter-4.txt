@@ -1,0 +1,129 @@
+To create a comprehensive JUnit 4 test suite for the `FoxHuntFrame` class, we need to focus on testing the public methods and any significant behavior that can be tested. Given the class structure, we will primarily focus on the `addPoint` method and the `actionPerformed` method, as well as any interactions with the `FoxTableModel`. We will also simulate some GUI interactions to ensure the components are initialized correctly.
+
+Here's a JUnit 4 test suite for the `FoxHuntFrame` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame foxHuntFrame;
+
+    @Before
+    public void setUp() {
+        foxHuntFrame = new FoxHuntFrame();
+    }
+
+    @Test
+    public void testAddPoint() {
+        // Set up the text fields with valid data
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+
+        // Call the method under test
+        foxHuntFrame.addPoint();
+
+        // Verify that a point was added to the points vector
+        assertEquals(1, foxHuntFrame.points.size());
+
+        // Verify that the display was updated
+        assertEquals(1, foxHuntFrame.display.getPoints().size());
+    }
+
+    @Test
+    public void testActionPerformed() {
+        // Mock an ActionEvent
+        ActionEvent mockEvent = Mockito.mock(ActionEvent.class);
+
+        // Set up the text fields with valid data
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+
+        // Call the method under test
+        foxHuntFrame.actionPerformed(mockEvent);
+
+        // Verify that a point was added to the points vector
+        assertEquals(1, foxHuntFrame.points.size());
+    }
+
+    @Test
+    public void testFoxTableModel() {
+        // Add a point to ensure the table model has data
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+        foxHuntFrame.addPoint();
+
+        FoxHuntFrame.FoxTableModel model = foxHuntFrame.posModel;
+
+        // Verify column count
+        assertEquals(2, model.getColumnCount());
+
+        // Verify row count
+        assertEquals(0, model.getRowCount()); // Initially zero because fox points are added after two points
+
+        // Add another point to trigger fox calculation
+        foxHuntFrame.theta.setText("90");
+        foxHuntFrame.lat.setText("35.0522");
+        foxHuntFrame.lon.setText("-119.2437");
+        foxHuntFrame.addPoint();
+
+        // Verify row count after adding second point
+        assertEquals(1, model.getRowCount());
+    }
+
+    @Test
+    public void testLoadLandmarks() throws IOException {
+        // Create a temporary landmarks.cfg file
+        File tempFile = File.createTempFile("landmarks", ".cfg");
+        FileWriter writer = new FileWriter(tempFile);
+        writer.write("NUM4\n");
+        writer.write("FILEicon1.png\n");
+        writer.write("LAT34.0522\n");
+        writer.write("LON-118.2437\n");
+        writer.write("FILEicon2.png\n");
+        writer.write("LAT35.0522\n");
+        writer.write("LON-119.2437\n");
+        writer.close();
+
+        // Set the landmarks file path
+        System.setProperty("user.dir", tempFile.getParent());
+
+        // Call the method under test
+        foxHuntFrame.loadLandmarks();
+
+        // Verify that landmarks were loaded
+        assertEquals(2, foxHuntFrame.display.getLandmarks().size());
+
+        // Clean up
+        tempFile.delete();
+    }
+
+    @Test
+    public void testErrorHandling() {
+        // Simulate an error
+        foxHuntFrame.error("Test error message");
+
+        // Since the error method shows a dialog, we can't directly test it without a UI testing framework.
+        // However, we can ensure that it doesn't throw any exceptions.
+    }
+}
+```
+
+### Notes:
+- The `testAddPoint` and `testActionPerformed` methods test the addition of points and the triggering of the `addPoint` method via an action event.
+- The `testFoxTableModel` method verifies the behavior of the `FoxTableModel` class.
+- The `testLoadLandmarks` method creates a temporary landmarks configuration file to test the `loadLandmarks` method.
+- The `testErrorHandling` method ensures that the `error` method can be called without exceptions, though it doesn't verify the dialog behavior due to the limitations of JUnit without a UI testing framework.
+- This test suite uses Mockito for mocking `ActionEvent` and assumes that `HuntDisplay` and `TrigPoint` have appropriate methods like `getPoints()` and `getLandmarks()` for verification. Adjust these based on the actual implementation of these classes.

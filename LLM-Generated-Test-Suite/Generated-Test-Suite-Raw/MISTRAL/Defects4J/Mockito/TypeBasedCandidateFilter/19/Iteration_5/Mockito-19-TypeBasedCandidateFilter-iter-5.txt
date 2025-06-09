@@ -1,0 +1,82 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.OngoingInjecter;
+import org.mockito.internal.configuration.injection.filter.TypeBasedCandidateFilter;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TypeBasedCandidateFilterTest {
+
+    private MockCandidateFilter mockNextFilter;
+    private TypeBasedCandidateFilter typeBasedCandidateFilter;
+    private Field mockField;
+    private Object mockFieldInstance;
+
+    @Before
+    public void setUp() throws Exception {
+        mockNextFilter = mock(MockCandidateFilter.class);
+        typeBasedCandidateFilter = new TypeBasedCandidateFilter(mockNextFilter);
+        mockField = Mockito.mock(Field.class);
+        mockFieldInstance = new Object();
+    }
+
+    @Test
+    public void testFilterCandidate_NoMatches() throws Exception {
+        Collection<Object> mocks = Arrays.asList(new Object(), new Object());
+        when(mockField.getType()).thenReturn(String.class);
+
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, mockField, mockFieldInstance);
+
+        verify(mockNextFilter).filterCandidate(Collections.emptyList(), mockField, mockFieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidate_SingleMatch() throws Exception {
+        Collection<Object> mocks = Arrays.asList("mockString", new Object());
+        when(mockField.getType()).thenReturn(String.class);
+
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, mockField, mockFieldInstance);
+
+        verify(mockNextFilter).filterCandidate(Arrays.asList("mockString"), mockField, mockFieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidate_MultipleMatches() throws Exception {
+        Collection<Object> mocks = Arrays.asList("mockString1", "mockString2", new Object());
+        when(mockField.getType()).thenReturn(String.class);
+
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, mockField, mockFieldInstance);
+
+        verify(mockNextFilter).filterCandidate(Arrays.asList("mockString1", "mockString2"), mockField, mockFieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidate_NoMocks() throws Exception {
+        Collection<Object> mocks = Collections.emptyList();
+        when(mockField.getType()).thenReturn(String.class);
+
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, mockField, mockFieldInstance);
+
+        verify(mockNextFilter).filterCandidate(Collections.emptyList(), mockField, mockFieldInstance);
+    }
+
+    @Test
+    public void testFilterCandidate_FieldTypeNotAssignable() throws Exception {
+        Collection<Object> mocks = Arrays.asList(new Object(), new Object());
+        when(mockField.getType()).thenReturn(Integer.class);
+
+        OngoingInjecter result = typeBasedCandidateFilter.filterCandidate(mocks, mockField, mockFieldInstance);
+
+        verify(mockNextFilter).filterCandidate(Collections.emptyList(), mockField, mockFieldInstance);
+    }
+}
+```

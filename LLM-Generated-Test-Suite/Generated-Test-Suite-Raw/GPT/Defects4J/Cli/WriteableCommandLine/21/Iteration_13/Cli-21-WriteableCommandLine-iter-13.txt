@@ -1,0 +1,109 @@
+Certainly! Below is a JUnit 4 test suite for the `WriteableCommandLine` interface. Since interfaces cannot be directly instantiated, this test suite assumes the existence of a concrete implementation of `WriteableCommandLine`. For demonstration purposes, let's assume this implementation is named `WriteableCommandLineImpl`.
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.apache.commons.cli2.Option;
+import org.apache.commons.cli2.WriteableCommandLine;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class WriteableCommandLineTest {
+
+    private WriteableCommandLine commandLine;
+    private Option testOption;
+
+    @Before
+    public void setUp() {
+        // Assuming WriteableCommandLineImpl is a concrete implementation of WriteableCommandLine
+        commandLine = new WriteableCommandLineImpl();
+        testOption = new Option("test", "test option");
+    }
+
+    @Test
+    public void testAddOption() {
+        commandLine.addOption(testOption);
+        assertTrue(commandLine.hasOption(testOption));
+    }
+
+    @Test
+    public void testAddValue() {
+        commandLine.addOption(testOption);
+        commandLine.addValue(testOption, "value1");
+        List values = commandLine.getUndefaultedValues(testOption);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test
+    public void testGetUndefaultedValues() {
+        commandLine.addOption(testOption);
+        List values = commandLine.getUndefaultedValues(testOption);
+        assertTrue(values.isEmpty());
+
+        commandLine.addValue(testOption, "value1");
+        values = commandLine.getUndefaultedValues(testOption);
+        assertEquals(1, values.size());
+        assertEquals("value1", values.get(0));
+    }
+
+    @Test
+    public void testSetDefaultValues() {
+        List<String> defaultValues = new ArrayList<>();
+        defaultValues.add("default1");
+        commandLine.setDefaultValues(testOption, defaultValues);
+
+        List values = commandLine.getUndefaultedValues(testOption);
+        assertTrue(values.isEmpty());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testAddSwitchThrowsException() {
+        commandLine.addOption(testOption);
+        commandLine.addSwitch(testOption, true);
+        commandLine.addSwitch(testOption, false); // Should throw IllegalStateException
+    }
+
+    @Test
+    public void testAddSwitch() {
+        commandLine.addOption(testOption);
+        commandLine.addSwitch(testOption, true);
+        assertTrue(commandLine.hasOption(testOption));
+    }
+
+    @Test
+    public void testSetDefaultSwitch() {
+        commandLine.setDefaultSwitch(testOption, true);
+        assertTrue(commandLine.hasOption(testOption));
+    }
+
+    @Test
+    public void testAddPropertyWithOption() {
+        commandLine.addOption(testOption);
+        commandLine.addProperty(testOption, "property1", "value1");
+        assertEquals("value1", commandLine.getProperty(testOption, "property1"));
+    }
+
+    @Test
+    public void testAddPropertyWithoutOption() {
+        commandLine.addProperty("property1", "value1");
+        assertEquals("value1", commandLine.getProperty("property1"));
+    }
+
+    @Test
+    public void testLooksLikeOption() {
+        assertTrue(commandLine.looksLikeOption("-option"));
+        assertFalse(commandLine.looksLikeOption("value"));
+    }
+}
+```
+
+### Notes:
+- This test suite assumes the existence of a concrete class `WriteableCommandLineImpl` that implements the `WriteableCommandLine` interface.
+- The `Option` class is assumed to have a constructor that takes a name and description.
+- The `commandLine.hasOption()` and `commandLine.getProperty()` methods are assumed to exist in the concrete implementation for checking the presence of an option and retrieving property values, respectively.
+- The `IllegalStateException` test checks that adding a switch twice throws an exception.
+- The test suite uses JUnit 4 annotations and assertions to verify the behavior of each method.

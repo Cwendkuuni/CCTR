@@ -1,0 +1,152 @@
+To create a comprehensive JUnit 4 test suite for the `FoxHuntFrame` class, we need to focus on testing the public methods and behaviors of the class. The main methods to test are `addPoint`, `actionPerformed`, and the constructor `FoxHuntFrame()`. Additionally, we should test the `FoxTableModel` class, which is an inner class of `FoxHuntFrame`.
+
+Here's a JUnit 4 test suite for the `FoxHuntFrame` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame foxHuntFrame;
+
+    @Before
+    public void setUp() {
+        foxHuntFrame = new FoxHuntFrame();
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(foxHuntFrame.theta);
+        assertNotNull(foxHuntFrame.lat);
+        assertNotNull(foxHuntFrame.lon);
+        assertNotNull(foxHuntFrame.zoom);
+        assertNotNull(foxHuntFrame.add);
+        assertNotNull(foxHuntFrame.pos);
+        assertNotNull(foxHuntFrame.posModel);
+        assertNotNull(foxHuntFrame.display);
+        assertNotNull(foxHuntFrame.panel1);
+        assertNotNull(foxHuntFrame.panel2);
+        assertNotNull(foxHuntFrame.panel3);
+        assertNotNull(foxHuntFrame.panel);
+        assertNotNull(foxHuntFrame.points);
+        assertNotNull(foxHuntFrame.fox);
+    }
+
+    @Test
+    public void testAddPoint() {
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+
+        int initialPointsSize = foxHuntFrame.points.size();
+        int initialFoxSize = foxHuntFrame.fox.size();
+
+        foxHuntFrame.addPoint();
+
+        assertEquals(initialPointsSize + 1, foxHuntFrame.points.size());
+        if (initialPointsSize > 0) {
+            assertEquals(initialFoxSize + 1, foxHuntFrame.fox.size());
+        } else {
+            assertEquals(initialFoxSize, foxHuntFrame.fox.size());
+        }
+    }
+
+    @Test
+    public void testActionPerformed() {
+        ActionEvent mockEvent = Mockito.mock(ActionEvent.class);
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+
+        int initialPointsSize = foxHuntFrame.points.size();
+
+        foxHuntFrame.actionPerformed(mockEvent);
+
+        assertEquals(initialPointsSize + 1, foxHuntFrame.points.size());
+    }
+
+    @Test
+    public void testLoadLandmarksFileNotFound() {
+        // Temporarily rename the landmarks.cfg file if it exists
+        File landmarksFile = new File("./landmarks.cfg");
+        File tempFile = new File("./landmarks_temp.cfg");
+        if (landmarksFile.exists()) {
+            landmarksFile.renameTo(tempFile);
+        }
+
+        try {
+            foxHuntFrame.loadLandmarks();
+            // If no exception is thrown, the test should fail
+            fail("Expected an error dialog due to missing landmarks.cfg file.");
+        } catch (Exception e) {
+            // Expected behavior
+        } finally {
+            // Restore the landmarks.cfg file
+            if (tempFile.exists()) {
+                tempFile.renameTo(landmarksFile);
+            }
+        }
+    }
+
+    @Test
+    public void testLoadLandmarksIOException() throws IOException {
+        // Create a malformed landmarks.cfg file
+        File landmarksFile = new File("./landmarks.cfg");
+        try (FileWriter writer = new FileWriter(landmarksFile)) {
+            writer.write("NUM 2\n");
+            writer.write("FILE icon1.png\n");
+            writer.write("LAT 34.0522\n");
+            // Missing LON entry
+        }
+
+        try {
+            foxHuntFrame.loadLandmarks();
+            // If no exception is thrown, the test should fail
+            fail("Expected an error dialog due to malformed landmarks.cfg file.");
+        } catch (Exception e) {
+            // Expected behavior
+        } finally {
+            // Clean up the malformed file
+            if (landmarksFile.exists()) {
+                landmarksFile.delete();
+            }
+        }
+    }
+
+    @Test
+    public void testFoxTableModel() {
+        FoxHuntFrame.FoxTableModel model = foxHuntFrame.new FoxTableModel();
+
+        assertEquals(2, model.getColumnCount());
+        assertEquals(0, model.getRowCount());
+
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+        foxHuntFrame.addPoint();
+
+        assertEquals(1, model.getRowCount());
+        assertEquals("Lattitude", model.getColumnName(0));
+        assertEquals("Longitude", model.getColumnName(1));
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a new instance of `FoxHuntFrame` before each test.
+- **Constructor Test**: Verifies that all components are initialized correctly.
+- **addPoint Test**: Checks that points are added correctly and that the fox vector is updated when there are at least two points.
+- **actionPerformed Test**: Ensures that the `actionPerformed` method correctly adds a point.
+- **loadLandmarks Tests**: These tests check the behavior when the landmarks configuration file is missing or malformed.
+- **FoxTableModel Test**: Verifies the behavior of the `FoxTableModel` class, including column count, row count, and column names.
+
+Note: The tests for file handling (`loadLandmarks`) assume that the file operations are mocked or controlled in a test environment. Adjust paths and file handling as necessary for your specific setup.

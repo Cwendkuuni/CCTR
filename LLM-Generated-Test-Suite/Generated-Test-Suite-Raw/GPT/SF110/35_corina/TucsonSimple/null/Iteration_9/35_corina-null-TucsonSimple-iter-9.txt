@@ -1,0 +1,131 @@
+Certainly! Below is a JUnit 4 test suite for the `TucsonSimple` class. This suite includes tests for all public methods and some private methods using reflection.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.*;
+import java.lang.reflect.Method;
+import java.util.HashMap;
+import java.util.Map;
+
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+
+    @Before
+    public void setUp() {
+        tucsonSimple = new TucsonSimple();
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("format.tucsonsimple", tucsonSimple.toString());
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        assertEquals(".RWL", tucsonSimple.getDefaultExtension());
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        BufferedReader reader = new BufferedReader(new StringReader(""));
+        tucsonSimple.load(reader);
+    }
+
+    @Test
+    public void testMake6digitCode() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("make6digitCode", Sample.class);
+        method.setAccessible(true);
+
+        Sample sampleWithId = new Sample();
+        sampleWithId.meta = new HashMap<>();
+        sampleWithId.meta.put("id", "1234567");
+
+        Sample sampleWithoutId = new Sample();
+        sampleWithoutId.meta = new HashMap<>();
+
+        assertEquals("123456", method.invoke(tucsonSimple, sampleWithId));
+        assertEquals("000000", method.invoke(tucsonSimple, sampleWithoutId));
+    }
+
+    @Test
+    public void testSaveRowHeader() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("saveRowHeader", BufferedWriter.class, Sample.class, String.class, int.class, Year.class);
+        method.setAccessible(true);
+
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(stringWriter);
+
+        Sample sample = new Sample();
+        sample.range = new Range(new Year(2000), new Year(2010));
+
+        method.invoke(tucsonSimple, writer, sample, "123456", 6, new Year(2000));
+        writer.flush();
+
+        assertEquals("1234562000", stringWriter.toString());
+    }
+
+    @Test
+    public void testSaveData() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("saveData", Sample.class, BufferedWriter.class);
+        method.setAccessible(true);
+
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(stringWriter);
+
+        Sample sample = new Sample();
+        sample.range = new Range(new Year(2000), new Year(2002));
+        sample.data = new HashMap<>();
+        sample.data.put(0, 100);
+        sample.data.put(1, 200);
+        sample.data.put(2, 300);
+
+        method.invoke(tucsonSimple, sample, writer);
+        writer.flush();
+
+        String expectedOutput = "1234562000 100\n1234562001 200\n1234562002 300\n   999\n";
+        assertEquals(expectedOutput, stringWriter.toString());
+    }
+
+    @Test
+    public void testComputeRange() throws Exception {
+        Method method = TucsonSimple.class.getDeclaredMethod("computeRange", Sample.class);
+        method.setAccessible(true);
+
+        Sample sample = new Sample();
+        sample.range = new Range(new Year(2000), new Year(2010));
+
+        Range result = (Range) method.invoke(tucsonSimple, sample);
+        assertEquals(new Year(2000), result.getStart());
+        assertEquals(new Year(2010), result.getEnd());
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        StringWriter stringWriter = new StringWriter();
+        BufferedWriter writer = new BufferedWriter(stringWriter);
+
+        Sample sample = new Sample();
+        sample.range = new Range(new Year(2000), new Year(2002));
+        sample.data = new HashMap<>();
+        sample.data.put(0, 100);
+        sample.data.put(1, 200);
+        sample.data.put(2, 300);
+
+        tucsonSimple.save(sample, writer);
+        writer.flush();
+
+        String expectedOutput = "1234562000 100\n1234562001 200\n1234562002 300\n   999\n";
+        assertEquals(expectedOutput, stringWriter.toString());
+    }
+}
+```
+
+### Notes:
+- The `Sample`, `Range`, `Year`, and `WrongFiletypeException` classes/interfaces are assumed to be part of the codebase, and their implementations are not provided here.
+- Reflection is used to test private methods (`make6digitCode`, `saveRowHeader`, `saveData`, and `computeRange`) since they are not directly accessible.
+- The `I18n.getText("format.tucsonsimple")` is assumed to return the string `"format.tucsonsimple"` for the purpose of this test.
+- The `StringUtils.leftPad` method is assumed to be available and correctly implemented.
+- The test suite assumes that the `Sample` class has `meta`, `range`, and `data` fields, and that `range` is an instance of `Range` with `getStart()` and `getEnd()` methods returning `Year` objects.

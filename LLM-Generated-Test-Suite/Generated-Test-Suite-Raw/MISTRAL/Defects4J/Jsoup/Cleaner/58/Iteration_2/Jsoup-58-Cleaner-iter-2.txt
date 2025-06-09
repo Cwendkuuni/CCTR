@@ -1,0 +1,110 @@
+```java
+package org.jsoup.safety;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.safety.Whitelist;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class CleanerTest {
+
+    private Cleaner cleaner;
+    private Whitelist whitelist;
+
+    @Before
+    public void setUp() {
+        whitelist = Whitelist.basic();
+        cleaner = new Cleaner(whitelist);
+    }
+
+    @Test
+    public void testClean_ValidDocument() {
+        String html = "<div><p>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parse(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertEquals("Hello World", cleanDocument.select("p").text());
+    }
+
+    @Test
+    public void testClean_InvalidDocument() {
+        String html = "<div><script>alert('xss')</script></div>";
+        Document dirtyDocument = Jsoup.parse(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertEquals(0, cleanDocument.select("script").size());
+    }
+
+    @Test
+    public void testIsValid_ValidDocument() {
+        String html = "<div><p>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parse(html);
+
+        assertTrue(cleaner.isValid(dirtyDocument));
+    }
+
+    @Test
+    public void testIsValid_InvalidDocument() {
+        String html = "<div><script>alert('xss')</script></div>";
+        Document dirtyDocument = Jsoup.parse(html);
+
+        assertFalse(cleaner.isValid(dirtyDocument));
+    }
+
+    @Test
+    public void testCopySafeNodes_ValidNodes() {
+        String html = "<div><p>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parse(html);
+        Element source = dirtyDocument.body();
+        Element dest = Document.createShell(dirtyDocument.baseUri()).body();
+
+        int numDiscarded = cleaner.copySafeNodes(source, dest);
+
+        assertEquals(0, numDiscarded);
+        assertEquals("Hello World", dest.select("p").text());
+    }
+
+    @Test
+    public void testCopySafeNodes_InvalidNodes() {
+        String html = "<div><script>alert('xss')</script></div>";
+        Document dirtyDocument = Jsoup.parse(html);
+        Element source = dirtyDocument.body();
+        Element dest = Document.createShell(dirtyDocument.baseUri()).body();
+
+        int numDiscarded = cleaner.copySafeNodes(source, dest);
+
+        assertEquals(1, numDiscarded);
+        assertEquals(0, dest.select("script").size());
+    }
+
+    @Test
+    public void testCreateSafeElement_ValidElement() {
+        String html = "<div><p id='test'>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parse(html);
+        Element sourceEl = dirtyDocument.select("p").first();
+
+        Cleaner.ElementMeta elementMeta = cleaner.createSafeElement(sourceEl);
+
+        assertEquals("p", elementMeta.el.tagName());
+        assertEquals("test", elementMeta.el.attr("id"));
+        assertEquals(0, elementMeta.numAttribsDiscarded);
+    }
+
+    @Test
+    public void testCreateSafeElement_InvalidElement() {
+        String html = "<div><p onclick='alert()'>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parse(html);
+        Element sourceEl = dirtyDocument.select("p").first();
+
+        Cleaner.ElementMeta elementMeta = cleaner.createSafeElement(sourceEl);
+
+        assertEquals("p", elementMeta.el.tagName());
+        assertFalse(elementMeta.el.hasAttr("onclick"));
+        assertEquals(1, elementMeta.numAttribsDiscarded);
+    }
+}
+```

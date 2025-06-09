@@ -1,0 +1,72 @@
+To create a comprehensive JUnit 4 test suite for the `TypeInfoFactory` class, we need to test each public method and any private methods that have complex logic. Since `TypeInfoFactory` is a utility class with static methods, we will focus on testing the static methods `getTypeInfoForArray` and `getTypeInfoForField`. Additionally, we will indirectly test the private methods by ensuring the public methods behave correctly.
+
+Here's a JUnit 4 test suite for the `TypeInfoFactory` class:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Test;
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.util.List;
+
+public class TypeInfoFactoryTest {
+
+    @Test
+    public void testGetTypeInfoForArray() {
+        Type arrayType = String[].class;
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(arrayType);
+        assertNotNull(typeInfoArray);
+        assertEquals(arrayType, typeInfoArray.getType());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArrayWithNonArrayType() {
+        Type nonArrayType = String.class;
+        TypeInfoFactory.getTypeInfoForArray(nonArrayType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField() throws NoSuchFieldException {
+        class TestClass {
+            List<String> list;
+        }
+        Field field = TestClass.class.getDeclaredField("list");
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, TestClass.class);
+        assertNotNull(typeInfo);
+        assertTrue(typeInfo.getType() instanceof ParameterizedType);
+        ParameterizedType parameterizedType = (ParameterizedType) typeInfo.getType();
+        assertEquals(List.class, parameterizedType.getRawType());
+        assertEquals(String.class, parameterizedType.getActualTypeArguments()[0]);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetTypeInfoForFieldWithUnsupportedType() throws NoSuchFieldException {
+        class TestClass {
+            Object obj;
+        }
+        Field field = TestClass.class.getDeclaredField("obj");
+        TypeInfoFactory.getTypeInfoForField(field, TestClass.class);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetActualTypeWithInvalidType() {
+        Type invalidType = new Type() {};
+        TypeInfoFactory.getTypeInfoForField(null, invalidType);
+    }
+}
+```
+
+### Explanation:
+
+1. **testGetTypeInfoForArray**: Tests the `getTypeInfoForArray` method with a valid array type and checks if the returned `TypeInfoArray` is not null and has the correct type.
+
+2. **testGetTypeInfoForArrayWithNonArrayType**: Tests the `getTypeInfoForArray` method with a non-array type and expects an `IllegalArgumentException`.
+
+3. **testGetTypeInfoForField**: Tests the `getTypeInfoForField` method with a field of type `List<String>` and checks if the returned `TypeInfo` is not null and has the correct parameterized type.
+
+4. **testGetTypeInfoForFieldWithUnsupportedType**: Tests the `getTypeInfoForField` method with a field of type `Object` and expects an `UnsupportedOperationException`.
+
+5. **testGetActualTypeWithInvalidType**: Tests the `getActualType` indirectly by passing an invalid type to `getTypeInfoForField` and expects an `IllegalArgumentException`.
+
+These tests cover the main functionalities of the `TypeInfoFactory` class, including handling of different types and exceptions.

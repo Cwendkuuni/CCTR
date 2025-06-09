@@ -1,0 +1,89 @@
+package org.apache.commons.compress.utils;
+
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import org.junit.Assert;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+public class IOUtilsTest {
+
+    private static final String TEST_STRING = "Hello, World!";
+    private static final byte[] TEST_BYTES = TEST_STRING.getBytes();
+
+    private InputStream inputStream;
+    private OutputStream outputStream;
+
+    @Before
+    public void setUp() {
+        inputStream = new ByteArrayInputStream(TEST_BYTES);
+        outputStream = new ByteArrayOutputStream();
+    }
+
+    @After
+    public void tearDown() {
+        IOUtils.closeQuietly(inputStream);
+        IOUtils.closeQuietly(outputStream);
+    }
+
+    @Test
+    public void testCopy() throws IOException {
+        long bytesCopied = IOUtils.copy(inputStream, outputStream);
+        Assert.assertEquals(TEST_BYTES.length, bytesCopied);
+        Assert.assertArrayEquals(TEST_BYTES, ((ByteArrayOutputStream) outputStream).toByteArray());
+    }
+
+    @Test
+    public void testCopyWithBufferSize() throws IOException {
+        int bufferSize = 5;
+        long bytesCopied = IOUtils.copy(inputStream, outputStream, bufferSize);
+        Assert.assertEquals(TEST_BYTES.length, bytesCopied);
+        Assert.assertArrayEquals(TEST_BYTES, ((ByteArrayOutputStream) outputStream).toByteArray());
+    }
+
+    @Test
+    public void testSkip() throws IOException {
+        long bytesToSkip = 5;
+        long bytesSkipped = IOUtils.skip(inputStream, bytesToSkip);
+        Assert.assertEquals(bytesToSkip, bytesSkipped);
+        byte[] remainingBytes = new byte[TEST_BYTES.length - (int) bytesToSkip];
+        inputStream.read(remainingBytes);
+        Assert.assertArrayEquals(TEST_STRING.substring((int) bytesToSkip).getBytes(), remainingBytes);
+    }
+
+    @Test
+    public void testReadFully() throws IOException {
+        byte[] buffer = new byte[TEST_BYTES.length];
+        int bytesRead = IOUtils.readFully(inputStream, buffer);
+        Assert.assertEquals(TEST_BYTES.length, bytesRead);
+        Assert.assertArrayEquals(TEST_BYTES, buffer);
+    }
+
+    @Test
+    public void testReadFullyWithOffsetAndLength() throws IOException {
+        byte[] buffer = new byte[TEST_BYTES.length * 2];
+        int offset = TEST_BYTES.length;
+        int length = TEST_BYTES.length;
+        int bytesRead = IOUtils.readFully(inputStream, buffer, offset, length);
+        Assert.assertEquals(length, bytesRead);
+        Assert.assertArrayEquals(TEST_BYTES, java.util.Arrays.copyOfRange(buffer, offset, offset + length));
+    }
+
+    @Test
+    public void testToByteArray() throws IOException {
+        byte[] result = IOUtils.toByteArray(inputStream);
+        Assert.assertArrayEquals(TEST_BYTES, result);
+    }
+
+    @Test
+    public void testCloseQuietly() {
+        IOUtils.closeQuietly(inputStream);
+        IOUtils.closeQuietly(outputStream);
+        // No exceptions should be thrown
+    }
+}

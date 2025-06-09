@@ -1,0 +1,85 @@
+```java
+import org.apache.commons.math3.linear.MatrixUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.SchurTransformer;
+import org.apache.commons.math3.exception.NonSquareMatrixException;
+import org.apache.commons.math3.exception.MaxCountExceededException;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class SchurTransformerTest {
+
+    private RealMatrix squareMatrix;
+    private RealMatrix nonSquareMatrix;
+    private SchurTransformer transformer;
+
+    @Before
+    public void setUp() {
+        // Initialize a 3x3 square matrix
+        squareMatrix = MatrixUtils.createRealMatrix(new double[][]{
+                {4, 1, 2},
+                {1, 3, 1},
+                {2, 1, 3}
+        });
+
+        // Initialize a non-square matrix
+        nonSquareMatrix = MatrixUtils.createRealMatrix(new double[][]{
+                {1, 2},
+                {3, 4},
+                {5, 6}
+        });
+
+        // Initialize the SchurTransformer with the square matrix
+        transformer = new SchurTransformer(squareMatrix);
+    }
+
+    @Test
+    public void testGetP() {
+        RealMatrix P = transformer.getP();
+        assertNotNull("Matrix P should not be null", P);
+        assertEquals("Matrix P should have the same row dimension as the input matrix", squareMatrix.getRowDimension(), P.getRowDimension());
+        assertEquals("Matrix P should have the same column dimension as the input matrix", squareMatrix.getColumnDimension(), P.getColumnDimension());
+    }
+
+    @Test
+    public void testGetPT() {
+        RealMatrix PT = transformer.getPT();
+        assertNotNull("Matrix PT should not be null", PT);
+        assertEquals("Matrix PT should have the same row dimension as the input matrix", squareMatrix.getRowDimension(), PT.getRowDimension());
+        assertEquals("Matrix PT should have the same column dimension as the input matrix", squareMatrix.getColumnDimension(), PT.getColumnDimension());
+    }
+
+    @Test
+    public void testGetT() {
+        RealMatrix T = transformer.getT();
+        assertNotNull("Matrix T should not be null", T);
+        assertEquals("Matrix T should have the same row dimension as the input matrix", squareMatrix.getRowDimension(), T.getRowDimension());
+        assertEquals("Matrix T should have the same column dimension as the input matrix", squareMatrix.getColumnDimension(), T.getColumnDimension());
+    }
+
+    @Test(expected = NonSquareMatrixException.class)
+    public void testConstructorWithNonSquareMatrix() {
+        new SchurTransformer(nonSquareMatrix);
+    }
+
+    @Test(expected = MaxCountExceededException.class)
+    public void testMaxIterationsExceeded() {
+        // Create a matrix that is likely to cause the iteration limit to be exceeded
+        RealMatrix difficultMatrix = MatrixUtils.createRealMatrix(new double[][]{
+                {1, 1e-10, 0},
+                {0, 1, 1e-10},
+                {0, 0, 1}
+        });
+        new SchurTransformer(difficultMatrix);
+    }
+}
+```
+
+This test suite covers the following scenarios:
+- Testing the `getP`, `getPT`, and `getT` methods to ensure they return matrices of the correct dimensions and are not null.
+- Testing the constructor with a non-square matrix to ensure it throws a `NonSquareMatrixException`.
+- Testing the behavior when the maximum number of iterations is exceeded, expecting a `MaxCountExceededException`. 
+
+Note: The test for exceeding maximum iterations is speculative and may not trigger the exception depending on the matrix and the implementation details of the `SchurTransformer`. Adjust the matrix or the test as needed based on actual behavior.

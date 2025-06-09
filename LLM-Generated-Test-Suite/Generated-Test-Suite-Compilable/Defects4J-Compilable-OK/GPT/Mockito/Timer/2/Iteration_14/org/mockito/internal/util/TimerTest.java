@@ -1,0 +1,47 @@
+package org.mockito.internal.util;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.internal.util.Timer;
+
+public class TimerTest {
+
+    private Timer timer;
+    private static final long DURATION_MILLIS = 1000; // 1 second
+
+    @Before
+    public void setUp() {
+        timer = new Timer(DURATION_MILLIS);
+    }
+
+    @Test
+    public void testTimerIsNotCountingBeforeStart() {
+        try {
+            timer.isCounting();
+            fail("Expected an AssertionError to be thrown");
+        } catch (AssertionError e) {
+            // Expected behavior
+        }
+    }
+
+    @Test
+    public void testTimerIsCountingAfterStart() {
+        timer.start();
+        assertTrue("Timer should be counting immediately after start", timer.isCounting());
+    }
+
+    @Test
+    public void testTimerStopsCountingAfterDuration() throws InterruptedException {
+        timer.start();
+        Thread.sleep(DURATION_MILLIS + 100); // Sleep a bit longer than the duration
+        assertFalse("Timer should not be counting after duration has passed", timer.isCounting());
+    }
+
+    @Test
+    public void testTimerIsCountingJustBeforeDurationEnds() throws InterruptedException {
+        timer.start();
+        Thread.sleep(DURATION_MILLIS - 100); // Sleep a bit less than the duration
+        assertTrue("Timer should still be counting just before duration ends", timer.isCounting());
+    }
+}

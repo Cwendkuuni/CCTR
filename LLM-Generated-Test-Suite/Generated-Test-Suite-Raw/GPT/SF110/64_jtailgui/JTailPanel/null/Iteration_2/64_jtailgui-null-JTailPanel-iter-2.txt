@@ -1,0 +1,103 @@
+To create a comprehensive JUnit 4 test suite for the `JTailPanel` class, we need to test its public methods and any observable behavior. The test suite will focus on the constructor, `getCharacterHeight`, `getVerticalScrollBar`, and `update` methods. We will use mocking to simulate interactions with the `JTailModel` and `JTailModelEvent`.
+
+Here's the complete JUnit 4 test suite:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.Font;
+import java.awt.FontMetrics;
+import java.util.Observable;
+
+import javax.swing.JScrollBar;
+import javax.swing.JTable;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import fr.pingtimeout.jtail.gui.model.JTailModel;
+import fr.pingtimeout.jtail.gui.model.JTailModelEvent;
+import fr.pingtimeout.jtail.gui.model.JTailModelEvent.Type;
+
+public class JTailPanelTest {
+
+    private JTailModel mockModel;
+    private JTailPanel jTailPanel;
+
+    @Before
+    public void setUp() {
+        mockModel = mock(JTailModel.class);
+        jTailPanel = new JTailPanel(mockModel);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(jTailPanel);
+        assertEquals(mockModel, jTailPanel.model);
+        assertNotNull(jTailPanel.scrollPane);
+        assertNotNull(jTailPanel.verticalScrollBar);
+        assertNotNull(jTailPanel.dataTable);
+        assertNotNull(jTailPanel.tableModel);
+    }
+
+    @Test
+    public void testGetCharacterHeight() {
+        FontMetrics metrics = jTailPanel.dataTable.getFontMetrics(jTailPanel.dataTable.getFont());
+        int expectedCharacterHeight = metrics.getHeight() - 1;
+        assertEquals(expectedCharacterHeight, jTailPanel.getCharacterHeight());
+    }
+
+    @Test
+    public void testGetVerticalScrollBar() {
+        JScrollBar verticalScrollBar = jTailPanel.getVerticalScrollBar();
+        assertNotNull(verticalScrollBar);
+        assertEquals(jTailPanel.verticalScrollBar, verticalScrollBar);
+    }
+
+    @Test
+    public void testUpdateResizedEvent() {
+        JTailModelEvent mockEvent = mock(JTailModelEvent.class);
+        mockEvent.type = Type.RESIZED;
+        mockEvent.minLine = 0;
+        mockEvent.firstLine = 0;
+        mockEvent.nbDisplayedLines = 10;
+        mockEvent.maxLine = 100;
+
+        when(mockModel.getLineNumbers()).thenReturn("1\n2\n3\n4\n5\n6\n7\n8\n9\n10");
+        when(mockModel.getContent()).thenReturn("Line1\nLine2\nLine3\nLine4\nLine5\nLine6\nLine7\nLine8\nLine9\nLine10");
+
+        jTailPanel.update(mockModel, mockEvent);
+
+        assertEquals(0, jTailPanel.verticalScrollBar.getModel().getMinimum());
+        assertEquals(0, jTailPanel.verticalScrollBar.getModel().getValue());
+        assertEquals(10, jTailPanel.verticalScrollBar.getModel().getExtent());
+        assertEquals(100, jTailPanel.verticalScrollBar.getModel().getMaximum());
+    }
+
+    @Test
+    public void testUpdateScrolledEvent() {
+        JTailModelEvent mockEvent = mock(JTailModelEvent.class);
+        mockEvent.type = Type.SCROLLED;
+
+        when(mockModel.getLineNumbers()).thenReturn("1\n2\n3\n4\n5\n6\n7\n8\n9\n10");
+        when(mockModel.getContent()).thenReturn("Line1\nLine2\nLine3\nLine4\nLine5\nLine6\nLine7\nLine8\nLine9\nLine10");
+
+        jTailPanel.update(mockModel, mockEvent);
+
+        assertEquals(10, jTailPanel.tableModel.getRowCount());
+        assertEquals("1", jTailPanel.tableModel.getValueAt(0, 0));
+        assertEquals("Line1", jTailPanel.tableModel.getValueAt(0, 1));
+    }
+}
+```
+
+### Explanation:
+- **Mocks and Setup**: We use Mockito to create a mock `JTailModel` and `JTailModelEvent`. This allows us to simulate the behavior of these components without needing their actual implementations.
+- **Constructor Test**: Verifies that the `JTailPanel` is initialized correctly with non-null components.
+- **Character Height Test**: Checks that the `getCharacterHeight` method returns the expected value based on the `FontMetrics`.
+- **Vertical ScrollBar Test**: Ensures that the `getVerticalScrollBar` method returns the correct scrollbar instance.
+- **Update Method Tests**: We test the `update` method for both `RESIZED` and `SCROLLED` events, verifying that the table model and scrollbar are updated correctly.
+
+This test suite provides a comprehensive check of the `JTailPanel` class's functionality.

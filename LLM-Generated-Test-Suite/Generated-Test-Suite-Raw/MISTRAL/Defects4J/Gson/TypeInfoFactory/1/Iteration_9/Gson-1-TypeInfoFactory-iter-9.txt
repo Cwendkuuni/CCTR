@@ -1,0 +1,165 @@
+```java
+package com.google.gson;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class TypeInfoFactoryTest {
+
+    private Field field;
+    private Type typeDefiningField;
+
+    @Before
+    public void setUp() throws NoSuchFieldException {
+        // Setup a sample class with a generic field for testing
+        class SampleClass<T> {
+            List<T> list;
+        }
+
+        field = SampleClass.class.getDeclaredField("list");
+        typeDefiningField = new ParameterizedType() {
+            @Override
+            public Type[] getActualTypeArguments() {
+                return new Type[]{String.class};
+            }
+
+            @Override
+            public Type getRawType() {
+                return SampleClass.class;
+            }
+
+            @Override
+            public Type getOwnerType() {
+                return null;
+            }
+        };
+    }
+
+    @Test
+    public void testGetTypeInfoForArray() {
+        Type arrayType = new GenericArrayTypeImpl(String.class);
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(arrayType);
+        assertNotNull(typeInfoArray);
+        assertEquals(arrayType, typeInfoArray.getType());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArray_NonArrayType() {
+        Type nonArrayType = String.class;
+        TypeInfoFactory.getTypeInfoForArray(nonArrayType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField() {
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningField);
+        assertNotNull(typeInfo);
+        assertEquals(List.class, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetActualType_Class() {
+        Type actualType = TypeInfoFactory.getActualType(String.class, typeDefiningField, SampleClass.class);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test
+    public void testGetActualType_ParameterizedType() {
+        Type parameterizedType = new ParameterizedType() {
+            @Override
+            public Type[] getActualTypeArguments() {
+                return new Type[]{String.class};
+            }
+
+            @Override
+            public Type getRawType() {
+                return List.class;
+            }
+
+            @Override
+            public Type getOwnerType() {
+                return null;
+            }
+        };
+
+        Type actualType = TypeInfoFactory.getActualType(parameterizedType, typeDefiningField, SampleClass.class);
+        assertTrue(actualType instanceof ParameterizedType);
+        ParameterizedType actualParameterizedType = (ParameterizedType) actualType;
+        assertEquals(List.class, actualParameterizedType.getRawType());
+        assertEquals(String.class, actualParameterizedType.getActualTypeArguments()[0]);
+    }
+
+    @Test
+    public void testGetActualType_GenericArrayType() {
+        Type genericArrayType = new GenericArrayTypeImpl(String.class);
+        Type actualType = TypeInfoFactory.getActualType(genericArrayType, typeDefiningField, SampleClass.class);
+        assertTrue(actualType instanceof GenericArrayType);
+        GenericArrayType actualGenericArrayType = (GenericArrayType) actualType;
+        assertEquals(String.class, actualGenericArrayType.getGenericComponentType());
+    }
+
+    @Test
+    public void testGetActualType_TypeVariable() {
+        TypeVariable<?> typeVariable = SampleClass.class.getTypeParameters()[0];
+        Type actualType = TypeInfoFactory.getActualType(typeVariable, typeDefiningField, SampleClass.class);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetActualType_TypeVariable_NonParameterizedType() {
+        TypeVariable<?> typeVariable = SampleClass.class.getTypeParameters()[0];
+        TypeInfoFactory.getActualType(typeVariable, String.class, SampleClass.class);
+    }
+
+    @Test
+    public void testGetActualType_WildcardType() {
+        Type wildcardType = new WildcardTypeImpl(new Type[]{String.class}, new Type[]{});
+        Type actualType = TypeInfoFactory.getActualType(wildcardType, typeDefiningField, SampleClass.class);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetActualType_UnsupportedType() {
+        Type unsupportedType = new Type() {};
+        TypeInfoFactory.getActualType(unsupportedType, typeDefiningField, SampleClass.class);
+    }
+
+    @Test
+    public void testExtractRealTypes() {
+        Type[] actualTypeArguments = new Type[]{String.class, Integer.class};
+        Type[] realTypes = TypeInfoFactory.extractRealTypes(actualTypeArguments, typeDefiningField, SampleClass.class);
+        assertArrayEquals(actualTypeArguments, realTypes);
+    }
+
+    @Test(expected = NullPointerException.class)
+    public void testExtractRealTypes_NullArgument() {
+        TypeInfoFactory.extractRealTypes(null, typeDefiningField, SampleClass.class);
+    }
+
+    @Test
+    public void testGetIndex() {
+        TypeVariable<?>[] typeVariables = SampleClass.class.getTypeParameters();
+        TypeVariable<?> typeVariable = typeVariables[0];
+        int index = TypeInfoFactory.getIndex(typeVariables, typeVariable);
+        assertEquals(0, index);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetIndex_TypeVariableNotFound() {
+        TypeVariable<?>[] typeVariables = SampleClass.class.getTypeParameters();
+        TypeVariable<?> typeVariable = new TypeVariable<Class<SampleClass>>() {};
+        TypeInfoFactory.getIndex(typeVariables, typeVariable);
+    }
+}
+```

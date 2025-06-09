@@ -1,0 +1,117 @@
+Certainly! Below is a JUnit 4 test suite for the `Entities` class. This suite aims to comprehensively test the methods provided in the class.
+
+```java
+import org.jsoup.nodes.Entities;
+import org.jsoup.nodes.Document;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+
+import static org.junit.Assert.*;
+
+public class EntitiesTest {
+
+    private Document.OutputSettings outputSettings;
+
+    @Before
+    public void setUp() {
+        outputSettings = new Document.OutputSettings();
+        outputSettings.charset(Charset.forName("UTF-8"));
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertTrue(Entities.isNamedEntity("amp"));
+        assertFalse(Entities.isNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testIsBaseNamedEntity() {
+        assertTrue(Entities.isBaseNamedEntity("lt"));
+        assertTrue(Entities.isBaseNamedEntity("amp"));
+        assertFalse(Entities.isBaseNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertEquals(Character.valueOf('&'), Entities.getCharacterByName("amp"));
+        assertNull(Entities.getCharacterByName("nonexistent"));
+    }
+
+    @Test
+    public void testEscape() {
+        String input = "This & that < those > these \"quotes\"";
+        String expected = "This &amp; that &lt; those &gt; these &quot;quotes&quot;";
+        assertEquals(expected, Entities.escape(input, outputSettings));
+    }
+
+    @Test
+    public void testEscapeInAttribute() {
+        StringBuilder accum = new StringBuilder();
+        String input = "This & that < those > these \"quotes\"";
+        Entities.escape(accum, input, outputSettings, true, false, false);
+        String expected = "This &amp; that < those > these &quot;quotes&quot;";
+        assertEquals(expected, accum.toString());
+    }
+
+    @Test
+    public void testEscapeWithNormaliseWhite() {
+        StringBuilder accum = new StringBuilder();
+        String input = "This    is   a  test";
+        Entities.escape(accum, input, outputSettings, false, true, false);
+        String expected = "This is a test";
+        assertEquals(expected, accum.toString());
+    }
+
+    @Test
+    public void testUnescape() {
+        String input = "This &amp; that &lt; those &gt; these &quot;quotes&quot;";
+        String expected = "This & that < those > these \"quotes\"";
+        assertEquals(expected, Entities.unescape(input));
+    }
+
+    @Test
+    public void testUnescapeStrict() {
+        String input = "This &amp; that &lt; those &gt; these &quot;quotes&quot;";
+        String expected = "This & that < those > these \"quotes\"";
+        assertEquals(expected, Entities.unescape(input, true));
+    }
+
+    @Test
+    public void testCanEncodeAscii() {
+        CharsetEncoder encoder = Charset.forName("US-ASCII").newEncoder();
+        assertTrue(Entities.canEncode(Entities.CoreCharset.ascii, 'A', encoder));
+        assertFalse(Entities.canEncode(Entities.CoreCharset.ascii, 'é', encoder));
+    }
+
+    @Test
+    public void testCanEncodeUtf() {
+        CharsetEncoder encoder = Charset.forName("UTF-8").newEncoder();
+        assertTrue(Entities.canEncode(Entities.CoreCharset.utf, 'A', encoder));
+        assertTrue(Entities.canEncode(Entities.CoreCharset.utf, 'é', encoder));
+    }
+
+    @Test
+    public void testCanEncodeFallback() {
+        CharsetEncoder encoder = Charset.forName("ISO-8859-1").newEncoder();
+        assertTrue(Entities.canEncode(Entities.CoreCharset.fallback, 'A', encoder));
+        assertTrue(Entities.canEncode(Entities.CoreCharset.fallback, 'é', encoder));
+    }
+}
+```
+
+### Explanation:
+- **Setup**: A `setUp` method initializes a `Document.OutputSettings` object with UTF-8 encoding.
+- **Test Methods**: Each method tests a specific functionality of the `Entities` class.
+  - `testIsNamedEntity` and `testIsBaseNamedEntity` check if certain strings are recognized as named entities.
+  - `testGetCharacterByName` verifies the retrieval of characters by their entity names.
+  - `testEscape` and `testEscapeInAttribute` test the escaping functionality with different scenarios.
+  - `testEscapeWithNormaliseWhite` checks the whitespace normalization during escaping.
+  - `testUnescape` and `testUnescapeStrict` validate the unescaping process.
+  - `testCanEncodeAscii`, `testCanEncodeUtf`, and `testCanEncodeFallback` test the `canEncode` method for different character sets.
+
+This suite should provide a comprehensive test coverage for the `Entities` class.

@@ -1,0 +1,89 @@
+package com.google.common.base;
+
+import static org.junit.Assert.*;
+import org.junit.Test;
+
+public class ObjectsTest {
+
+    @Test
+    public void testEqual() {
+        assertTrue(Objects.equal(null, null));
+        assertTrue(Objects.equal("test", "test"));
+        assertFalse(Objects.equal(null, "test"));
+        assertFalse(Objects.equal("test", null));
+        assertFalse(Objects.equal("test1", "test2"));
+    }
+
+    @Test
+    public void testHashCode() {
+        assertEquals(0, Objects.hashCode((Object[]) null));
+        assertEquals(31, Objects.hashCode("test"));
+        assertEquals(961, Objects.hashCode("test", "test"));
+    }
+
+    @Test
+    public void testToStringHelperWithObject() {
+        Objects.ToStringHelper helper = Objects.toStringHelper(new Object());
+        assertNotNull(helper);
+        assertEquals("Object{}", helper.toString());
+    }
+
+    @Test
+    public void testToStringHelperWithClass() {
+        Objects.ToStringHelper helper = Objects.toStringHelper(ObjectsTest.class);
+        assertNotNull(helper);
+        assertEquals("ObjectsTest{}", helper.toString());
+    }
+
+    @Test
+    public void testToStringHelperWithString() {
+        Objects.ToStringHelper helper = Objects.toStringHelper("TestClass");
+        assertNotNull(helper);
+        assertEquals("TestClass{}", helper.toString());
+    }
+
+    @Test
+    public void testFirstNonNull() {
+        assertEquals("first", Objects.firstNonNull("first", "second"));
+        assertEquals("second", Objects.firstNonNull(null, "second"));
+        assertNull(Objects.firstNonNull(null, null));
+    }
+
+    @Test
+    public void testToStringHelperAddMethods() {
+        Objects.ToStringHelper helper = Objects.toStringHelper("TestClass");
+        helper.add("name", "value")
+              .add("boolean", true)
+              .add("char", 'c')
+              .add("double", 1.0)
+              .add("float", 1.0f)
+              .add("int", 1)
+              .add("long", 1L);
+
+        assertEquals("TestClass{name=value, boolean=true, char=c, double=1.0, float=1.0, int=1, long=1}", helper.toString());
+    }
+
+    @Test
+    public void testToStringHelperAddValueMethods() {
+        Objects.ToStringHelper helper = Objects.toStringHelper("TestClass");
+        helper.addValue("value")
+              .addValue(true)
+              .addValue('c')
+              .addValue(1.0)
+              .addValue(1.0f)
+              .addValue(1)
+              .addValue(1L);
+
+        assertEquals("TestClass{value, true, c, 1.0, 1.0, 1, 1}", helper.toString());
+    }
+
+    @Test
+    public void testToStringHelperOmitNullValues() {
+        Objects.ToStringHelper helper = Objects.toStringHelper("TestClass");
+        helper.omitNullValues()
+              .add("name", "value")
+              .add("nullValue", null);
+
+        assertEquals("TestClass{name=value}", helper.toString());
+    }
+}

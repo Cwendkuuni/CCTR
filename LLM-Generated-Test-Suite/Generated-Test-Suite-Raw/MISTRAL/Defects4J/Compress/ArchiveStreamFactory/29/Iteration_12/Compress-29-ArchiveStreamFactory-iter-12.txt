@@ -1,0 +1,147 @@
+```java
+package org.apache.commons.compress.archivers;
+
+import static org.junit.Assert.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
+import org.apache.commons.compress.archivers.ar.ArArchiveOutputStream;
+import org.apache.commons.compress.archivers.arj.ArjArchiveInputStream;
+import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
+import org.apache.commons.compress.archivers.cpio.CpioArchiveOutputStream;
+import org.apache.commons.compress.archivers.dump.DumpArchiveInputStream;
+import org.apache.commons.compress.archivers.jar.JarArchiveInputStream;
+import org.apache.commons.compress.archivers.jar.JarArchiveOutputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.apache.commons.compress.utils.IOUtils;
+import org.junit.Before;
+import org.junit.Test;
+
+public class ArchiveStreamFactoryTest {
+
+    private ArchiveStreamFactory factory;
+
+    @Before
+    public void setUp() {
+        factory = new ArchiveStreamFactory();
+    }
+
+    @Test
+    public void testGetEntryEncoding() {
+        assertNull(factory.getEntryEncoding());
+    }
+
+    @Test
+    public void testSetEntryEncoding() {
+        factory.setEntryEncoding("UTF-8");
+        assertEquals("UTF-8", factory.getEntryEncoding());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testSetEntryEncodingWithConstructorEncoding() {
+        ArchiveStreamFactory factoryWithEncoding = new ArchiveStreamFactory("UTF-8");
+        factoryWithEncoding.setEntryEncoding("ISO-8859-1");
+    }
+
+    @Test
+    public void testCreateArchiveInputStream() throws Exception {
+        InputStream in = new ByteArrayInputStream(new byte[0]);
+
+        assertNotNull(factory.createArchiveInputStream(ArchiveStreamFactory.AR, in));
+        assertNotNull(factory.createArchiveInputStream(ArchiveStreamFactory.ARJ, in));
+        assertNotNull(factory.createArchiveInputStream(ArchiveStreamFactory.ZIP, in));
+        assertNotNull(factory.createArchiveInputStream(ArchiveStreamFactory.TAR, in));
+        assertNotNull(factory.createArchiveInputStream(ArchiveStreamFactory.JAR, in));
+        assertNotNull(factory.createArchiveInputStream(ArchiveStreamFactory.CPIO, in));
+        assertNotNull(factory.createArchiveInputStream(ArchiveStreamFactory.DUMP, in));
+
+        try {
+            factory.createArchiveInputStream(ArchiveStreamFactory.SEVEN_Z, in);
+            fail("Expected StreamingNotSupportedException");
+        } catch (StreamingNotSupportedException e) {
+            // expected
+        }
+
+        try {
+            factory.createArchiveInputStream(null, in);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+
+        try {
+            factory.createArchiveInputStream("unknown", in);
+            fail("Expected ArchiveException");
+        } catch (ArchiveException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testCreateArchiveOutputStream() throws Exception {
+        OutputStream out = new ByteArrayOutputStream();
+
+        assertNotNull(factory.createArchiveOutputStream(ArchiveStreamFactory.AR, out));
+        assertNotNull(factory.createArchiveOutputStream(ArchiveStreamFactory.ZIP, out));
+        assertNotNull(factory.createArchiveOutputStream(ArchiveStreamFactory.TAR, out));
+        assertNotNull(factory.createArchiveOutputStream(ArchiveStreamFactory.JAR, out));
+        assertNotNull(factory.createArchiveOutputStream(ArchiveStreamFactory.CPIO, out));
+
+        try {
+            factory.createArchiveOutputStream(ArchiveStreamFactory.SEVEN_Z, out);
+            fail("Expected StreamingNotSupportedException");
+        } catch (StreamingNotSupportedException e) {
+            // expected
+        }
+
+        try {
+            factory.createArchiveOutputStream(null, out);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+
+        try {
+            factory.createArchiveOutputStream("unknown", out);
+            fail("Expected ArchiveException");
+        } catch (ArchiveException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testCreateArchiveInputStreamAutoDetect() throws Exception {
+        InputStream in = new ByteArrayInputStream(new byte[0]);
+
+        try {
+            factory.createArchiveInputStream(in);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+
+        // Mocking input stream with mark support
+        InputStream mockIn = new ByteArrayInputStream(new byte[0]) {
+            @Override
+            public boolean markSupported() {
+                return true;
+            }
+        };
+
+        try {
+            factory.createArchiveInputStream(mockIn);
+            fail("Expected ArchiveException");
+        } catch (ArchiveException e) {
+            // expected
+        }
+    }
+}
+```

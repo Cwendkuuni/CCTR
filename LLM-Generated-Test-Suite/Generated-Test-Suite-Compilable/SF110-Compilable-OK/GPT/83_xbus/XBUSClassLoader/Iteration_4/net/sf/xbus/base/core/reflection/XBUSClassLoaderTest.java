@@ -1,0 +1,102 @@
+package net.sf.xbus.base.core.reflection;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.After;
+import org.junit.BeforeClass;
+import java.net.URL;
+import java.net.URLClassLoader;
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.Vector;
+import net.sf.xbus.base.core.reflection.XBUSClassLoader;
+
+public class XBUSClassLoaderTest {
+
+    private static final String TEMP_DIR = "temp_test_dir";
+    private static final String LIB_DIR = TEMP_DIR + "/lib";
+    private static final String RUNTIME_DIR = TEMP_DIR + "/lib/runtime";
+    private static final String PLUGIN_DIR = TEMP_DIR + "/plugin/lib";
+    private static final String TEST_DIR = TEMP_DIR + "/test/lib";
+
+    @BeforeClass
+    public static void setUpClass() throws IOException {
+        // Create temporary directories and files to simulate the environment
+        createTestEnvironment();
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        // Clean up after each test
+        deleteTestEnvironment();
+    }
+
+    @Test
+    public void testGetInstance() {
+        // Set the XBUS_HOME to the temporary directory
+        System.setProperty("XBUS_HOME", TEMP_DIR);
+
+        // Get an instance of XBUSClassLoader
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(getClass().getClassLoader());
+
+        assertNotNull("ClassLoader instance should not be null", classLoader);
+    }
+
+    @Test
+    public void testCreateClassLoader() {
+        // Set the XBUS_HOME to the temporary directory
+        System.setProperty("XBUS_HOME", TEMP_DIR);
+
+        // Get an instance of XBUSClassLoader
+        XBUSClassLoader classLoader = XBUSClassLoader.getInstance(getClass().getClassLoader());
+
+        assertNotNull("ClassLoader instance should not be null", classLoader);
+        assertTrue("ClassLoader should be an instance of URLClassLoader", classLoader instanceof URLClassLoader);
+    }
+
+    @Test
+    public void testAddUrls() throws Exception {
+        // Create a vector to hold URLs
+        Vector<URL> urls = new Vector<>();
+
+        // Call the private addUrls method using reflection
+        java.lang.reflect.Method method = XBUSClassLoader.class.getDeclaredMethod("addUrls", Vector.class, String.class);
+        method.setAccessible(true);
+        method.invoke(null, urls, LIB_DIR);
+
+        // Check if URLs were added
+        assertFalse("URLs should have been added", urls.isEmpty());
+    }
+
+    private static void createTestEnvironment() throws IOException {
+        // Create directories
+        Files.createDirectories(Paths.get(LIB_DIR));
+        Files.createDirectories(Paths.get(RUNTIME_DIR));
+        Files.createDirectories(Paths.get(PLUGIN_DIR));
+        Files.createDirectories(Paths.get(TEST_DIR));
+
+        // Create dummy jar files
+        createDummyJarFile(LIB_DIR + "/test1.jar");
+        createDummyJarFile(RUNTIME_DIR + "/test2.jar");
+        createDummyJarFile(PLUGIN_DIR + "/test3.jar");
+        createDummyJarFile(TEST_DIR + "/test4.jar");
+    }
+
+    private static void createDummyJarFile(String path) throws IOException {
+        Path filePath = Paths.get(path);
+        Files.createFile(filePath);
+        Files.write(filePath, "dummy content".getBytes(), StandardOpenOption.WRITE);
+    }
+
+    private static void deleteTestEnvironment() throws IOException {
+        // Delete the temporary directory and its contents
+        Files.walk(Paths.get(TEMP_DIR))
+            .map(Path::toFile)
+            .forEach(File::delete);
+    }
+}

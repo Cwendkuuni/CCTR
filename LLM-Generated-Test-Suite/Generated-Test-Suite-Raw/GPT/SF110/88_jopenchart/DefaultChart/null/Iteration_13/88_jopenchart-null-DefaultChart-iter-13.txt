@@ -1,0 +1,99 @@
+Certainly! Below is a JUnit 4 test suite for the `DefaultChart` class. This test suite aims to cover the constructors and the `render` method. Note that due to the abstract nature of some methods and dependencies on other classes, some tests will require mock objects or assumptions about the behavior of those dependencies.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import de.progra.charting.model.ChartDataModel;
+import de.progra.charting.render.AbstractChartRenderer;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import java.awt.*;
+import java.util.HashMap;
+import java.util.Map;
+
+public class DefaultChartTest {
+
+    private ChartDataModel mockModel;
+    private Graphics2D mockGraphics;
+    private DefaultChart chart;
+
+    @Before
+    public void setUp() {
+        mockModel = mock(ChartDataModel.class);
+        mockGraphics = mock(Graphics2D.class);
+    }
+
+    @Test
+    public void testConstructorWithModelAndTitle() {
+        chart = new DefaultChart(mockModel, "Test Title");
+
+        assertNotNull(chart.getChartDataModel());
+        assertNotNull(chart.getRowColorModel());
+        assertNotNull(chart.getLegend());
+        assertNotNull(chart.getTitle());
+        assertEquals("Test Title", chart.getTitle().getText());
+    }
+
+    @Test
+    public void testConstructorWithModelTitleAndCoordSystem() {
+        chart = new DefaultChart(mockModel, "Test Title", DefaultChart.LINEAR_X_LINEAR_Y);
+
+        assertNotNull(chart.getCoordSystem());
+    }
+
+    @Test
+    public void testConstructorWithModelTitleCoordSystemAndAxes() {
+        chart = new DefaultChart(mockModel, "Test Title", DefaultChart.LINEAR_X_LINEAR_Y, "X-Axis", "Y-Axis");
+
+        assertNotNull(chart.getCoordSystem());
+        assertEquals("X-Axis", chart.getCoordSystem().getXAxisUnit());
+        assertEquals("Y-Axis", chart.getCoordSystem().getYAxisUnit());
+    }
+
+    @Test
+    public void testRender() {
+        chart = new DefaultChart(mockModel, "Test Title", DefaultChart.LINEAR_X_LINEAR_Y);
+        chart.setChartRenderer(new HashMap<String, AbstractChartRenderer>());
+
+        chart.render(mockGraphics);
+
+        ArgumentCaptor<Rectangle> captor = ArgumentCaptor.forClass(Rectangle.class);
+        verify(mockGraphics, atLeastOnce()).fillRect(anyInt(), anyInt(), anyInt(), anyInt());
+        verify(mockGraphics, atLeastOnce()).setColor(any(Color.class));
+    }
+
+    @Test
+    public void testRenderWithTitleAndLegend() {
+        chart = new DefaultChart(mockModel, "Test Title", DefaultChart.LINEAR_X_LINEAR_Y);
+        chart.setChartRenderer(new HashMap<String, AbstractChartRenderer>());
+
+        chart.render(mockGraphics);
+
+        assertNotNull(chart.getTitle());
+        assertNotNull(chart.getLegend());
+    }
+
+    @Test
+    public void testRenderWithChartRenderer() {
+        chart = new DefaultChart(mockModel, "Test Title", DefaultChart.LINEAR_X_LINEAR_Y);
+
+        Map<String, AbstractChartRenderer> renderers = new HashMap<>();
+        AbstractChartRenderer mockRenderer = mock(AbstractChartRenderer.class);
+        renderers.put("mockRenderer", mockRenderer);
+        chart.setChartRenderer(renderers);
+
+        chart.render(mockGraphics);
+
+        verify(mockRenderer, atLeastOnce()).render(mockGraphics);
+    }
+}
+```
+
+### Notes:
+- **Mocking**: The test suite uses Mockito to mock dependencies like `ChartDataModel`, `Graphics2D`, and `AbstractChartRenderer`.
+- **Assertions**: The tests include assertions to verify that the constructors initialize the chart's components correctly.
+- **Render Method**: The `render` method tests ensure that the method interacts with the `Graphics2D` object as expected, and that renderers are called if present.
+- **Dependencies**: The test suite assumes that the methods `getChartDataModel`, `getRowColorModel`, `getLegend`, `getTitle`, `getCoordSystem`, and `getChartRenderer` are accessible and return the expected objects. If these methods are not public, you may need to adjust the test suite accordingly.

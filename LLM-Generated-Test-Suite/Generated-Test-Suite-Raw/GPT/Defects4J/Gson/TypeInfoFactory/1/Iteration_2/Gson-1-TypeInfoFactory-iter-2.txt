@@ -1,0 +1,133 @@
+To create a comprehensive JUnit 4 test suite for the `TypeInfoFactory` class, we need to test each public method and any private methods that have significant logic. Since `TypeInfoFactory` is a utility class with static methods, we don't need to instantiate it. We will use reflection to test private methods. Below is a complete JUnit 4 test suite for the `TypeInfoFactory` class:
+
+```java
+import com.google.gson.*;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.Method;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class TypeInfoFactoryTest {
+
+    private Field sampleField;
+    private Type sampleType;
+    private Class<?> sampleClass;
+
+    @Before
+    public void setUp() throws NoSuchFieldException {
+        sampleField = SampleClass.class.getDeclaredField("sampleField");
+        sampleType = SampleClass.class.getGenericSuperclass();
+        sampleClass = SampleClass.class;
+    }
+
+    @Test
+    public void testGetTypeInfoForArray() {
+        Type arrayType = new TypeInfoArray(new int[0].getClass()).getType();
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(arrayType);
+        assertNotNull(typeInfoArray);
+        assertEquals(arrayType, typeInfoArray.getType());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArrayWithNonArrayType() {
+        Type nonArrayType = String.class;
+        TypeInfoFactory.getTypeInfoForArray(nonArrayType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField() {
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(sampleField, sampleType);
+        assertNotNull(typeInfo);
+        assertEquals(String.class, typeInfo.getType());
+    }
+
+    @Test
+    public void testGetActualTypeWithClass() throws Exception {
+        Method method = TypeInfoFactory.class.getDeclaredMethod("getActualType", Type.class, Type.class, Class.class);
+        method.setAccessible(true);
+        Type result = (Type) method.invoke(null, String.class, sampleType, sampleClass);
+        assertEquals(String.class, result);
+    }
+
+    @Test
+    public void testGetActualTypeWithParameterizedType() throws Exception {
+        Method method = TypeInfoFactory.class.getDeclaredMethod("getActualType", Type.class, Type.class, Class.class);
+        method.setAccessible(true);
+        ParameterizedType parameterizedType = (ParameterizedType) sampleField.getGenericType();
+        Type result = (Type) method.invoke(null, parameterizedType, sampleType, sampleClass);
+        assertTrue(result instanceof ParameterizedType);
+    }
+
+    @Test
+    public void testGetActualTypeWithTypeVariable() throws Exception {
+        Method method = TypeInfoFactory.class.getDeclaredMethod("getActualType", Type.class, Type.class, Class.class);
+        method.setAccessible(true);
+        TypeVariable<?> typeVariable = (TypeVariable<?>) sampleClass.getTypeParameters()[0];
+        Type result = (Type) method.invoke(null, typeVariable, sampleType, sampleClass);
+        assertEquals(String.class, result);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testGetActualTypeWithTypeVariableWithoutParameterizedType() throws Exception {
+        Method method = TypeInfoFactory.class.getDeclaredMethod("getActualType", Type.class, Type.class, Class.class);
+        method.setAccessible(true);
+        TypeVariable<?> typeVariable = (TypeVariable<?>) sampleClass.getTypeParameters()[0];
+        method.invoke(null, typeVariable, Object.class, sampleClass);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetActualTypeWithInvalidType() throws Exception {
+        Method method = TypeInfoFactory.class.getDeclaredMethod("getActualType", Type.class, Type.class, Class.class);
+        method.setAccessible(true);
+        method.invoke(null, new Object(), sampleType, sampleClass);
+    }
+
+    @Test
+    public void testExtractRealTypes() throws Exception {
+        Method method = TypeInfoFactory.class.getDeclaredMethod("extractRealTypes", Type[].class, Type.class, Class.class);
+        method.setAccessible(true);
+        Type[] types = {String.class};
+        Type[] result = (Type[]) method.invoke(null, types, sampleType, sampleClass);
+        assertArrayEquals(types, result);
+    }
+
+    @Test
+    public void testGetIndex() throws Exception {
+        Method method = TypeInfoFactory.class.getDeclaredMethod("getIndex", TypeVariable[].class, TypeVariable.class);
+        method.setAccessible(true);
+        TypeVariable<?>[] typeVariables = sampleClass.getTypeParameters();
+        int index = (int) method.invoke(null, typeVariables, typeVariables[0]);
+        assertEquals(0, index);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetIndexWithInvalidTypeVariable() throws Exception {
+        Method method = TypeInfoFactory.class.getDeclaredMethod("getIndex", TypeVariable[].class, TypeVariable.class);
+        method.setAccessible(true);
+        TypeVariable<?>[] typeVariables = sampleClass.getTypeParameters();
+        method.invoke(null, typeVariables, String.class.getTypeParameters()[0]);
+    }
+
+    // Sample class for testing purposes
+    private static class SampleClass<T> {
+        private T sampleField;
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes a sample field, type, and class for use in the tests.
+- **Public Methods**: Tests for `getTypeInfoForArray` and `getTypeInfoForField` ensure they handle valid and invalid inputs correctly.
+- **Private Methods**: Reflection is used to access and test private methods like `getActualType`, `extractRealTypes`, and `getIndex`.
+- **Edge Cases**: Tests include cases for invalid inputs and exceptions to ensure robustness.
+
+This test suite should cover the functionality of the `TypeInfoFactory` class comprehensively.

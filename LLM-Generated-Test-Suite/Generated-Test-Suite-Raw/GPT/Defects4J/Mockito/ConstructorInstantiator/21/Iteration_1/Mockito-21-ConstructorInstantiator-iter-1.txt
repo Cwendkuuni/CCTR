@@ -1,0 +1,80 @@
+Certainly! Below is a complete JUnit 4 test suite for the `ConstructorInstantiator` class. This test suite aims to cover various scenarios, including cases where the class has a no-argument constructor, cases where an outer class instance is required, and cases where instantiation fails.
+
+```java
+import org.junit.Test;
+import org.mockito.internal.creation.instance.ConstructorInstantiator;
+import org.mockito.internal.creation.instance.InstantationException;
+
+import static org.junit.Assert.*;
+
+public class ConstructorInstantiatorTest {
+
+    public static class NoArgConstructorClass {
+        public NoArgConstructorClass() {
+        }
+    }
+
+    public static class OuterClass {
+        public class InnerClass {
+            public InnerClass() {
+            }
+        }
+
+        public class InnerClassWithOuter {
+            public InnerClassWithOuter(OuterClass outer) {
+            }
+        }
+    }
+
+    public static class NoConstructorClass {
+        private NoConstructorClass() {
+        }
+    }
+
+    @Test
+    public void testNewInstanceWithNoArgConstructor() {
+        ConstructorInstantiator instantiator = new ConstructorInstantiator(null);
+        NoArgConstructorClass instance = instantiator.newInstance(NoArgConstructorClass.class);
+        assertNotNull(instance);
+    }
+
+    @Test
+    public void testNewInstanceWithOuterClass() {
+        OuterClass outer = new OuterClass();
+        ConstructorInstantiator instantiator = new ConstructorInstantiator(outer);
+        OuterClass.InnerClassWithOuter instance = instantiator.newInstance(OuterClass.InnerClassWithOuter.class);
+        assertNotNull(instance);
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNewInstanceWithPrivateConstructor() {
+        ConstructorInstantiator instantiator = new ConstructorInstantiator(null);
+        instantiator.newInstance(NoConstructorClass.class);
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNewInstanceWithIncorrectOuterClass() {
+        ConstructorInstantiator instantiator = new ConstructorInstantiator(new Object());
+        instantiator.newInstance(OuterClass.InnerClassWithOuter.class);
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNewInstanceWithNoOuterClassProvided() {
+        ConstructorInstantiator instantiator = new ConstructorInstantiator(null);
+        instantiator.newInstance(OuterClass.InnerClassWithOuter.class);
+    }
+}
+```
+
+### Explanation:
+- **NoArgConstructorClass**: A class with a no-argument constructor to test the `noArgConstructor` method.
+- **OuterClass**: An outer class containing inner classes to test the `withOuterClass` method.
+- **NoConstructorClass**: A class with a private constructor to test failure scenarios.
+- **Test Methods**:
+  - `testNewInstanceWithNoArgConstructor`: Tests instantiation of a class with a no-argument constructor.
+  - `testNewInstanceWithOuterClass`: Tests instantiation of an inner class requiring an outer class instance.
+  - `testNewInstanceWithPrivateConstructor`: Tests failure when trying to instantiate a class with a private constructor.
+  - `testNewInstanceWithIncorrectOuterClass`: Tests failure when an incorrect outer class instance is provided.
+  - `testNewInstanceWithNoOuterClassProvided`: Tests failure when no outer class instance is provided for a class that requires it.
+
+This test suite should provide comprehensive coverage for the `ConstructorInstantiator` class.

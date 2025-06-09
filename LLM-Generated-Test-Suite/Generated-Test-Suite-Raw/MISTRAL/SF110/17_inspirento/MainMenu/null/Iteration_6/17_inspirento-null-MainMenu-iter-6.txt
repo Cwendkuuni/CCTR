@@ -1,0 +1,160 @@
+```java
+package com.allenstudio.ir.ui;
+
+import com.allenstudio.ir.core.InspirentoMediator;
+import com.allenstudio.ir.util.InspirentoUtilities;
+import com.allenstudio.ir.util.UIResources;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import javax.swing.*;
+import java.net.URL;
+import java.util.MissingResourceException;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({UIResources.class, InspirentoUtilities.class})
+public class MainMenuTest {
+
+    @Mock
+    private InspirentoMediator mockMediator;
+
+    @Mock
+    private UIResources mockUIResources;
+
+    private MainMenu mainMenu;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        PowerMockito.mockStatic(UIResources.class);
+        PowerMockito.mockStatic(InspirentoUtilities.class);
+        mainMenu = new MainMenu(mockMediator);
+    }
+
+    @Test
+    public void testConstructor() {
+        String[] menus = {"menu1", "menu2"};
+        when(InspirentoUtilities.tokenize(anyString())).thenReturn(menus);
+        when(UIResources.getString("menu")).thenReturn("menu1,menu2");
+
+        MainMenu menu = new MainMenu(mockMediator);
+        assertEquals(2, menu.getMenuCount());
+    }
+
+    @Test
+    public void testCreateMenu() {
+        String menu = "file";
+        String label = "File";
+        String[] items = {"new", "open", "save"};
+
+        when(UIResources.getString(menu + "Label")).thenReturn(label);
+        when(InspirentoUtilities.tokenize(UIResources.getString(menu))).thenReturn(items);
+        when(UIResources.getString("newLabel")).thenReturn("New");
+        when(UIResources.getString("openLabel")).thenReturn("Open");
+        when(UIResources.getString("saveLabel")).thenReturn("Save");
+
+        JMenu jMenu = mainMenu.createMenu(menu);
+        assertEquals(label, jMenu.getText());
+        assertEquals(3, jMenu.getItemCount());
+    }
+
+    @Test
+    public void testCreateMenuWithMnemonic() {
+        String menu = "file";
+        String label = "File*F";
+        String[] items = {"new", "open", "save"};
+
+        when(UIResources.getString(menu + "Label")).thenReturn(label);
+        when(InspirentoUtilities.tokenize(UIResources.getString(menu))).thenReturn(items);
+        when(UIResources.getString("newLabel")).thenReturn("New");
+        when(UIResources.getString("openLabel")).thenReturn("Open");
+        when(UIResources.getString("saveLabel")).thenReturn("Save");
+
+        JMenu jMenu = mainMenu.createMenu(menu);
+        assertEquals("File", jMenu.getText());
+        assertEquals('F', jMenu.getMnemonic());
+        assertEquals(3, jMenu.getItemCount());
+    }
+
+    @Test
+    public void testCreateMenuWithSubMenu() {
+        String menu = "file";
+        String label = "File";
+        String[] items = {"new", "open", "save>", "exit"};
+
+        when(UIResources.getString(menu + "Label")).thenReturn(label);
+        when(InspirentoUtilities.tokenize(UIResources.getString(menu))).thenReturn(items);
+        when(UIResources.getString("newLabel")).thenReturn("New");
+        when(UIResources.getString("openLabel")).thenReturn("Open");
+        when(UIResources.getString("saveLabel")).thenReturn("Save");
+        when(UIResources.getString("exitLabel")).thenReturn("Exit");
+
+        JMenu jMenu = mainMenu.createMenu(menu);
+        assertEquals(label, jMenu.getText());
+        assertEquals(4, jMenu.getItemCount());
+        assertTrue(jMenu.getItem(2) instanceof JMenu);
+    }
+
+    @Test
+    public void testCreateMenuWithCheckBoxMenuItem() {
+        String menu = "file";
+        String label = "File";
+        String[] items = {"new", "#open", "save"};
+
+        when(UIResources.getString(menu + "Label")).thenReturn(label);
+        when(InspirentoUtilities.tokenize(UIResources.getString(menu))).thenReturn(items);
+        when(UIResources.getString("newLabel")).thenReturn("New");
+        when(UIResources.getString("openLabel")).thenReturn("Open");
+        when(UIResources.getString("saveLabel")).thenReturn("Save");
+
+        JMenu jMenu = mainMenu.createMenu(menu);
+        assertEquals(label, jMenu.getText());
+        assertEquals(3, jMenu.getItemCount());
+        assertTrue(jMenu.getItem(1) instanceof JCheckBoxMenuItem);
+    }
+
+    @Test
+    public void testAddShortcutAndIcon() {
+        JMenuItem item = new JMenuItem("Test");
+        String key = "test";
+        String shortcut = "ctrl T";
+        String iconPath = "/path/to/icon.png";
+        URL url = getClass().getResource(iconPath);
+
+        when(UIResources.getString(key + "Shortcut")).thenReturn(shortcut);
+        when(UIResources.getString(key + "Icon")).thenReturn(iconPath);
+
+        mainMenu.addShortcutAndIcon(item, key);
+        assertEquals(KeyStroke.getKeyStroke(shortcut), item.getAccelerator());
+        assertNotNull(item.getIcon());
+    }
+
+    @Test
+    public void testAddShortcutAndIconWithMissingResource() {
+        JMenuItem item = new JMenuItem("Test");
+        String key = "test";
+
+        when(UIResources.getString(key + "Shortcut")).thenThrow(new MissingResourceException("Test", "test", "key"));
+        when(UIResources.getString(key + "Icon")).thenThrow(new MissingResourceException("Test", "test", "key"));
+
+        mainMenu.addShortcutAndIcon(item, key);
+        assertNull(item.getAccelerator());
+        assertNull(item.getIcon());
+    }
+
+    @Test
+    public void testChanged() {
+        mainMenu.changed();
+        // No implementation, so no assertions needed
+    }
+}
+```

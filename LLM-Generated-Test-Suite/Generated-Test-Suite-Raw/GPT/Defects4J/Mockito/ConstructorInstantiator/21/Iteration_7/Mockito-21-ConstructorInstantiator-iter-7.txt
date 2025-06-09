@@ -1,0 +1,76 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `ConstructorInstantiator` class. This test suite covers various scenarios, including cases where the outer class instance is provided and where it is not, as well as handling exceptions.
+
+```java
+import org.junit.Test;
+import org.junit.Before;
+import org.mockito.internal.creation.instance.ConstructorInstantiator;
+
+import static org.junit.Assert.*;
+
+public class ConstructorInstantiatorTest {
+
+    private ConstructorInstantiator instantiatorWithOuter;
+    private ConstructorInstantiator instantiatorWithoutOuter;
+
+    private static class OuterClass {
+        class InnerClass {
+            InnerClass() {}
+            InnerClass(OuterClass outer) {}
+        }
+    }
+
+    private static class NoArgClass {
+        NoArgClass() {}
+    }
+
+    private static class NoNoArgConstructorClass {
+        NoNoArgConstructorClass(String param) {}
+    }
+
+    @Before
+    public void setUp() {
+        instantiatorWithOuter = new ConstructorInstantiator(new OuterClass());
+        instantiatorWithoutOuter = new ConstructorInstantiator(null);
+    }
+
+    @Test
+    public void testNewInstanceWithOuterClass() {
+        OuterClass.InnerClass instance = instantiatorWithOuter.newInstance(OuterClass.InnerClass.class);
+        assertNotNull(instance);
+    }
+
+    @Test
+    public void testNewInstanceWithoutOuterClass() {
+        NoArgClass instance = instantiatorWithoutOuter.newInstance(NoArgClass.class);
+        assertNotNull(instance);
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNewInstanceWithOuterClassThrowsException() {
+        instantiatorWithOuter.newInstance(NoArgClass.class);
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNewInstanceWithoutOuterClassThrowsException() {
+        instantiatorWithoutOuter.newInstance(NoNoArgConstructorClass.class);
+    }
+
+    @Test(expected = InstantationException.class)
+    public void testNewInstanceWithOuterClassWrongTypeThrowsException() {
+        instantiatorWithOuter.newInstance(NoNoArgConstructorClass.class);
+    }
+}
+```
+
+### Explanation:
+
+1. **Setup**: The `setUp` method initializes two instances of `ConstructorInstantiator`: one with an outer class instance and one without.
+
+2. **Test Cases**:
+   - **`testNewInstanceWithOuterClass`**: Tests creating an instance of an inner class using the outer class instance.
+   - **`testNewInstanceWithoutOuterClass`**: Tests creating an instance of a class with a no-argument constructor.
+   - **`testNewInstanceWithOuterClassThrowsException`**: Tests that an exception is thrown when trying to instantiate a class without the required outer class constructor.
+   - **`testNewInstanceWithoutOuterClassThrowsException`**: Tests that an exception is thrown when trying to instantiate a class without a no-argument constructor.
+   - **`testNewInstanceWithOuterClassWrongTypeThrowsException`**: Tests that an exception is thrown when the outer class instance is of the wrong type.
+
+3. **Exception Handling**: The tests expect `InstantationException` to be thrown in scenarios where instantiation is not possible due to constructor mismatches.

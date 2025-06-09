@@ -1,0 +1,204 @@
+```java
+package org.jsoup.select;
+
+import org.jsoup.helper.StringUtil;
+import org.jsoup.helper.Validate;
+import org.jsoup.parser.TokenQueue;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import static org.junit.Assert.*;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.jsoup.internal.Normalizer.normalize;
+
+public class QueryParserTest {
+
+    private QueryParser queryParser;
+
+    @Before
+    public void setUp() {
+        queryParser = new QueryParser("div");
+    }
+
+    @After
+    public void tearDown() {
+        queryParser = null;
+    }
+
+    @Test
+    public void testParse() {
+        String query = "div > p";
+        Evaluator evaluator = QueryParser.parse(query);
+        assertNotNull(evaluator);
+    }
+
+    @Test
+    public void testParseWithInvalidQuery() {
+        String query = "div >> p";
+        try {
+            QueryParser.parse(query);
+            fail("Expected SelectorParseException");
+        } catch (Selector.SelectorParseException e) {
+            assertEquals("Unknown combinator: >", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testParseWithEmptyQuery() {
+        String query = "";
+        try {
+            QueryParser.parse(query);
+            fail("Expected SelectorParseException");
+        } catch (Selector.SelectorParseException e) {
+            assertEquals("Could not parse query '': unexpected token at ''", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testConsumeSubQuery() {
+        String query = "div > p";
+        queryParser = new QueryParser(query);
+        String subQuery = queryParser.consumeSubQuery();
+        assertEquals("div", subQuery);
+    }
+
+    @Test
+    public void testFindElements() {
+        String query = "div.class#id";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(3, queryParser.evals.size());
+    }
+
+    @Test
+    public void testById() {
+        String query = "#id";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.Id);
+    }
+
+    @Test
+    public void testByClass() {
+        String query = ".class";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.Class);
+    }
+
+    @Test
+    public void testByTag() {
+        String query = "div";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.Tag);
+    }
+
+    @Test
+    public void testByAttribute() {
+        String query = "[attr=value]";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.AttributeWithValue);
+    }
+
+    @Test
+    public void testAllElements() {
+        String query = "*";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.AllElements);
+    }
+
+    @Test
+    public void testIndexLessThan() {
+        String query = ":lt(3)";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IndexLessThan);
+    }
+
+    @Test
+    public void testIndexGreaterThan() {
+        String query = ":gt(3)";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IndexGreaterThan);
+    }
+
+    @Test
+    public void testIndexEquals() {
+        String query = ":eq(3)";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IndexEquals);
+    }
+
+    @Test
+    public void testCssNthChild() {
+        String query = ":nth-child(2n+1)";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.IsNthChild);
+    }
+
+    @Test
+    public void testHas() {
+        String query = ":has(div)";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof StructuralEvaluator.Has);
+    }
+
+    @Test
+    public void testContains() {
+        String query = ":contains(text)";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.ContainsText);
+    }
+
+    @Test
+    public void testContainsData() {
+        String query = ":containsData(data)";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.ContainsData);
+    }
+
+    @Test
+    public void testMatches() {
+        String query = ":matches(regex)";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof Evaluator.Matches);
+    }
+
+    @Test
+    public void testNot() {
+        String query = ":not(div)";
+        queryParser = new QueryParser(query);
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+        assertTrue(queryParser.evals.get(0) instanceof StructuralEvaluator.Not);
+    }
+}
+```

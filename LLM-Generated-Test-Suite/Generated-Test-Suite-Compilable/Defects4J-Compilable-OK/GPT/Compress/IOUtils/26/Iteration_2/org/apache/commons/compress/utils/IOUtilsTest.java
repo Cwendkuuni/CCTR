@@ -1,0 +1,113 @@
+package org.apache.commons.compress.utils;
+
+import org.apache.commons.compress.utils.IOUtils;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+
+import static org.junit.Assert.assertArrayEquals;
+import static org.junit.Assert.assertEquals;
+
+public class IOUtilsTest {
+
+    private InputStream inputStream;
+    private ByteArrayOutputStream outputStream;
+
+    @Before
+    public void setUp() {
+        outputStream = new ByteArrayOutputStream();
+    }
+
+    @After
+    public void tearDown() {
+        IOUtils.closeQuietly(inputStream);
+        IOUtils.closeQuietly(outputStream);
+    }
+
+    @Test
+    public void testCopyWithDefaultBufferSize() throws IOException {
+        byte[] data = "Test data for copy".getBytes();
+        inputStream = new ByteArrayInputStream(data);
+
+        long bytesCopied = IOUtils.copy(inputStream, outputStream);
+
+        assertEquals(data.length, bytesCopied);
+        assertArrayEquals(data, outputStream.toByteArray());
+    }
+
+    @Test
+    public void testCopyWithCustomBufferSize() throws IOException {
+        byte[] data = "Test data for copy with custom buffer size".getBytes();
+        inputStream = new ByteArrayInputStream(data);
+
+        long bytesCopied = IOUtils.copy(inputStream, outputStream, 10);
+
+        assertEquals(data.length, bytesCopied);
+        assertArrayEquals(data, outputStream.toByteArray());
+    }
+
+    @Test
+    public void testSkip() throws IOException {
+        byte[] data = "Test data for skip".getBytes();
+        inputStream = new ByteArrayInputStream(data);
+
+        long bytesSkipped = IOUtils.skip(inputStream, 5);
+
+        assertEquals(5, bytesSkipped);
+
+        byte[] remainingData = new byte[data.length - 5];
+        inputStream.read(remainingData);
+
+        assertArrayEquals("data for skip".getBytes(), remainingData);
+    }
+
+    @Test
+    public void testReadFully() throws IOException {
+        byte[] data = "Test data for readFully".getBytes();
+        inputStream = new ByteArrayInputStream(data);
+
+        byte[] buffer = new byte[data.length];
+        int bytesRead = IOUtils.readFully(inputStream, buffer);
+
+        assertEquals(data.length, bytesRead);
+        assertArrayEquals(data, buffer);
+    }
+
+    @Test
+    public void testReadFullyWithOffsetAndLength() throws IOException {
+        byte[] data = "Test data for readFully with offset".getBytes();
+        inputStream = new ByteArrayInputStream(data);
+
+        byte[] buffer = new byte[data.length];
+        int bytesRead = IOUtils.readFully(inputStream, buffer, 5, data.length - 5);
+
+        assertEquals(data.length - 5, bytesRead);
+        assertArrayEquals("Test ".getBytes(), new byte[]{buffer[0], buffer[1], buffer[2], buffer[3], buffer[4]});
+        assertArrayEquals("data for readFully with offset".getBytes(), new byte[]{buffer[5], buffer[6], buffer[7], buffer[8], buffer[9], buffer[10], buffer[11], buffer[12], buffer[13], buffer[14], buffer[15], buffer[16], buffer[17], buffer[18], buffer[19], buffer[20], buffer[21], buffer[22], buffer[23], buffer[24], buffer[25], buffer[26], buffer[27], buffer[28], buffer[29], buffer[30], buffer[31], buffer[32], buffer[33]});
+    }
+
+    @Test
+    public void testToByteArray() throws IOException {
+        byte[] data = "Test data for toByteArray".getBytes();
+        inputStream = new ByteArrayInputStream(data);
+
+        byte[] result = IOUtils.toByteArray(inputStream);
+
+        assertArrayEquals(data, result);
+    }
+
+    @Test
+    public void testCloseQuietly() {
+        // Test with a non-null Closeable
+        ByteArrayOutputStream stream = new ByteArrayOutputStream();
+        IOUtils.closeQuietly(stream);
+
+        // Test with a null Closeable
+        IOUtils.closeQuietly(null);
+    }
+}

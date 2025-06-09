@@ -1,0 +1,146 @@
+Certainly! Below is a JUnit 4 test suite for the `ClientGroup` class. This test suite aims to cover all the methods in the class, ensuring that they behave as expected under various scenarios.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import ioproject.server.network.ClientGroup;
+import ioproject.common.network.Client;
+import ioproject.common.network.ClientHandler;
+import org.junit.Before;
+import org.junit.Test;
+import java.lang.ref.WeakReference;
+import java.util.Iterator;
+
+public class ClientGroupTest {
+
+    private ClientGroup parentGroup;
+    private ClientGroup clientGroup;
+    private Client mockClient;
+    private ClientHandler mockHandler;
+
+    @Before
+    public void setUp() {
+        parentGroup = new ClientGroup(null);
+        clientGroup = new ClientGroup(parentGroup);
+        mockClient = mock(Client.class);
+        mockHandler = mock(ClientHandler.class);
+    }
+
+    @Test
+    public void testParentGroup() {
+        assertEquals(parentGroup, clientGroup.parentGroup());
+    }
+
+    @Test
+    public void testNotifyMessageSent() {
+        clientGroup.add(mockClient);
+        clientGroup.addClientHandler(mockHandler);
+        assertTrue(clientGroup.notifyMessageSent(mockClient, "Test Message"));
+        verify(mockHandler).messageSent(mockClient, "Test Message");
+    }
+
+    @Test
+    public void testNotifyMessageSent_ClientNotInGroup() {
+        assertFalse(clientGroup.notifyMessageSent(mockClient, "Test Message"));
+    }
+
+    @Test
+    public void testNotifyMessageReceived() {
+        clientGroup.add(mockClient);
+        clientGroup.addClientHandler(mockHandler);
+        assertTrue(clientGroup.notifyMessageReceived(mockClient, "Test Message"));
+        verify(mockHandler).messageReceived(mockClient, "Test Message");
+    }
+
+    @Test
+    public void testNotifyMessageReceived_ClientNotInGroup() {
+        assertFalse(clientGroup.notifyMessageReceived(mockClient, "Test Message"));
+    }
+
+    @Test
+    public void testNotifyExceptionCaught() {
+        clientGroup.add(mockClient);
+        clientGroup.addClientHandler(mockHandler);
+        Throwable throwable = new Throwable("Test Exception");
+        assertTrue(clientGroup.notifyExceptionCaught(mockClient, throwable));
+        verify(mockHandler).exceptionCaught(mockClient, throwable);
+    }
+
+    @Test
+    public void testNotifyExceptionCaught_ClientNotInGroup() {
+        Throwable throwable = new Throwable("Test Exception");
+        assertFalse(clientGroup.notifyExceptionCaught(mockClient, throwable));
+    }
+
+    @Test
+    public void testIterator() {
+        clientGroup.add(mockClient);
+        Iterator<Client> iterator = clientGroup.iterator();
+        assertTrue(iterator.hasNext());
+        assertEquals(mockClient, iterator.next());
+    }
+
+    @Test
+    public void testContains() {
+        clientGroup.add(mockClient);
+        assertTrue(clientGroup.contains(mockClient));
+    }
+
+    @Test
+    public void testContains_ClientNotInGroup() {
+        assertFalse(clientGroup.contains(mockClient));
+    }
+
+    @Test
+    public void testSize() {
+        assertEquals(0, clientGroup.size());
+        clientGroup.add(mockClient);
+        assertEquals(1, clientGroup.size());
+    }
+
+    @Test
+    public void testAdd() {
+        assertTrue(clientGroup.add(mockClient));
+        assertTrue(clientGroup.contains(mockClient));
+    }
+
+    @Test
+    public void testAdd_ClientAlreadyInParentGroup() {
+        parentGroup.add(mockClient);
+        assertTrue(clientGroup.add(mockClient));
+    }
+
+    @Test
+    public void testRemove() {
+        clientGroup.add(mockClient);
+        assertTrue(clientGroup.remove(mockClient));
+        assertFalse(clientGroup.contains(mockClient));
+    }
+
+    @Test
+    public void testRemove_ClientNotInGroup() {
+        assertFalse(clientGroup.remove(mockClient));
+    }
+
+    @Test
+    public void testCreateSubGroup() {
+        ClientGroup subGroup = clientGroup.createSubGroup();
+        assertNotNull(subGroup);
+        assertEquals(clientGroup, subGroup.parentGroup());
+    }
+
+    @Test
+    public void testAddClientHandler() {
+        clientGroup.addClientHandler(mockHandler);
+        clientGroup.add(mockClient);
+        verify(mockHandler).clientAdded(mockClient);
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: We use Mockito to create mock objects for `Client` and `ClientHandler` to simulate interactions without needing real implementations.
+- **Setup**: The `setUp` method initializes the test environment before each test.
+- **Tests**: Each method in `ClientGroup` is tested for both typical and edge cases, ensuring comprehensive coverage.
+- **Assertions**: We use assertions to verify expected outcomes, and Mockito's `verify` to ensure that handler methods are called appropriately.

@@ -1,0 +1,76 @@
+```java
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
+import javax.sound.sampled.SourceDataLine;
+import java.io.File;
+import java.io.IOException;
+
+public class MP3Test {
+
+    private MP3 mp3;
+    private String testFilename;
+
+    @Before
+    public void setUp() {
+        testFilename = "test.mp3";
+        mp3 = new MP3(testFilename);
+    }
+
+    @After
+    public void tearDown() {
+        mp3 = null;
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(mp3);
+        assertEquals(testFilename, mp3.filename);
+    }
+
+    @Test
+    public void testRun() {
+        // This test is a bit tricky because it involves multithreading and audio playback.
+        // We can't easily test the actual audio playback, but we can test that the run method
+        // doesn't throw any exceptions and that it sets up the audio system correctly.
+
+        // Create a mock file to simulate the MP3 file
+        File mockFile = new File(testFilename);
+        try {
+            mockFile.createNewFile();
+        } catch (IOException e) {
+            fail("Failed to create mock file: " + e.getMessage());
+        }
+
+        // Start the MP3 thread
+        mp3.start();
+
+        // Wait for the thread to finish
+        try {
+            mp3.join();
+        } catch (InterruptedException e) {
+            fail("Thread was interrupted: " + e.getMessage());
+        }
+
+        // Clean up the mock file
+        mockFile.delete();
+
+        // Check that the audio system was set up correctly
+        // This is a bit of a hack, but it's the best we can do without mocking the audio system
+        try {
+            AudioInputStream in = AudioSystem.getAudioInputStream(mockFile);
+            AudioInputStream din = AudioSystem.getAudioInputStream(in.getFormat(), in);
+            SourceDataLine line = (SourceDataLine) AudioSystem.getLine(new SourceDataLine.Info(SourceDataLine.class, din.getFormat()));
+            assertNotNull(line);
+            din.close();
+            in.close();
+        } catch (Exception e) {
+            fail("Failed to set up audio system: " + e.getMessage());
+        }
+    }
+}
+```

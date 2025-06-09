@@ -1,0 +1,139 @@
+```java
+package net.sourceforge.beanbin.reflect;
+
+import net.sourceforge.beanbin.search.*;
+import net.sourceforge.beanbin.*;
+import net.sourceforge.beanbin.query.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.lang.annotation.*;
+import java.lang.reflect.*;
+import java.util.*;
+
+public class ReflectionSearchTest {
+
+    private ReflectionSearch reflectionSearch;
+    private Class<?> testClass;
+
+    @Before
+    public void setUp() {
+        testClass = TestClass.class;
+        reflectionSearch = new ReflectionSearch(testClass);
+    }
+
+    @Test
+    public void testHasAnnotation() {
+        assertTrue(reflectionSearch.hasAnnotation("@TestAnnotation"));
+        assertFalse(reflectionSearch.hasAnnotation("@NonExistentAnnotation"));
+    }
+
+    @Test
+    public void testHasWildcard() throws NoSuchMethodException {
+        Method hasWildcardMethod = ReflectionSearch.class.getDeclaredMethod("hasWildcard", String.class);
+        hasWildcardMethod.setAccessible(true);
+
+        try {
+            assertTrue((Boolean) hasWildcardMethod.invoke(reflectionSearch, "*Test*"));
+            assertFalse((Boolean) hasWildcardMethod.invoke(reflectionSearch, "Test"));
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Exception occurred during testHasWildcard");
+        }
+    }
+
+    @Test
+    public void testMethodsThatHave() {
+        try {
+            reflectionSearch.methodsThatHave("testMethod");
+            List<Method> methods = reflectionSearch.getMethods();
+            assertNotNull(methods);
+            assertTrue(methods.stream().anyMatch(m -> m.getName().equals("testMethod")));
+        } catch (BeanBinException e) {
+            e.printStackTrace();
+            fail("Exception occurred during testMethodsThatHave");
+        }
+    }
+
+    @Test
+    public void testMethodsThatDontHave() {
+        try {
+            reflectionSearch.methodsThatDontHave("testMethod");
+            List<Method> methods = reflectionSearch.getMethods();
+            assertNotNull(methods);
+            assertFalse(methods.stream().anyMatch(m -> m.getName().equals("testMethod")));
+        } catch (BeanBinException e) {
+            e.printStackTrace();
+            fail("Exception occurred during testMethodsThatDontHave");
+        }
+    }
+
+    @Test
+    public void testAnd() {
+        reflectionSearch.and();
+        assertEquals(Conditional.AND, reflectionSearch.getQuery().getNextConditional());
+    }
+
+    @Test
+    public void testOr() {
+        reflectionSearch.or();
+        assertEquals(Conditional.OR, reflectionSearch.getQuery().getNextConditional());
+    }
+
+    @Test
+    public void testGetMethods() {
+        try {
+            List<Method> methods = reflectionSearch.getMethods();
+            assertNotNull(methods);
+        } catch (BeanBinException e) {
+            e.printStackTrace();
+            fail("Exception occurred during testGetMethods");
+        }
+    }
+
+    @Test
+    public void testIntersect() throws NoSuchMethodException {
+        Method intersectMethod = ReflectionSearch.class.getDeclaredMethod("intersect", List.class, List.class);
+        intersectMethod.setAccessible(true);
+
+        List<Method> master = new ArrayList<>(Arrays.asList(testClass.getMethods()));
+        List<Method> toAdd = new ArrayList<>(Arrays.asList(testClass.getMethods()));
+
+        try {
+            intersectMethod.invoke(reflectionSearch, master, toAdd);
+            assertEquals(master.size(), toAdd.size());
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Exception occurred during testIntersect");
+        }
+    }
+
+    @Test
+    public void testUnion() throws NoSuchMethodException {
+        Method unionMethod = ReflectionSearch.class.getDeclaredMethod("union", List.class, List.class);
+        unionMethod.setAccessible(true);
+
+        List<Method> master = new ArrayList<>(Arrays.asList(testClass.getMethods()));
+        List<Method> toAdd = new ArrayList<>(Arrays.asList(testClass.getMethods()));
+
+        try {
+            unionMethod.invoke(reflectionSearch, master, toAdd);
+            assertTrue(master.size() >= toAdd.size());
+        } catch (Exception e) {
+            e.printStackTrace();
+            fail("Exception occurred during testUnion");
+        }
+    }
+
+    @Retention(RetentionPolicy.RUNTIME)
+    @Target(ElementType.TYPE)
+    public @interface TestAnnotation {
+    }
+
+    @TestAnnotation
+    public static class TestClass {
+        public void testMethod() {
+        }
+    }
+}
+```

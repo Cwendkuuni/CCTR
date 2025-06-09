@@ -1,0 +1,223 @@
+package org.jsoup.parser;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class TokenQueueTest {
+
+    private TokenQueue tokenQueue;
+
+    @Before
+    public void setUp() {
+        tokenQueue = new TokenQueue("example data");
+    }
+
+    @Test
+    public void testIsEmpty() {
+        assertFalse(tokenQueue.isEmpty());
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        tokenQueue.consume();
+        assertTrue(tokenQueue.isEmpty());
+    }
+
+    @Test
+    public void testPeek() {
+        assertEquals('e', tokenQueue.peek());
+        tokenQueue.consume();
+        assertEquals('x', tokenQueue.peek());
+    }
+
+    @Test
+    public void testAddFirstCharacter() {
+        tokenQueue.addFirst('a');
+        assertEquals('a', tokenQueue.peek());
+    }
+
+    @Test
+    public void testAddFirstString() {
+        tokenQueue.addFirst("abc");
+        assertEquals('a', tokenQueue.peek());
+        tokenQueue.consume();
+        assertEquals('b', tokenQueue.peek());
+    }
+
+    @Test
+    public void testMatches() {
+        assertTrue(tokenQueue.matches("example"));
+        assertFalse(tokenQueue.matches("wrong"));
+    }
+
+    @Test
+    public void testMatchesCS() {
+        assertTrue(tokenQueue.matchesCS("example"));
+        assertFalse(tokenQueue.matchesCS("Example"));
+    }
+
+    @Test
+    public void testMatchesAnyString() {
+        assertTrue(tokenQueue.matchesAny("example", "wrong"));
+        assertFalse(tokenQueue.matchesAny("wrong", "another"));
+    }
+
+    @Test
+    public void testMatchesAnyChar() {
+        assertTrue(tokenQueue.matchesAny('e', 'x'));
+        assertFalse(tokenQueue.matchesAny('a', 'b'));
+    }
+
+    @Test
+    public void testMatchesStartTag() {
+        tokenQueue = new TokenQueue("<tag");
+        assertTrue(tokenQueue.matchesStartTag());
+        tokenQueue = new TokenQueue("tag");
+        assertFalse(tokenQueue.matchesStartTag());
+    }
+
+    @Test
+    public void testMatchChomp() {
+        assertTrue(tokenQueue.matchChomp("example"));
+        assertFalse(tokenQueue.matchChomp("wrong"));
+    }
+
+    @Test
+    public void testMatchesWhitespace() {
+        tokenQueue = new TokenQueue(" example");
+        assertTrue(tokenQueue.matchesWhitespace());
+        tokenQueue = new TokenQueue("example");
+        assertFalse(tokenQueue.matchesWhitespace());
+    }
+
+    @Test
+    public void testMatchesWord() {
+        assertTrue(tokenQueue.matchesWord());
+        tokenQueue = new TokenQueue(" 123");
+        assertTrue(tokenQueue.matchesWord());
+        tokenQueue = new TokenQueue(" ");
+        assertFalse(tokenQueue.matchesWord());
+    }
+
+    @Test
+    public void testAdvance() {
+        tokenQueue.advance();
+        assertEquals('x', tokenQueue.peek());
+    }
+
+    @Test
+    public void testConsume() {
+        assertEquals('e', tokenQueue.consume());
+        assertEquals('x', tokenQueue.consume());
+    }
+
+    @Test
+    public void testConsumeString() {
+        tokenQueue.consume("example");
+        assertEquals(' ', tokenQueue.peek());
+    }
+
+    @Test
+    public void testConsumeTo() {
+        tokenQueue = new TokenQueue("example data");
+        assertEquals("example", tokenQueue.consumeTo("data"));
+        assertEquals(" data", tokenQueue.toString());
+    }
+
+    @Test
+    public void testConsumeToIgnoreCase() {
+        tokenQueue = new TokenQueue("example DATA");
+        assertEquals("example ", tokenQueue.consumeToIgnoreCase("data"));
+        assertEquals("DATA", tokenQueue.toString());
+    }
+
+    @Test
+    public void testConsumeToAny() {
+        tokenQueue = new TokenQueue("example data");
+        assertEquals("example", tokenQueue.consumeToAny("data", "test"));
+        assertEquals(" data", tokenQueue.toString());
+    }
+
+    @Test
+    public void testChompTo() {
+        tokenQueue = new TokenQueue("example data");
+        assertEquals("example", tokenQueue.chompTo("data"));
+        assertEquals(" data", tokenQueue.toString());
+    }
+
+    @Test
+    public void testChompToIgnoreCase() {
+        tokenQueue = new TokenQueue("example DATA");
+        assertEquals("example ", tokenQueue.chompToIgnoreCase("data"));
+        assertEquals("DATA", tokenQueue.toString());
+    }
+
+    @Test
+    public void testChompBalanced() {
+        tokenQueue = new TokenQueue("(one (two) three) four");
+        assertEquals("one (two) three", tokenQueue.chompBalanced('(', ')'));
+        assertEquals(" four", tokenQueue.toString());
+    }
+
+    @Test
+    public void testUnescape() {
+        assertEquals("example", TokenQueue.unescape("example"));
+        assertEquals("example", TokenQueue.unescape("ex\\ample"));
+    }
+
+    @Test
+    public void testConsumeWhitespace() {
+        tokenQueue = new TokenQueue(" example data");
+        assertTrue(tokenQueue.consumeWhitespace());
+        assertEquals("example data", tokenQueue.toString());
+    }
+
+    @Test
+    public void testConsumeWord() {
+        assertEquals("example", tokenQueue.consumeWord());
+        assertEquals(" data", tokenQueue.toString());
+    }
+
+    @Test
+    public void testConsumeTagName() {
+        tokenQueue = new TokenQueue("tag-name");
+        assertEquals("tag-name", tokenQueue.consumeTagName());
+    }
+
+    @Test
+    public void testConsumeElementSelector() {
+        tokenQueue = new TokenQueue("tag|name");
+        assertEquals("tag|name", tokenQueue.consumeElementSelector());
+    }
+
+    @Test
+    public void testConsumeCssIdentifier() {
+        tokenQueue = new TokenQueue("css-identifier");
+        assertEquals("css-identifier", tokenQueue.consumeCssIdentifier());
+    }
+
+    @Test
+    public void testConsumeAttributeKey() {
+        tokenQueue = new TokenQueue("attr-key");
+        assertEquals("attr-key", tokenQueue.consumeAttributeKey());
+    }
+
+    @Test
+    public void testRemainder() {
+        assertEquals("example data", tokenQueue.remainder());
+        assertTrue(tokenQueue.isEmpty());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("example data", tokenQueue.toString());
+    }
+}

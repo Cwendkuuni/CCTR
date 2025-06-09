@@ -1,0 +1,195 @@
+```java
+import static org.junit.Assert.*;
+
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import org.apache.commons.compress.archivers.ArchiveException;
+import org.apache.commons.compress.archivers.ArchiveInputStream;
+import org.apache.commons.compress.archivers.ArchiveOutputStream;
+import org.apache.commons.compress.archivers.ArchiveStreamFactory;
+import org.apache.commons.compress.archivers.ar.ArArchiveInputStream;
+import org.apache.commons.compress.archivers.ar.ArArchiveOutputStream;
+import org.apache.commons.compress.archivers.cpio.CpioArchiveInputStream;
+import org.apache.commons.compress.archivers.cpio.CpioArchiveOutputStream;
+import org.apache.commons.compress.archivers.dump.DumpArchiveInputStream;
+import org.apache.commons.compress.archivers.jar.JarArchiveInputStream;
+import org.apache.commons.compress.archivers.jar.JarArchiveOutputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveInputStream;
+import org.apache.commons.compress.archivers.tar.TarArchiveOutputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveInputStream;
+import org.apache.commons.compress.archivers.zip.ZipArchiveOutputStream;
+import org.junit.Test;
+
+public class ArchiveStreamFactoryTest {
+
+    @Test
+    public void testCreateArchiveInputStreamWithNullArchiverName() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        try {
+            factory.createArchiveInputStream(null, new ByteArrayInputStream(new byte[0]));
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Archivername must not be null.", e.getMessage());
+        } catch (ArchiveException e) {
+            fail("Unexpected ArchiveException");
+        }
+    }
+
+    @Test
+    public void testCreateArchiveInputStreamWithNullInputStream() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        try {
+            factory.createArchiveInputStream(ArchiveStreamFactory.ZIP, null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("InputStream must not be null.", e.getMessage());
+        } catch (ArchiveException e) {
+            fail("Unexpected ArchiveException");
+        }
+    }
+
+    @Test
+    public void testCreateArchiveInputStreamWithUnknownArchiverName() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        try {
+            factory.createArchiveInputStream("unknown", new ByteArrayInputStream(new byte[0]));
+            fail("Expected ArchiveException");
+        } catch (ArchiveException e) {
+            assertEquals("Archiver: unknown not found.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCreateArchiveInputStreamWithValidArchiverName() throws ArchiveException {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream in = new ByteArrayInputStream(new byte[0]);
+
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.AR, in) instanceof ArArchiveInputStream);
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.ZIP, in) instanceof ZipArchiveInputStream);
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.TAR, in) instanceof TarArchiveInputStream);
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.JAR, in) instanceof JarArchiveInputStream);
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.CPIO, in) instanceof CpioArchiveInputStream);
+        assertTrue(factory.createArchiveInputStream(ArchiveStreamFactory.DUMP, in) instanceof DumpArchiveInputStream);
+    }
+
+    @Test
+    public void testCreateArchiveOutputStreamWithNullArchiverName() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        try {
+            factory.createArchiveOutputStream(null, new ByteArrayOutputStream());
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Archivername must not be null.", e.getMessage());
+        } catch (ArchiveException e) {
+            fail("Unexpected ArchiveException");
+        }
+    }
+
+    @Test
+    public void testCreateArchiveOutputStreamWithNullOutputStream() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        try {
+            factory.createArchiveOutputStream(ArchiveStreamFactory.ZIP, null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("OutputStream must not be null.", e.getMessage());
+        } catch (ArchiveException e) {
+            fail("Unexpected ArchiveException");
+        }
+    }
+
+    @Test
+    public void testCreateArchiveOutputStreamWithUnknownArchiverName() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        try {
+            factory.createArchiveOutputStream("unknown", new ByteArrayOutputStream());
+            fail("Expected ArchiveException");
+        } catch (ArchiveException e) {
+            assertEquals("Archiver: unknown not found.", e.getMessage());
+        }
+    }
+
+    @Test
+    public void testCreateArchiveOutputStreamWithValidArchiverName() throws ArchiveException {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        OutputStream out = new ByteArrayOutputStream();
+
+        assertTrue(factory.createArchiveOutputStream(ArchiveStreamFactory.AR, out) instanceof ArArchiveOutputStream);
+        assertTrue(factory.createArchiveOutputStream(ArchiveStreamFactory.ZIP, out) instanceof ZipArchiveOutputStream);
+        assertTrue(factory.createArchiveOutputStream(ArchiveStreamFactory.TAR, out) instanceof TarArchiveOutputStream);
+        assertTrue(factory.createArchiveOutputStream(ArchiveStreamFactory.JAR, out) instanceof JarArchiveOutputStream);
+        assertTrue(factory.createArchiveOutputStream(ArchiveStreamFactory.CPIO, out) instanceof CpioArchiveOutputStream);
+    }
+
+    @Test
+    public void testCreateArchiveInputStreamWithNullInputStreamAutoDetect() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        try {
+            factory.createArchiveInputStream(null);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Stream must not be null.", e.getMessage());
+        } catch (ArchiveException e) {
+            fail("Unexpected ArchiveException");
+        }
+    }
+
+    @Test
+    public void testCreateArchiveInputStreamWithNonMarkSupportedInputStream() {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+        InputStream in = new ByteArrayInputStream(new byte[0]) {
+            @Override
+            public boolean markSupported() {
+                return false;
+            }
+        };
+        try {
+            factory.createArchiveInputStream(in);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            assertEquals("Mark is not supported.", e.getMessage());
+        } catch (ArchiveException e) {
+            fail("Unexpected ArchiveException");
+        }
+    }
+
+    @Test
+    public void testCreateArchiveInputStreamAutoDetect() throws ArchiveException, IOException {
+        ArchiveStreamFactory factory = new ArchiveStreamFactory();
+
+        // Mocking the signature for ZIP
+        byte[] zipSignature = {0x50, 0x4B, 0x03, 0x04};
+        InputStream in = new ByteArrayInputStream(zipSignature);
+        assertTrue(factory.createArchiveInputStream(in) instanceof ZipArchiveInputStream);
+
+        // Mocking the signature for JAR
+        byte[] jarSignature = {0x50, 0x4B, 0x03, 0x04};
+        in = new ByteArrayInputStream(jarSignature);
+        assertTrue(factory.createArchiveInputStream(in) instanceof JarArchiveInputStream);
+
+        // Mocking the signature for AR
+        byte[] arSignature = {0x21, 0x3C, 0x61, 0x72, 0x63, 0x68, 0x3E, 0x0A};
+        in = new ByteArrayInputStream(arSignature);
+        assertTrue(factory.createArchiveInputStream(in) instanceof ArArchiveInputStream);
+
+        // Mocking the signature for CPIO
+        byte[] cpioSignature = {0x30, 0x37, 0x30, 0x37, 0x30, 0x31};
+        in = new ByteArrayInputStream(cpioSignature);
+        assertTrue(factory.createArchiveInputStream(in) instanceof CpioArchiveInputStream);
+
+        // Mocking the signature for DUMP
+        byte[] dumpSignature = new byte[32];
+        in = new ByteArrayInputStream(dumpSignature);
+        assertTrue(factory.createArchiveInputStream(in) instanceof DumpArchiveInputStream);
+
+        // Mocking the signature for TAR
+        byte[] tarSignature = new byte[512];
+        in = new ByteArrayInputStream(tarSignature);
+        assertTrue(factory.createArchiveInputStream(in) instanceof TarArchiveInputStream);
+    }
+}
+```

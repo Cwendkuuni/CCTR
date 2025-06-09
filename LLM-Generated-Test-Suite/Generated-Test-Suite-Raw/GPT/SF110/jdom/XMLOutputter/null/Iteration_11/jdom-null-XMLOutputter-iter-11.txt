@@ -1,0 +1,135 @@
+To create a comprehensive JUnit 4 test suite for the `XMLOutputter` class, we need to test all public methods, including constructors, getters, setters, and output methods. The test suite will include tests for different scenarios, such as null inputs, valid inputs, and edge cases. Here is a basic test suite:
+
+```java
+import org.jdom2.*;
+import org.jdom2.output.*;
+import org.jdom2.output.support.*;
+import org.junit.*;
+import java.io.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+
+public class XMLOutputterTest {
+
+    private XMLOutputter xmlOutputter;
+    private Format format;
+    private XMLOutputProcessor processor;
+
+    @Before
+    public void setUp() {
+        format = Format.getPrettyFormat();
+        processor = new AbstractXMLOutputProcessor() {
+            @Override
+            protected void printDeclaration(Writer out, FormatStack fstack) throws IOException {
+                // Custom implementation for testing
+            }
+        };
+        xmlOutputter = new XMLOutputter(format, processor);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        XMLOutputter defaultOutputter = new XMLOutputter();
+        assertNotNull(defaultOutputter.getFormat());
+        assertNotNull(defaultOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testConstructorWithFormat() {
+        XMLOutputter outputter = new XMLOutputter(format);
+        assertEquals(format, outputter.getFormat());
+    }
+
+    @Test
+    public void testConstructorWithProcessor() {
+        XMLOutputter outputter = new XMLOutputter(processor);
+        assertEquals(processor, outputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testSetAndGetFormat() {
+        Format newFormat = Format.getCompactFormat();
+        xmlOutputter.setFormat(newFormat);
+        assertEquals(newFormat, xmlOutputter.getFormat());
+    }
+
+    @Test
+    public void testSetAndGetProcessor() {
+        XMLOutputProcessor newProcessor = new AbstractXMLOutputProcessor() {
+            @Override
+            protected void printDeclaration(Writer out, FormatStack fstack) throws IOException {
+                // Custom implementation for testing
+            }
+        };
+        xmlOutputter.setXMLOutputProcessor(newProcessor);
+        assertEquals(newProcessor, xmlOutputter.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testOutputDocumentToString() throws IOException {
+        Document doc = new Document(new Element("root"));
+        String output = xmlOutputter.outputString(doc);
+        assertNotNull(output);
+        assertTrue(output.contains("root"));
+    }
+
+    @Test
+    public void testOutputElementToString() throws IOException {
+        Element element = new Element("element");
+        String output = xmlOutputter.outputString(element);
+        assertNotNull(output);
+        assertTrue(output.contains("element"));
+    }
+
+    @Test
+    public void testOutputToOutputStream() throws IOException {
+        Document doc = new Document(new Element("root"));
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        xmlOutputter.output(doc, out);
+        String output = new String(out.toByteArray());
+        assertTrue(output.contains("root"));
+    }
+
+    @Test
+    public void testEscapeAttributeEntities() {
+        String input = "Test & < > \" '";
+        String escaped = xmlOutputter.escapeAttributeEntities(input);
+        assertNotNull(escaped);
+        assertFalse(escaped.contains("&"));
+    }
+
+    @Test
+    public void testEscapeElementEntities() {
+        String input = "Test & < >";
+        String escaped = xmlOutputter.escapeElementEntities(input);
+        assertNotNull(escaped);
+        assertFalse(escaped.contains("&"));
+    }
+
+    @Test
+    public void testClone() {
+        XMLOutputter clone = xmlOutputter.clone();
+        assertNotSame(xmlOutputter, clone);
+        assertEquals(xmlOutputter.getFormat(), clone.getFormat());
+        assertEquals(xmlOutputter.getXMLOutputProcessor(), clone.getXMLOutputProcessor());
+    }
+
+    @Test
+    public void testToString() {
+        String description = xmlOutputter.toString();
+        assertNotNull(description);
+        assertTrue(description.contains("XMLOutputter"));
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes the `XMLOutputter` with a specific `Format` and `XMLOutputProcessor` for testing.
+- **Constructors**: Tests for different constructors ensure that the object is initialized correctly.
+- **Getters and Setters**: Tests for `setFormat`, `getFormat`, `setXMLOutputProcessor`, and `getXMLOutputProcessor` ensure that the properties are set and retrieved correctly.
+- **Output Methods**: Tests for `outputString` and `output` methods ensure that XML content is correctly serialized to strings and output streams.
+- **Escape Methods**: Tests for `escapeAttributeEntities` and `escapeElementEntities` ensure that special characters are correctly escaped.
+- **Clone and toString**: Tests for `clone` and `toString` ensure that the object can be cloned and represented as a string correctly.
+
+This test suite covers the main functionalities of the `XMLOutputter` class. You may need to adjust the tests based on the actual behavior of the `XMLOutputProcessor` and `Format` classes, as well as any additional requirements or edge cases specific to your application.

@@ -1,0 +1,135 @@
+```java
+package nu.staldal.lagoon;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.*;
+import java.util.Properties;
+
+public class LagoonCLITest {
+
+    private LagoonCLI lagoonCLI;
+    private Properties properties;
+
+    @Before
+    public void setUp() {
+        lagoonCLI = new LagoonCLI();
+        properties = new Properties();
+    }
+
+    @Test
+    public void testMainNoArgs() {
+        String[] args = {};
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        LagoonCLI.main(args);
+
+        assertTrue(outContent.toString().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainBuild() {
+        String[] args = {"dummyFile", "build"};
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        LagoonCLI.main(args);
+
+        assertTrue(outContent.toString().contains("Building website..."));
+    }
+
+    @Test
+    public void testMainForce() {
+        String[] args = {"dummyFile", "force"};
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        LagoonCLI.main(args);
+
+        assertTrue(outContent.toString().contains("Force building website..."));
+    }
+
+    @Test
+    public void testMainInterval() {
+        String[] args = {"dummyFile", "10"};
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        LagoonCLI.main(args);
+
+        assertTrue(outContent.toString().contains("Building website..."));
+    }
+
+    @Test
+    public void testMainInvalidInterval() {
+        String[] args = {"dummyFile", "invalidInterval"};
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        LagoonCLI.main(args);
+
+        assertTrue(outContent.toString().contains("Syntax:"));
+    }
+
+    @Test
+    public void testMainPropertyFile() throws IOException {
+        File propertyFile = File.createTempFile("test", ".properties");
+        properties.setProperty("targetURL", "http://example.com");
+        properties.setProperty("sitemapFile", "sitemap.xml");
+        properties.setProperty("sourceDir", "src");
+        properties.store(new FileOutputStream(propertyFile), null);
+
+        String[] args = {propertyFile.getAbsolutePath(), "build"};
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        LagoonCLI.main(args);
+
+        assertTrue(outContent.toString().contains("Building website..."));
+    }
+
+    @Test
+    public void testMainSitemapFile() {
+        String[] args = {"sitemap.xml", "build"};
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        LagoonCLI.main(args);
+
+        assertTrue(outContent.toString().contains("Building website..."));
+    }
+
+    @Test
+    public void testGetProperty() throws LagoonException {
+        properties.setProperty("testProperty", "testValue");
+        assertEquals("testValue", LagoonCLI.getProperty("testProperty"));
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyNotFound() throws LagoonException {
+        LagoonCLI.getProperty("nonExistentProperty");
+    }
+
+    @Test
+    public void testShowTime() {
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        LagoonCLI.showTime(5000);
+
+        assertTrue(outContent.toString().contains("in 5 s"));
+    }
+
+    @Test
+    public void testShowTimeMilliseconds() {
+        ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+
+        LagoonCLI.showTime(500);
+
+        assertTrue(outContent.toString().contains("in 500 ms"));
+    }
+}
+```

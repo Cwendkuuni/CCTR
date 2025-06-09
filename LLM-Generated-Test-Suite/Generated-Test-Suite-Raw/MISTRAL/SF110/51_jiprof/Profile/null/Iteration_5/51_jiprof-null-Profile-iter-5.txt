@@ -1,0 +1,301 @@
+```java
+package com.mentorgen.tools.profile.runtime;
+
+import com.mentorgen.tools.profile.*;
+import com.mentorgen.tools.profile.output.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.io.IOException;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({Profile.class, Controller.class, ThreadDictionary.class, Frame.class, ClassAllocation.class, ProfileDump.class})
+public class ProfileTest {
+
+    @Before
+    public void setUp() {
+        Profile.init();
+    }
+
+    @Test
+    public void testInitProfiler() {
+        PowerMockito.mockStatic(Runtime.class);
+        PowerMockito.mockStatic(Controller.class);
+        PowerMockito.mockStatic(System.class);
+
+        Profile.initProfiler();
+
+        PowerMockito.verifyStatic(Runtime.class);
+        Runtime.getRuntime().addShutdownHook(any(Thread.class));
+        PowerMockito.verifyStatic(System.class);
+        System.err.println("Java Interactive Profiler: starting");
+        assertNotNull(Profile._controller);
+    }
+
+    @Test
+    public void testInit() {
+        Profile.init();
+
+        assertNotNull(Profile._threadActiveFrame);
+        assertNotNull(Profile._threadDictionary);
+        assertNotNull(Profile._methodDictionary);
+        assertNotNull(Profile._frameList);
+        assertNotNull(Profile._lock);
+        assertNotNull(Profile._allocList);
+    }
+
+    @Test
+    public void testClear() {
+        Profile.clear();
+
+        assertNotNull(Profile._threadActiveFrame);
+        assertNotNull(Profile._threadDictionary);
+        assertNotNull(Profile._methodDictionary);
+        assertNotNull(Profile._frameList);
+        assertNotNull(Profile._lock);
+        assertNotNull(Profile._allocList);
+    }
+
+    @Test
+    public void testStart() {
+        Controller controllerMock = mock(Controller.class);
+        Profile._controller = controllerMock;
+
+        Profile.start();
+
+        verify(controllerMock).start();
+    }
+
+    @Test
+    public void testStop() {
+        Controller controllerMock = mock(Controller.class);
+        Profile._controller = controllerMock;
+
+        Profile.stop();
+
+        verify(controllerMock).stop();
+    }
+
+    @Test
+    public void testSetFileName() {
+        Controller controllerMock = mock(Controller.class);
+        Profile._controller = controllerMock;
+        String fileName = "testFile.txt";
+
+        Profile.setFileName(fileName);
+
+        verify(controllerMock).setFileName(fileName);
+    }
+
+    @Test
+    public void testShutdown() {
+        ThreadDictionary threadDictionaryMock = mock(ThreadDictionary.class);
+        Profile._threadDictionary = threadDictionaryMock;
+        Frame frameMock = mock(Frame.class);
+        when(threadDictionaryMock.getMostRecentFrame(anyLong())).thenReturn(frameMock);
+
+        Profile.shutdown();
+
+        verify(frameMock).close();
+        verify(frameMock).computeNetTime();
+    }
+
+    @Test
+    public void testThreads() {
+        ThreadDictionary threadDictionaryMock = mock(ThreadDictionary.class);
+        Profile._threadDictionary = threadDictionaryMock;
+        Iterable<Long> threadsMock = mock(Iterable.class);
+        when(threadDictionaryMock.threads()).thenReturn(threadsMock);
+
+        Iterable<Long> result = Profile.threads();
+
+        assertEquals(threadsMock, result);
+    }
+
+    @Test
+    public void testInteractions() {
+        ThreadDictionary threadDictionaryMock = mock(ThreadDictionary.class);
+        Profile._threadDictionary = threadDictionaryMock;
+        Iterable<Frame> interactionsMock = mock(Iterable.class);
+        when(threadDictionaryMock.interactions(anyLong())).thenReturn(interactionsMock);
+
+        Iterable<Frame> result = Profile.interactions(1L);
+
+        assertEquals(interactionsMock, result);
+    }
+
+    @Test
+    public void testFrameList() {
+        List<Frame> frameListMock = mock(List.class);
+        Profile._frameList = frameListMock;
+
+        Iterable<Frame> result = Profile.frameList();
+
+        assertEquals(frameListMock, result);
+    }
+
+    @Test
+    public void testAllocations() {
+        Map<String, ClassAllocation> allocListMock = mock(Map.class);
+        Profile._allocList = allocListMock;
+        Collection<ClassAllocation> valuesMock = mock(Collection.class);
+        when(allocListMock.values()).thenReturn(valuesMock);
+
+        Iterable<ClassAllocation> result = Profile.allocations();
+
+        assertEquals(valuesMock, result);
+    }
+
+    @Test
+    public void testGetThreadTotalTime() {
+        ThreadDictionary threadDictionaryMock = mock(ThreadDictionary.class);
+        Profile._threadDictionary = threadDictionaryMock;
+        when(threadDictionaryMock.getThreadTotalTime(anyLong())).thenReturn(100L);
+
+        long result = Profile.getThreadTotalTime(1L);
+
+        assertEquals(100L, result);
+    }
+
+    @Test
+    public void testSortFrameList() {
+        List<Frame> frameListMock = mock(List.class);
+        Profile._frameList = frameListMock;
+        Comparator<Frame> comparatorMock = mock(Comparator.class);
+
+        Profile.sortFrameList(comparatorMock);
+
+        verify(frameListMock).sort(comparatorMock);
+    }
+
+    @Test
+    public void testStartMethod() {
+        PowerMockito.mockStatic(System.class);
+        PowerMockito.mockStatic(Thread.class);
+        PowerMockito.mockStatic(Controller.class);
+        PowerMockito.mockStatic(Profile.class);
+
+        Method methodMock = mock(Method.class);
+        when(methodMock.toString()).thenReturn("methodToString");
+        Frame parentMock = mock(Frame.class);
+        Frame targetMock = mock(Frame.class);
+        when(parentMock.getChild(any(Method.class))).thenReturn(targetMock);
+        Profile._threadActiveFrame = new HashMap<>();
+        Profile._threadActiveFrame.put(1L, parentMock);
+        Profile._methodDictionary = new HashMap<>();
+        Profile._frameList = new ArrayList<>();
+
+        Profile.start("className", "methodName");
+
+        verify(parentMock).getChild(any(Method.class));
+        verify(Profile._frameList).add(targetMock);
+    }
+
+    @Test
+    public void testEndMethod() {
+        PowerMockito.mockStatic(System.class);
+        PowerMockito.mockStatic(Thread.class);
+        PowerMockito.mockStatic(Controller.class);
+        PowerMockito.mockStatic(Profile.class);
+
+        Frame targetMock = mock(Frame.class);
+        when(targetMock.getParent()).thenReturn(null);
+        Profile._threadActiveFrame = new HashMap<>();
+        Profile._threadActiveFrame.put(1L, targetMock);
+
+        Profile.end("className", "methodName");
+
+        verify(targetMock).setEndTime(anyLong());
+    }
+
+    @Test
+    public void testBeginWait() {
+        PowerMockito.mockStatic(System.class);
+        PowerMockito.mockStatic(Thread.class);
+        PowerMockito.mockStatic(Controller.class);
+        PowerMockito.mockStatic(Profile.class);
+
+        Frame targetMock = mock(Frame.class);
+        Profile._threadActiveFrame = new HashMap<>();
+        Profile._threadActiveFrame.put(1L, targetMock);
+
+        Profile.beginWait("className", "methodName");
+
+        verify(targetMock).beginWait(anyLong());
+    }
+
+    @Test
+    public void testEndWait() {
+        PowerMockito.mockStatic(System.class);
+        PowerMockito.mockStatic(Thread.class);
+        PowerMockito.mockStatic(Controller.class);
+        PowerMockito.mockStatic(Profile.class);
+
+        Frame targetMock = mock(Frame.class);
+        Profile._threadActiveFrame = new HashMap<>();
+        Profile._threadActiveFrame.put(1L, targetMock);
+
+        Profile.endWait("className", "methodName");
+
+        verify(targetMock).endWait(anyLong());
+    }
+
+    @Test
+    public void testUnwind() {
+        PowerMockito.mockStatic(System.class);
+        PowerMockito.mockStatic(Thread.class);
+        PowerMockito.mockStatic(Controller.class);
+        PowerMockito.mockStatic(Profile.class);
+
+        Frame targetMock = mock(Frame.class);
+        Profile._threadActiveFrame = new HashMap<>();
+        Profile._threadActiveFrame.put(1L, targetMock);
+
+        Profile.unwind("className", "methodName", "exception");
+
+        verify(Profile._threadActiveFrame).put(anyLong(), any(Frame.class));
+    }
+
+    @Test
+    public void testAlloc() {
+        PowerMockito.mockStatic(System.class);
+        PowerMockito.mockStatic(Thread.class);
+        PowerMockito.mockStatic(Controller.class);
+        PowerMockito.mockStatic(Profile.class);
+
+        ClassAllocation caMock = mock(ClassAllocation.class);
+        Profile._allocList = new HashMap<>();
+        Profile._allocList.put("className", caMock);
+
+        Profile.alloc("className");
+
+        verify(caMock).incAllocCount();
+    }
+
+    @Test
+    public void testRun() throws IOException {
+        PowerMockito.mockStatic(ProfileDump.class);
+        Controller controllerMock = mock(Controller.class);
+        Profile._controller = controllerMock;
+        ThreadDictionary threadDictionaryMock = mock(ThreadDictionary.class);
+        Profile._threadDictionary = threadDictionaryMock;
+        when(threadDictionaryMock.size()).thenReturn(1);
+
+        Profile profile = new Profile();
+        profile.run();
+
+        verify(controllerMock).close();
+        PowerMockito.verifyStatic(ProfileDump.class);
+        ProfileDump.dump();
+    }
+}
+```

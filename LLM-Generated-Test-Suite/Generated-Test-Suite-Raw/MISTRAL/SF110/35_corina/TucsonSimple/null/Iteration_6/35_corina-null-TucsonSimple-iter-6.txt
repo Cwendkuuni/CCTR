@@ -1,0 +1,113 @@
+```java
+package corina.formats;
+
+import corina.ui.*;
+import corina.*;
+import corina.util.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.io.*;
+
+public class TucsonSimpleTest {
+
+    private TucsonSimple tucsonSimple;
+    private Sample sample;
+    private BufferedWriter writer;
+    private BufferedReader reader;
+
+    @Before
+    public void setUp() throws Exception {
+        tucsonSimple = new TucsonSimple();
+        sample = new Sample();
+        writer = new BufferedWriter(new StringWriter());
+        reader = new BufferedReader(new StringReader(""));
+    }
+
+    @Test
+    public void testToString() {
+        String expected = I18n.getText("format.tucsonsimple");
+        assertEquals(expected, tucsonSimple.toString());
+    }
+
+    @Test
+    public void testGetDefaultExtension() {
+        assertEquals(".RWL", tucsonSimple.getDefaultExtension());
+    }
+
+    @Test(expected = WrongFiletypeException.class)
+    public void testLoad() throws IOException {
+        tucsonSimple.load(reader);
+    }
+
+    @Test
+    public void testMake6digitCode() {
+        sample.meta.put("id", "123456789");
+        assertEquals("123456", tucsonSimple.make6digitCode(sample));
+
+        sample.meta.put("id", "12345");
+        assertEquals("12345 ", tucsonSimple.make6digitCode(sample));
+
+        sample.meta.remove("id");
+        assertEquals("000000", tucsonSimple.make6digitCode(sample));
+    }
+
+    @Test
+    public void testSaveRowHeader() throws IOException {
+        sample.range = new Range(new Year(1900), new Year(2000));
+        String code = "123456";
+        int yearWidth = 6;
+        Year year = new Year(1950);
+
+        tucsonSimple.saveRowHeader(writer, sample, code, yearWidth, year);
+        writer.flush();
+
+        String expected = "123456 1950";
+        assertEquals(expected, ((StringWriter) writer.getWriter()).toString().trim());
+    }
+
+    @Test
+    public void testSaveData() throws IOException {
+        // Mocking the sample data for testing
+        sample.range = new Range(new Year(1900), new Year(2000));
+        sample.data = new ArrayList<>();
+        sample.count = new ArrayList<>();
+        for (int i = 0; i < 101; i++) {
+            sample.data.add(i);
+            sample.count.add(i);
+        }
+
+        tucsonSimple.saveData(sample, writer);
+        writer.flush();
+
+        // Expected output should be verified based on the logic in saveData method
+        String expected = "..."; // Fill in the expected output based on the logic
+        assertEquals(expected, ((StringWriter) writer.getWriter()).toString().trim());
+    }
+
+    @Test
+    public void testComputeRange() {
+        sample.range = new Range(new Year(-1000), new Year(2000));
+        Range expected = new Range(new Year(1001), new Year(2000));
+        assertEquals(expected, tucsonSimple.computeRange(sample));
+
+        sample.range = new Range(new Year(1), new Year(2000));
+        expected = new Range(new Year(1), new Year(2000));
+        assertEquals(expected, tucsonSimple.computeRange(sample));
+
+        sample.range = new Range(new Year(-8000), new Year(2000));
+        expected = new Range(new Year(1), new Year(2000));
+        assertEquals(expected, tucsonSimple.computeRange(sample));
+    }
+
+    @Test
+    public void testSave() throws IOException {
+        tucsonSimple.save(sample, writer);
+        writer.flush();
+
+        // Expected output should be verified based on the logic in save method
+        String expected = "..."; // Fill in the expected output based on the logic
+        assertEquals(expected, ((StringWriter) writer.getWriter()).toString().trim());
+    }
+}
+```

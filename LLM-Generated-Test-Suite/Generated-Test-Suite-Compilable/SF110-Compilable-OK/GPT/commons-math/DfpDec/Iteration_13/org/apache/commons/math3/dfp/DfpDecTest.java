@@ -1,0 +1,156 @@
+package org.apache.commons.math3.dfp;
+
+import org.apache.commons.math3.dfp.Dfp;
+import org.apache.commons.math3.dfp.DfpDec;
+import org.apache.commons.math3.dfp.DfpField;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class DfpDecTest {
+
+    private DfpField field;
+
+    @Before
+    public void setUp() {
+        // Initialize a DfpField with a specific precision
+        field = new DfpField(10);
+    }
+
+    @Test
+    public void testConstructorWithDfpField() {
+        DfpDec dfpDec = new DfpDec(field);
+        assertNotNull(dfpDec);
+    }
+
+    @Test
+    public void testConstructorWithByte() {
+        DfpDec dfpDec = new DfpDec(field, (byte) 5);
+        assertNotNull(dfpDec);
+    }
+
+    @Test
+    public void testConstructorWithInt() {
+        DfpDec dfpDec = new DfpDec(field, 123);
+        assertNotNull(dfpDec);
+    }
+
+    @Test
+    public void testConstructorWithLong() {
+        DfpDec dfpDec = new DfpDec(field, 123456789L);
+        assertNotNull(dfpDec);
+    }
+
+    @Test
+    public void testConstructorWithDouble() {
+        DfpDec dfpDec = new DfpDec(field, 123.456);
+        assertNotNull(dfpDec);
+    }
+
+    @Test
+    public void testConstructorWithDfp() {
+        Dfp dfp = new Dfp(field, 123.456);
+        DfpDec dfpDec = new DfpDec(dfp);
+        assertNotNull(dfpDec);
+    }
+
+    @Test
+    public void testConstructorWithString() {
+        DfpDec dfpDec = new DfpDec(field, "123.456");
+        assertNotNull(dfpDec);
+    }
+
+    @Test
+    public void testConstructorWithSignAndNans() {
+        DfpDec dfpDec = new DfpDec(field, (byte) 1, (byte) 0);
+        assertNotNull(dfpDec);
+    }
+
+    @Test
+    public void testNewInstance() {
+        DfpDec dfpDec = new DfpDec(field);
+        Dfp newInstance = dfpDec.newInstance();
+        assertNotNull(newInstance);
+        assertTrue(newInstance instanceof DfpDec);
+    }
+
+    @Test
+    public void testNewInstanceWithByte() {
+        DfpDec dfpDec = new DfpDec(field);
+        Dfp newInstance = dfpDec.newInstance((byte) 5);
+        assertNotNull(newInstance);
+        assertTrue(newInstance instanceof DfpDec);
+    }
+
+    @Test
+    public void testNewInstanceWithInt() {
+        DfpDec dfpDec = new DfpDec(field);
+        Dfp newInstance = dfpDec.newInstance(123);
+        assertNotNull(newInstance);
+        assertTrue(newInstance instanceof DfpDec);
+    }
+
+    @Test
+    public void testNewInstanceWithLong() {
+        DfpDec dfpDec = new DfpDec(field);
+        Dfp newInstance = dfpDec.newInstance(123456789L);
+        assertNotNull(newInstance);
+        assertTrue(newInstance instanceof DfpDec);
+    }
+
+    @Test
+    public void testNewInstanceWithDouble() {
+        DfpDec dfpDec = new DfpDec(field);
+        Dfp newInstance = dfpDec.newInstance(123.456);
+        assertNotNull(newInstance);
+        assertTrue(newInstance instanceof DfpDec);
+    }
+
+    @Test
+    public void testNewInstanceWithDfp() {
+        DfpDec dfpDec = new DfpDec(field);
+        Dfp dfp = new Dfp(field, 123.456);
+        Dfp newInstance = dfpDec.newInstance(dfp);
+        assertNotNull(newInstance);
+        assertTrue(newInstance instanceof DfpDec);
+    }
+
+    @Test
+    public void testNewInstanceWithString() {
+        DfpDec dfpDec = new DfpDec(field);
+        Dfp newInstance = dfpDec.newInstance("123.456");
+        assertNotNull(newInstance);
+        assertTrue(newInstance instanceof DfpDec);
+    }
+
+    @Test
+    public void testNewInstanceWithSignAndNans() {
+        DfpDec dfpDec = new DfpDec(field);
+        Dfp newInstance = dfpDec.newInstance((byte) 1, (byte) 0);
+        assertNotNull(newInstance);
+        assertTrue(newInstance instanceof DfpDec);
+    }
+
+    @Test
+    public void testGetDecimalDigits() {
+        DfpDec dfpDec = new DfpDec(field);
+        int decimalDigits = dfpDec.getDecimalDigits();
+        assertEquals(37, decimalDigits); // Assuming 10 radix digits
+    }
+
+    @Test
+    public void testRound() {
+        DfpDec dfpDec = new DfpDec(field, 123.456);
+        int result = dfpDec.round(0);
+        assertEquals(0, result); // Check the expected rounding result
+    }
+
+    @Test
+    public void testNextAfter() {
+        DfpDec dfpDec = new DfpDec(field, 123.456);
+        Dfp x = new Dfp(field, 124.456);
+        Dfp result = dfpDec.nextAfter(x);
+        assertNotNull(result);
+        assertTrue(result.lessThan(x));
+    }
+}

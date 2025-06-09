@@ -1,0 +1,137 @@
+Certainly! Below is a JUnit 4 test suite for the `X7875_NewUnix` class. This suite aims to comprehensively test the methods of the class, including edge cases and typical usage scenarios.
+
+```java
+import org.apache.commons.compress.archivers.zip.ZipShort;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.math.BigInteger;
+import java.util.Arrays;
+import java.util.zip.ZipException;
+
+import static org.junit.Assert.*;
+
+public class X7875_NewUnixTest {
+
+    private X7875_NewUnix x7875NewUnix;
+
+    @Before
+    public void setUp() {
+        x7875NewUnix = new X7875_NewUnix();
+    }
+
+    @Test
+    public void testGetHeaderId() {
+        assertEquals(new ZipShort(0x7875), x7875NewUnix.getHeaderId());
+    }
+
+    @Test
+    public void testGetUID() {
+        assertEquals(1000L, x7875NewUnix.getUID());
+    }
+
+    @Test
+    public void testGetGID() {
+        assertEquals(1000L, x7875NewUnix.getGID());
+    }
+
+    @Test
+    public void testSetUID() {
+        x7875NewUnix.setUID(12345L);
+        assertEquals(12345L, x7875NewUnix.getUID());
+    }
+
+    @Test
+    public void testSetGID() {
+        x7875NewUnix.setGID(54321L);
+        assertEquals(54321L, x7875NewUnix.getGID());
+    }
+
+    @Test
+    public void testGetLocalFileDataLength() {
+        assertEquals(new ZipShort(5), x7875NewUnix.getLocalFileDataLength());
+    }
+
+    @Test
+    public void testGetCentralDirectoryLength() {
+        assertEquals(new ZipShort(5), x7875NewUnix.getCentralDirectoryLength());
+    }
+
+    @Test
+    public void testGetLocalFileDataData() {
+        x7875NewUnix.setUID(12345L);
+        x7875NewUnix.setGID(54321L);
+        byte[] expectedData = new byte[]{1, 2, 57, 48, 2, -47, 106};
+        assertArrayEquals(expectedData, x7875NewUnix.getLocalFileDataData());
+    }
+
+    @Test
+    public void testGetCentralDirectoryData() {
+        assertArrayEquals(new byte[0], x7875NewUnix.getCentralDirectoryData());
+    }
+
+    @Test
+    public void testParseFromLocalFileData() throws ZipException {
+        byte[] data = new byte[]{1, 2, 57, 48, 2, -47, 106};
+        x7875NewUnix.parseFromLocalFileData(data, 0, data.length);
+        assertEquals(12345L, x7875NewUnix.getUID());
+        assertEquals(54321L, x7875NewUnix.getGID());
+    }
+
+    @Test
+    public void testParseFromCentralDirectoryData() throws ZipException {
+        // This method does nothing, so we just ensure no exception is thrown
+        x7875NewUnix.parseFromCentralDirectoryData(new byte[0], 0, 0);
+    }
+
+    @Test
+    public void testToString() {
+        String expected = "0x7875 Zip Extra Field: UID=1000 GID=1000";
+        assertEquals(expected, x7875NewUnix.toString());
+    }
+
+    @Test
+    public void testClone() throws CloneNotSupportedException {
+        X7875_NewUnix clone = (X7875_NewUnix) x7875NewUnix.clone();
+        assertEquals(x7875NewUnix, clone);
+        assertNotSame(x7875NewUnix, clone);
+    }
+
+    @Test
+    public void testEquals() {
+        X7875_NewUnix another = new X7875_NewUnix();
+        assertEquals(x7875NewUnix, another);
+        another.setUID(12345L);
+        assertNotEquals(x7875NewUnix, another);
+    }
+
+    @Test
+    public void testHashCode() {
+        X7875_NewUnix another = new X7875_NewUnix();
+        assertEquals(x7875NewUnix.hashCode(), another.hashCode());
+        another.setUID(12345L);
+        assertNotEquals(x7875NewUnix.hashCode(), another.hashCode());
+    }
+
+    @Test
+    public void testTrimLeadingZeroesForceMinLength() {
+        byte[] input = new byte[]{0, 0, 1, 2, 3};
+        byte[] expected = new byte[]{1, 2, 3};
+        assertArrayEquals(expected, X7875_NewUnix.trimLeadingZeroesForceMinLength(input));
+
+        byte[] singleZero = new byte[]{0};
+        assertArrayEquals(singleZero, X7875_NewUnix.trimLeadingZeroesForceMinLength(singleZero));
+    }
+}
+```
+
+This test suite covers the following aspects:
+
+- **Constructor and Initial State**: Tests the initial state of the object.
+- **Getters and Setters**: Tests for `getUID`, `getGID`, `setUID`, and `setGID`.
+- **Data Length Methods**: Tests for `getLocalFileDataLength` and `getCentralDirectoryLength`.
+- **Data Methods**: Tests for `getLocalFileDataData` and `getCentralDirectoryData`.
+- **Parsing Methods**: Tests for `parseFromLocalFileData` and `parseFromCentralDirectoryData`.
+- **Utility Methods**: Tests for `toString`, `clone`, `equals`, `hashCode`, and `trimLeadingZeroesForceMinLength`.
+
+This suite assumes that the `ZipUtil` methods used in the class are functioning correctly. If `ZipUtil` is part of the same package, you might want to add tests for those methods as well.

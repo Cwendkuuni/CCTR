@@ -1,0 +1,149 @@
+```java
+import net.kencochrane.a4j.DAO.Product;
+import net.kencochrane.a4j.beans.*;
+import net.kencochrane.a4j.file.FileUtil;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.util.ArrayList;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class ProductTest {
+
+    private Product product;
+    private FileUtil fileUtil;
+    private Search search;
+
+    @Before
+    public void setUp() {
+        product = new Product();
+        fileUtil = mock(FileUtil.class);
+        search = mock(Search.class);
+    }
+
+    @Test
+    public void testGetProduct_NullFileInputStream() {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        when(fileUtil.fetchASINFile(asin, "heavy", offer, page)).thenReturn(null);
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetProduct_ValidFileInputStream() throws Exception {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        FileInputStream fileIn = mock(FileInputStream.class);
+        when(fileUtil.fetchASINFile(asin, "heavy", offer, page)).thenReturn(fileIn);
+
+        ProductInfo productInfoBean = mock(ProductInfo.class);
+        ProductDetails[] details = {mock(ProductDetails.class)};
+        when(productInfoBean.getDetails()).thenReturn(details);
+
+        JOXBeanInputStream joxIn = mock(JOXBeanInputStream.class);
+        when(joxIn.readObject(ProductInfo.class)).thenReturn(productInfoBean);
+
+        PowerMockito.mockStatic(JOXBeanInputStream.class);
+        whenNew(JOXBeanInputStream.class).withArguments((InputStream) fileIn).thenReturn(joxIn);
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNotNull(result);
+        verify(fileIn).close();
+        verify(joxIn).close();
+    }
+
+    @Test
+    public void testGetProduct_WithAccessories() throws Exception {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        FileInputStream fileIn = mock(FileInputStream.class);
+        when(fileUtil.fetchASINFile(asin, "heavy", offer, page)).thenReturn(fileIn);
+
+        ProductInfo productInfoBean = mock(ProductInfo.class);
+        ProductDetails[] details = {mock(ProductDetails.class)};
+        when(productInfoBean.getDetails()).thenReturn(details);
+
+        Accessories accessories = mock(Accessories.class);
+        ArrayList<ProductDetails> accessoryArray = new ArrayList<>();
+        accessoryArray.add(mock(ProductDetails.class));
+        when(accessories.getAccessoryArray()).thenReturn(accessoryArray);
+        when(details[0].getAccessories()).thenReturn(accessories);
+
+        JOXBeanInputStream joxIn = mock(JOXBeanInputStream.class);
+        when(joxIn.readObject(ProductInfo.class)).thenReturn(productInfoBean);
+
+        PowerMockito.mockStatic(JOXBeanInputStream.class);
+        whenNew(JOXBeanInputStream.class).withArguments((InputStream) fileIn).thenReturn(joxIn);
+
+        FileInputStream accessoryFileIn = mock(FileInputStream.class);
+        when(fileUtil.fetchAccessories(asin, accessoryArray)).thenReturn(accessoryFileIn);
+
+        ProductInfo accessoryProductInfoBean = mock(ProductInfo.class);
+        ArrayList<ProductDetails> productsArrayList = new ArrayList<>();
+        productsArrayList.add(mock(ProductDetails.class));
+        when(accessoryProductInfoBean.getProductsArrayList()).thenReturn(productsArrayList);
+
+        JOXBeanInputStream accessoryJoxIn = mock(JOXBeanInputStream.class);
+        when(accessoryJoxIn.readObject(ProductInfo.class)).thenReturn(accessoryProductInfoBean);
+
+        PowerMockito.mockStatic(JOXBeanInputStream.class);
+        whenNew(JOXBeanInputStream.class).withArguments((InputStream) accessoryFileIn).thenReturn(accessoryJoxIn);
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNotNull(result);
+        verify(fileIn).close();
+        verify(joxIn).close();
+        verify(accessoryFileIn).close();
+        verify(accessoryJoxIn).close();
+    }
+
+    @Test
+    public void testGetProduct_WithSimilarItems() throws Exception {
+        String asin = "testAsin";
+        String offer = "testOffer";
+        String page = "testPage";
+
+        FileInputStream fileIn = mock(FileInputStream.class);
+        when(fileUtil.fetchASINFile(asin, "heavy", offer, page)).thenReturn(fileIn);
+
+        ProductInfo productInfoBean = mock(ProductInfo.class);
+        ProductDetails[] details = {mock(ProductDetails.class)};
+        when(productInfoBean.getDetails()).thenReturn(details);
+
+        JOXBeanInputStream joxIn = mock(JOXBeanInputStream.class);
+        when(joxIn.readObject(ProductInfo.class)).thenReturn(productInfoBean);
+
+        PowerMockito.mockStatic(JOXBeanInputStream.class);
+        whenNew(JOXBeanInputStream.class).withArguments((InputStream) fileIn).thenReturn(joxIn);
+
+        ProductInfo similarProductInfoBean = mock(ProductInfo.class);
+        ArrayList<ProductDetails> productsArrayList = new ArrayList<>();
+        productsArrayList.add(mock(ProductDetails.class));
+        when(similarProductInfoBean.getProductsArrayList()).thenReturn(productsArrayList);
+
+        when(search.SimilaritesSearch(asin, "1")).thenReturn(similarProductInfoBean);
+
+        FullProduct result = product.getProduct(asin, offer, page);
+
+        assertNotNull(result);
+        verify(fileIn).close();
+        verify(joxIn).close();
+    }
+}
+```

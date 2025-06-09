@@ -1,0 +1,167 @@
+To create a comprehensive JUnit 4 test suite for the `CoordSystemUtilities` class, we need to mock the dependencies and test each method. Below is a test suite that covers the methods in the class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import de.progra.charting.CoordSystemUtilities;
+import de.progra.charting.model.ChartDataModel;
+import de.progra.charting.model.ChartDataModelConstraints;
+import de.progra.charting.model.CoordSystem;
+import de.progra.charting.model.ChartUtilities;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.awt.*;
+import java.awt.font.FontRenderContext;
+import java.awt.geom.AffineTransform;
+import java.awt.geom.Line2D;
+import java.awt.geom.Rectangle2D;
+import java.text.DecimalFormat;
+
+public class CoordSystemUtilitiesTest {
+
+    private CoordSystem coordSystem;
+    private ChartDataModelConstraints constraints;
+    private ChartDataModelConstraints constraints2;
+    private ChartDataModel model;
+    private CoordSystemUtilities utilities;
+
+    @Before
+    public void setUp() {
+        coordSystem = mock(CoordSystem.class);
+        constraints = mock(ChartDataModelConstraints.class);
+        constraints2 = mock(ChartDataModelConstraints.class);
+        model = mock(ChartDataModel.class);
+
+        when(coordSystem.getYAxisUnit()).thenReturn("Y Unit");
+        when(coordSystem.getXAxisUnit()).thenReturn("X Unit");
+        when(coordSystem.getFont()).thenReturn(new Font("Arial", Font.PLAIN, 12));
+        when(coordSystem.getFontRenderContext()).thenReturn(new FontRenderContext(new AffineTransform(), true, true));
+        when(coordSystem.getBounds()).thenReturn(new Rectangle(0, 0, 100, 100));
+        when(coordSystem.getRightMargin()).thenReturn(10);
+        when(coordSystem.getTopMargin()).thenReturn(10);
+        when(coordSystem.getXDecimalFormat()).thenReturn(new DecimalFormat("#.##"));
+        when(coordSystem.getYDecimalFormat()).thenReturn(new DecimalFormat("#.##"));
+        when(coordSystem.isPaintLabels()).thenReturn(true);
+        when(coordSystem.isPaintOnlyTick()).thenReturn(false);
+        when(coordSystem.isPaintAltTick()).thenReturn(false);
+        when(coordSystem.getTransform(anyInt())).thenReturn(new AffineTransform());
+
+        utilities = new CoordSystemUtilities(coordSystem, constraints, constraints2, model);
+    }
+
+    @Test
+    public void testComputeLeftMargin() {
+        when(constraints.getMinimumColumnValue()).thenReturn(-10.0);
+        when(constraints.getMaximumColumnValue()).thenReturn(10.0);
+
+        int leftMargin = utilities.computeLeftMargin();
+        assertTrue(leftMargin >= 20);
+    }
+
+    @Test
+    public void testComputeRightMargin() {
+        int rightMargin = utilities.computeRightMargin();
+        assertTrue(rightMargin >= 15);
+    }
+
+    @Test
+    public void testComputeTopMargin() {
+        int topMargin = utilities.computeTopMargin();
+        assertTrue(topMargin >= 15);
+    }
+
+    @Test
+    public void testComputeBottomMargin() {
+        when(constraints.getMinimumValue()).thenReturn(-10.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+
+        int bottomMargin = utilities.computeBottomMargin();
+        assertTrue(bottomMargin >= 20);
+    }
+
+    @Test
+    public void testComputeXAxisLabelHeight() {
+        when(constraints.getMinimumColumnValue()).thenReturn(0.0);
+        when(constraints.getMaximumColumnValue()).thenReturn(10.0);
+        when(constraints.getMinimumValue()).thenReturn(0.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+
+        int xAxisLabelHeight = utilities.computeXAxisLabelHeight();
+        assertTrue(xAxisLabelHeight >= 0);
+    }
+
+    @Test
+    public void testComputeYAxisLabelWidth() {
+        when(constraints.getMinimumValue()).thenReturn(0.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+        when(constraints.getMinimumColumnValue()).thenReturn(0.0);
+        when(constraints.getMaximumColumnValue()).thenReturn(10.0);
+
+        int yAxisLabelWidth = utilities.computeYAxisLabelWidth();
+        assertTrue(yAxisLabelWidth >= 0);
+    }
+
+    @Test
+    public void testDrawNumericalXAxisTicks() {
+        Graphics2D g = mock(Graphics2D.class);
+        utilities.drawNumericalXAxisTicks(g);
+        verify(g, atLeastOnce()).draw(any(Line2D.class));
+    }
+
+    @Test
+    public void testDrawXAxisTicks() {
+        Graphics2D g = mock(Graphics2D.class);
+        utilities.drawXAxisTicks(g);
+        verify(g, atLeastOnce()).draw(any(Line2D.class));
+    }
+
+    @Test
+    public void testDrawYAxisTicks() {
+        Graphics2D g = mock(Graphics2D.class);
+        utilities.drawYAxisTicks(g);
+        verify(g, atLeastOnce()).draw(any(Line2D.class));
+    }
+
+    @Test
+    public void testGetXAxisLine2D() {
+        when(constraints.getMinimumColumnValue()).thenReturn(0.0);
+        when(constraints.getMaximumColumnValue()).thenReturn(10.0);
+        when(constraints.getMinimumValue()).thenReturn(0.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+
+        Line2D xAxisLine = utilities.getXAxisLine2D();
+        assertNotNull(xAxisLine);
+    }
+
+    @Test
+    public void testGetYAxisLine2D() {
+        when(constraints.getMinimumColumnValue()).thenReturn(0.0);
+        when(constraints.getMaximumColumnValue()).thenReturn(10.0);
+        when(constraints.getMinimumValue()).thenReturn(0.0);
+        when(constraints.getMaximumValue()).thenReturn(10.0);
+
+        Line2D yAxisLine = utilities.getYAxisLine2D();
+        assertNotNull(yAxisLine);
+    }
+
+    @Test
+    public void testGetSecondYAxisLine2D() {
+        when(constraints2.getMaximumColumnValue()).thenReturn(10.0);
+        when(constraints2.getMinimumValue()).thenReturn(0.0);
+        when(constraints2.getMaximumValue()).thenReturn(10.0);
+
+        Line2D secondYAxisLine = utilities.getSecondYAxisLine2D();
+        assertNotNull(secondYAxisLine);
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: We use Mockito to create mock objects for `CoordSystem`, `ChartDataModelConstraints`, and `ChartDataModel` since these are dependencies of `CoordSystemUtilities`.
+- **Setup**: The `setUp` method initializes these mocks with some default behavior.
+- **Tests**: Each method in `CoordSystemUtilities` is tested. For methods that return a value, we assert the expected conditions. For methods that perform drawing operations, we verify that the drawing methods are called on the `Graphics2D` object.
+- **Assertions**: We use assertions to ensure that the computed margins and dimensions are within expected ranges.
+
+This test suite provides a comprehensive set of tests for the `CoordSystemUtilities` class, ensuring that each method behaves as expected under various conditions.

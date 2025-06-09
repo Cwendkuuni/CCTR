@@ -1,0 +1,121 @@
+To create a comprehensive JUnit 4 test suite for the `OracleIdentiteDao` class, we need to test each method in the class. This includes testing the `insert`, `update`, `delete`, `find`, `findCandidat`, and `findRespForm` methods. We will use mock objects to simulate the behavior of the `EntityManager` and related classes, as we are focusing on unit testing without a real database connection.
+
+Below is a JUnit 4 test suite for the `OracleIdentiteDao` class:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import javax.persistence.*;
+import java.util.*;
+
+import fr.unice.gfarce.identity.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class OracleIdentiteDaoTest {
+
+    @InjectMocks
+    private OracleIdentiteDao dao;
+
+    @Mock
+    private EntityManager em;
+
+    @Mock
+    private EntityTransaction tx;
+
+    @Mock
+    private EntityManagerFactory emf;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        when(em.getTransaction()).thenReturn(tx);
+    }
+
+    @Test
+    public void testInsert() {
+        Identite identite = new Identite();
+        dao.insert(identite, "nomForm", Calendar.getInstance());
+
+        verify(em).persist(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testUpdate() {
+        Identite identite = new Identite();
+        identite.setId(1L);
+        when(em.find(Identite.class, identite.getId())).thenReturn(identite);
+
+        dao.update(identite);
+
+        verify(em).find(Identite.class, identite.getId());
+        verify(em).merge(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testDelete() {
+        Identite identite = new Identite();
+        identite.setId(1L);
+        when(em.find(Identite.class, identite.getId())).thenReturn(identite);
+
+        dao.delete(identite);
+
+        verify(em).find(Identite.class, identite.getId());
+        verify(em).remove(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+    }
+
+    @Test
+    public void testFind() {
+        List<Identite> expectedList = new ArrayList<>();
+        when(em.createQuery(anyString())).thenReturn(mock(Query.class));
+        when(em.createQuery(anyString()).getResultList()).thenReturn(expectedList);
+
+        List<Identite> result = dao.find("nom", "prenom", "sex", "email", Identite.TypeIdentite.CANDIDAT);
+
+        assertEquals(expectedList, result);
+    }
+
+    @Test
+    public void testFindCandidat() {
+        List<Identite> expectedList = new ArrayList<>();
+        when(em.createQuery(anyString())).thenReturn(mock(Query.class));
+        when(em.createQuery(anyString()).getResultList()).thenReturn(expectedList);
+
+        Candidat[] result = dao.findCandidat("nom", "prenom", "sex", "email");
+
+        assertNotNull(result);
+        assertEquals(expectedList.size(), result.length);
+    }
+
+    @Test
+    public void testFindRespForm() {
+        List<Identite> expectedList = new ArrayList<>();
+        when(em.createQuery(anyString())).thenReturn(mock(Query.class));
+        when(em.createQuery(anyString()).getResultList()).thenReturn(expectedList);
+
+        RespFormation[] result = dao.findRespForm("nom", "prenom", "sex", "email");
+
+        assertNotNull(result);
+        assertEquals(expectedList.size(), result.length);
+    }
+}
+```
+
+### Explanation:
+- **Mockito** is used to mock the `EntityManager`, `EntityTransaction`, and `EntityManagerFactory` to avoid actual database operations.
+- **`@InjectMocks`** is used to create an instance of `OracleIdentiteDao` with the mocked dependencies.
+- **`@Mock`** is used to create mock instances of the dependencies.
+- **`@Before`** sets up the mock behavior before each test.
+- Each test method verifies that the appropriate methods on the `EntityManager` and `EntityTransaction` are called with the expected arguments.
+- The `find`, `findCandidat`, and `findRespForm` methods are tested to ensure they return the expected results based on the mocked query results.

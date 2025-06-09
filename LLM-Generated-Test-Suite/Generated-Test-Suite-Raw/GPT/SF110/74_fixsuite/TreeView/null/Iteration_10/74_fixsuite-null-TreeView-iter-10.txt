@@ -1,0 +1,112 @@
+To create a comprehensive JUnit 4 test suite for the `TreeView` class, we need to test the public methods and the interactions with the GUI components. The test suite will include tests for the constructor, action events, key events, and tree selection events. We'll use mocking for dependencies like `Library`, `DictionaryInfo`, `MessageInfo`, `ComponentInfo`, and `FieldInfo`.
+
+Here is the JUnit 4 test suite:
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import org.fixsuite.message.view.TreeView;
+import org.fixsuite.message.info.*;
+import org.fixsuite.message.*;
+import javax.swing.*;
+import javax.swing.event.TreeSelectionEvent;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+import java.util.Arrays;
+
+import static org.mockito.Mockito.*;
+
+public class TreeViewTest {
+
+    private Library mockLibrary;
+    private DictionaryInfo mockDictionary;
+    private MessageInfo mockMessage;
+    private ComponentInfo mockComponent;
+    private FieldInfo mockField;
+    private TreeView treeView;
+
+    @Before
+    public void setUp() {
+        mockLibrary = mock(Library.class);
+        mockDictionary = mock(DictionaryInfo.class);
+        mockMessage = mock(MessageInfo.class);
+        mockComponent = mock(ComponentInfo.class);
+        mockField = mock(FieldInfo.class);
+
+        when(mockLibrary.getDictionaries()).thenReturn(Arrays.asList(mockDictionary));
+        when(mockDictionary.getVersion()).thenReturn("FIX.4.2");
+        when(mockDictionary.getMessages()).thenReturn(Arrays.asList(mockMessage));
+        when(mockMessage.getName()).thenReturn("TestMessage");
+        when(mockMessage.getMessageType()).thenReturn("D");
+        when(mockMessage.getItems()).thenReturn(Arrays.asList(mockComponent));
+        when(mockComponent.getName()).thenReturn("TestComponent");
+        when(mockComponent.getItems()).thenReturn(Arrays.asList(mockField));
+        when(mockField.getName()).thenReturn("TestField");
+        when(mockField.getTagNumber()).thenReturn(35);
+
+        treeView = new TreeView(mockLibrary);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(treeView);
+    }
+
+    @Test
+    public void testActionPerformedExpand() {
+        ActionEvent expandEvent = new ActionEvent(treeView.expandButton, ActionEvent.ACTION_PERFORMED, "Expand");
+        treeView.actionPerformed(expandEvent);
+        // Verify that expandAll method is called
+        // This can be done by checking the expanded state of the tree nodes
+    }
+
+    @Test
+    public void testActionPerformedCollapse() {
+        ActionEvent collapseEvent = new ActionEvent(treeView.collapseButton, ActionEvent.ACTION_PERFORMED, "Collapse");
+        treeView.actionPerformed(collapseEvent);
+        // Verify that collapseAll method is called
+        // This can be done by checking the collapsed state of the tree nodes
+    }
+
+    @Test
+    public void testActionPerformedSearch() {
+        treeView.searchTextField.setText("TestMessage");
+        ActionEvent searchEvent = new ActionEvent(treeView.searchButton, ActionEvent.ACTION_PERFORMED, "Search");
+        treeView.actionPerformed(searchEvent);
+        // Verify that search method is called and nodes are highlighted
+    }
+
+    @Test
+    public void testActionPerformedClear() {
+        ActionEvent clearEvent = new ActionEvent(treeView.clearButton, ActionEvent.ACTION_PERFORMED, "Clear");
+        treeView.actionPerformed(clearEvent);
+        // Verify that clear method is called and nodes are not highlighted
+    }
+
+    @Test
+    public void testKeyPressedEnter() {
+        KeyEvent enterKeyEvent = new KeyEvent(treeView.searchTextField, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED);
+        treeView.keyPressed(enterKeyEvent);
+        // Verify that searchButton.doClick() is called
+    }
+
+    @Test
+    public void testValueChanged() {
+        TreeSelectionEvent mockEvent = mock(TreeSelectionEvent.class);
+        treeView.valueChanged(mockEvent);
+        // Verify that the correct details are displayed based on the selected node
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to create mock objects for `Library`, `DictionaryInfo`, `MessageInfo`, `ComponentInfo`, and `FieldInfo`. This allows us to simulate the behavior of these dependencies without needing their actual implementations.
+- **Setup**: The `setUp` method initializes the mock objects and sets up their behavior using `when(...).thenReturn(...)`.
+- **Tests**: Each test method corresponds to a functionality of the `TreeView` class:
+  - **Constructor Test**: Ensures the `TreeView` object is created successfully.
+  - **Action Events**: Tests for expand, collapse, search, and clear actions.
+  - **Key Events**: Tests for pressing the Enter key in the search text field.
+  - **Tree Selection**: Tests the behavior when a tree node is selected.
+
+Note: The actual verification of GUI changes (like node expansion/collapse and highlighting) would require a more sophisticated setup, potentially involving a GUI testing framework or additional methods to expose internal state for testing purposes.

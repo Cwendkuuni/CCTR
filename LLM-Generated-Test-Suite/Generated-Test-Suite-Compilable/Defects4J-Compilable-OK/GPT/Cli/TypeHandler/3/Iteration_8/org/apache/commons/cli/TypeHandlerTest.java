@@ -1,0 +1,154 @@
+package org.apache.commons.cli;
+
+import org.apache.commons.cli.TypeHandler;
+import org.apache.commons.lang.math.NumberUtils;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import static org.junit.Assert.*;
+
+import java.io.File;
+import java.net.URL;
+import java.net.MalformedURLException;
+import java.util.Date;
+
+public class TypeHandlerTest {
+
+    @Before
+    public void setUp() {
+        // Setup code if needed
+    }
+
+    @After
+    public void tearDown() {
+        // Teardown code if needed
+    }
+
+    @Test
+    public void testCreateValueString() {
+        String str = "testString";
+        Object result = TypeHandler.createValue(str, PatternOptionBuilder.STRING_VALUE);
+        assertEquals(str, result);
+    }
+
+    @Test
+    public void testCreateValueObject() {
+        String className = "java.lang.String";
+        Object result = TypeHandler.createValue(className, PatternOptionBuilder.OBJECT_VALUE);
+        assertNotNull(result);
+        assertTrue(result instanceof String);
+    }
+
+    @Test
+    public void testCreateValueNumber() {
+        String numberStr = "123";
+        Object result = TypeHandler.createValue(numberStr, PatternOptionBuilder.NUMBER_VALUE);
+        assertNotNull(result);
+        assertTrue(result instanceof Number);
+        assertEquals(123L, ((Number) result).longValue());
+    }
+
+    @Test
+    public void testCreateValueDate() {
+        String dateStr = "2023-10-10";
+        Object result = TypeHandler.createValue(dateStr, PatternOptionBuilder.DATE_VALUE);
+        assertNull(result); // As createDate is not implemented
+    }
+
+    @Test
+    public void testCreateValueClass() {
+        String className = "java.lang.String";
+        Object result = TypeHandler.createValue(className, PatternOptionBuilder.CLASS_VALUE);
+        assertNotNull(result);
+        assertEquals(String.class, result);
+    }
+
+    @Test
+    public void testCreateValueFile() {
+        String filePath = "test.txt";
+        Object result = TypeHandler.createValue(filePath, PatternOptionBuilder.FILE_VALUE);
+        assertNotNull(result);
+        assertTrue(result instanceof File);
+        assertEquals(filePath, ((File) result).getPath());
+    }
+
+    @Test
+    public void testCreateValueExistingFile() {
+        String filePath = "test.txt";
+        Object result = TypeHandler.createValue(filePath, PatternOptionBuilder.EXISTING_FILE_VALUE);
+        assertNotNull(result);
+        assertTrue(result instanceof File);
+        assertEquals(filePath, ((File) result).getPath());
+    }
+
+    @Test
+    public void testCreateValueFiles() {
+        String filePaths = "test1.txt,test2.txt";
+        Object result = TypeHandler.createValue(filePaths, PatternOptionBuilder.FILES_VALUE);
+        assertNull(result); // As createFiles is not implemented
+    }
+
+    @Test
+    public void testCreateValueURL() {
+        String urlStr = "http://www.example.com";
+        Object result = TypeHandler.createValue(urlStr, PatternOptionBuilder.URL_VALUE);
+        assertNotNull(result);
+        assertTrue(result instanceof URL);
+        assertEquals(urlStr, ((URL) result).toString());
+    }
+
+    @Test
+    public void testCreateObject() {
+        String className = "java.lang.String";
+        Object result = TypeHandler.createObject(className);
+        assertNotNull(result);
+        assertTrue(result instanceof String);
+    }
+
+    @Test
+    public void testCreateNumber() {
+        String numberStr = "123.45";
+        Number result = TypeHandler.createNumber(numberStr);
+        assertNotNull(result);
+        assertTrue(result instanceof Double);
+        assertEquals(123.45, result.doubleValue(), 0.001);
+    }
+
+    @Test
+    public void testCreateClass() {
+        String className = "java.lang.String";
+        Class result = TypeHandler.createClass(className);
+        assertNotNull(result);
+        assertEquals(String.class, result);
+    }
+
+    @Test
+    public void testCreateDate() {
+        String dateStr = "2023-10-10";
+        Date result = TypeHandler.createDate(dateStr);
+        assertNull(result); // As createDate is not implemented
+    }
+
+    @Test
+    public void testCreateURL() {
+        String urlStr = "http://www.example.com";
+        URL result = TypeHandler.createURL(urlStr);
+        assertNotNull(result);
+        assertEquals(urlStr, result.toString());
+    }
+
+    @Test
+    public void testCreateFile() {
+        String filePath = "test.txt";
+        File result = TypeHandler.createFile(filePath);
+        assertNotNull(result);
+        assertEquals(filePath, result.getPath());
+    }
+
+    @Test
+    public void testCreateFiles() {
+        String filePaths = "test1.txt,test2.txt";
+        File[] result = TypeHandler.createFiles(filePaths);
+        assertNull(result); // As createFiles is not implemented
+    }
+}

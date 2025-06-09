@@ -1,0 +1,171 @@
+package org.apache.commons.compress.archivers.tar;
+
+import org.junit.Test;
+import org.junit.Before;
+import static org.junit.Assert.*;
+
+public class TarUtilsTest {
+
+    private byte[] buffer;
+
+    @Before
+    public void setUp() {
+        buffer = new byte[100];
+    }
+
+    @Test
+    public void testParseOctal() {
+        // Test with valid octal string
+        byte[] octalBytes = " 01234567".getBytes();
+        System.arraycopy(octalBytes, 0, buffer, 0, octalBytes.length);
+        long result = TarUtils.parseOctal(buffer, 0, octalBytes.length);
+        assertEquals(42798L, result);
+
+        // Test with leading spaces
+        octalBytes = "   01234567".getBytes();
+        System.arraycopy(octalBytes, 0, buffer, 0, octalBytes.length);
+        result = TarUtils.parseOctal(buffer, 0, octalBytes.length);
+        assertEquals(42798L, result);
+
+        // Test with trailing spaces
+        octalBytes = "01234567   ".getBytes();
+        System.arraycopy(octalBytes, 0, buffer, 0, octalBytes.length);
+        result = TarUtils.parseOctal(buffer, 0, octalBytes.length);
+        assertEquals(42798L, result);
+
+        // Test with invalid octal digit
+        octalBytes = "01234568".getBytes();
+        System.arraycopy(octalBytes, 0, buffer, 0, octalBytes.length);
+        try {
+            TarUtils.parseOctal(buffer, 0, octalBytes.length);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testParseName() {
+        // Test with valid name
+        byte[] nameBytes = "filename".getBytes();
+        System.arraycopy(nameBytes, 0, buffer, 0, nameBytes.length);
+        String result = TarUtils.parseName(buffer, 0, nameBytes.length);
+        assertEquals("filename", result);
+
+        // Test with NUL terminated name
+        nameBytes = "filename\0".getBytes();
+        System.arraycopy(nameBytes, 0, buffer, 0, nameBytes.length);
+        result = TarUtils.parseName(buffer, 0, nameBytes.length);
+        assertEquals("filename", result);
+    }
+
+    @Test
+    public void testFormatNameBytes() {
+        // Test with name shorter than buffer
+        String name = "filename";
+        int offset = 0;
+        int length = 10;
+        int newOffset = TarUtils.formatNameBytes(name, buffer, offset, length);
+        assertEquals(offset + length, newOffset);
+        assertEquals("filename\0\0\0", new String(buffer, 0, length));
+
+        // Test with name longer than buffer
+        name = "longfilename";
+        length = 5;
+        newOffset = TarUtils.formatNameBytes(name, buffer, offset, length);
+        assertEquals(offset + length, newOffset);
+        assertEquals("longf", new String(buffer, 0, length));
+    }
+
+    @Test
+    public void testFormatUnsignedOctalString() {
+        // Test with value that fits in buffer
+        long value = 12345L;
+        int offset = 0;
+        int length = 10;
+        TarUtils.formatUnsignedOctalString(value, buffer, offset, length);
+        assertEquals("0000030071", new String(buffer, 0, length));
+
+        // Test with value that does not fit in buffer
+        value = 123456789012345L;
+        try {
+            TarUtils.formatUnsignedOctalString(value, buffer, offset, length);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testFormatOctalBytes() {
+        // Test with value that fits in buffer
+        long value = 12345L;
+        int offset = 0;
+        int length = 12;
+        int newOffset = TarUtils.formatOctalBytes(value, buffer, offset, length);
+        assertEquals(offset + length, newOffset);
+        assertEquals("0000030071 \0", new String(buffer, 0, length));
+
+        // Test with value that does not fit in buffer
+        value = 123456789012345L;
+        try {
+            TarUtils.formatOctalBytes(value, buffer, offset, length);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testFormatLongOctalBytes() {
+        // Test with value that fits in buffer
+        long value = 12345L;
+        int offset = 0;
+        int length = 11;
+        int newOffset = TarUtils.formatLongOctalBytes(value, buffer, offset, length);
+        assertEquals(offset + length, newOffset);
+        assertEquals("0000030071 ", new String(buffer, 0, length));
+
+        // Test with value that does not fit in buffer
+        value = 123456789012345L;
+        try {
+            TarUtils.formatLongOctalBytes(value, buffer, offset, length);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testFormatCheckSumOctalBytes() {
+        // Test with value that fits in buffer
+        long value = 12345L;
+        int offset = 0;
+        int length = 12;
+        int newOffset = TarUtils.formatCheckSumOctalBytes(value, buffer, offset, length);
+        assertEquals(offset + length, newOffset);
+        assertEquals("0000030071\0 ", new String(buffer, 0, length));
+
+        // Test with value that does not fit in buffer
+        value = 123456789012345L;
+        try {
+            TarUtils.formatCheckSumOctalBytes(value, buffer, offset, length);
+            fail("Expected IllegalArgumentException");
+        } catch (IllegalArgumentException e) {
+            // expected
+        }
+    }
+
+    @Test
+    public void testComputeCheckSum() {
+        // Test with sample buffer
+        byte[] sampleBuffer = "sample".getBytes();
+        long checksum = TarUtils.computeCheckSum(sampleBuffer);
+        assertEquals(528L, checksum);
+
+        // Test with empty buffer
+        byte[] emptyBuffer = new byte[0];
+        checksum = TarUtils.computeCheckSum(emptyBuffer);
+        assertEquals(0L, checksum);
+    }
+}

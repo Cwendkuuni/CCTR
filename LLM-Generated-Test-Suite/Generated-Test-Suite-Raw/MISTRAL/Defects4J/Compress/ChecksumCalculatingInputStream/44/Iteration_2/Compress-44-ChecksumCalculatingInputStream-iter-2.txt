@@ -1,0 +1,90 @@
+```java
+import org.apache.commons.compress.utils.ChecksumCalculatingInputStream;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.zip.Adler32;
+import java.util.zip.Checksum;
+
+import static org.junit.Assert.*;
+
+public class ChecksumCalculatingInputStreamTest {
+
+    private Checksum checksum;
+    private InputStream inputStream;
+    private ChecksumCalculatingInputStream checksumInputStream;
+
+    @Before
+    public void setUp() {
+        checksum = new Adler32();
+        inputStream = new ByteArrayInputStream("test data".getBytes());
+        checksumInputStream = new ChecksumCalculatingInputStream(checksum, inputStream);
+    }
+
+    @Test
+    public void testReadSingleByte() throws IOException {
+        int data = checksumInputStream.read();
+        assertEquals('t', data);
+        assertEquals(checksum.getValue(), checksumInputStream.getValue());
+    }
+
+    @Test
+    public void testReadByteArray() throws IOException {
+        byte[] buffer = new byte[4];
+        int bytesRead = checksumInputStream.read(buffer);
+        assertEquals(4, bytesRead);
+        assertEquals("test", new String(buffer, 0, bytesRead));
+        assertEquals(checksum.getValue(), checksumInputStream.getValue());
+    }
+
+    @Test
+    public void testReadByteArrayWithOffsetAndLength() throws IOException {
+        byte[] buffer = new byte[10];
+        int bytesRead = checksumInputStream.read(buffer, 2, 4);
+        assertEquals(4, bytesRead);
+        assertEquals("test", new String(buffer, 2, bytesRead));
+        assertEquals(checksum.getValue(), checksumInputStream.getValue());
+    }
+
+    @Test
+    public void testSkip() throws IOException {
+        long skipped = checksumInputStream.skip(1);
+        assertEquals(1, skipped);
+        assertEquals(checksum.getValue(), checksumInputStream.getValue());
+    }
+
+    @Test
+    public void testGetValue() {
+        assertEquals(checksum.getValue(), checksumInputStream.getValue());
+    }
+
+    @Test
+    public void testReadUntilEnd() throws IOException {
+        byte[] buffer = new byte[100];
+        int bytesRead;
+        while ((bytesRead = checksumInputStream.read(buffer)) != -1) {
+            // Read until the end
+        }
+        assertEquals(checksum.getValue(), checksumInputStream.getValue());
+    }
+
+    @Test
+    public void testIOExceptionPropagation() throws IOException {
+        InputStream mockInputStream = Mockito.mock(InputStream.class);
+        Mockito.when(mockInputStream.read()).thenThrow(new IOException("Test IOException"));
+
+        ChecksumCalculatingInputStream testStream = new ChecksumCalculatingInputStream(checksum, mockInputStream);
+
+        try {
+            testStream.read();
+            fail("Expected IOException");
+        } catch (IOException e) {
+            assertEquals("Test IOException", e.getMessage());
+        }
+    }
+}
+```

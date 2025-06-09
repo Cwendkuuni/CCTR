@@ -1,0 +1,105 @@
+To create a comprehensive JUnit 4 test suite for the `AbstractLoader` class, we need to consider the following:
+
+1. **Constructor Testing**: Since `AbstractLoader` is abstract, we'll need a concrete subclass for testing purposes.
+2. **Method Testing**: We need to test `parseInputSource`, `resolveEntity`, `error`, and `fatalError` methods.
+3. **Exception Handling**: Ensure that exceptions are thrown as expected.
+4. **Resource Handling**: Test the resource resolution logic in `resolveEntity`.
+
+Below is a JUnit 4 test suite for the `AbstractLoader` class:
+
+```java
+import com.puppycrawl.tools.checkstyle.api.AbstractLoader;
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class AbstractLoaderTest {
+
+    private AbstractLoader loader;
+    private Map<String, String> publicIdToResourceNameMap;
+
+    // Concrete subclass for testing
+    private class TestLoader extends AbstractLoader {
+        protected TestLoader(String publicId, String dtdResourceName) throws SAXException, ParserConfigurationException {
+            super(publicId, dtdResourceName);
+        }
+
+        protected TestLoader(Map<String, String> publicIdToResourceNameMap) throws SAXException, ParserConfigurationException {
+            super(publicIdToResourceNameMap);
+        }
+    }
+
+    @Before
+    public void setUp() throws Exception {
+        publicIdToResourceNameMap = new HashMap<>();
+        publicIdToResourceNameMap.put("-//Test//DTD Test 1.0//EN", "test.dtd");
+        loader = new TestLoader(publicIdToResourceNameMap);
+    }
+
+    @Test
+    public void testParseInputSource() throws Exception {
+        InputSource inputSource = mock(InputSource.class);
+        try {
+            loader.parseInputSource(inputSource);
+        } catch (SAXException | IOException e) {
+            fail("Exception should not be thrown: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testResolveEntity() throws Exception {
+        String publicId = "-//Test//DTD Test 1.0//EN";
+        String systemId = "http://www.example.com/test.dtd";
+
+        InputSource inputSource = loader.resolveEntity(publicId, systemId);
+        assertNotNull("InputSource should not be null", inputSource);
+
+        InputStream inputStream = inputSource.getByteStream();
+        assertNotNull("InputStream should not be null", inputStream);
+    }
+
+    @Test(expected = SAXParseException.class)
+    public void testError() throws SAXException {
+        SAXParseException exception = mock(SAXParseException.class);
+        loader.error(exception);
+    }
+
+    @Test(expected = SAXParseException.class)
+    public void testFatalError() throws SAXException {
+        SAXParseException exception = mock(SAXParseException.class);
+        loader.fatalError(exception);
+    }
+
+    @Test
+    public void testResolveEntityWithUnknownPublicId() throws Exception {
+        String unknownPublicId = "-//Unknown//DTD Unknown 1.0//EN";
+        String systemId = "http://www.example.com/unknown.dtd";
+
+        InputSource inputSource = loader.resolveEntity(unknownPublicId, systemId);
+        assertNull("InputSource should be null for unknown publicId", inputSource);
+    }
+}
+```
+
+### Explanation:
+
+- **Concrete Subclass**: `TestLoader` is a concrete subclass of `AbstractLoader` used for testing.
+- **Setup Method**: Initializes the `publicIdToResourceNameMap` and `loader` before each test.
+- **Test Methods**:
+  - `testParseInputSource`: Verifies that `parseInputSource` can be called without exceptions.
+  - `testResolveEntity`: Checks if `resolveEntity` returns a valid `InputSource` for known public IDs.
+  - `testError` and `testFatalError`: Ensure that `SAXParseException` is thrown as expected.
+  - `testResolveEntityWithUnknownPublicId`: Verifies that `resolveEntity` returns `null` for unknown public IDs.
+
+This test suite covers the main functionalities and exception handling of the `AbstractLoader` class.

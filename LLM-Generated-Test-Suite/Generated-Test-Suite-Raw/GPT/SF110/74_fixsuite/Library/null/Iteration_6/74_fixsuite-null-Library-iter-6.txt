@@ -1,0 +1,144 @@
+Certainly! Below is a JUnit 4 test suite for the `Library` class. This test suite aims to cover the public methods of the class, including `loadFromDirectory`, `getDictionaries`, and `getDictionary`. Note that testing private methods directly is not possible, but their functionality can be indirectly tested through the public methods that use them.
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import org.mockito.Mockito;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(JUnit4.class)
+public class LibraryTest {
+
+    private Library library;
+    private static final Logger logger = LoggerFactory.getLogger(LibraryTest.class);
+
+    @Before
+    public void setUp() {
+        library = new Library();
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithValidDirectory() throws IOException {
+        // Create a temporary directory with subdirectories and files
+        File tempDir = Files.createTempDirectory("testLibrary").toFile();
+        File subDir = new File(tempDir, "subDir");
+        subDir.mkdir();
+        new File(subDir, "Fields.xml").createNewFile();
+        new File(subDir, "Enums.xml").createNewFile();
+        new File(subDir, "Components.xml").createNewFile();
+        new File(subDir, "MsgType.xml").createNewFile();
+        new File(subDir, "MsgContents.xml").createNewFile();
+
+        // Test loading from the directory
+        boolean result = library.loadFromDirectory(tempDir.getAbsolutePath());
+        assertTrue(result);
+        assertFalse(library.getDictionaries().isEmpty());
+
+        // Clean up
+        for (File file : subDir.listFiles()) {
+            file.delete();
+        }
+        subDir.delete();
+        tempDir.delete();
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithEmptyDirectory() throws IOException {
+        // Create a temporary empty directory
+        File tempDir = Files.createTempDirectory("testLibraryEmpty").toFile();
+
+        // Test loading from the empty directory
+        boolean result = library.loadFromDirectory(tempDir.getAbsolutePath());
+        assertFalse(result);
+
+        // Clean up
+        tempDir.delete();
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithInvalidPath() {
+        // Test loading from an invalid path
+        boolean result = library.loadFromDirectory("invalidPath");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testGetDictionaries() throws IOException {
+        // Create a temporary directory with subdirectories and files
+        File tempDir = Files.createTempDirectory("testLibrary").toFile();
+        File subDir = new File(tempDir, "subDir");
+        subDir.mkdir();
+        new File(subDir, "Fields.xml").createNewFile();
+        new File(subDir, "Enums.xml").createNewFile();
+        new File(subDir, "Components.xml").createNewFile();
+        new File(subDir, "MsgType.xml").createNewFile();
+        new File(subDir, "MsgContents.xml").createNewFile();
+
+        // Load from the directory
+        library.loadFromDirectory(tempDir.getAbsolutePath());
+
+        // Test getDictionaries
+        List<DictionaryInfo> dictionaries = library.getDictionaries();
+        assertNotNull(dictionaries);
+        assertFalse(dictionaries.isEmpty());
+
+        // Clean up
+        for (File file : subDir.listFiles()) {
+            file.delete();
+        }
+        subDir.delete();
+        tempDir.delete();
+    }
+
+    @Test
+    public void testGetDictionary() throws IOException {
+        // Create a temporary directory with subdirectories and files
+        File tempDir = Files.createTempDirectory("testLibrary").toFile();
+        File subDir = new File(tempDir, "subDir");
+        subDir.mkdir();
+        new File(subDir, "Fields.xml").createNewFile();
+        new File(subDir, "Enums.xml").createNewFile();
+        new File(subDir, "Components.xml").createNewFile();
+        new File(subDir, "MsgType.xml").createNewFile();
+        new File(subDir, "MsgContents.xml").createNewFile();
+
+        // Load from the directory
+        library.loadFromDirectory(tempDir.getAbsolutePath());
+
+        // Test getDictionary
+        DictionaryInfo dictionary = library.getDictionary("subDir");
+        assertNotNull(dictionary);
+
+        // Clean up
+        for (File file : subDir.listFiles()) {
+            file.delete();
+        }
+        subDir.delete();
+        tempDir.delete();
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: The `setUp` method initializes a new `Library` instance before each test.
+- **Test Methods**:
+  - `testLoadFromDirectoryWithValidDirectory`: Tests loading from a valid directory with the expected XML files.
+  - `testLoadFromDirectoryWithEmptyDirectory`: Tests loading from an empty directory.
+  - `testLoadFromDirectoryWithInvalidPath`: Tests loading from an invalid path.
+  - `testGetDictionaries`: Tests retrieving dictionaries after loading from a valid directory.
+  - `testGetDictionary`: Tests retrieving a specific dictionary by version after loading.
+
+### Note:
+- The tests use temporary directories and files to simulate different scenarios.
+- The `DictionaryInfo` and `MainParser` classes are assumed to be part of the project and should be mocked or implemented accordingly for the tests to run successfully.
+- The `Logger` is mocked to avoid actual logging during tests.

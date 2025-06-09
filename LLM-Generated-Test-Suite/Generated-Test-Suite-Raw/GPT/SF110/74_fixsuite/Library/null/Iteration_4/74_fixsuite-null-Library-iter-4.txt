@@ -1,0 +1,109 @@
+Certainly! Below is a JUnit 4 test suite for the `Library` class. This suite includes tests for the public methods `loadFromDirectory`, `getDictionaries`, and `getDictionary`. Note that testing private methods directly is not possible in Java, so we focus on testing the public interface.
+
+```java
+import org.junit.*;
+import org.junit.rules.TemporaryFolder;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
+import java.io.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+
+public class LibraryTest {
+
+    private Library library;
+    private static final Logger logger = LoggerFactory.getLogger(LibraryTest.class);
+
+    @Rule
+    public TemporaryFolder tempFolder = new TemporaryFolder();
+
+    @Before
+    public void setUp() {
+        library = new Library();
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithValidDirectory() throws IOException {
+        File validDir = tempFolder.newFolder("validDir");
+        File subDir = new File(validDir, "subDir");
+        subDir.mkdir();
+        new File(subDir, "Fields.xml").createNewFile();
+        new File(subDir, "Enums.xml").createNewFile();
+        new File(subDir, "Components.xml").createNewFile();
+        new File(subDir, "MsgType.xml").createNewFile();
+        new File(subDir, "MsgContents.xml").createNewFile();
+
+        boolean result = library.loadFromDirectory(validDir.getAbsolutePath());
+        assertTrue("Expected loadFromDirectory to return true for valid directory", result);
+        assertFalse("Expected dictionaries to be loaded", library.getDictionaries().isEmpty());
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithEmptyDirectory() throws IOException {
+        File emptyDir = tempFolder.newFolder("emptyDir");
+
+        boolean result = library.loadFromDirectory(emptyDir.getAbsolutePath());
+        assertFalse("Expected loadFromDirectory to return false for empty directory", result);
+        assertTrue("Expected no dictionaries to be loaded", library.getDictionaries().isEmpty());
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithInvalidPath() {
+        boolean result = library.loadFromDirectory("invalidPath");
+        assertFalse("Expected loadFromDirectory to return false for invalid path", result);
+        assertTrue("Expected no dictionaries to be loaded", library.getDictionaries().isEmpty());
+    }
+
+    @Test
+    public void testGetDictionaries() throws IOException {
+        File validDir = tempFolder.newFolder("validDir");
+        File subDir = new File(validDir, "subDir");
+        subDir.mkdir();
+        new File(subDir, "Fields.xml").createNewFile();
+        new File(subDir, "Enums.xml").createNewFile();
+        new File(subDir, "Components.xml").createNewFile();
+        new File(subDir, "MsgType.xml").createNewFile();
+        new File(subDir, "MsgContents.xml").createNewFile();
+
+        library.loadFromDirectory(validDir.getAbsolutePath());
+        List<DictionaryInfo> dictionaries = library.getDictionaries();
+        assertNotNull("Expected non-null list of dictionaries", dictionaries);
+        assertFalse("Expected non-empty list of dictionaries", dictionaries.isEmpty());
+    }
+
+    @Test
+    public void testGetDictionaryWithExistingVersion() throws IOException {
+        File validDir = tempFolder.newFolder("validDir");
+        File subDir = new File(validDir, "subDir");
+        subDir.mkdir();
+        new File(subDir, "Fields.xml").createNewFile();
+        new File(subDir, "Enums.xml").createNewFile();
+        new File(subDir, "Components.xml").createNewFile();
+        new File(subDir, "MsgType.xml").createNewFile();
+        new File(subDir, "MsgContents.xml").createNewFile();
+
+        library.loadFromDirectory(validDir.getAbsolutePath());
+        DictionaryInfo dictionary = library.getDictionary("subDir");
+        assertNotNull("Expected non-null dictionary for existing version", dictionary);
+    }
+
+    @Test
+    public void testGetDictionaryWithNonExistingVersion() {
+        DictionaryInfo dictionary = library.getDictionary("nonExistingVersion");
+        assertNull("Expected null dictionary for non-existing version", dictionary);
+    }
+}
+```
+
+### Explanation:
+- **TemporaryFolder Rule**: This JUnit rule is used to create temporary directories and files for testing purposes, ensuring that they are deleted after the tests run.
+- **Test Methods**: Each test method is designed to test a specific aspect of the `Library` class's functionality:
+  - `testLoadFromDirectoryWithValidDirectory`: Tests loading dictionaries from a valid directory structure.
+  - `testLoadFromDirectoryWithEmptyDirectory`: Tests behavior when the directory is empty.
+  - `testLoadFromDirectoryWithInvalidPath`: Tests behavior when the path is invalid.
+  - `testGetDictionaries`: Tests retrieval of loaded dictionaries.
+  - `testGetDictionaryWithExistingVersion`: Tests retrieval of a dictionary with an existing version.
+  - `testGetDictionaryWithNonExistingVersion`: Tests retrieval of a dictionary with a non-existing version.
+
+This test suite assumes that the `DictionaryInfo` and `MainParser` classes are correctly implemented and that the `MainParser.parse` method populates the `DictionaryInfo` objects as expected.

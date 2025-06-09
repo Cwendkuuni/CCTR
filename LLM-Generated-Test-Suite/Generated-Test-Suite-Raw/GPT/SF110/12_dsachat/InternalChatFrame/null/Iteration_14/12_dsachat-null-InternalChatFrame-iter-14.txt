@@ -1,0 +1,88 @@
+To create a comprehensive JUnit 4 test suite for the `InternalChatFrame` class, we need to test the public methods and any significant private methods that affect the class's behavior. The test suite will include tests for adding and deleting users, adding text, and handling action events. Note that some methods, like GUI-related ones, might be challenging to test directly without a GUI testing framework, but we can still test the logic behind them.
+
+Here's a basic test suite for the `InternalChatFrame` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.Color;
+import java.awt.event.ActionEvent;
+
+import javax.swing.text.BadLocationException;
+import javax.swing.text.StyledDocument;
+
+import org.junit.Before;
+import org.junit.Test;
+
+public class InternalChatFrameTest {
+
+    private InternalChatFrame chatFrame;
+    private MainFrame mockParent;
+
+    @Before
+    public void setUp() {
+        mockParent = mock(MainFrame.class);
+        when(mockParent.getSize()).thenReturn(new java.awt.Dimension(800, 600));
+        chatFrame = new InternalChatFrame(mockParent);
+    }
+
+    @Test
+    public void testAddUser() {
+        chatFrame.addUser("User1");
+        String[] users = chatFrame.getUserlist();
+        assertEquals(1, users.length);
+        assertEquals("User1", users[0]);
+    }
+
+    @Test
+    public void testDeleteUser() {
+        chatFrame.addUser("User1");
+        chatFrame.deleteUser("User1");
+        String[] users = chatFrame.getUserlist();
+        assertEquals(0, users.length);
+    }
+
+    @Test
+    public void testAddText() throws BadLocationException {
+        StyledDocument doc = chatFrame.showTxt.getStyledDocument();
+        chatFrame.addText("User1: Hello");
+        assertEquals("User1: Hello\n", doc.getText(0, doc.getLength()));
+    }
+
+    @Test
+    public void testActionPerformedChooseColor() {
+        chatFrame.addUser("User1");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame, ActionEvent.ACTION_PERFORMED, "chooseColor");
+        chatFrame.actionPerformed(event);
+        // Since JColorChooser is a GUI component, we can't directly test the color change without a GUI testing framework.
+        // However, we can ensure no exceptions are thrown and the method is called.
+    }
+
+    @Test
+    public void testActionPerformedWhisper() {
+        chatFrame.addUser("User1");
+        chatFrame.list.setSelectedIndex(0);
+        ActionEvent event = new ActionEvent(chatFrame, ActionEvent.ACTION_PERFORMED, "whisper");
+        chatFrame.actionPerformed(event);
+        assertEquals("/w User1 ", chatFrame.txtInput.getText());
+    }
+
+    @Test
+    public void testGetChatlog() {
+        chatFrame.addText("User1: Hello");
+        assertEquals("User1: Hello\n", chatFrame.getChatlog());
+    }
+
+    // Additional tests for mouse events and other GUI interactions would require a GUI testing framework like FEST or AssertJ-Swing.
+}
+```
+
+### Notes:
+- **Mocking**: We use Mockito to mock the `MainFrame` class since it is not provided. This allows us to simulate its behavior without needing the actual implementation.
+- **GUI Components**: Direct testing of GUI components like `JColorChooser` is not feasible without a GUI testing framework. The tests focus on ensuring that methods are called and that no exceptions are thrown.
+- **StyledDocument**: The `addText` method is tested by checking the content of the `StyledDocument`. This assumes that the document's text can be retrieved and compared.
+- **Action Events**: We simulate action events to test the `actionPerformed` method. This checks that the correct actions are taken based on the command.
+
+This test suite provides a foundation for testing the `InternalChatFrame` class. For more comprehensive testing, especially of GUI components, consider using a GUI testing framework.

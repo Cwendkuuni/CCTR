@@ -1,0 +1,110 @@
+To create a comprehensive JUnit 4 test suite for the `MacawWorkBench` class, we need to consider testing the public methods and the behavior of the `actionPerformed` method. Since some methods are private, we will focus on testing the public interface and the interactions triggered by the `ActionEvent`. Note that testing GUI components and methods that involve `System.exit()` can be challenging, so we will use mocking to simulate these interactions.
+
+Here's a JUnit 4 test suite for the `MacawWorkBench` class:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+
+public class MacawWorkBenchTest {
+
+    private MacawWorkBench macawWorkBench;
+    private SessionProperties mockSessionProperties;
+    private UserInterfaceFactory mockUserInterfaceFactory;
+    private JDialog mockDialog;
+    private JButton mockEditConstantsButton;
+    private JButton mockEditVariablesButton;
+    private JButton mockExportVariableDataButton;
+    private JButton mockExitButton;
+
+    @Before
+    public void setUp() {
+        mockSessionProperties = mock(SessionProperties.class);
+        mockUserInterfaceFactory = mock(UserInterfaceFactory.class);
+        mockDialog = mock(JDialog.class);
+        mockEditConstantsButton = mock(JButton.class);
+        mockEditVariablesButton = mock(JButton.class);
+        mockExportVariableDataButton = mock(JButton.class);
+        mockExitButton = mock(JButton.class);
+
+        when(mockSessionProperties.getUserInterfaceFactory()).thenReturn(mockUserInterfaceFactory);
+        when(mockUserInterfaceFactory.createDialog()).thenReturn(mockDialog);
+        when(mockUserInterfaceFactory.createButton(anyString())).thenReturn(mockEditConstantsButton, mockEditVariablesButton, mockExportVariableDataButton, mockExitButton);
+
+        macawWorkBench = new MacawWorkBench(mockSessionProperties);
+    }
+
+    @Test
+    public void testShow() {
+        macawWorkBench.show();
+        verify(mockDialog).setVisible(true);
+    }
+
+    @Test
+    public void testActionPerformed_editConstants() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(mockEditConstantsButton);
+
+        macawWorkBench.actionPerformed(mockEvent);
+
+        // Verify that the editConstants method was called
+        ArgumentCaptor<ActionEvent> captor = ArgumentCaptor.forClass(ActionEvent.class);
+        verify(mockEditConstantsButton).addActionListener(captor.capture());
+        assertEquals(mockEditConstantsButton, captor.getValue().getSource());
+    }
+
+    @Test
+    public void testActionPerformed_editVariables() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(mockEditVariablesButton);
+
+        macawWorkBench.actionPerformed(mockEvent);
+
+        // Verify that the editVariables method was called
+        ArgumentCaptor<ActionEvent> captor = ArgumentCaptor.forClass(ActionEvent.class);
+        verify(mockEditVariablesButton).addActionListener(captor.capture());
+        assertEquals(mockEditVariablesButton, captor.getValue().getSource());
+    }
+
+    @Test
+    public void testActionPerformed_exportVariableData() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(mockExportVariableDataButton);
+
+        macawWorkBench.actionPerformed(mockEvent);
+
+        // Verify that the exportVariableData method was called
+        ArgumentCaptor<ActionEvent> captor = ArgumentCaptor.forClass(ActionEvent.class);
+        verify(mockExportVariableDataButton).addActionListener(captor.capture());
+        assertEquals(mockExportVariableDataButton, captor.getValue().getSource());
+    }
+
+    @Test
+    public void testActionPerformed_exit() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(mockExitButton);
+
+        try {
+            macawWorkBench.actionPerformed(mockEvent);
+            fail("Expected System.exit() to be called");
+        } catch (SecurityException e) {
+            // Expected exception due to System.exit() being called
+        }
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock dependencies like `SessionProperties`, `UserInterfaceFactory`, `JDialog`, and `JButton`.
+- **Testing `show()`**: We verify that the dialog is set to visible when `show()` is called.
+- **Testing `actionPerformed()`**: We simulate button clicks by creating mock `ActionEvent` objects and verify that the appropriate methods are called.
+- **Handling `System.exit()`**: We expect a `SecurityException` when `System.exit()` is called, which is a common way to test exit calls in unit tests.
+
+This test suite provides a basic structure for testing the `MacawWorkBench` class. Depending on the actual implementation details of the methods and the behavior of the GUI components, additional tests and verifications might be necessary.

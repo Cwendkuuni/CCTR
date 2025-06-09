@@ -1,0 +1,142 @@
+```java
+package fi.vtt.noen.testgen.observations.formatter;
+
+import fi.vtt.noen.testgen.parser.InterfaceParser;
+import fi.vtt.noen.testgen.model.ProgramRun;
+import fi.vtt.noen.testgen.model.Event;
+import fi.vtt.noen.testgen.model.EventAttribute;
+import fi.vtt.noen.testgen.model.ArrayAttribute;
+import fi.vtt.noen.testgen.observations.data.OutputBuffer;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class DaikonFormatterTest {
+
+    @Mock
+    private ProgramRun mockProgramRun;
+
+    @Mock
+    private Event mockEvent;
+
+    @Mock
+    private EventAttribute mockEventAttribute;
+
+    @Mock
+    private ArrayAttribute mockArrayAttribute;
+
+    @Mock
+    private Iterator<Event> mockEventIterator;
+
+    @Mock
+    private Iterator<EventAttribute> mockEventAttributeIterator;
+
+    private DaikonFormatter daikonFormatterSimple;
+    private DaikonFormatter daikonFormatterWithInputs;
+
+    @Before
+    public void setUp() throws IOException {
+        MockitoAnnotations.initMocks(this);
+        daikonFormatterSimple = new DaikonFormatter("testFile.txt", true);
+        daikonFormatterWithInputs = new DaikonFormatter("testFile.txt", Arrays.asList("input1", "input2"));
+    }
+
+    @Test
+    public void testHeader() {
+        String expectedHeader = "decl-version 2.0\nvar-comparability implicit\n";
+        assertEquals(expectedHeader, daikonFormatterSimple.header());
+    }
+
+    @Test
+    public void testFooter() {
+        assertEquals("", daikonFormatterSimple.footer());
+    }
+
+    @Test
+    public void testFileNameExtension() {
+        assertEquals("dtrace", daikonFormatterSimple.fileNameExtension());
+    }
+
+    @Test
+    public void testObservationsSimple() {
+        when(mockProgramRun.iterator()).thenReturn(mockEventIterator);
+        when(mockEventIterator.hasNext()).thenReturn(true, false);
+        when(mockEventIterator.next()).thenReturn(mockEvent);
+
+        String result = daikonFormatterSimple.observations(mockProgramRun);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testObservationsWithInputs() {
+        when(mockProgramRun.iterator()).thenReturn(mockEventIterator);
+        when(mockEventIterator.hasNext()).thenReturn(true, false);
+        when(mockEventIterator.next()).thenReturn(mockEvent);
+        when(mockEvent.getName()).thenReturn("input1");
+        when(mockEvent.isExit()).thenReturn(false);
+
+        String result = daikonFormatterWithInputs.observations(mockProgramRun);
+        assertNotNull(result);
+    }
+
+    @Test
+    public void testSimplePoint() throws IOException {
+        OutputBuffer out = new OutputBuffer();
+        daikonFormatterSimple.simplePoint(mockEvent, "10", out);
+        assertNotNull(out.toString());
+    }
+
+    @Test
+    public void testPoint() throws IOException {
+        OutputBuffer out = new OutputBuffer();
+        daikonFormatterWithInputs.point("testName", mockEvent, "11", out);
+        assertNotNull(out.toString());
+    }
+
+    @Test
+    public void testDeclarations() throws IOException {
+        OutputBuffer out = new OutputBuffer();
+        daikonFormatterSimple.declarations(mockEvent, "testName", out, "10");
+        assertNotNull(out.toString());
+    }
+
+    @Test
+    public void testAttributes() throws IOException {
+        OutputBuffer out = new OutputBuffer();
+        when(mockEvent.attributes()).thenReturn(mockEventAttributeIterator);
+        when(mockEventAttributeIterator.hasNext()).thenReturn(true, false);
+        when(mockEventAttributeIterator.next()).thenReturn(mockEventAttribute);
+        when(mockEventAttribute.getName()).thenReturn("attrName");
+        when(mockEventAttribute.getType()).thenReturn("java.lang.String");
+        when(mockEventAttribute.getValue()).thenReturn("attrValue");
+
+        daikonFormatterSimple.attributes(mockEvent, out);
+        assertNotNull(out.toString());
+    }
+
+    @Test
+    public void testInputs() throws Exception {
+        Collection<Class> inputs = DaikonFormatter.inputs();
+        assertNotNull(inputs);
+    }
+
+    @Test
+    public void testOutputs() throws Exception {
+        Collection<Class> outputs = DaikonFormatter.outputs();
+        assertNotNull(outputs);
+    }
+}
+```

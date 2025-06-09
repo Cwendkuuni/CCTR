@@ -1,0 +1,135 @@
+To create a comprehensive JUnit 4 test suite for the `Abrir` class, we need to test the constructors and the private methods `abrirSerializado` and `abrirXML`. Since these methods are private, we will use reflection to test them. Additionally, we will mock dependencies like `ProcessarEntidades`, `Serializacao`, and `SerializacaoXML` to isolate the tests.
+
+Here's a complete JUnit 4 test suite for the `Abrir` class:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import javax.swing.*;
+import javax.swing.filechooser.FileFilter;
+import java.io.File;
+import java.io.FileReader;
+import java.io.Reader;
+import java.lang.reflect.Method;
+
+@RunWith(MockitoJUnitRunner.class)
+public class AbrirTest {
+
+    @Mock
+    private ProcessarEntidades mockForm;
+
+    @Mock
+    private Serializacao mockSerializacao;
+
+    @Mock
+    private SerializacaoXML mockSerializacaoXML;
+
+    @Mock
+    private JFileChooser mockFileChooser;
+
+    @Mock
+    private File mockFile;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+    }
+
+    @Test
+    public void testConstructorWithFileName_XML() throws Exception {
+        String arquivo = "test.jaw.xml";
+        Abrir abrir = new Abrir(mockForm, arquivo);
+
+        assertEquals("", abrir.xml);
+        assertEquals(mockForm, abrir.form);
+        verify(mockForm).setNomeArquivoSalvo(arquivo);
+    }
+
+    @Test
+    public void testConstructorWithFileName_Serialized() throws Exception {
+        String arquivo = "test.jaw";
+        Abrir abrir = new Abrir(mockForm, arquivo);
+
+        assertEquals("", abrir.xml);
+        assertEquals(mockForm, abrir.form);
+        verify(mockForm).setNomeArquivoSalvo(arquivo);
+    }
+
+    @Test
+    public void testConstructorWithTypeAbrir_XML() throws Exception {
+        when(mockFileChooser.getSelectedFile()).thenReturn(mockFile);
+        when(mockFile.getAbsolutePath()).thenReturn("test.jaw.xml");
+        when(mockFile.getName()).thenReturn("test.jaw.xml");
+
+        Abrir abrir = new Abrir(mockForm, Abrir.ABRIR_XML);
+
+        assertEquals("", abrir.xml);
+        assertEquals(mockForm, abrir.form);
+    }
+
+    @Test
+    public void testConstructorWithTypeAbrir_Serialized() throws Exception {
+        when(mockFileChooser.getSelectedFile()).thenReturn(mockFile);
+        when(mockFile.getAbsolutePath()).thenReturn("test.jaw");
+        when(mockFile.getName()).thenReturn("test.jaw");
+
+        Abrir abrir = new Abrir(mockForm, Abrir.ABRIR);
+
+        assertEquals("", abrir.xml);
+        assertEquals(mockForm, abrir.form);
+    }
+
+    @Test
+    public void testAbrirSerializado() throws Exception {
+        String arquivo = "test.jaw";
+        Abrir abrir = new Abrir(mockForm, arquivo);
+
+        Method method = Abrir.class.getDeclaredMethod("abrirSerializado", String.class);
+        method.setAccessible(true);
+        method.invoke(abrir, arquivo);
+
+        verify(mockForm).setNomeArquivoSalvo(arquivo);
+    }
+
+    @Test
+    public void testAbrirXML() throws Exception {
+        String arquivo = "test.jaw.xml";
+        Abrir abrir = new Abrir(mockForm, arquivo);
+
+        Method method = Abrir.class.getDeclaredMethod("abrirXML", String.class);
+        method.setAccessible(true);
+        method.invoke(abrir, arquivo);
+
+        verify(mockForm).setNomeArquivoSalvo(arquivo);
+    }
+
+    @Test
+    public void testFiltro2Accept() {
+        Abrir.Filtro2 filtro2 = new Abrir(mockForm, "test.jaw.xml").new Filtro2();
+        assertTrue(filtro2.accept(new File("test.jaw.xml")));
+        assertFalse(filtro2.accept(new File("test.jaw")));
+    }
+
+    @Test
+    public void testFiltroAccept() {
+        Abrir.Filtro filtro = new Abrir(mockForm, "test.jaw").new Filtro();
+        assertTrue(filtro.accept(new File("test.jaw")));
+        assertFalse(filtro.accept(new File("test.jaw.xml")));
+    }
+}
+```
+
+### Explanation:
+- **Mocks**: We use Mockito to mock dependencies like `ProcessarEntidades`, `Serializacao`, and `SerializacaoXML`.
+- **Reflection**: Since `abrirSerializado` and `abrirXML` are private, we use reflection to access and test these methods.
+- **File Filters**: We test the `accept` method of both `Filtro` and `Filtro2` classes to ensure they correctly filter files based on their extensions.
+- **Constructor Tests**: We test both constructors of the `Abrir` class to ensure they initialize the object correctly based on the file type or open type.
+
+This test suite should cover the main functionalities of the `Abrir` class.

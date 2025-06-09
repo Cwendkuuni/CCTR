@@ -1,0 +1,118 @@
+Certainly! Below is a JUnit 4 test suite for the `Library` class. This test suite aims to cover the public methods of the class, including `loadFromDirectory`, `getDictionaries`, and `getDictionary`. Note that testing private methods directly is not possible, so we focus on testing the public interface, which indirectly tests the private methods.
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import org.mockito.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.*;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(JUnit4.class)
+public class LibraryTest {
+
+    private Library library;
+    private static final String TEST_DIRECTORY = "testLibrary";
+    private static final String EMPTY_DIRECTORY = "emptyLibrary";
+    private static final String INVALID_DIRECTORY = "invalidLibrary";
+
+    @Before
+    public void setUp() throws IOException {
+        library = new Library();
+
+        // Create test directories and files
+        Files.createDirectories(Paths.get(TEST_DIRECTORY));
+        Files.createFile(Paths.get(TEST_DIRECTORY, "Fields.xml"));
+        Files.createFile(Paths.get(TEST_DIRECTORY, "Enums.xml"));
+        Files.createFile(Paths.get(TEST_DIRECTORY, "Components.xml"));
+        Files.createFile(Paths.get(TEST_DIRECTORY, "MsgType.xml"));
+        Files.createFile(Paths.get(TEST_DIRECTORY, "MsgContents.xml"));
+
+        Files.createDirectories(Paths.get(EMPTY_DIRECTORY));
+
+        // Mock logger
+        Logger mockLogger = mock(Logger.class);
+        Library.logger = mockLogger;
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        // Clean up test directories and files
+        Files.walk(Paths.get(TEST_DIRECTORY))
+                .map(Path::toFile)
+                .forEach(File::delete);
+
+        Files.walk(Paths.get(EMPTY_DIRECTORY))
+                .map(Path::toFile)
+                .forEach(File::delete);
+    }
+
+    @Test
+    public void testLoadFromDirectory_Success() {
+        boolean result = library.loadFromDirectory(TEST_DIRECTORY);
+        assertTrue(result);
+        assertFalse(library.getDictionaries().isEmpty());
+    }
+
+    @Test
+    public void testLoadFromDirectory_EmptyDirectory() {
+        boolean result = library.loadFromDirectory(EMPTY_DIRECTORY);
+        assertFalse(result);
+        assertTrue(library.getDictionaries().isEmpty());
+    }
+
+    @Test
+    public void testLoadFromDirectory_InvalidDirectory() {
+        boolean result = library.loadFromDirectory(INVALID_DIRECTORY);
+        assertFalse(result);
+        assertTrue(library.getDictionaries().isEmpty());
+    }
+
+    @Test
+    public void testGetDictionaries_Empty() {
+        List<DictionaryInfo> dictionaries = library.getDictionaries();
+        assertNotNull(dictionaries);
+        assertTrue(dictionaries.isEmpty());
+    }
+
+    @Test
+    public void testGetDictionary_NonExistentVersion() {
+        DictionaryInfo dictionary = library.getDictionary("non-existent-version");
+        assertNull(dictionary);
+    }
+
+    @Test
+    public void testGetDictionary_ExistingVersion() {
+        library.loadFromDirectory(TEST_DIRECTORY);
+        DictionaryInfo dictionary = library.getDictionary("testLibrary");
+        assertNotNull(dictionary);
+    }
+}
+```
+
+### Explanation:
+
+1. **Setup and Teardown**: 
+   - The `setUp` method creates a test directory with the necessary XML files to simulate a valid library directory. It also creates an empty directory for testing.
+   - The `tearDown` method cleans up the created directories and files after each test.
+
+2. **Test Cases**:
+   - `testLoadFromDirectory_Success`: Tests loading from a valid directory with all required files.
+   - `testLoadFromDirectory_EmptyDirectory`: Tests loading from an empty directory.
+   - `testLoadFromDirectory_InvalidDirectory`: Tests loading from a non-existent directory.
+   - `testGetDictionaries_Empty`: Tests retrieving dictionaries when none are loaded.
+   - `testGetDictionary_NonExistentVersion`: Tests retrieving a dictionary with a non-existent version.
+   - `testGetDictionary_ExistingVersion`: Tests retrieving a dictionary with an existing version after loading.
+
+3. **Mocking**:
+   - The logger is mocked to prevent actual logging during tests.
+
+This test suite provides a comprehensive test coverage for the public methods of the `Library` class.

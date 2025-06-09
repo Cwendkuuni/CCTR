@@ -1,0 +1,150 @@
+Certainly! Below is a JUnit 4 test suite for the `Joiner` class. This test suite aims to cover various scenarios for each method in the `Joiner` class, including edge cases and typical use cases.
+
+```java
+import com.google.common.base.Joiner;
+import com.google.common.base.Joiner.MapJoiner;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.util.*;
+
+import static org.junit.Assert.*;
+
+public class JoinerTest {
+
+    private Joiner joiner;
+    private Joiner joinerWithChar;
+    private Joiner joinerWithNullReplacement;
+    private Joiner joinerSkippingNulls;
+    private MapJoiner mapJoiner;
+
+    @Before
+    public void setUp() {
+        joiner = Joiner.on(", ");
+        joinerWithChar = Joiner.on(';');
+        joinerWithNullReplacement = joiner.useForNull("null");
+        joinerSkippingNulls = joiner.skipNulls();
+        mapJoiner = joiner.withKeyValueSeparator("=");
+    }
+
+    @Test
+    public void testJoinerOnString() {
+        assertEquals("a, b, c", joiner.join("a", "b", "c"));
+    }
+
+    @Test
+    public void testJoinerOnChar() {
+        assertEquals("a;b;c", joinerWithChar.join("a", "b", "c"));
+    }
+
+    @Test
+    public void testAppendToWithIterable() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        joiner.appendTo(sb, Arrays.asList("a", "b", "c"));
+        assertEquals("a, b, c", sb.toString());
+    }
+
+    @Test
+    public void testAppendToWithIterator() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        joiner.appendTo(sb, Arrays.asList("a", "b", "c").iterator());
+        assertEquals("a, b, c", sb.toString());
+    }
+
+    @Test
+    public void testAppendToWithArray() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        joiner.appendTo(sb, new Object[]{"a", "b", "c"});
+        assertEquals("a, b, c", sb.toString());
+    }
+
+    @Test
+    public void testAppendToWithVarargs() throws IOException {
+        StringBuilder sb = new StringBuilder();
+        joiner.appendTo(sb, "a", "b", "c");
+        assertEquals("a, b, c", sb.toString());
+    }
+
+    @Test
+    public void testJoinWithIterable() {
+        assertEquals("a, b, c", joiner.join(Arrays.asList("a", "b", "c")));
+    }
+
+    @Test
+    public void testJoinWithIterator() {
+        assertEquals("a, b, c", joiner.join(Arrays.asList("a", "b", "c").iterator()));
+    }
+
+    @Test
+    public void testJoinWithArray() {
+        assertEquals("a, b, c", joiner.join(new Object[]{"a", "b", "c"}));
+    }
+
+    @Test
+    public void testJoinWithVarargs() {
+        assertEquals("a, b, c", joiner.join("a", "b", "c"));
+    }
+
+    @Test
+    public void testUseForNull() {
+        assertEquals("a, null, c", joinerWithNullReplacement.join("a", null, "c"));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testUseForNullTwice() {
+        joinerWithNullReplacement.useForNull("anotherNull");
+    }
+
+    @Test
+    public void testSkipNulls() {
+        assertEquals("a, c", joinerSkippingNulls.join("a", null, "c"));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSkipNullsAndUseForNull() {
+        joinerSkippingNulls.useForNull("null");
+    }
+
+    @Test
+    public void testMapJoiner() {
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        assertEquals("key1=value1, key2=value2", mapJoiner.join(map));
+    }
+
+    @Test
+    public void testMapJoinerWithNullValue() {
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("key1", null);
+        map.put("key2", "value2");
+        assertEquals("key1=null, key2=value2", mapJoiner.useForNull("null").join(map));
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testMapJoinerSkipNulls() {
+        mapJoiner.skipNulls();
+    }
+
+    @Test
+    public void testMapJoinerAppendTo() throws IOException {
+        Map<String, String> map = new LinkedHashMap<>();
+        map.put("key1", "value1");
+        map.put("key2", "value2");
+        StringBuilder sb = new StringBuilder();
+        mapJoiner.appendTo(sb, map);
+        assertEquals("key1=value1, key2=value2", sb.toString());
+    }
+}
+```
+
+This test suite covers the following:
+
+- Basic functionality of `Joiner` with both string and character separators.
+- Handling of null values using `useForNull` and `skipNulls`.
+- Joining collections, arrays, and varargs.
+- Functionality of `MapJoiner` for joining map entries.
+- Edge cases such as attempting to use `useForNull` or `skipNulls` multiple times.
+
+Make sure to have the necessary dependencies for JUnit 4 and any other required libraries in your project setup to run these tests.

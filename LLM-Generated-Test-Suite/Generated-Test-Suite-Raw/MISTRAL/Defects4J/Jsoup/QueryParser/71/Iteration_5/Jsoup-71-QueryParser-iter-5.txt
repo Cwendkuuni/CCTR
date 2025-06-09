@@ -1,0 +1,217 @@
+```java
+package org.jsoup.select;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.jsoup.helper.StringUtil;
+import org.jsoup.helper.Validate;
+import org.jsoup.parser.TokenQueue;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.junit.Assert.*;
+import static org.jsoup.internal.Normalizer.normalize;
+
+public class QueryParserTest {
+
+    private QueryParser queryParser;
+
+    @Before
+    public void setUp() {
+        queryParser = new QueryParser("div");
+    }
+
+    @Test
+    public void testParse() {
+        Evaluator evaluator = QueryParser.parse("div");
+        assertNotNull(evaluator);
+    }
+
+    @Test(expected = Selector.SelectorParseException.class)
+    public void testParseInvalidQuery() {
+        QueryParser.parse("invalid query");
+    }
+
+    @Test
+    public void testParseMethod() {
+        Evaluator evaluator = queryParser.parse();
+        assertNotNull(evaluator);
+    }
+
+    @Test
+    public void testCombinator() {
+        queryParser.combinator(' ');
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test(expected = Selector.SelectorParseException.class)
+    public void testCombinatorInvalid() {
+        queryParser.combinator('X');
+    }
+
+    @Test
+    public void testConsumeSubQuery() {
+        String subQuery = queryParser.consumeSubQuery();
+        assertEquals("div", subQuery);
+    }
+
+    @Test
+    public void testFindElements() {
+        queryParser.findElements();
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test(expected = Selector.SelectorParseException.class)
+    public void testFindElementsInvalid() {
+        queryParser.query = "invalid";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.findElements();
+    }
+
+    @Test
+    public void testById() {
+        queryParser.query = "#id";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.tq.matchChomp("#");
+        queryParser.byId();
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testByClass() {
+        queryParser.query = ".class";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.tq.matchChomp(".");
+        queryParser.byClass();
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testByTag() {
+        queryParser.query = "div";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.byTag();
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testByAttribute() {
+        queryParser.query = "[attr]";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.byAttribute();
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testAllElements() {
+        queryParser.query = "*";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.tq.matchChomp("*");
+        queryParser.allElements();
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testIndexLessThan() {
+        queryParser.query = ":lt(5)";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.tq.matchChomp(":lt(");
+        queryParser.indexLessThan();
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testIndexGreaterThan() {
+        queryParser.query = ":gt(5)";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.tq.matchChomp(":gt(");
+        queryParser.indexGreaterThan();
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testIndexEquals() {
+        queryParser.query = ":eq(5)";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.tq.matchChomp(":eq(");
+        queryParser.indexEquals();
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testCssNthChild() {
+        queryParser.query = ":nth-child(2n+1)";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.tq.matchChomp(":nth-child(");
+        queryParser.cssNthChild(false, false);
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testConsumeIndex() {
+        queryParser.query = ":eq(5)";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.tq.matchChomp(":eq(");
+        int index = queryParser.consumeIndex();
+        assertEquals(5, index);
+    }
+
+    @Test
+    public void testHas() {
+        queryParser.query = ":has(div)";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.has();
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testContains() {
+        queryParser.query = ":contains(text)";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.contains(false);
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testContainsData() {
+        queryParser.query = ":containsData(data)";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.containsData();
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testMatches() {
+        queryParser.query = ":matches(regex)";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.matches(false);
+        assertEquals(1, queryParser.evals.size());
+    }
+
+    @Test
+    public void testNot() {
+        queryParser.query = ":not(div)";
+        queryParser.tq = new TokenQueue(queryParser.query);
+        queryParser.tq.consumeWhitespace();
+        queryParser.not();
+        assertEquals(1, queryParser.evals.size());
+    }
+}
+```

@@ -1,0 +1,108 @@
+To create a comprehensive JUnit 4 test suite for the `FoxHuntFrame` class, we need to focus on testing the public methods and behaviors of the class. The primary methods to test are `addPoint()` and `actionPerformed()`, as well as ensuring that the GUI components are initialized correctly. Since the class relies on GUI components and external files, we'll need to mock or simulate these dependencies where possible.
+
+Below is a JUnit 4 test suite for the `FoxHuntFrame` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+
+import javax.swing.JButton;
+import javax.swing.JTextField;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame foxHuntFrame;
+
+    @Before
+    public void setUp() throws Exception {
+        // Create a temporary landmarks.cfg file for testing
+        createLandmarksFile();
+
+        // Initialize the FoxHuntFrame
+        foxHuntFrame = new FoxHuntFrame();
+    }
+
+    @After
+    public void tearDown() throws Exception {
+        // Delete the temporary landmarks.cfg file after tests
+        File file = new File("./landmarks.cfg");
+        if (file.exists()) {
+            file.delete();
+        }
+    }
+
+    @Test
+    public void testAddPoint() {
+        // Set up the text fields with test data
+        foxHuntFrame.theta.setText("45");
+        foxHuntFrame.lat.setText("34.0522");
+        foxHuntFrame.lon.setText("-118.2437");
+
+        // Call the method under test
+        foxHuntFrame.addPoint();
+
+        // Verify that a point was added to the points vector
+        assertEquals(1, foxHuntFrame.points.size());
+
+        // Verify that the display was updated
+        verify(foxHuntFrame.display, times(1)).addPoint(any(TrigPoint.class));
+    }
+
+    @Test
+    public void testActionPerformed() {
+        // Mock an ActionEvent
+        ActionEvent mockEvent = mock(ActionEvent.class);
+
+        // Call the method under test
+        foxHuntFrame.actionPerformed(mockEvent);
+
+        // Verify that addPoint was called
+        assertEquals(1, foxHuntFrame.points.size());
+    }
+
+    @Test
+    public void testLoadLandmarks() {
+        // Verify that landmarks are loaded correctly
+        assertTrue(foxHuntFrame.display.getLandmarks().size() > 0);
+    }
+
+    @Test
+    public void testErrorHandling() {
+        // Simulate an error and verify error handling
+        foxHuntFrame.error("Test Error");
+        // Since System.exit is called, we cannot directly test it here.
+        // This would be better tested with a tool like System Rules or by refactoring to avoid System.exit.
+    }
+
+    private void createLandmarksFile() throws IOException {
+        File file = new File("./landmarks.cfg");
+        FileWriter writer = new FileWriter(file);
+        writer.write("NUM4\n");
+        writer.write("FILEicon1.png\n");
+        writer.write("LAT34.0522\n");
+        writer.write("LON-118.2437\n");
+        writer.write("FILEicon2.png\n");
+        writer.write("LAT36.1699\n");
+        writer.write("LON-115.1398\n");
+        writer.close();
+    }
+}
+```
+
+### Key Points:
+- **Mocking and Setup**: We use Mockito to mock dependencies and simulate GUI actions. We also create a temporary `landmarks.cfg` file for testing the `loadLandmarks()` method.
+- **Testing GUI Components**: Direct testing of GUI components is limited, but we ensure that methods interacting with them are tested.
+- **Error Handling**: The `error()` method is tested indirectly. Direct testing of `System.exit()` is complex and typically requires additional tools or refactoring.
+- **JUnit 4 Annotations**: We use `@Before` and `@After` for setup and teardown, ensuring a clean environment for each test.
+
+This test suite provides a basic structure for testing the `FoxHuntFrame` class. Depending on the complexity and requirements, additional tests and mocking might be necessary.

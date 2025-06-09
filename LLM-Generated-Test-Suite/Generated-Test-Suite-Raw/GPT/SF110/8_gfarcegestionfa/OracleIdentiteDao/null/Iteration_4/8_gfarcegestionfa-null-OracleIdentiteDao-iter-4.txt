@@ -1,0 +1,148 @@
+To create a comprehensive JUnit 4 test suite for the `OracleIdentiteDao` class, we need to test each method in the class. This includes testing the `insert`, `update`, `delete`, `find`, `findCandidat`, and `findRespForm` methods. We will use mock objects to simulate the behavior of the `EntityManager` and `EntityTransaction` since these are external dependencies.
+
+Below is a JUnit 4 test suite for the `OracleIdentiteDao` class:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.persistence.*;
+import java.util.*;
+
+import fr.unice.gfarce.identity.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class OracleIdentiteDaoTest {
+
+    @Mock
+    private EntityManagerFactory emf;
+
+    @Mock
+    private EntityManager em;
+
+    @Mock
+    private EntityTransaction tx;
+
+    @InjectMocks
+    private OracleIdentiteDao dao;
+
+    private Identite identite;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        when(emf.createEntityManager()).thenReturn(em);
+        when(em.getTransaction()).thenReturn(tx);
+
+        identite = new Identite();
+        identite.setId(1L);
+        identite.setNom("Doe");
+        identite.setPrenom("John");
+        identite.setEmail("john.doe@example.com");
+        identite.setSex("M");
+        identite.setType(Identite.TypeIdentite.CANDIDAT);
+    }
+
+    @Test
+    public void testInsert() {
+        dao.insert(identite, "FormName", Calendar.getInstance());
+
+        verify(em).persist(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+        verify(em).close();
+        verify(emf).close();
+    }
+
+    @Test
+    public void testUpdate() {
+        when(em.find(Identite.class, identite.getId())).thenReturn(identite);
+
+        dao.update(identite);
+
+        verify(em).find(Identite.class, identite.getId());
+        verify(em).merge(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+        verify(em).close();
+        verify(emf).close();
+    }
+
+    @Test
+    public void testDelete() {
+        when(em.find(Identite.class, identite.getId())).thenReturn(identite);
+
+        dao.delete(identite);
+
+        verify(em).find(Identite.class, identite.getId());
+        verify(em).remove(identite);
+        verify(tx).begin();
+        verify(tx).commit();
+        verify(em).close();
+        verify(emf).close();
+    }
+
+    @Test
+    public void testFind() {
+        List<Identite> expectedList = new ArrayList<>();
+        expectedList.add(identite);
+
+        when(em.createQuery(anyString())).thenReturn(mock(Query.class));
+        when(em.createQuery(anyString()).getResultList()).thenReturn(expectedList);
+
+        List<Identite> result = dao.find("Doe", "John", "M", "john.doe@example.com", Identite.TypeIdentite.CANDIDAT);
+
+        assertEquals(expectedList, result);
+        verify(em).close();
+        verify(emf).close();
+    }
+
+    @Test
+    public void testFindCandidat() {
+        List<Identite> expectedList = new ArrayList<>();
+        expectedList.add(identite);
+
+        when(em.createQuery(anyString())).thenReturn(mock(Query.class));
+        when(em.createQuery(anyString()).getResultList()).thenReturn(expectedList);
+
+        Candidat[] result = dao.findCandidat("Doe", "John", "M", "john.doe@example.com");
+
+        assertNotNull(result);
+        assertEquals(1, result.length);
+        assertEquals(identite, result[0]);
+        verify(em).close();
+        verify(emf).close();
+    }
+
+    @Test
+    public void testFindRespForm() {
+        List<Identite> expectedList = new ArrayList<>();
+        Identite respForm = new Identite();
+        respForm.setType(Identite.TypeIdentite.FORMATEUR);
+        expectedList.add(respForm);
+
+        when(em.createQuery(anyString())).thenReturn(mock(Query.class));
+        when(em.createQuery(anyString()).getResultList()).thenReturn(expectedList);
+
+        RespFormation[] result = dao.findRespForm("Doe", "John", "M", "john.doe@example.com");
+
+        assertNotNull(result);
+        assertEquals(1, result.length);
+        assertEquals(respForm, result[0]);
+        verify(em).close();
+        verify(emf).close();
+    }
+}
+```
+
+### Explanation:
+- **Mockito** is used to mock the `EntityManagerFactory`, `EntityManager`, and `EntityTransaction` to avoid actual database operations.
+- **`@Mock`** and **`@InjectMocks`** annotations are used to create mock objects and inject them into the `OracleIdentiteDao` instance.
+- Each test method verifies that the appropriate methods on the `EntityManager` and `EntityTransaction` are called.
+- The `find`, `findCandidat`, and `findRespForm` methods are tested by mocking the query results.
+- The `setUp` method initializes the mock objects and sets up a sample `Identite` object for testing.

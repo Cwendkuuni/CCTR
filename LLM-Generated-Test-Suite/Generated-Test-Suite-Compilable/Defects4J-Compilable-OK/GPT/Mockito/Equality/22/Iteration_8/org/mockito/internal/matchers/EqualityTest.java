@@ -1,0 +1,119 @@
+package org.mockito.internal.matchers;
+
+import org.junit.Test;
+import static org.junit.Assert.*;
+import org.mockito.internal.matchers.Equality;
+
+public class EqualityTest {
+
+    @Test
+    public void testAreEqualWithBothNull() {
+        assertTrue(Equality.areEqual(null, null));
+    }
+
+    @Test
+    public void testAreEqualWithOneNull() {
+        assertFalse(Equality.areEqual(null, new Object()));
+        assertFalse(Equality.areEqual(new Object(), null));
+    }
+
+    @Test
+    public void testAreEqualWithEqualObjects() {
+        Object obj = new Object();
+        assertTrue(Equality.areEqual(obj, obj));
+    }
+
+    @Test
+    public void testAreEqualWithDifferentObjects() {
+        assertFalse(Equality.areEqual(new Object(), new Object()));
+    }
+
+    @Test
+    public void testAreEqualWithEqualArrays() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {1, 2, 3};
+        assertTrue(Equality.areEqual(array1, array2));
+    }
+
+    @Test
+    public void testAreEqualWithDifferentArrays() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {4, 5, 6};
+        assertFalse(Equality.areEqual(array1, array2));
+    }
+
+    @Test
+    public void testAreEqualWithDifferentLengthArrays() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {1, 2, 3, 4};
+        assertFalse(Equality.areEqual(array1, array2));
+    }
+
+    @Test
+    public void testAreEqualWithNestedArrays() {
+        int[][] array1 = {{1, 2}, {3, 4}};
+        int[][] array2 = {{1, 2}, {3, 4}};
+        assertTrue(Equality.areEqual(array1, array2));
+    }
+
+    @Test
+    public void testAreEqualWithDifferentNestedArrays() {
+        int[][] array1 = {{1, 2}, {3, 4}};
+        int[][] array2 = {{1, 2}, {4, 3}};
+        assertFalse(Equality.areEqual(array1, array2));
+    }
+
+    @Test
+    public void testAreArraysEqualWithEqualArrays() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {1, 2, 3};
+        assertTrue(Equality.areArraysEqual(array1, array2));
+    }
+
+    @Test
+    public void testAreArraysEqualWithDifferentArrays() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {4, 5, 6};
+        assertFalse(Equality.areArraysEqual(array1, array2));
+    }
+
+    @Test
+    public void testAreArrayLengthsEqualWithEqualLengthArrays() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {4, 5, 6};
+        assertTrue(Equality.areArrayLengthsEqual(array1, array2));
+    }
+
+    @Test
+    public void testAreArrayLengthsEqualWithDifferentLengthArrays() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {1, 2, 3, 4};
+        assertFalse(Equality.areArrayLengthsEqual(array1, array2));
+    }
+
+    @Test
+    public void testAreArrayElementsEqualWithEqualElements() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {1, 2, 3};
+        assertTrue(Equality.areArrayElementsEqual(array1, array2));
+    }
+
+    @Test
+    public void testAreArrayElementsEqualWithDifferentElements() {
+        int[] array1 = {1, 2, 3};
+        int[] array2 = {3, 2, 1};
+        assertFalse(Equality.areArrayElementsEqual(array1, array2));
+    }
+
+    @Test
+    public void testIsArrayWithArray() {
+        int[] array = {1, 2, 3};
+        assertTrue(Equality.isArray(array));
+    }
+
+    @Test
+    public void testIsArrayWithNonArray() {
+        Object obj = new Object();
+        assertFalse(Equality.isArray(obj));
+    }
+}

@@ -1,0 +1,129 @@
+```java
+package com.google.gson.internal.bind.util;
+
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import static org.junit.Assert.*;
+
+import java.text.ParseException;
+import java.text.ParsePosition;
+import java.util.Date;
+import java.util.TimeZone;
+
+public class ISO8601UtilsTest {
+
+    private static final String UTC_ID = "UTC";
+    private static final TimeZone TIMEZONE_UTC = TimeZone.getTimeZone(UTC_ID);
+
+    @Before
+    public void setUp() {
+        // Any setup code if needed
+    }
+
+    @After
+    public void tearDown() {
+        // Any teardown code if needed
+    }
+
+    @Test
+    public void testFormatDate() {
+        Date date = new Date();
+        String formattedDate = ISO8601Utils.format(date);
+        assertNotNull(formattedDate);
+        assertTrue(formattedDate.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}Z"));
+    }
+
+    @Test
+    public void testFormatDateWithMillis() {
+        Date date = new Date();
+        String formattedDate = ISO8601Utils.format(date, true);
+        assertNotNull(formattedDate);
+        assertTrue(formattedDate.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}\\.\\d{3}Z"));
+    }
+
+    @Test
+    public void testFormatDateWithTimeZone() {
+        Date date = new Date();
+        TimeZone tz = TimeZone.getTimeZone("GMT+02:00");
+        String formattedDate = ISO8601Utils.format(date, false, tz);
+        assertNotNull(formattedDate);
+        assertTrue(formattedDate.matches("\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}[+-]\\d{2}:\\d{2}"));
+    }
+
+    @Test
+    public void testParseDate() {
+        String dateStr = "2023-10-05T14:48:00Z";
+        ParsePosition pos = new ParsePosition(0);
+        Date date = ISO8601Utils.parse(dateStr, pos);
+        assertNotNull(date);
+        assertEquals(2023, date.getYear() + 1900);
+        assertEquals(9, date.getMonth()); // Month is 0-based
+        assertEquals(5, date.getDate());
+        assertEquals(14, date.getHours());
+        assertEquals(48, date.getMinutes());
+        assertEquals(0, date.getSeconds());
+    }
+
+    @Test
+    public void testParseDateWithMillis() {
+        String dateStr = "2023-10-05T14:48:00.123Z";
+        ParsePosition pos = new ParsePosition(0);
+        Date date = ISO8601Utils.parse(dateStr, pos);
+        assertNotNull(date);
+        assertEquals(2023, date.getYear() + 1900);
+        assertEquals(9, date.getMonth()); // Month is 0-based
+        assertEquals(5, date.getDate());
+        assertEquals(14, date.getHours());
+        assertEquals(48, date.getMinutes());
+        assertEquals(0, date.getSeconds());
+        assertEquals(123, date.getTime() % 1000);
+    }
+
+    @Test
+    public void testParseDateWithTimeZone() {
+        String dateStr = "2023-10-05T14:48:00+02:00";
+        ParsePosition pos = new ParsePosition(0);
+        Date date = ISO8601Utils.parse(dateStr, pos);
+        assertNotNull(date);
+        assertEquals(2023, date.getYear() + 1900);
+        assertEquals(9, date.getMonth()); // Month is 0-based
+        assertEquals(5, date.getDate());
+        assertEquals(12, date.getHours()); // Adjusted for timezone
+        assertEquals(48, date.getMinutes());
+        assertEquals(0, date.getSeconds());
+    }
+
+    @Test(expected = ParseException.class)
+    public void testParseInvalidDate() {
+        String dateStr = "invalid-date";
+        ParsePosition pos = new ParsePosition(0);
+        ISO8601Utils.parse(dateStr, pos);
+    }
+
+    @Test
+    public void testCheckOffset() {
+        assertTrue(ISO8601Utils.checkOffset("2023-10-05T14:48:00Z", 4, '-'));
+        assertFalse(ISO8601Utils.checkOffset("2023-10-05T14:48:00Z", 4, 'T'));
+    }
+
+    @Test
+    public void testParseInt() {
+        assertEquals(2023, ISO8601Utils.parseInt("2023-10-05T14:48:00Z", 0, 4));
+        assertEquals(10, ISO8601Utils.parseInt("2023-10-05T14:48:00Z", 5, 7));
+    }
+
+    @Test
+    public void testPadInt() {
+        StringBuilder buffer = new StringBuilder();
+        ISO8601Utils.padInt(buffer, 5, 2);
+        assertEquals("05", buffer.toString());
+    }
+
+    @Test
+    public void testIndexOfNonDigit() {
+        assertEquals(4, ISO8601Utils.indexOfNonDigit("2023-10-05T14:48:00Z", 0));
+        assertEquals(7, ISO8601Utils.indexOfNonDigit("2023-10-05T14:48:00Z", 5));
+    }
+}
+```

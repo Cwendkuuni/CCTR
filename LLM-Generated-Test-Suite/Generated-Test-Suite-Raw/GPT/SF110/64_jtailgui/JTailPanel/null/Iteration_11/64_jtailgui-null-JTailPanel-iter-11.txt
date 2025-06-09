@@ -1,0 +1,81 @@
+To create a comprehensive JUnit 4 test suite for the `JTailPanel` class, we need to test its public methods and any observable behavior. The class has two public methods: `getCharacterHeight()` and `getVerticalScrollBar()`, and it implements the `Observer` interface, which requires testing the `update()` method. Below is a JUnit 4 test suite that covers these aspects:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import fr.pingtimeout.jtail.gui.model.JTailModel;
+import fr.pingtimeout.jtail.gui.model.JTailModelEvent;
+import fr.pingtimeout.jtail.gui.model.JTailModelEvent.Type;
+import org.junit.Before;
+import org.junit.Test;
+
+import javax.swing.*;
+import java.util.Observable;
+
+public class JTailPanelTest {
+
+    private JTailModel mockModel;
+    private JTailPanel jTailPanel;
+
+    @Before
+    public void setUp() {
+        mockModel = mock(JTailModel.class);
+        jTailPanel = new JTailPanel(mockModel);
+    }
+
+    @Test
+    public void testGetCharacterHeight() {
+        int characterHeight = jTailPanel.getCharacterHeight();
+        assertTrue("Character height should be greater than 0", characterHeight > 0);
+    }
+
+    @Test
+    public void testGetVerticalScrollBar() {
+        JScrollBar verticalScrollBar = jTailPanel.getVerticalScrollBar();
+        assertNotNull("Vertical scroll bar should not be null", verticalScrollBar);
+    }
+
+    @Test
+    public void testUpdateResizedEvent() {
+        JTailModelEvent event = new JTailModelEvent(Type.RESIZED, 0, 10, 100, 10);
+        when(mockModel.getLineNumbers()).thenReturn("1\n2\n3\n4\n5\n6\n7\n8\n9\n10");
+        when(mockModel.getContent()).thenReturn("Line1\nLine2\nLine3\nLine4\nLine5\nLine6\nLine7\nLine8\nLine9\nLine10");
+
+        jTailPanel.update(mockModel, event);
+
+        assertEquals("Vertical scrollbar minimum should be set", 0, jTailPanel.getVerticalScrollBar().getMinimum());
+        assertEquals("Vertical scrollbar value should be set", 10, jTailPanel.getVerticalScrollBar().getValue());
+        assertEquals("Vertical scrollbar extent should be set", 10, jTailPanel.getVerticalScrollBar().getModel().getExtent());
+        assertEquals("Vertical scrollbar maximum should be set", 100, jTailPanel.getVerticalScrollBar().getMaximum());
+    }
+
+    @Test
+    public void testUpdateScrolledEvent() {
+        JTailModelEvent event = new JTailModelEvent(Type.SCROLLED, 0, 10, 100, 10);
+        when(mockModel.getLineNumbers()).thenReturn("1\n2\n3\n4\n5\n6\n7\n8\n9\n10");
+        when(mockModel.getContent()).thenReturn("Line1\nLine2\nLine3\nLine4\nLine5\nLine6\nLine7\nLine8\nLine9\nLine10");
+
+        jTailPanel.update(mockModel, event);
+
+        // Verify that the table model is updated correctly
+        assertEquals("Table model should have 10 rows", 10, jTailPanel.tableModel.getRowCount());
+        assertEquals("First row line number should be 1", "1", jTailPanel.tableModel.getValueAt(0, 0));
+        assertEquals("First row content should be Line1", "Line1", jTailPanel.tableModel.getValueAt(0, 1));
+    }
+}
+```
+
+### Explanation:
+
+1. **Setup**: We use a mock `JTailModel` to simulate the model's behavior without needing a full implementation. This allows us to control the data returned by the model.
+
+2. **Test `getCharacterHeight()`**: We verify that the character height is greater than zero, which is a basic validation of the method's functionality.
+
+3. **Test `getVerticalScrollBar()`**: We ensure that the vertical scroll bar is not null, confirming that it is initialized correctly.
+
+4. **Test `update()` with `RESIZED` event**: We simulate a `RESIZED` event and verify that the vertical scrollbar's properties are set correctly.
+
+5. **Test `update()` with `SCROLLED` event**: We simulate a `SCROLLED` event and check that the table model is updated with the correct number of rows and content.
+
+This test suite provides a basic level of coverage for the `JTailPanel` class. Depending on the complexity and requirements of the application, additional tests may be necessary to cover edge cases and other behaviors.

@@ -1,0 +1,99 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.util.*;
+
+public class MessageHandlerTest {
+
+    private MessageHandler messageHandler;
+
+    @Before
+    public void setUp() {
+        messageHandler = MessageHandler.getInstance("testMessages");
+    }
+
+    @Test
+    public void testGetMessage_KeyFound() {
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        params.add("param2");
+
+        String result = messageHandler.getMessage("testKey", params);
+        assertEquals("Expected message with params", result);
+    }
+
+    @Test
+    public void testGetMessage_KeyNotFound() {
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+
+        String result = messageHandler.getMessage("nonExistentKey", params);
+        assertEquals("Key: nonExistentKey not found in message file", result);
+    }
+
+    @Test
+    public void testGetMessageOptional_KeyFound() {
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+        params.add("param2");
+
+        String result = messageHandler.getMessageOptional("testKey", params);
+        assertEquals("Expected message with params", result);
+    }
+
+    @Test
+    public void testGetMessageOptional_KeyNotFound() {
+        List<String> params = new ArrayList<>();
+        params.add("param1");
+
+        String result = messageHandler.getMessageOptional("nonExistentKey", params);
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetMessageOptional_NoParams() {
+        String result = messageHandler.getMessageOptional("testKey", null);
+        assertEquals("Expected message without params", result);
+    }
+
+    @Test
+    public void testGetInstance_NewInstance() {
+        MessageHandler instance = MessageHandler.getInstance("newInstance");
+        assertNotNull(instance);
+    }
+
+    @Test
+    public void testGetInstance_ExistingInstance() {
+        MessageHandler instance1 = MessageHandler.getInstance("existingInstance");
+        MessageHandler instance2 = MessageHandler.getInstance("existingInstance");
+        assertSame(instance1, instance2);
+    }
+
+    @Test
+    public void testAddMessages_ValidFiles() {
+        // Assuming there are valid message files in the test directory
+        messageHandler.addMessages("testMessages", "test/resources/");
+        assertNotNull(messageHandler.getMessageOptional("testKey", null));
+    }
+
+    @Test
+    public void testAddMessages_NoFiles() {
+        // Assuming there are no message files in the test directory
+        messageHandler.addMessages("testMessages", "test/resources/empty/");
+        assertNull(messageHandler.getMessageOptional("testKey", null));
+    }
+
+    @Test
+    public void testMessagesFilter_Accept() {
+        MessagesFilter filter = new MessagesFilter("testMessages", "_en_US.properties");
+        assertTrue(filter.accept(new File("test/resources/"), "testMessages_en_US.properties"));
+    }
+
+    @Test
+    public void testMessagesFilter_Reject() {
+        MessagesFilter filter = new MessagesFilter("testMessages", "_en_US.properties");
+        assertFalse(filter.accept(new File("test/resources/"), "otherMessages_en_US.properties"));
+    }
+}
+```

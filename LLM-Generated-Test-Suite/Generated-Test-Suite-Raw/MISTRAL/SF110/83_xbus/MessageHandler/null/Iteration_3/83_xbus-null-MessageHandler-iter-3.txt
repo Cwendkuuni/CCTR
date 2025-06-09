@@ -1,0 +1,164 @@
+```java
+package net.sf.xbus.base.core;
+
+import net.sf.xbus.base.core.trace.Trace;
+import net.sf.xbus.base.core.strings.XStringSupport;
+import net.sf.xbus.base.core.config.Constants;
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mockito;
+import org.powermock.api.mockito.PowerMockito;
+import org.powermock.core.classloader.annotations.PrepareForTest;
+import org.powermock.modules.junit4.PowerMockRunner;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(PowerMockRunner.class)
+@PrepareForTest({MessageHandler.class, Trace.class, XStringSupport.class, Constants.class, File.class, FileInputStream.class})
+public class MessageHandlerTest {
+
+    private MessageHandler messageHandler;
+
+    @Before
+    public void setUp() {
+        PowerMockito.mockStatic(Trace.class);
+        PowerMockito.mockStatic(XStringSupport.class);
+        PowerMockito.mockStatic(Constants.class);
+        PowerMockito.mockStatic(File.class);
+        PowerMockito.mockStatic(FileInputStream.class);
+
+        messageHandler = new MessageHandler("testBasename");
+    }
+
+    @Test
+    public void testGetMessage_KeyFound() {
+        String key = "testKey";
+        List<String> params = Arrays.asList("param1", "param2");
+        String expectedMessage = "Test message with $1$ and $2$";
+
+        messageHandler.mMessages = new Hashtable<>();
+        messageHandler.mMessages.put(key, expectedMessage);
+
+        String result = messageHandler.getMessage(key, params);
+
+        assertEquals("Test message with param1 and param2", result);
+    }
+
+    @Test
+    public void testGetMessage_KeyNotFound() {
+        String key = "testKey";
+        List<String> params = Arrays.asList("param1", "param2");
+
+        messageHandler.mMessages = new Hashtable<>();
+
+        String result = messageHandler.getMessage(key, params);
+
+        assertEquals("Key: testKey not found in message file", result);
+        verifyStatic(times(1));
+        Trace.error("Key: testKey not found in message file");
+    }
+
+    @Test
+    public void testGetMessageOptional_KeyFound() {
+        String key = "testKey";
+        List<String> params = Arrays.asList("param1", "param2");
+        String expectedMessage = "Test message with $1$ and $2$";
+
+        messageHandler.mMessages = new Hashtable<>();
+        messageHandler.mMessages.put(key, expectedMessage);
+
+        String result = messageHandler.getMessageOptional(key, params);
+
+        assertEquals("Test message with param1 and param2", result);
+    }
+
+    @Test
+    public void testGetMessageOptional_KeyNotFound() {
+        String key = "testKey";
+        List<String> params = Arrays.asList("param1", "param2");
+
+        messageHandler.mMessages = new Hashtable<>();
+
+        String result = messageHandler.getMessageOptional(key, params);
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testGetInstance_NewInstance() {
+        String basename = "testBasename";
+
+        MessageHandler instance = MessageHandler.getInstance(basename);
+
+        assertNotNull(instance);
+        assertEquals(messageHandler, instance);
+    }
+
+    @Test
+    public void testGetInstance_ExistingInstance() {
+        String basename = "testBasename";
+
+        MessageHandler instance1 = MessageHandler.getInstance(basename);
+        MessageHandler instance2 = MessageHandler.getInstance(basename);
+
+        assertEquals(instance1, instance2);
+    }
+
+    @Test
+    public void testAddMessages() throws IOException {
+        String basename = "testBasename";
+        String dir = "testDir";
+        String postfix = "_en_US.properties";
+        String filename = basename + postfix;
+
+        File mockFile = mock(File.class);
+        when(mockFile.list(any(FilenameFilter.class))).thenReturn(new String[]{filename});
+
+        FileInputStream mockInputStream = mock(FileInputStream.class);
+        when(mockFile.exists()).thenReturn(true);
+        when(new File(dir)).thenReturn(mockFile);
+        whenNew(FileInputStream.class).withArguments(dir + filename).thenReturn(mockInputStream);
+
+        Properties mockProps = mock(Properties.class);
+        when(mockProps.keys()).thenReturn(Collections.enumeration(Arrays.asList("key1", "key2")));
+        when(mockProps.get("key1")).thenReturn("value1");
+        when(mockProps.get("key2")).thenReturn("value2");
+
+        doNothing().when(mockProps).load(mockInputStream);
+
+        messageHandler.addMessages(basename, dir);
+
+        assertEquals("value1", messageHandler.mMessages.get("key1"));
+        assertEquals("value2", messageHandler.mMessages.get("key2"));
+    }
+
+    @Test
+    public void testMessagesFilter_Accept() {
+        String prefix = "testPrefix";
+        String postfix = "_en_US.properties";
+        String filename = prefix + postfix;
+
+        MessageHandler.MessagesFilter filter = new MessageHandler.MessagesFilter(prefix, postfix);
+
+        assertTrue(filter.accept(null, filename));
+    }
+
+    @Test
+    public void testMessagesFilter_Reject() {
+        String prefix = "testPrefix";
+        String postfix = "_en_US.properties";
+        String filename = "wrongPrefix" + postfix;
+
+        MessageHandler.MessagesFilter filter = new MessageHandler.MessagesFilter(prefix, postfix);
+
+        assertFalse(filter.accept(null, filename));
+    }
+}
+```

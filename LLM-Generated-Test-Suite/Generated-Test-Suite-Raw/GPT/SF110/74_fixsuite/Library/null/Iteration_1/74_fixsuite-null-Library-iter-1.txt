@@ -1,0 +1,152 @@
+To create a comprehensive JUnit 4 test suite for the `Library` class, we need to test the public methods: `loadFromDirectory`, `getDictionaries`, and `getDictionary`. We will mock dependencies where necessary and simulate different scenarios to ensure thorough testing.
+
+Below is the JUnit 4 test suite:
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.util.*;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class LibraryTest {
+
+    @Mock
+    private Logger logger;
+
+    private Library library;
+
+    @Before
+    public void setUp() {
+        library = new Library();
+        Library.logger = logger; // Inject mock logger
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithValidDirectory() {
+        // Setup
+        String validPath = "validDirectory";
+        File mockDirectory = mock(File.class);
+        File mockSubDirectory = mock(File.class);
+        File[] subFiles = {mock(File.class), mock(File.class)};
+        
+        when(mockDirectory.isDirectory()).thenReturn(true);
+        when(mockDirectory.listFiles()).thenReturn(new File[]{mockSubDirectory});
+        when(mockSubDirectory.isDirectory()).thenReturn(true);
+        when(mockSubDirectory.listFiles()).thenReturn(subFiles);
+        when(mockSubDirectory.getName()).thenReturn("version1");
+
+        // Mock static method call
+        try (MockedStatic<File> mockedFile = mockStatic(File.class)) {
+            mockedFile.when(() -> new File(validPath)).thenReturn(mockDirectory);
+
+            // Execute
+            boolean result = library.loadFromDirectory(validPath);
+
+            // Verify
+            assertTrue(result);
+            verify(logger).debug("Loaded 1 FIX dictionaries.");
+        }
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithEmptyDirectory() {
+        // Setup
+        String emptyPath = "emptyDirectory";
+        File mockDirectory = mock(File.class);
+
+        when(mockDirectory.isDirectory()).thenReturn(true);
+        when(mockDirectory.listFiles()).thenReturn(new File[]{});
+
+        // Mock static method call
+        try (MockedStatic<File> mockedFile = mockStatic(File.class)) {
+            mockedFile.when(() -> new File(emptyPath)).thenReturn(mockDirectory);
+
+            // Execute
+            boolean result = library.loadFromDirectory(emptyPath);
+
+            // Verify
+            assertFalse(result);
+            verify(logger).error("Supplied directory is empty.");
+        }
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithInvalidPath() {
+        // Setup
+        String invalidPath = "invalidPath";
+        File mockFile = mock(File.class);
+
+        when(mockFile.isDirectory()).thenReturn(false);
+
+        // Mock static method call
+        try (MockedStatic<File> mockedFile = mockStatic(File.class)) {
+            mockedFile.when(() -> new File(invalidPath)).thenReturn(mockFile);
+
+            // Execute
+            boolean result = library.loadFromDirectory(invalidPath);
+
+            // Verify
+            assertFalse(result);
+            verify(logger).error("Supplied path is not a directory.");
+        }
+    }
+
+    @Test
+    public void testGetDictionaries() {
+        // Setup
+        DictionaryInfo mockDictionary = mock(DictionaryInfo.class);
+        library.dictionaries.put("version1", mockDictionary);
+
+        // Execute
+        List<DictionaryInfo> dictionaries = library.getDictionaries();
+
+        // Verify
+        assertEquals(1, dictionaries.size());
+        assertEquals(mockDictionary, dictionaries.get(0));
+    }
+
+    @Test
+    public void testGetDictionary() {
+        // Setup
+        DictionaryInfo mockDictionary = mock(DictionaryInfo.class);
+        library.dictionaries.put("version1", mockDictionary);
+
+        // Execute
+        DictionaryInfo dictionary = library.getDictionary("version1");
+
+        // Verify
+        assertNotNull(dictionary);
+        assertEquals(mockDictionary, dictionary);
+    }
+
+    @Test
+    public void testGetDictionaryWithNonExistentVersion() {
+        // Execute
+        DictionaryInfo dictionary = library.getDictionary("nonExistentVersion");
+
+        // Verify
+        assertNull(dictionary);
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock the `Logger` and `File` objects to simulate different scenarios without relying on actual file system operations.
+- **Test Cases**:
+  - **Valid Directory**: Tests loading from a valid directory structure.
+  - **Empty Directory**: Tests behavior when the directory is empty.
+  - **Invalid Path**: Tests behavior when the path is not a directory.
+  - **Get Dictionaries**: Tests retrieval of all loaded dictionaries.
+  - **Get Dictionary**: Tests retrieval of a specific dictionary by version.
+  - **Non-Existent Version**: Tests retrieval of a dictionary that doesn't exist.
+
+This test suite ensures that the `Library` class behaves correctly under various conditions.

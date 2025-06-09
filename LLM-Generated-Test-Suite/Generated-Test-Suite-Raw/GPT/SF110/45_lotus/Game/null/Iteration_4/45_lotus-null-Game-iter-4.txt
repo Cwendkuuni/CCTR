@@ -1,0 +1,130 @@
+Certainly! Below is a JUnit 4 test suite for the `Game` class. This suite tests all the methods in the class, assuming that the necessary dependencies and mock objects are available.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import lotus.core.*;
+import lotus.core.interfaces.*;
+import lotus.core.card.*;
+import lotus.core.stack.*;
+import lotus.core.phases.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.*;
+
+import java.util.*;
+
+public class GameTest {
+
+    @Mock
+    private UserInterface mockUI1;
+    
+    @Mock
+    private UserInterface mockUI2;
+    
+    @Mock
+    private CardCollection mockDeck1;
+    
+    @Mock
+    private CardCollection mockDeck2;
+    
+    @Mock
+    private Player mockPlayer1;
+    
+    @Mock
+    private Player mockPlayer2;
+    
+    @Mock
+    private Card mockCard;
+    
+    @Mock
+    private Stack mockStack;
+    
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        Game.stack = mockStack;
+        Game.player1 = mockPlayer1;
+        Game.player2 = mockPlayer2;
+    }
+
+    @Test
+    public void testGetPlayingPlayer_Player1() {
+        Game.playingPlayer = 1;
+        assertEquals(Game.player1, Game.getPlayingPlayer());
+    }
+
+    @Test
+    public void testGetPlayingPlayer_Player2() {
+        Game.playingPlayer = 2;
+        assertEquals(Game.player2, Game.getPlayingPlayer());
+    }
+
+    @Test
+    public void testGetNonPlayingPlayer_Player1() {
+        Game.playingPlayer = 1;
+        assertEquals(Game.player2, Game.getNonPlayingPlayer());
+    }
+
+    @Test
+    public void testGetNonPlayingPlayer_Player2() {
+        Game.playingPlayer = 2;
+        assertEquals(Game.player1, Game.getNonPlayingPlayer());
+    }
+
+    @Test
+    public void testGetOtherPlayer() {
+        assertEquals(Game.player2, Game.getOtherPlayer(Game.player1));
+        assertEquals(Game.player1, Game.getOtherPlayer(Game.player2));
+    }
+
+    @Test
+    public void testInit() {
+        when(mockDeck1.iterator()).thenReturn(Collections.singletonList(mockCard).iterator());
+        when(mockDeck2.iterator()).thenReturn(Collections.singletonList(mockCard).iterator());
+
+        Game.init(mockUI1, mockUI2, "Player1", "Player2", mockDeck1, mockDeck2);
+
+        assertEquals(Game.player1, Game.getPlayingPlayer());
+        assertTrue(Game.currentPhase instanceof UntapPhase);
+
+        verify(mockUI1).init(Game.player1);
+        verify(mockUI2).init(Game.player2);
+        verify(mockCard, times(2)).owner = any(Player.class);
+        verify(mockCard, times(2)).zone = any();
+    }
+
+    @Test
+    public void testGivePriorityToCurrentPlayer() {
+        when(Game.player1.letPlayerSpeak()).thenReturn(false);
+        when(Game.player2.letPlayerSpeak()).thenReturn(false);
+        when(mockStack.empty()).thenReturn(true);
+
+        Game.givePriorityToCurrentPlayer();
+
+        verify(Game.player1, atLeastOnce()).letPlayerSpeak();
+        verify(Game.player2, atLeastOnce()).letPlayerSpeak();
+        verify(mockStack, never()).resolveLast();
+    }
+
+    @Test
+    public void testGivePriorityToCurrentPlayer_WithStack() {
+        when(Game.player1.letPlayerSpeak()).thenReturn(false);
+        when(Game.player2.letPlayerSpeak()).thenReturn(false);
+        when(mockStack.empty()).thenReturn(false).thenReturn(true);
+
+        Game.givePriorityToCurrentPlayer();
+
+        verify(mockStack, atLeastOnce()).resolveLast();
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: The test suite uses Mockito to mock dependencies such as `UserInterface`, `CardCollection`, `Player`, `Card`, and `Stack`.
+- **Setup**: The `setUp` method initializes the mocks and sets the static fields in the `Game` class.
+- **Test Methods**: Each method in the `Game` class is tested with appropriate assertions and verifications.
+- **Behavior Verification**: The test suite verifies interactions with mocked objects to ensure the methods behave as expected.
+
+Please ensure that the necessary dependencies for Mockito and JUnit are included in your project to run these tests.

@@ -1,0 +1,86 @@
+To create a comprehensive JUnit 4 test suite for the `LagoonCLI` class, we need to consider testing the static methods `main`, `getProperty`, and `showTime`. Since `main` is a complex method that interacts with the file system and external classes, we will focus on testing the logic within `getProperty` and `showTime`. Testing `main` would typically require integration tests or mocking of external dependencies, which is beyond the scope of a simple unit test.
+
+Here's a JUnit 4 test suite for the `LagoonCLI` class:
+
+```java
+import nu.staldal.lagoon.LagoonCLI;
+import nu.staldal.lagoon.core.LagoonException;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayOutputStream;
+import java.io.PrintStream;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
+
+public class LagoonCLITest {
+
+    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+    private final PrintStream originalOut = System.out;
+    private final PrintStream originalErr = System.err;
+
+    @Before
+    public void setUpStreams() {
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+    }
+
+    @Before
+    public void setUpProperties() {
+        LagoonCLI.properties = new Properties();
+        LagoonCLI.properties.setProperty("targetURL", "http://example.com");
+        LagoonCLI.properties.setProperty("sitemapFile", "sitemap.xml");
+        LagoonCLI.properties.setProperty("sourceDir", "/source/dir");
+    }
+
+    @Test
+    public void testGetPropertyExists() throws LagoonException {
+        String targetURL = LagoonCLI.getProperty("targetURL");
+        assertEquals("http://example.com", targetURL);
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyNotExists() throws LagoonException {
+        LagoonCLI.getProperty("nonExistentProperty");
+    }
+
+    @Test
+    public void testShowTimeLessThan10Seconds() {
+        LagoonCLI.showTime(5000);
+        assertEquals("in 5000 ms\n", outContent.toString());
+    }
+
+    @Test
+    public void testShowTimeMoreThan10Seconds() {
+        LagoonCLI.showTime(15000);
+        assertEquals("in 15 s\n", outContent.toString());
+    }
+
+    @Test
+    public void testShowTimeExactly10Seconds() {
+        LagoonCLI.showTime(10000);
+        assertEquals("in 10 s\n", outContent.toString());
+    }
+
+    @After
+    public void restoreStreams() {
+        System.setOut(originalOut);
+        System.setErr(originalErr);
+    }
+}
+```
+
+### Explanation:
+
+- **setUpStreams**: Redirects `System.out` and `System.err` to capture output for testing.
+- **setUpProperties**: Initializes the `properties` field with some default values for testing `getProperty`.
+- **testGetPropertyExists**: Tests that `getProperty` returns the correct value for an existing property.
+- **testGetPropertyNotExists**: Tests that `getProperty` throws a `LagoonException` when the property does not exist.
+- **testShowTimeLessThan10Seconds**: Tests `showTime` for durations less than 10 seconds.
+- **testShowTimeMoreThan10Seconds**: Tests `showTime` for durations more than 10 seconds.
+- **testShowTimeExactly10Seconds**: Tests `showTime` for exactly 10 seconds.
+- **restoreStreams**: Restores the original `System.out` and `System.err` after tests.
+
+This test suite covers the logic within `getProperty` and `showTime`. Testing `main` would require more complex setup, including mocking file I/O and external dependencies, which is typically done in integration tests.

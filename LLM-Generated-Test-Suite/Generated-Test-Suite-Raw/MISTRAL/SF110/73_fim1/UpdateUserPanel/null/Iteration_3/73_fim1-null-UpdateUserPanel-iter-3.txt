@@ -1,0 +1,202 @@
+```java
+package osa.ora.server.admin.ui;
+
+import osa.ora.server.admin.*;
+import osa.ora.server.beans.*;
+import org.junit.*;
+import static org.junit.Assert.*;
+import javax.swing.*;
+import java.awt.event.*;
+import java.util.*;
+
+public class UpdateUserPanelTest {
+
+    private AdminApp adminApp;
+    private ControlPanel controlPanel;
+    private UpdateUserPanel updateUserPanel;
+
+    @Before
+    public void setUp() {
+        adminApp = new AdminApp(); // Assuming AdminApp has a default constructor
+        controlPanel = new ControlPanel(); // Assuming ControlPanel has a default constructor
+        updateUserPanel = new UpdateUserPanel(adminApp, controlPanel);
+    }
+
+    @Test
+    public void testUpdateModel() {
+        // Mock data
+        Group group = new Group();
+        User user = new User();
+        group.getUsers().add(user);
+        adminApp.getGroups().add(group);
+
+        updateUserPanel.updateModel();
+
+        // Verify the model of jComboBox1 is set correctly
+        DefaultComboBoxModel<Group> model = (DefaultComboBoxModel<Group>) updateUserPanel.jComboBox1.getModel();
+        assertEquals(1, model.getSize());
+        assertEquals(group, model.getElementAt(0));
+
+        // Verify the model of jComboBox2 is set correctly
+        DefaultComboBoxModel<User> userModel = (DefaultComboBoxModel<User>) updateUserPanel.jComboBox2.getModel();
+        assertEquals(1, userModel.getSize());
+        assertEquals(user, userModel.getElementAt(0));
+    }
+
+    @Test
+    public void testInitComponents() {
+        updateUserPanel.initComponents();
+
+        // Verify components are initialized
+        assertNotNull(updateUserPanel.jLabel1);
+        assertNotNull(updateUserPanel.jLabel2);
+        assertNotNull(updateUserPanel.jLabel3);
+        assertNotNull(updateUserPanel.jCheckBox1);
+        assertNotNull(updateUserPanel.jCheckBox2);
+        assertNotNull(updateUserPanel.jCheckBox3);
+        assertNotNull(updateUserPanel.jLabel4);
+        assertNotNull(updateUserPanel.jComboBox1);
+        assertNotNull(updateUserPanel.jTextField2);
+        assertNotNull(updateUserPanel.jTextField3);
+        assertNotNull(updateUserPanel.jButton1);
+        assertNotNull(updateUserPanel.jButton2);
+        assertNotNull(updateUserPanel.jComboBox2);
+        assertNotNull(updateUserPanel.jButton3);
+        assertNotNull(updateUserPanel.jButton4);
+        assertNotNull(updateUserPanel.jLabel5);
+        assertNotNull(updateUserPanel.jTextField1);
+        assertNotNull(updateUserPanel.jTextField4);
+        assertNotNull(updateUserPanel.jLabel6);
+    }
+
+    @Test
+    public void testJButton1ActionPerformed() {
+        updateUserPanel.jButton1ActionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
+
+        // Verify the parent dialog is hidden and fields are reset
+        assertFalse(controlPanel.getParentDialog().isVisible());
+        assertEquals("", updateUserPanel.jTextField1.getText());
+        assertEquals("", updateUserPanel.jTextField2.getText());
+        assertEquals("", updateUserPanel.jTextField3.getText());
+        assertEquals("", updateUserPanel.jTextField4.getText());
+        assertFalse(updateUserPanel.jCheckBox1.isSelected());
+        assertFalse(updateUserPanel.jCheckBox2.isSelected());
+        assertFalse(updateUserPanel.jCheckBox3.isSelected());
+    }
+
+    @Test
+    public void testJButton2ActionPerformed() {
+        // Mock data
+        Group group = new Group();
+        User user = new User();
+        group.getUsers().add(user);
+        adminApp.getGroups().add(group);
+        updateUserPanel.jComboBox1.setModel(new DefaultComboBoxModel<>(adminApp.getGroups()));
+        updateUserPanel.jComboBox2.setModel(new DefaultComboBoxModel<>(group.getUsers()));
+
+        updateUserPanel.jButton2ActionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
+
+        // Verify user is deleted and fields are reset
+        assertEquals(0, group.getUsers().size());
+        assertEquals("", updateUserPanel.jTextField1.getText());
+        assertEquals("", updateUserPanel.jTextField2.getText());
+        assertEquals("", updateUserPanel.jTextField3.getText());
+        assertEquals("", updateUserPanel.jTextField4.getText());
+        assertFalse(updateUserPanel.jCheckBox1.isSelected());
+        assertFalse(updateUserPanel.jCheckBox2.isSelected());
+        assertFalse(updateUserPanel.jCheckBox3.isSelected());
+    }
+
+    @Test
+    public void testJButton3ActionPerformed() {
+        // Mock data
+        User user = new User();
+        updateUserPanel.jComboBox2.setModel(new DefaultComboBoxModel<>(new User[]{user}));
+
+        updateUserPanel.jButton3ActionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
+
+        // Verify user password is reset
+        // Assuming adminApp.resetUserPass returns the user with reset password
+        assertNotNull(adminApp.resetUserPass(user));
+    }
+
+    @Test
+    public void testJButton4ActionPerformed() {
+        // Mock data
+        Group group = new Group();
+        User user = new User();
+        group.getUsers().add(user);
+        adminApp.getGroups().add(group);
+        updateUserPanel.jComboBox1.setModel(new DefaultComboBoxModel<>(adminApp.getGroups()));
+        updateUserPanel.jComboBox2.setModel(new DefaultComboBoxModel<>(group.getUsers()));
+        updateUserPanel.jTextField1.setText("Test User");
+        updateUserPanel.jTextField2.setText("test@example.com");
+
+        updateUserPanel.jButton4ActionPerformed(new ActionEvent(this, ActionEvent.ACTION_PERFORMED, null));
+
+        // Verify user is updated
+        assertEquals("Test User", user.getName());
+        assertEquals("test@example.com", user.getEmail());
+    }
+
+    @Test
+    public void testJComboBox1ItemStateChanged() {
+        // Mock data
+        Group group = new Group();
+        User user = new User();
+        group.getUsers().add(user);
+        adminApp.getGroups().add(group);
+        updateUserPanel.jComboBox1.setModel(new DefaultComboBoxModel<>(adminApp.getGroups()));
+
+        updateUserPanel.jComboBox1ItemStateChanged(new ItemEvent(this, ItemEvent.ITEM_STATE_CHANGED, group, ItemEvent.SELECTED));
+
+        // Verify jComboBox2 model is updated and user fields are filled
+        DefaultComboBoxModel<User> userModel = (DefaultComboBoxModel<User>) updateUserPanel.jComboBox2.getModel();
+        assertEquals(1, userModel.getSize());
+        assertEquals(user, userModel.getElementAt(0));
+        assertEquals(user.getName(), updateUserPanel.jTextField1.getText());
+        assertEquals(user.getEmail(), updateUserPanel.jTextField2.getText());
+    }
+
+    @Test
+    public void testReset() {
+        updateUserPanel.reset();
+
+        // Verify fields are reset
+        assertEquals("", updateUserPanel.jTextField1.getText());
+        assertEquals("", updateUserPanel.jTextField2.getText());
+        assertEquals("", updateUserPanel.jTextField3.getText());
+        assertEquals("", updateUserPanel.jTextField4.getText());
+        assertFalse(updateUserPanel.jCheckBox1.isSelected());
+        assertFalse(updateUserPanel.jCheckBox2.isSelected());
+        assertFalse(updateUserPanel.jCheckBox3.isSelected());
+    }
+
+    @Test
+    public void testFillUser() {
+        // Mock data
+        User user = new User();
+        user.setName("Test User");
+        user.setEmail("test@example.com");
+
+        updateUserPanel.fillUser(user);
+
+        // Verify user fields are filled
+        assertEquals("Test User", updateUserPanel.jTextField1.getText());
+        assertEquals("test@example.com", updateUserPanel.jTextField2.getText());
+    }
+
+    @Test
+    public void testJComboBox2ItemStateChanged() {
+        // Mock data
+        User user = new User();
+        updateUserPanel.jComboBox2.setModel(new DefaultComboBoxModel<>(new User[]{user}));
+
+        updateUserPanel.jComboBox2ItemStateChanged(new ItemEvent(this, ItemEvent.ITEM_STATE_CHANGED, user, ItemEvent.SELECTED));
+
+        // Verify user fields are filled
+        assertEquals(user.getName(), updateUserPanel.jTextField1.getText());
+        assertEquals(user.getEmail(), updateUserPanel.jTextField2.getText());
+    }
+}
+```

@@ -1,0 +1,178 @@
+```java
+package com.jstevh.viewer;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.Attributes;
+import org.xml.sax.SAXException;
+
+import java.util.HashMap;
+
+import static org.junit.Assert.*;
+
+public class SAXDirParserTest {
+
+    private SAXDirParser parser;
+
+    @Before
+    public void setUp() throws Exception {
+        parser = new SAXDirParser();
+    }
+
+    @Test
+    public void testGetWebData() {
+        assertEquals("", parser.getWebData());
+    }
+
+    @Test
+    public void testStartElement() throws SAXException {
+        Attributes atts = null;
+
+        parser.startElement(null, null, "BrowserLoc", atts);
+        assertTrue(parser.check);
+        assertEquals(0, parser.level);
+
+        parser.startElement(null, null, "Editor", atts);
+        assertTrue(parser.check);
+        assertEquals(10, parser.level);
+
+        parser.startElement(null, null, "acceptsLineNumber", atts);
+        assertTrue(parser.check);
+        assertEquals(11, parser.level);
+
+        parser.startElement(null, null, "parameter", atts);
+        assertTrue(parser.check);
+        assertEquals(12, parser.level);
+
+        parser.startElement(null, null, "Group", atts);
+        assertEquals(2, parser.level);
+        assertFalse(parser.check);
+
+        parser.startElement(null, null, "Web", atts);
+        assertTrue(parser.check);
+        assertEquals(30, parser.level);
+
+        parser.startElement(null, null, "Local", atts);
+        assertTrue(parser.check);
+        assertEquals(31, parser.level);
+
+        parser.startElement(null, null, "Names", atts);
+        assertTrue(parser.check);
+
+        parser.startElement(null, null, "pkg", atts);
+        assertEquals(4, parser.level);
+    }
+
+    @Test
+    public void testCharacters() {
+        char[] charArray = "test".toCharArray();
+
+        parser.level = 0;
+        parser.check = true;
+        parser.characters(charArray, 0, charArray.length);
+        assertEquals("test", SAXDirParser.localBrowser);
+        assertFalse(parser.check);
+        assertEquals(-1, parser.level);
+
+        parser.level = 10;
+        parser.check = true;
+        parser.characters(charArray, 0, charArray.length);
+        assertEquals("test", SAXDirParser.file_editor);
+        assertFalse(parser.check);
+        assertEquals(-1, parser.level);
+
+        parser.level = 11;
+        parser.check = true;
+        parser.characters("Yes".toCharArray(), 0, 3);
+        assertTrue(SAXDirParser.lineNumAccepted);
+        assertFalse(parser.check);
+        assertEquals(-1, parser.level);
+
+        parser.level = 11;
+        parser.check = true;
+        parser.characters("No".toCharArray(), 0, 2);
+        assertFalse(SAXDirParser.lineNumAccepted);
+        assertFalse(parser.check);
+        assertEquals(-1, parser.level);
+
+        parser.level = 12;
+        parser.check = true;
+        parser.characters(charArray, 0, charArray.length);
+        assertEquals("test", SAXDirParser.lineNumParam);
+        assertFalse(parser.check);
+        assertEquals(-1, parser.level);
+
+        parser.level = 30;
+        parser.check = true;
+        parser.characters(charArray, 0, charArray.length);
+        assertEquals("test", parser.location);
+        assertFalse(parser.check);
+        assertEquals(-1, parser.level);
+
+        parser.level = 31;
+        parser.check = true;
+        parser.characters("Yes".toCharArray(), 0, 3);
+        assertTrue(parser.local);
+        assertFalse(parser.check);
+        assertEquals(-1, parser.level);
+
+        parser.level = 31;
+        parser.check = true;
+        parser.characters("No".toCharArray(), 0, 2);
+        assertFalse(parser.local);
+        assertFalse(parser.check);
+        assertEquals(-1, parser.level);
+
+        parser.level = 4;
+        parser.check = true;
+        parser.location = "location";
+        parser.characters("pkg.".toCharArray(), 0, 4);
+        assertEquals("location", SAXDirParser.directory.get("pkg"));
+        assertTrue(SAXDirParser.localPackages.contains("pkg"));
+    }
+
+    @Test
+    public void testEndElement() throws SAXException {
+        parser.endElement(null, null, "Group");
+        assertFalse(parser.check);
+    }
+
+    @Test
+    public void testGetDirectory() {
+        HashMap<String, String> directory = new HashMap<>();
+        directory.put("test", "location");
+        SAXDirParser.directory = directory;
+        assertEquals(directory, SAXDirParser.getDirectory());
+    }
+
+    @Test
+    public void testGetLocalPackages() {
+        SAXDirParser.localPackages.add("test");
+        assertEquals("test", SAXDirParser.getLocalPackages().get(0));
+    }
+
+    @Test
+    public void testGetLocalBrowser() {
+        SAXDirParser.localBrowser = "browser";
+        assertEquals("browser", SAXDirParser.getLocalBrowser());
+    }
+
+    @Test
+    public void testGetEditor() {
+        SAXDirParser.file_editor = "editor";
+        assertEquals("editor", SAXDirParser.getEditor());
+    }
+
+    @Test
+    public void testAcceptsLineNumber() {
+        SAXDirParser.lineNumAccepted = true;
+        assertTrue(SAXDirParser.acceptsLineNumber());
+    }
+
+    @Test
+    public void testLineNumberParameter() {
+        SAXDirParser.lineNumParam = "param";
+        assertEquals("param", SAXDirParser.lineNumberParameter());
+    }
+}
+```

@@ -1,0 +1,166 @@
+Certainly! Below is a complete JUnit 4 test suite to comprehensively test the `LagoonCLI` class.
+
+```java
+package nu.staldal.lagoon;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.*;
+import java.util.Properties;
+
+public class LagoonCLITest {
+
+    private final ByteArrayOutputStream outContent = new ByteArrayOutputStream();
+    private final ByteArrayOutputStream errContent = new ByteArrayOutputStream();
+    private final PrintStream originalOut = System.out;
+    private final PrintStream originalErr = System.err;
+
+    @Before
+    public void setUpStreams() {
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+    }
+
+    @Test
+    public void testMainNoArgs() {
+        LagoonCLI.main(new String[]{});
+        assertEquals("Syntax:\nnu.staldal.lagoon.LagoonCLI <property_file> [<interval>|build|force]\nnu.staldal.lagoon.LagoonCLI <sitemap_file> [<interval>|build|force]\n", outContent.toString());
+    }
+
+    @Test
+    public void testMainBuild() {
+        LagoonCLI.main(new String[]{"test.properties", "build"});
+        assertTrue(outContent.toString().contains("Building website..."));
+    }
+
+    @Test
+    public void testMainForce() {
+        LagoonCLI.main(new String[]{"test.properties", "force"});
+        assertTrue(outContent.toString().contains("Force building website..."));
+    }
+
+    @Test
+    public void testMainInterval() {
+        LagoonCLI.main(new String[]{"test.properties", "10"});
+        assertTrue(outContent.toString().contains("Building website..."));
+    }
+
+    @Test
+    public void testMainInvalidInterval() {
+        LagoonCLI.main(new String[]{"test.properties", "invalid"});
+        assertEquals("Syntax:\nnu.staldal.lagoon.LagoonCLI <property_file> [<interval>|build|force]\nnu.staldal.lagoon.LagoonCLI <sitemap_file> [<interval>|build|force]\n", outContent.toString());
+    }
+
+    @Test
+    public void testMainInvalidIntervalNegative() {
+        LagoonCLI.main(new String[]{"test.properties", "-10"});
+        assertEquals("Syntax:\nnu.staldal.lagoon.LagoonCLI <property_file> [<interval>|build|force]\nnu.staldal.lagoon.LagoonCLI <sitemap_file> [<interval>|build|force]\n", outContent.toString());
+    }
+
+    @Test
+    public void testMainSitemapFile() {
+        LagoonCLI.main(new String[]{"test.sitemap"});
+        assertTrue(outContent.toString().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testMainPropertyFile() {
+        LagoonCLI.main(new String[]{"test.properties"});
+        assertTrue(outContent.toString().contains("Initializing Lagoon..."));
+    }
+
+    @Test
+    public void testMainPropertyFileNotFound() {
+        LagoonCLI.main(new String[]{"nonexistent.properties"});
+        assertTrue(errContent.toString().contains("File not found: nonexistent.properties"));
+    }
+
+    @Test
+    public void testMainSitemapFileNotFound() {
+        LagoonCLI.main(new String[]{"nonexistent.sitemap"});
+        assertTrue(errContent.toString().contains("File not found: nonexistent.sitemap"));
+    }
+
+    @Test
+    public void testMainInteractiveMode() {
+        LagoonCLI.main(new String[]{"test.properties"});
+        assertTrue(outContent.toString().contains("Ready"));
+    }
+
+    @Test
+    public void testMainInteractiveModeBuild() {
+        // Simulate user input for interactive mode
+        InputStream sysInBackup = System.in;
+        ByteArrayInputStream in = new ByteArrayInputStream("b\nq\n".getBytes());
+        System.setIn(in);
+
+        LagoonCLI.main(new String[]{"test.properties"});
+
+        System.setIn(sysInBackup);
+        assertTrue(outContent.toString().contains("Building website..."));
+    }
+
+    @Test
+    public void testMainInteractiveModeForce() {
+        // Simulate user input for interactive mode
+        InputStream sysInBackup = System.in;
+        ByteArrayInputStream in = new ByteArrayInputStream("f\nq\n".getBytes());
+        System.setIn(in);
+
+        LagoonCLI.main(new String[]{"test.properties"});
+
+        System.setIn(sysInBackup);
+        assertTrue(outContent.toString().contains("Force building website..."));
+    }
+
+    @Test
+    public void testMainInteractiveModeQuit() {
+        // Simulate user input for interactive mode
+        InputStream sysInBackup = System.in;
+        ByteArrayInputStream in = new ByteArrayInputStream("q\n".getBytes());
+        System.setIn(in);
+
+        LagoonCLI.main(new String[]{"test.properties"});
+
+        System.setIn(sysInBackup);
+        assertTrue(outContent.toString().contains("Exiting Lagoon..."));
+    }
+
+    @Test
+    public void testGetProperty() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("testKey", "testValue");
+        LagoonCLI.properties = properties;
+
+        String value = LagoonCLI.getProperty("testKey");
+        assertEquals("testValue", value);
+    }
+
+    @Test(expected = LagoonException.class)
+    public void testGetPropertyNotFound() throws Exception {
+        Properties properties = new Properties();
+        LagoonCLI.properties = properties;
+
+        LagoonCLI.getProperty("nonexistentKey");
+    }
+
+    @Test
+    public void testShowTime() {
+        LagoonCLI.showTime(5000);
+        assertEquals("in 5 s\n", outContent.toString());
+
+        outContent.reset();
+        LagoonCLI.showTime(500);
+        assertEquals("in 500 ms\n", outContent.toString());
+    }
+
+    @After
+    public void restoreStreams() {
+        System.setOut(originalOut);
+        System.setErr(originalErr);
+    }
+}
+```
+
+This test suite covers various scenarios for the `LagoonCLI` class, including different command-line arguments, interactive mode, and property retrieval. Make sure to adjust the test cases according to the actual behavior and dependencies of the `LagoonCLI` class in your environment.

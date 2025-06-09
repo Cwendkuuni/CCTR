@@ -1,0 +1,110 @@
+package lotus.core.phases;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import lotus.core.phases.*;
+import lotus.core.*;
+
+public class PhaseTest {
+
+    @Before
+    public void setUp() {
+        // Reset the Game state before each test
+        Game.currentPhase = null;
+        Game.playingPlayer = 1;
+    }
+
+    @Test
+    public void testNextPhaseFromUntapPhase() {
+        Game.currentPhase = new UntapPhase();
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof UpkeepPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromUpkeepPhase() {
+        Game.currentPhase = new UpkeepPhase();
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof DrawPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromDrawPhase() {
+        Game.currentPhase = new DrawPhase();
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof Main1Phase);
+    }
+
+    @Test
+    public void testNextPhaseFromMain1Phase() {
+        Game.currentPhase = new Main1Phase();
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof CombatBeginningPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromCombatBeginningPhase() {
+        Game.currentPhase = new CombatBeginningPhase();
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof DeclareAttackersPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromDeclareAttackersPhase() {
+        Game.currentPhase = new DeclareAttackersPhase();
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof DeclareBlockersPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromDeclareBlockersPhase() {
+        Game.currentPhase = new DeclareBlockersPhase();
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof CombatDamagePhase);
+    }
+
+    @Test
+    public void testNextPhaseFromCombatDamagePhase() {
+        Game.currentPhase = new CombatDamagePhase();
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof CombatEndPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromCombatEndPhase() {
+        Game.currentPhase = new CombatEndPhase();
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof Main2Phase);
+    }
+
+    @Test
+    public void testNextPhaseFromMain2Phase() {
+        Game.currentPhase = new Main2Phase();
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof EndOfTurnPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromEndOfTurnPhase() {
+        Game.currentPhase = new EndOfTurnPhase();
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof CleanupPhase);
+    }
+
+    @Test
+    public void testNextPhaseFromCleanupPhase() {
+        Game.currentPhase = new CleanupPhase();
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof PlayerChangePhase);
+    }
+
+    @Test
+    public void testNextPhaseFromPlayerChangePhase() {
+        Game.currentPhase = new PlayerChangePhase();
+        int initialPlayer = Game.playingPlayer;
+        Phase.nextPhase();
+        assertTrue(Game.currentPhase instanceof UntapPhase);
+        assertEquals(initialPlayer % 2 + 1, Game.playingPlayer);
+    }
+}

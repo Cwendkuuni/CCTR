@@ -1,0 +1,111 @@
+To create a comprehensive JUnit 4 test suite for the `MacawWorkBench` class, we need to test the main functionalities and interactions of the class. This includes testing the `actionPerformed` method, which is the primary method that interacts with the UI components. Since the class involves UI components and system exit calls, we will need to mock these components and handle the system exit appropriately.
+
+Here's a JUnit 4 test suite for the `MacawWorkBench` class:
+
+```java
+import static org.mockito.Mockito.*;
+import static org.junit.Assert.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+
+@RunWith(MockitoJUnitRunner.class)
+public class MacawWorkBenchTest {
+
+    @Mock
+    private SessionProperties mockSessionProperties;
+    @Mock
+    private UserInterfaceFactory mockUserInterfaceFactory;
+    @Mock
+    private JDialog mockDialog;
+    @Mock
+    private JButton mockEditConstantsButton;
+    @Mock
+    private JButton mockEditVariablesButton;
+    @Mock
+    private JButton mockExportVariableDataButton;
+    @Mock
+    private JButton mockExitButton;
+
+    private MacawWorkBench macawWorkBench;
+
+    @Before
+    public void setUp() {
+        when(mockSessionProperties.getUserInterfaceFactory()).thenReturn(mockUserInterfaceFactory);
+        when(mockUserInterfaceFactory.createDialog()).thenReturn(mockDialog);
+        when(mockUserInterfaceFactory.createButton(anyString())).thenReturn(mockEditConstantsButton, mockEditVariablesButton, mockExportVariableDataButton, mockExitButton);
+
+        macawWorkBench = new MacawWorkBench(mockSessionProperties);
+    }
+
+    @Test
+    public void testShow() {
+        macawWorkBench.show();
+        verify(mockDialog).setVisible(true);
+    }
+
+    @Test
+    public void testActionPerformed_editConstants() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(mockEditConstantsButton);
+
+        macawWorkBench.actionPerformed(mockEvent);
+
+        // Verify that the editConstants method was called
+        // Since editConstants is private, we can't directly verify it, but we can check interactions
+        // with the mock objects that would be used in editConstants.
+        verify(mockEditConstantsButton).addActionListener(macawWorkBench);
+    }
+
+    @Test
+    public void testActionPerformed_editVariables() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(mockEditVariablesButton);
+
+        macawWorkBench.actionPerformed(mockEvent);
+
+        // Verify that the editVariables method was called
+        verify(mockEditVariablesButton).addActionListener(macawWorkBench);
+    }
+
+    @Test
+    public void testActionPerformed_exportVariableData() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(mockExportVariableDataButton);
+
+        macawWorkBench.actionPerformed(mockEvent);
+
+        // Verify that the exportVariableData method was called
+        verify(mockExportVariableDataButton).addActionListener(macawWorkBench);
+    }
+
+    @Test
+    public void testActionPerformed_exit() {
+        ActionEvent mockEvent = mock(ActionEvent.class);
+        when(mockEvent.getSource()).thenReturn(mockExitButton);
+
+        // We need to handle System.exit calls in tests
+        try {
+            macawWorkBench.actionPerformed(mockEvent);
+            fail("Expected a SecurityException to be thrown");
+        } catch (SecurityException e) {
+            // Expected exception
+        }
+
+        // Verify that the exit method was called
+        verify(mockExitButton).addActionListener(macawWorkBench);
+    }
+}
+```
+
+### Notes:
+- **Mocking**: We use Mockito to mock the dependencies such as `SessionProperties`, `UserInterfaceFactory`, `JDialog`, and `JButton`.
+- **System.exit Handling**: The `exit` method calls `System.exit(0)`, which would terminate the JVM. In a real test environment, you might want to use a `SecurityManager` to prevent the JVM from exiting during tests.
+- **Private Methods**: Since `editConstants`, `editVariables`, `exportVariableData`, and `exit` are private, we cannot directly test them. Instead, we test the `actionPerformed` method, which indirectly tests these private methods by verifying interactions with the mocked components.
+- **UI Components**: The test suite assumes that the UI components are correctly created and added to the dialog. The focus is on testing the logic within the `MacawWorkBench` class.

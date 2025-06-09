@@ -1,0 +1,114 @@
+Certainly! Below is a JUnit 4 test suite for the `Entities` class. This suite tests the public methods and some of the static methods within the class. Note that some methods, such as `escape` and `unescape`, rely on other classes like `Document.OutputSettings` and `Parser`, so mock objects or simplified implementations might be necessary for a complete test.
+
+```java
+import org.jsoup.nodes.Entities;
+import org.jsoup.nodes.Document;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class EntitiesTest {
+
+    private Map<String, Character> testFullMap;
+    private Map<String, Character> testBaseMap;
+    private Map<Character, String> testXhtmlByVal;
+    private Map<Character, String> testBaseByVal;
+    private Map<Character, String> testFullByVal;
+
+    @Before
+    public void setUp() {
+        testFullMap = new HashMap<>();
+        testBaseMap = new HashMap<>();
+        testXhtmlByVal = new HashMap<>();
+        testBaseByVal = new HashMap<>();
+        testFullByVal = new HashMap<>();
+
+        // Sample data for testing
+        testFullMap.put("lt", '<');
+        testFullMap.put("gt", '>');
+        testBaseMap.put("lt", '<');
+        testBaseMap.put("gt", '>');
+        testXhtmlByVal.put('<', "lt");
+        testXhtmlByVal.put('>', "gt");
+        testBaseByVal.put('<', "lt");
+        testBaseByVal.put('>', "gt");
+        testFullByVal.put('<', "lt");
+        testFullByVal.put('>', "gt");
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertFalse(Entities.isNamedEntity("unknown"));
+    }
+
+    @Test
+    public void testIsBaseNamedEntity() {
+        assertTrue(Entities.isBaseNamedEntity("lt"));
+        assertFalse(Entities.isBaseNamedEntity("unknown"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertNull(Entities.getCharacterByName("unknown"));
+    }
+
+    @Test
+    public void testEscape() {
+        Document.OutputSettings out = new Document.OutputSettings();
+        out.escapeMode(Entities.EscapeMode.base);
+        out.charset(Charset.forName("UTF-8"));
+
+        String input = "This is a <test> & \"example\".";
+        String expected = "This is a &lt;test&gt; &amp; &quot;example&quot;.";
+        assertEquals(expected, Entities.escape(input, out));
+    }
+
+    @Test
+    public void testUnescape() {
+        String input = "This is a &lt;test&gt; &amp; &quot;example&quot;.";
+        String expected = "This is a <test> & \"example\".";
+        assertEquals(expected, Entities.unescape(input));
+    }
+
+    @Test
+    public void testUnescapeStrict() {
+        String input = "This is a &lt;test&gt; &amp; &quot;example&quot;.";
+        String expected = "This is a <test> & \"example\".";
+        assertEquals(expected, Entities.unescape(input, true));
+    }
+
+    @Test
+    public void testEscapeModeGetMap() {
+        Entities.EscapeMode escapeMode = Entities.EscapeMode.base;
+        assertNotNull(escapeMode.getMap());
+    }
+
+    @Test
+    public void testCanEncode() {
+        CharsetEncoder encoder = Charset.forName("US-ASCII").newEncoder();
+        assertTrue(Entities.canEncode(Entities.CoreCharset.ascii, 'A', encoder));
+        assertFalse(Entities.canEncode(Entities.CoreCharset.ascii, '€', encoder));
+    }
+
+    @Test
+    public void testCoreCharsetByName() {
+        assertEquals(Entities.CoreCharset.ascii, Entities.CoreCharset.byName("US-ASCII"));
+        assertEquals(Entities.CoreCharset.utf, Entities.CoreCharset.byName("UTF-8"));
+        assertEquals(Entities.CoreCharset.fallback, Entities.CoreCharset.byName("ISO-8859-1"));
+    }
+}
+```
+
+### Notes:
+- **Mocking and Simplification**: The `escape` and `unescape` methods depend on `Document.OutputSettings` and `Parser`, respectively. In a real-world scenario, you might need to mock these dependencies or provide simplified implementations.
+- **Test Data**: The test data used in the `setUp` method is a simplified version. You should replace it with actual data from the `entities-base.properties` and `entities-full.properties` files if available.
+- **Charset Handling**: The `canEncode` method tests encoding capabilities. Ensure that the charset used in tests matches the expected behavior of the method.
+- **Completeness**: This test suite covers the main functionalities of the `Entities` class. Depending on the actual implementation details and dependencies, additional tests might be necessary.

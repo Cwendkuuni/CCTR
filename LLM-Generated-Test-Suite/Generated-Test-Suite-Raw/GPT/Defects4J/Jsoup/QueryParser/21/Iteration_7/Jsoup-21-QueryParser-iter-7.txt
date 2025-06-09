@@ -1,0 +1,123 @@
+To create a comprehensive JUnit 4 test suite for the `QueryParser` class, we need to test the public and package-private methods. The main method to test is `parse(String query)`, which is the entry point for parsing a CSS query. The other methods are package-private and are used internally by `parse`.
+
+Below is a JUnit 4 test suite for the `QueryParser` class. Note that this test suite assumes the existence of the `Evaluator` and related classes, as well as the `TokenQueue`, `StringUtil`, and `Validate` classes. The test suite focuses on testing the parsing logic and the handling of different CSS selectors.
+
+```java
+import org.jsoup.select.QueryParser;
+import org.jsoup.select.Evaluator;
+import org.jsoup.select.Selector;
+import org.jsoup.helper.Validate;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class QueryParserTest {
+
+    @Test
+    public void testParseSimpleTag() {
+        Evaluator evaluator = QueryParser.parse("div");
+        assertNotNull(evaluator);
+        assertTrue(evaluator instanceof Evaluator.Tag);
+    }
+
+    @Test
+    public void testParseIdSelector() {
+        Evaluator evaluator = QueryParser.parse("#myId");
+        assertNotNull(evaluator);
+        assertTrue(evaluator instanceof Evaluator.Id);
+    }
+
+    @Test
+    public void testParseClassSelector() {
+        Evaluator evaluator = QueryParser.parse(".myClass");
+        assertNotNull(evaluator);
+        assertTrue(evaluator instanceof Evaluator.Class);
+    }
+
+    @Test
+    public void testParseAttributeSelector() {
+        Evaluator evaluator = QueryParser.parse("[href]");
+        assertNotNull(evaluator);
+        assertTrue(evaluator instanceof Evaluator.Attribute);
+    }
+
+    @Test
+    public void testParseAttributeWithValueSelector() {
+        Evaluator evaluator = QueryParser.parse("[href='example.com']");
+        assertNotNull(evaluator);
+        assertTrue(evaluator instanceof Evaluator.AttributeWithValue);
+    }
+
+    @Test
+    public void testParseChildCombinator() {
+        Evaluator evaluator = QueryParser.parse("div > p");
+        assertNotNull(evaluator);
+        assertTrue(evaluator instanceof CombiningEvaluator.And);
+    }
+
+    @Test
+    public void testParseDescendantCombinator() {
+        Evaluator evaluator = QueryParser.parse("div p");
+        assertNotNull(evaluator);
+        assertTrue(evaluator instanceof CombiningEvaluator.And);
+    }
+
+    @Test
+    public void testParseAdjacentSiblingCombinator() {
+        Evaluator evaluator = QueryParser.parse("div + p");
+        assertNotNull(evaluator);
+        assertTrue(evaluator instanceof CombiningEvaluator.And);
+    }
+
+    @Test
+    public void testParseGeneralSiblingCombinator() {
+        Evaluator evaluator = QueryParser.parse("div ~ p");
+        assertNotNull(evaluator);
+        assertTrue(evaluator instanceof CombiningEvaluator.And);
+    }
+
+    @Test
+    public void testParseGroupSelector() {
+        Evaluator evaluator = QueryParser.parse("div, p");
+        assertNotNull(evaluator);
+        assertTrue(evaluator instanceof CombiningEvaluator.Or);
+    }
+
+    @Test
+    public void testParsePseudoClass() {
+        Evaluator evaluator = QueryParser.parse(":contains(text)");
+        assertNotNull(evaluator);
+        assertTrue(evaluator instanceof Evaluator.ContainsText);
+    }
+
+    @Test
+    public void testParsePseudoClassWithIndex() {
+        Evaluator evaluator = QueryParser.parse(":lt(3)");
+        assertNotNull(evaluator);
+        assertTrue(evaluator instanceof Evaluator.IndexLessThan);
+    }
+
+    @Test(expected = Selector.SelectorParseException.class)
+    public void testParseInvalidSelector() {
+        QueryParser.parse("div > > p");
+    }
+
+    @Test(expected = Selector.SelectorParseException.class)
+    public void testParseEmptySelector() {
+        QueryParser.parse("");
+    }
+
+    @Test(expected = Selector.SelectorParseException.class)
+    public void testParseInvalidAttributeSelector() {
+        QueryParser.parse("[href='']");
+    }
+}
+```
+
+### Explanation:
+- **Basic Selectors**: Tests for simple tag, ID, class, and attribute selectors.
+- **Combinators**: Tests for child (`>`), descendant (space), adjacent sibling (`+`), and general sibling (`~`) combinators.
+- **Group Selector**: Tests for multiple selectors separated by a comma.
+- **Pseudo-classes**: Tests for pseudo-classes like `:contains` and `:lt`.
+- **Invalid Selectors**: Tests for invalid selectors to ensure exceptions are thrown as expected.
+
+This test suite provides a comprehensive set of tests for the `QueryParser` class, covering a wide range of CSS selector parsing scenarios.

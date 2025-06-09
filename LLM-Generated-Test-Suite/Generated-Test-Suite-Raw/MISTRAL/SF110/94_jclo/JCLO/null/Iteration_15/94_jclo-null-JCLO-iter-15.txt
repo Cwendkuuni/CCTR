@@ -1,0 +1,224 @@
+```java
+package edu.mscd.cs.jclo;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+
+public class JCLOTest {
+
+    private JCLO jclo;
+    private TestClass testObject;
+
+    @Before
+    public void setUp() {
+        testObject = new TestClass();
+        jclo = new JCLO(testObject);
+    }
+
+    @Test
+    public void testConstructorWithObject() {
+        JCLO jclo = new JCLO(testObject);
+        assertNotNull(jclo);
+    }
+
+    @Test
+    public void testConstructorWithObjectAndAliases() {
+        String[][] aliases = {{"alias1", "field1"}, {"alias2", "field2"}};
+        JCLO jclo = new JCLO(testObject, aliases);
+        assertNotNull(jclo);
+    }
+
+    @Test
+    public void testConstructorWithPrefixAndObject() {
+        JCLO jclo = new JCLO("prefix", testObject);
+        assertNotNull(jclo);
+    }
+
+    @Test
+    public void testConstructorWithPrefixObjectAndAliases() {
+        String[][] aliases = {{"alias1", "field1"}, {"alias2", "field2"}};
+        JCLO jclo = new JCLO("prefix", testObject, aliases);
+        assertNotNull(jclo);
+    }
+
+    @Test
+    public void testGetValue() {
+        testObject.field1 = "value1";
+        assertEquals("value1", jclo.getValue("field1"));
+    }
+
+    @Test
+    public void testGetValueNonExistentField() {
+        assertNull(jclo.getValue("nonExistentField"));
+    }
+
+    @Test
+    public void testSetValue() {
+        jclo.parse(new String[]{"--field1=newValue"});
+        assertEquals("newValue", testObject.field1);
+    }
+
+    @Test
+    public void testToString() {
+        testObject.field1 = "value1";
+        testObject.field2 = 123;
+        String result = jclo.toString();
+        assertTrue(result.contains("String: field1 = value1"));
+        assertTrue(result.contains("int: field2 = 123"));
+    }
+
+    @Test
+    public void testUsage() {
+        String usage = jclo.usage();
+        assertTrue(usage.contains("--field1=String"));
+        assertTrue(usage.contains("--field2=int"));
+    }
+
+    @Test
+    public void testParseAdditional() {
+        jclo.parse(new String[]{"additionalArg1", "additionalArg2"});
+        assertArrayEquals(new String[]{"additionalArg1", "additionalArg2"}, testObject.additional);
+    }
+
+    @Test
+    public void testParseBoolean() {
+        jclo.parse(new String[]{"--booleanField=true"});
+        assertTrue(testObject.booleanField);
+    }
+
+    @Test
+    public void testParseArray() {
+        jclo.parse(new String[]{"--intArray=1", "--intArray=2"});
+        assertArrayEquals(new int[]{1, 2}, testObject.intArray);
+    }
+
+    @Test
+    public void testGetBoolean() {
+        testObject.booleanField = true;
+        assertTrue(jclo.getBoolean("booleanField"));
+    }
+
+    @Test
+    public void testGetByte() {
+        testObject.byteField = 1;
+        assertEquals(1, jclo.getByte("byteField"));
+    }
+
+    @Test
+    public void testGetChar() {
+        testObject.charField = 'a';
+        assertEquals('a', jclo.getChar("charField"));
+    }
+
+    @Test
+    public void testGetShort() {
+        testObject.shortField = 1;
+        assertEquals(1, jclo.getShort("shortField"));
+    }
+
+    @Test
+    public void testGetInt() {
+        testObject.intField = 1;
+        assertEquals(1, jclo.getInt("intField"));
+    }
+
+    @Test
+    public void testGetFloat() {
+        testObject.floatField = 1.0f;
+        assertEquals(1.0f, jclo.getFloat("floatField"), 0.001);
+    }
+
+    @Test
+    public void testGetDouble() {
+        testObject.doubleField = 1.0;
+        assertEquals(1.0, jclo.getDouble("doubleField"), 0.001);
+    }
+
+    @Test
+    public void testGetLong() {
+        testObject.longField = 1L;
+        assertEquals(1L, jclo.getLong("longField"));
+    }
+
+    @Test
+    public void testGetString() {
+        testObject.stringField = "test";
+        assertEquals("test", jclo.getString("stringField"));
+    }
+
+    @Test
+    public void testGetBytes() {
+        testObject.byteArray = new byte[]{1, 2, 3};
+        assertArrayEquals(new byte[]{1, 2, 3}, jclo.getBytes("byteArray"));
+    }
+
+    @Test
+    public void testGetChars() {
+        testObject.charArray = new char[]{'a', 'b', 'c'};
+        assertArrayEquals(new char[]{'a', 'b', 'c'}, jclo.getChars("charArray"));
+    }
+
+    @Test
+    public void testGetShorts() {
+        testObject.shortArray = new short[]{1, 2, 3};
+        assertArrayEquals(new short[]{1, 2, 3}, jclo.getShorts("shortArray"));
+    }
+
+    @Test
+    public void testGetInts() {
+        testObject.intArray = new int[]{1, 2, 3};
+        assertArrayEquals(new int[]{1, 2, 3}, jclo.getInts("intArray"));
+    }
+
+    @Test
+    public void testGetFloats() {
+        testObject.floatArray = new float[]{1.0f, 2.0f, 3.0f};
+        assertArrayEquals(new float[]{1.0f, 2.0f, 3.0f}, jclo.getFloats("floatArray"), 0.001);
+    }
+
+    @Test
+    public void testGetDoubles() {
+        testObject.doubleArray = new double[]{1.0, 2.0, 3.0};
+        assertArrayEquals(new double[]{1.0, 2.0, 3.0}, jclo.getDoubles("doubleArray"), 0.001);
+    }
+
+    @Test
+    public void testGetLongs() {
+        testObject.longArray = new long[]{1L, 2L, 3L};
+        assertArrayEquals(new long[]{1L, 2L, 3L}, jclo.getLongs("longArray"));
+    }
+
+    @Test
+    public void testGetStrings() {
+        testObject.stringArray = new String[]{"one", "two", "three"};
+        assertArrayEquals(new String[]{"one", "two", "three"}, jclo.getStrings("stringArray"));
+    }
+
+    private static class TestClass {
+        public String field1;
+        public int field2;
+        public boolean booleanField;
+        public byte byteField;
+        public char charField;
+        public short shortField;
+        public int intField;
+        public float floatField;
+        public double doubleField;
+        public long longField;
+        public String stringField;
+        public byte[] byteArray;
+        public char[] charArray;
+        public short[] shortArray;
+        public int[] intArray;
+        public float[] floatArray;
+        public double[] doubleArray;
+        public long[] longArray;
+        public String[] stringArray;
+        public String[] additional;
+    }
+}
+```

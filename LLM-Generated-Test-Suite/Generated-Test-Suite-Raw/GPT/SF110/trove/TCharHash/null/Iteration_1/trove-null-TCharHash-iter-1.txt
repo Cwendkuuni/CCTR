@@ -1,0 +1,121 @@
+Certainly! Below is a JUnit 4 test suite for the `TCharHash` class. This test suite aims to cover the various methods within the class, including constructors, and other public and protected methods. Note that since `TCharHash` is an abstract class, a concrete subclass is created for testing purposes.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import gnu.trove.impl.hash.TCharHash;
+import gnu.trove.procedure.TCharProcedure;
+
+public class TCharHashTest {
+
+    private TCharHash tCharHash;
+
+    // Concrete subclass for testing
+    private class TCharHashConcrete extends TCharHash {
+        public TCharHashConcrete() {
+            super();
+        }
+
+        public TCharHashConcrete(int initialCapacity) {
+            super(initialCapacity);
+        }
+
+        public TCharHashConcrete(int initialCapacity, float loadFactor) {
+            super(initialCapacity, loadFactor);
+        }
+
+        public TCharHashConcrete(int initialCapacity, float loadFactor, char no_entry_value) {
+            super(initialCapacity, loadFactor, no_entry_value);
+        }
+    }
+
+    @Before
+    public void setUp() {
+        tCharHash = new TCharHashConcrete();
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        assertEquals(Constants.DEFAULT_CHAR_NO_ENTRY_VALUE, tCharHash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacity() {
+        TCharHash hash = new TCharHashConcrete(10);
+        assertEquals(Constants.DEFAULT_CHAR_NO_ENTRY_VALUE, hash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithInitialCapacityAndLoadFactor() {
+        TCharHash hash = new TCharHashConcrete(10, 0.5f);
+        assertEquals(Constants.DEFAULT_CHAR_NO_ENTRY_VALUE, hash.getNoEntryValue());
+    }
+
+    @Test
+    public void testConstructorWithAllParameters() {
+        TCharHash hash = new TCharHashConcrete(10, 0.5f, 'x');
+        assertEquals('x', hash.getNoEntryValue());
+    }
+
+    @Test
+    public void testSetUp() {
+        int capacity = tCharHash.setUp(10);
+        assertTrue(capacity >= 10);
+    }
+
+    @Test
+    public void testContains() {
+        tCharHash.insertKey('a');
+        assertTrue(tCharHash.contains('a'));
+        assertFalse(tCharHash.contains('b'));
+    }
+
+    @Test
+    public void testForEach() {
+        tCharHash.insertKey('a');
+        tCharHash.insertKey('b');
+        TCharProcedure procedure = new TCharProcedure() {
+            @Override
+            public boolean execute(char value) {
+                return value != 'b';
+            }
+        };
+        assertFalse(tCharHash.forEach(procedure));
+    }
+
+    @Test
+    public void testRemoveAt() {
+        int index = tCharHash.insertKey('a');
+        tCharHash.removeAt(index);
+        assertFalse(tCharHash.contains('a'));
+    }
+
+    @Test
+    public void testIndex() {
+        tCharHash.insertKey('a');
+        assertTrue(tCharHash.index('a') >= 0);
+        assertEquals(-1, tCharHash.index('b'));
+    }
+
+    @Test
+    public void testInsertKey() {
+        int index = tCharHash.insertKey('a');
+        assertTrue(index >= 0);
+        assertEquals(-index - 1, tCharHash.insertKey('a'));
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testInsertKeyRehashThrowsExceptionWhenFull() {
+        TCharHash hash = new TCharHashConcrete(1, 1.0f);
+        hash.insertKey('a');
+        hash.insertKey('b'); // Should throw exception
+    }
+}
+```
+
+### Explanation:
+- **Concrete Subclass**: Since `TCharHash` is abstract, a concrete subclass `TCharHashConcrete` is created for testing purposes.
+- **Test Methods**: Each method in the `TCharHash` class is tested, including constructors, `setUp`, `contains`, `forEach`, `removeAt`, `index`, and `insertKey`.
+- **Edge Cases**: The test suite includes edge cases such as inserting keys into a full hash table to ensure exceptions are thrown as expected.
+- **JUnit 4**: The test suite uses JUnit 4 annotations and assertions to verify the behavior of the `TCharHash` class methods.

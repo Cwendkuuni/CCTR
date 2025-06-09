@@ -1,0 +1,170 @@
+package org.apache.commons.lang3.builder;
+
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import static org.junit.Assert.*;
+
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Comparator;
+
+public class CompareToBuilderTest {
+
+    private CompareToBuilder compareToBuilder;
+
+    @Before
+    public void setUp() {
+        compareToBuilder = new CompareToBuilder();
+    }
+
+    @After
+    public void tearDown() {
+        compareToBuilder = null;
+    }
+
+    @Test
+    public void testReflectionCompare() {
+        TestClass obj1 = new TestClass(1, "test");
+        TestClass obj2 = new TestClass(1, "test");
+        TestClass obj3 = new TestClass(2, "test");
+
+        assertEquals(0, CompareToBuilder.reflectionCompare(obj1, obj2));
+        assertTrue(CompareToBuilder.reflectionCompare(obj1, obj3) < 0);
+        assertTrue(CompareToBuilder.reflectionCompare(obj3, obj1) > 0);
+    }
+
+    @Test
+    public void testReflectionCompareWithTransients() {
+        TestClass obj1 = new TestClass(1, "test");
+        TestClass obj2 = new TestClass(1, "test");
+        obj2.transientField = 2;
+
+        assertEquals(0, CompareToBuilder.reflectionCompare(obj1, obj2, true));
+    }
+
+    @Test
+    public void testReflectionCompareWithExcludeFields() {
+        TestClass obj1 = new TestClass(1, "test");
+        TestClass obj2 = new TestClass(2, "test");
+
+        assertEquals(0, CompareToBuilder.reflectionCompare(obj1, obj2, Arrays.asList("field1")));
+    }
+
+    @Test
+    public void testReflectionCompareWithExcludeFieldsArray() {
+        TestClass obj1 = new TestClass(1, "test");
+        TestClass obj2 = new TestClass(2, "test");
+
+        assertEquals(0, CompareToBuilder.reflectionCompare(obj1, obj2, "field1"));
+    }
+
+    @Test
+    public void testReflectionCompareWithAllParams() {
+        TestClass obj1 = new TestClass(1, "test");
+        TestClass obj2 = new TestClass(2, "test");
+
+        assertEquals(0, CompareToBuilder.reflectionCompare(obj1, obj2, true, TestClass.class, "field1"));
+    }
+
+    @Test
+    public void testAppendSuper() {
+        compareToBuilder.appendSuper(1);
+        assertEquals(1, compareToBuilder.toComparison());
+    }
+
+    @Test
+    public void testAppendObjects() {
+        compareToBuilder.append(1, 2);
+        assertEquals(-1, compareToBuilder.toComparison());
+
+        compareToBuilder = new CompareToBuilder();
+        compareToBuilder.append(2, 1);
+        assertEquals(1, compareToBuilder.toComparison());
+
+        compareToBuilder = new CompareToBuilder();
+        compareToBuilder.append(1, 1);
+        assertEquals(0, compareToBuilder.toComparison());
+    }
+
+    @Test
+    public void testAppendObjectsWithComparator() {
+        Comparator<Integer> comparator = Comparator.reverseOrder();
+        compareToBuilder.append(1, 2, comparator);
+        assertEquals(1, compareToBuilder.toComparison());
+
+        compareToBuilder = new CompareToBuilder();
+        compareToBuilder.append(2, 1, comparator);
+        assertEquals(-1, compareToBuilder.toComparison());
+
+        compareToBuilder = new CompareToBuilder();
+        compareToBuilder.append(1, 1, comparator);
+        assertEquals(0, compareToBuilder.toComparison());
+    }
+
+    @Test
+    public void testAppendArrays() {
+        compareToBuilder.append(new int[]{1, 2}, new int[]{1, 3});
+        assertEquals(-1, compareToBuilder.toComparison());
+
+        compareToBuilder = new CompareToBuilder();
+        compareToBuilder.append(new int[]{1, 3}, new int[]{1, 2});
+        assertEquals(1, compareToBuilder.toComparison());
+
+        compareToBuilder = new CompareToBuilder();
+        compareToBuilder.append(new int[]{1, 2}, new int[]{1, 2});
+        assertEquals(0, compareToBuilder.toComparison());
+    }
+
+    @Test
+    public void testAppendArraysWithComparator() {
+        Comparator<Integer> comparator = Comparator.reverseOrder();
+        compareToBuilder.append(new Integer[]{1, 2}, new Integer[]{1, 3}, comparator);
+        assertEquals(1, compareToBuilder.toComparison());
+
+        compareToBuilder = new CompareToBuilder();
+        compareToBuilder.append(new Integer[]{1, 3}, new Integer[]{1, 2}, comparator);
+        assertEquals(-1, compareToBuilder.toComparison());
+
+        compareToBuilder = new CompareToBuilder();
+        compareToBuilder.append(new Integer[]{1, 2}, new Integer[]{1, 2}, comparator);
+        assertEquals(0, compareToBuilder.toComparison());
+    }
+
+    @Test
+    public void testAppendPrimitives() {
+        compareToBuilder.append(1L, 2L);
+        assertEquals(-1, compareToBuilder.toComparison());
+
+        compareToBuilder = new CompareToBuilder();
+        compareToBuilder.append(2L, 1L);
+        assertEquals(1, compareToBuilder.toComparison());
+
+        compareToBuilder = new CompareToBuilder();
+        compareToBuilder.append(1L, 1L);
+        assertEquals(0, compareToBuilder.toComparison());
+    }
+
+    @Test
+    public void testToComparison() {
+        compareToBuilder.append(1, 2);
+        assertEquals(-1, compareToBuilder.toComparison());
+    }
+
+    @Test
+    public void testBuild() {
+        compareToBuilder.append(1, 2);
+        assertEquals(-1, (int) compareToBuilder.build());
+    }
+
+    private static class TestClass {
+        private int field1;
+        private String field2;
+        private transient int transientField;
+
+        public TestClass(int field1, String field2) {
+            this.field1 = field1;
+            this.field2 = field2;
+        }
+    }
+}

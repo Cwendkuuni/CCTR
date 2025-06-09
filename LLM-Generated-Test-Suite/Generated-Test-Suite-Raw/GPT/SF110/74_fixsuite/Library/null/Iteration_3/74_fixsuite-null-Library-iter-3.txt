@@ -1,0 +1,148 @@
+Certainly! Below is a JUnit 4 test suite for the `Library` class. This test suite aims to cover the main functionalities of the class, including loading dictionaries from a directory, retrieving dictionaries, and handling edge cases.
+
+```java
+import org.junit.*;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+import org.mockito.Mockito;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(JUnit4.class)
+public class LibraryTest {
+
+    private Library library;
+    private static Logger logger;
+
+    @BeforeClass
+    public static void setUpClass() {
+        logger = LoggerFactory.getLogger(Library.class);
+    }
+
+    @Before
+    public void setUp() {
+        library = new Library();
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithValidDirectory() throws IOException {
+        Path tempDir = Files.createTempDirectory("testDir");
+        File validDir = tempDir.toFile();
+        File subDir = new File(validDir, "subDir");
+        subDir.mkdir();
+        new File(subDir, "Fields.xml").createNewFile();
+        new File(subDir, "Enums.xml").createNewFile();
+        new File(subDir, "Components.xml").createNewFile();
+        new File(subDir, "MsgType.xml").createNewFile();
+        new File(subDir, "MsgContents.xml").createNewFile();
+
+        boolean result = library.loadFromDirectory(validDir.getAbsolutePath());
+        assertTrue(result);
+        assertFalse(library.getDictionaries().isEmpty());
+
+        // Clean up
+        for (File file : subDir.listFiles()) {
+            file.delete();
+        }
+        subDir.delete();
+        validDir.delete();
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithEmptyDirectory() throws IOException {
+        Path tempDir = Files.createTempDirectory("emptyDir");
+        File emptyDir = tempDir.toFile();
+
+        boolean result = library.loadFromDirectory(emptyDir.getAbsolutePath());
+        assertFalse(result);
+
+        // Clean up
+        emptyDir.delete();
+    }
+
+    @Test
+    public void testLoadFromDirectoryWithInvalidPath() {
+        boolean result = library.loadFromDirectory("invalidPath");
+        assertFalse(result);
+    }
+
+    @Test
+    public void testGetDictionariesWhenEmpty() {
+        List<DictionaryInfo> dictionaries = library.getDictionaries();
+        assertTrue(dictionaries.isEmpty());
+    }
+
+    @Test
+    public void testGetDictionaryWithValidVersion() throws IOException {
+        Path tempDir = Files.createTempDirectory("testDir");
+        File validDir = tempDir.toFile();
+        File subDir = new File(validDir, "subDir");
+        subDir.mkdir();
+        new File(subDir, "Fields.xml").createNewFile();
+        new File(subDir, "Enums.xml").createNewFile();
+        new File(subDir, "Components.xml").createNewFile();
+        new File(subDir, "MsgType.xml").createNewFile();
+        new File(subDir, "MsgContents.xml").createNewFile();
+
+        library.loadFromDirectory(validDir.getAbsolutePath());
+        DictionaryInfo dictionary = library.getDictionary("subDir");
+        assertNotNull(dictionary);
+
+        // Clean up
+        for (File file : subDir.listFiles()) {
+            file.delete();
+        }
+        subDir.delete();
+        validDir.delete();
+    }
+
+    @Test
+    public void testGetDictionaryWithInvalidVersion() {
+        DictionaryInfo dictionary = library.getDictionary("invalidVersion");
+        assertNull(dictionary);
+    }
+
+    @Test
+    public void testArrangeFiles() throws IOException {
+        File[] files = new File[5];
+        files[0] = new File("Fields.xml");
+        files[1] = new File("Enums.xml");
+        files[2] = new File("Components.xml");
+        files[3] = new File("MsgType.xml");
+        files[4] = new File("MsgContents.xml");
+
+        List<File> arrangedFiles = library.arrangeFiles(files);
+        assertEquals(5, arrangedFiles.size());
+        assertEquals("Fields.xml", arrangedFiles.get(0).getName());
+        assertEquals("Enums.xml", arrangedFiles.get(1).getName());
+        assertEquals("Components.xml", arrangedFiles.get(2).getName());
+        assertEquals("MsgType.xml", arrangedFiles.get(3).getName());
+        assertEquals("MsgContents.xml", arrangedFiles.get(4).getName());
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: The `setUp` method initializes a new `Library` instance before each test. The `setUpClass` method initializes the logger once for the test class.
+- **Test Cases**:
+  - **`testLoadFromDirectoryWithValidDirectory`**: Tests loading dictionaries from a valid directory structure.
+  - **`testLoadFromDirectoryWithEmptyDirectory`**: Tests behavior when the directory is empty.
+  - **`testLoadFromDirectoryWithInvalidPath`**: Tests behavior when the path is invalid.
+  - **`testGetDictionariesWhenEmpty`**: Ensures that the dictionary list is empty when no dictionaries are loaded.
+  - **`testGetDictionaryWithValidVersion`**: Tests retrieving a dictionary with a valid version.
+  - **`testGetDictionaryWithInvalidVersion`**: Tests retrieving a dictionary with an invalid version.
+  - **`testArrangeFiles`**: Tests the arrangement of files based on predefined names.
+
+### Note:
+- The test suite uses temporary directories and files to simulate different scenarios.
+- The `MainParser` and `DictionaryInfo` classes are assumed to be correctly implemented and available in the classpath.
+- The `Logger` is mocked to avoid actual logging during tests.

@@ -1,0 +1,69 @@
+Certainly! Below is a JUnit 4 test suite for the `XBUSClassLoader` class. This test suite aims to cover the methods within the class, including the singleton pattern and URL handling. Note that due to the nature of the class (e.g., reliance on external constants and system properties), some tests may require adjustments based on your specific environment.
+
+```java
+import org.junit.*;
+import static org.junit.Assert.*;
+import java.net.*;
+import java.io.*;
+import java.util.*;
+
+public class XBUSClassLoaderTest {
+
+    private static final String XBUS_HOME = "path/to/xbus/home"; // Adjust this path as necessary
+
+    @BeforeClass
+    public static void setUpBeforeClass() throws Exception {
+        // Set the XBUS_HOME constant for testing
+        System.setProperty("XBUS_HOME", XBUS_HOME);
+    }
+
+    @Test
+    public void testGetInstance() {
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader instance1 = XBUSClassLoader.getInstance(parent);
+        assertNotNull("Instance should not be null", instance1);
+
+        XBUSClassLoader instance2 = XBUSClassLoader.getInstance(parent);
+        assertSame("Instances should be the same (singleton)", instance1, instance2);
+    }
+
+    @Test
+    public void testCreateClassLoader() {
+        ClassLoader parent = getClass().getClassLoader();
+        XBUSClassLoader instance = XBUSClassLoader.getInstance(parent);
+        assertNotNull("ClassLoader instance should not be null", instance);
+    }
+
+    @Test
+    public void testAddUrls() throws Exception {
+        Vector<URL> urls = new Vector<>();
+        String testDir = XBUS_HOME + "/lib"; // Ensure this directory exists with some jar/zip files for testing
+        XBUSClassLoader.addUrls(urls, testDir);
+
+        assertFalse("URLs should be added", urls.isEmpty());
+        for (URL url : urls) {
+            assertTrue("URL should point to a jar or zip file", url.toString().endsWith(".jar") || url.toString().endsWith(".zip"));
+        }
+    }
+
+    @Test(expected = MalformedURLException.class)
+    public void testAddUrlsWithMalformedUrl() throws Exception {
+        Vector<URL> urls = new Vector<>();
+        String invalidDir = "invalid/path"; // Ensure this path is invalid
+        XBUSClassLoader.addUrls(urls, invalidDir);
+    }
+
+    @AfterClass
+    public static void tearDownAfterClass() throws Exception {
+        // Clean up if necessary
+    }
+}
+```
+
+### Notes:
+1. **Environment Setup**: The `XBUS_HOME` path should be set to a valid directory containing `lib`, `lib/runtime`, `plugin/lib`, and `test/lib` subdirectories with some `.jar` or `.zip` files for the tests to pass.
+2. **System Properties**: The test suite assumes that `XBUS_HOME` is set as a system property. Adjust the setup method as needed for your environment.
+3. **Exception Handling**: The test for malformed URLs expects a `MalformedURLException`. Adjust the test if your environment handles this differently.
+4. **Singleton Pattern**: The test suite checks that the `XBUSClassLoader` follows the singleton pattern by asserting that multiple calls to `getInstance` return the same instance.
+
+Ensure that the paths and environment variables are correctly set up in your testing environment for these tests to execute successfully.

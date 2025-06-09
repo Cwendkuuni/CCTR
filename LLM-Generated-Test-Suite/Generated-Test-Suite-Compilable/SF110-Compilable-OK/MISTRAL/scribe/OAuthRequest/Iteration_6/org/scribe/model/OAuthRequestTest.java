@@ -1,0 +1,65 @@
+package org.scribe.model;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.scribe.model.Verb;
+
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class OAuthRequestTest {
+
+    private OAuthRequest oAuthRequest;
+    private static final String TEST_URL = "http://example.com";
+
+    @Before
+    public void setUp() {
+        oAuthRequest = new OAuthRequest(Verb.GET, TEST_URL);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(oAuthRequest);
+        assertEquals(Verb.GET, oAuthRequest.getVerb());
+        assertEquals(TEST_URL, oAuthRequest.getUrl());
+        assertNotNull(oAuthRequest.getOauthParameters());
+        assertTrue(oAuthRequest.getOauthParameters().isEmpty());
+    }
+
+    @Test
+    public void testAddOAuthParameter() {
+        oAuthRequest.addOAuthParameter("oauth_token", "test_token");
+        assertEquals("test_token", oAuthRequest.getOauthParameters().get("oauth_token"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAddOAuthParameterInvalidKey() {
+        oAuthRequest.addOAuthParameter("invalid_key", "test_value");
+    }
+
+    @Test
+    public void testAddOAuthParameterScope() {
+        oAuthRequest.addOAuthParameter("scope", "test_scope");
+        assertEquals("test_scope", oAuthRequest.getOauthParameters().get("scope"));
+    }
+
+    @Test
+    public void testGetOauthParameters() {
+        Map<String, String> expectedParameters = new HashMap<>();
+        expectedParameters.put("oauth_token", "test_token");
+        expectedParameters.put("scope", "test_scope");
+
+        oAuthRequest.addOAuthParameter("oauth_token", "test_token");
+        oAuthRequest.addOAuthParameter("scope", "test_scope");
+
+        assertEquals(expectedParameters, oAuthRequest.getOauthParameters());
+    }
+
+    @Test
+    public void testToString() {
+        String expectedString = String.format("@OAuthRequest(%s, %s)", Verb.GET, TEST_URL);
+        assertEquals(expectedString, oAuthRequest.toString());
+    }
+}

@@ -1,0 +1,210 @@
+```java
+package org.apache.commons.lang3.text;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import java.text.Format;
+import java.text.ParsePosition;
+import java.util.HashMap;
+import java.util.Locale;
+import java.util.Map;
+
+public class ExtendedMessageFormatTest {
+
+    private ExtendedMessageFormat emf;
+    private Map<String, FormatFactory> registry;
+
+    @Before
+    public void setUp() {
+        registry = new HashMap<>();
+        emf = new ExtendedMessageFormat("Test pattern", registry);
+    }
+
+    @Test
+    public void testConstructorWithPattern() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Test pattern");
+        assertNotNull(emf);
+        assertEquals("Test pattern", emf.toPattern());
+    }
+
+    @Test
+    public void testConstructorWithPatternAndLocale() {
+        Locale locale = Locale.FRANCE;
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Test pattern", locale);
+        assertNotNull(emf);
+        assertEquals("Test pattern", emf.toPattern());
+        assertEquals(locale, emf.getLocale());
+    }
+
+    @Test
+    public void testConstructorWithPatternAndRegistry() {
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Test pattern", registry);
+        assertNotNull(emf);
+        assertEquals("Test pattern", emf.toPattern());
+        assertEquals(registry, emf.registry);
+    }
+
+    @Test
+    public void testConstructorWithPatternLocaleAndRegistry() {
+        Locale locale = Locale.FRANCE;
+        ExtendedMessageFormat emf = new ExtendedMessageFormat("Test pattern", locale, registry);
+        assertNotNull(emf);
+        assertEquals("Test pattern", emf.toPattern());
+        assertEquals(locale, emf.getLocale());
+        assertEquals(registry, emf.registry);
+    }
+
+    @Test
+    public void testToPattern() {
+        assertEquals("Test pattern", emf.toPattern());
+    }
+
+    @Test
+    public void testApplyPattern() {
+        emf.applyPattern("New pattern");
+        assertEquals("New pattern", emf.toPattern());
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormat() {
+        emf.setFormat(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatByArgumentIndex() {
+        emf.setFormatByArgumentIndex(0, null);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormats() {
+        emf.setFormats(new Format[0]);
+    }
+
+    @Test(expected = UnsupportedOperationException.class)
+    public void testSetFormatsByArgumentIndex() {
+        emf.setFormatsByArgumentIndex(new Format[0]);
+    }
+
+    @Test
+    public void testEquals() {
+        ExtendedMessageFormat emf2 = new ExtendedMessageFormat("Test pattern", registry);
+        assertTrue(emf.equals(emf2));
+    }
+
+    @Test
+    public void testEqualsDifferentPattern() {
+        ExtendedMessageFormat emf2 = new ExtendedMessageFormat("Different pattern", registry);
+        assertFalse(emf.equals(emf2));
+    }
+
+    @Test
+    public void testEqualsDifferentRegistry() {
+        Map<String, FormatFactory> registry2 = new HashMap<>();
+        ExtendedMessageFormat emf2 = new ExtendedMessageFormat("Test pattern", registry2);
+        assertFalse(emf.equals(emf2));
+    }
+
+    @Test
+    public void testHashCode() {
+        ExtendedMessageFormat emf2 = new ExtendedMessageFormat("Test pattern", registry);
+        assertEquals(emf.hashCode(), emf2.hashCode());
+    }
+
+    @Test
+    public void testGetFormat() {
+        registry.put("test", new FormatFactory() {
+            @Override
+            public Format getFormat(String name, String arguments, Locale locale) {
+                return new java.text.SimpleDateFormat();
+            }
+        });
+        Format format = emf.getFormat("test");
+        assertNotNull(format);
+        assertTrue(format instanceof java.text.SimpleDateFormat);
+    }
+
+    @Test
+    public void testReadArgumentIndex() {
+        ParsePosition pos = new ParsePosition(0);
+        int index = emf.readArgumentIndex("{0}", pos);
+        assertEquals(0, index);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testReadArgumentIndexInvalid() {
+        ParsePosition pos = new ParsePosition(0);
+        emf.readArgumentIndex("{a}", pos);
+    }
+
+    @Test
+    public void testParseFormatDescription() {
+        ParsePosition pos = new ParsePosition(0);
+        String description = emf.parseFormatDescription("{test}", pos);
+        assertEquals("test", description);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testParseFormatDescriptionInvalid() {
+        ParsePosition pos = new ParsePosition(0);
+        emf.parseFormatDescription("{test", pos);
+    }
+
+    @Test
+    public void testInsertFormats() {
+        ArrayList<String> customPatterns = new ArrayList<>();
+        customPatterns.add("custom");
+        String pattern = emf.insertFormats("{0}", customPatterns);
+        assertEquals("{0,custom}", pattern);
+    }
+
+    @Test
+    public void testSeekNonWs() {
+        ParsePosition pos = new ParsePosition(0);
+        emf.seekNonWs(" test", pos);
+        assertEquals(1, pos.getIndex());
+    }
+
+    @Test
+    public void testNext() {
+        ParsePosition pos = new ParsePosition(0);
+        emf.next(pos);
+        assertEquals(1, pos.getIndex());
+    }
+
+    @Test
+    public void testAppendQuotedString() {
+        ParsePosition pos = new ParsePosition(0);
+        StringBuilder sb = new StringBuilder();
+        emf.appendQuotedString("'test'", pos, sb, true);
+        assertEquals("test", sb.toString());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testAppendQuotedStringInvalid() {
+        ParsePosition pos = new ParsePosition(0);
+        StringBuilder sb = new StringBuilder();
+        emf.appendQuotedString("'test", pos, sb, true);
+    }
+
+    @Test
+    public void testGetQuotedString() {
+        ParsePosition pos = new ParsePosition(0);
+        emf.getQuotedString("'test'", pos, true);
+        assertEquals(5, pos.getIndex());
+    }
+
+    @Test
+    public void testContainsElements() {
+        ArrayList<String> list = new ArrayList<>();
+        list.add("test");
+        assertTrue(emf.containsElements(list));
+    }
+
+    @Test
+    public void testContainsElementsEmpty() {
+        ArrayList<String> list = new ArrayList<>();
+        assertFalse(emf.containsElements(list));
+    }
+}
+```

@@ -1,0 +1,209 @@
+```java
+package org.fixsuite.message.view;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.*;
+import javax.swing.event.TreeSelectionEvent;
+import javax.swing.tree.DefaultMutableTreeNode;
+import javax.swing.tree.TreePath;
+import java.awt.event.ActionEvent;
+import java.awt.event.KeyEvent;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TreeViewTest {
+
+    private TreeView treeView;
+    private Library library;
+    private JTree fixTree;
+    private JTextField searchTextField;
+    private JButton searchButton;
+    private JButton clearButton;
+    private JButton expandButton;
+    private JButton collapseButton;
+
+    @Before
+    public void setUp() {
+        library = mock(Library.class);
+        treeView = new TreeView(library);
+
+        fixTree = treeView.getFixTree();
+        searchTextField = treeView.getSearchTextField();
+        searchButton = treeView.getSearchButton();
+        clearButton = treeView.getClearButton();
+        expandButton = treeView.getExpandButton();
+        collapseButton = treeView.getCollapseButton();
+    }
+
+    @Test
+    public void testInitGUI() {
+        assertNotNull(treeView.getMainScrollPane());
+        assertNotNull(fixTree);
+        assertNotNull(searchTextField);
+        assertNotNull(searchButton);
+        assertNotNull(clearButton);
+        assertNotNull(expandButton);
+        assertNotNull(collapseButton);
+    }
+
+    @Test
+    public void testLoadFIXTree() {
+        when(library.getDictionaries()).thenReturn(new DictionaryInfo[]{new DictionaryInfo("1.0")});
+        FixInfoTreeNode root = treeView.loadFIXTree();
+        assertNotNull(root);
+        assertEquals("Dictionaries", root.getUserObject());
+    }
+
+    @Test
+    public void testLoadMessages() {
+        DictionaryInfo dictionary = new DictionaryInfo("1.0");
+        MessageInfo message = new MessageInfo("Message", "Type");
+        dictionary.addMessage(message);
+
+        FixInfoTreeNode versionNode = new FixInfoTreeNode("Version");
+        treeView.loadMessages(versionNode, dictionary);
+
+        assertEquals(1, versionNode.getChildCount());
+        assertEquals(message, ((FixInfoTreeNode) versionNode.getChildAt(0)).getUserObject());
+    }
+
+    @Test
+    public void testLoadItems() {
+        CompositeFixInfo compositeFixInfo = new CompositeFixInfo("Composite");
+        FixInfo info = new FixInfo("Info");
+        compositeFixInfo.addItem(info);
+
+        FixInfoTreeNode branchNode = new FixInfoTreeNode("Branch");
+        treeView.loadItems(branchNode, compositeFixInfo, 0);
+
+        assertEquals(1, branchNode.getChildCount());
+        assertEquals(info, ((FixInfoTreeNode) branchNode.getChildAt(0)).getUserObject());
+    }
+
+    @Test
+    public void testExpandAll() {
+        treeView.expandAll();
+        // Verify that expandRow is called for each row
+        verify(fixTree, atLeastOnce()).expandRow(anyInt());
+    }
+
+    @Test
+    public void testCollapseAll() {
+        treeView.collapseAll();
+        // Verify that collapseRow is called for each row
+        verify(fixTree, atLeastOnce()).collapseRow(anyInt());
+    }
+
+    @Test
+    public void testSearch() {
+        FixInfoTreeNode root = new FixInfoTreeNode("Root");
+        FixInfoTreeNode child = new FixInfoTreeNode(new MessageInfo("Message", "Type"));
+        root.add(child);
+
+        treeView.search(root, "Message");
+        assertTrue(child.isHighlighted());
+    }
+
+    @Test
+    public void testClear() {
+        FixInfoTreeNode root = new FixInfoTreeNode("Root");
+        FixInfoTreeNode child = new FixInfoTreeNode(new MessageInfo("Message", "Type"));
+        child.setHighlighted(true);
+        root.add(child);
+
+        treeView.clear(root);
+        assertFalse(child.isHighlighted());
+    }
+
+    @Test
+    public void testValueChanged() {
+        FixInfoTreeNode node = new FixInfoTreeNode(new FieldInfo("Field", 1));
+        TreeSelectionEvent event = new TreeSelectionEvent(this, null, null, null, new TreePath(node));
+
+        treeView.valueChanged(event);
+        // Verify that displayDetails is called with the correct parameters
+        verify(LibrarySuite.getInstance().getDetailsPanel()).displayDetails(any(FixInfo.class), any(ComponentInfo.class));
+    }
+
+    @Test
+    public void testActionPerformed() {
+        ActionEvent event = new ActionEvent(collapseButton, ActionEvent.ACTION_PERFORMED, null);
+        treeView.actionPerformed(event);
+        verify(treeView).collapseAll();
+
+        event = new ActionEvent(expandButton, ActionEvent.ACTION_PERFORMED, null);
+        treeView.actionPerformed(event);
+        verify(treeView).expandAll();
+
+        event = new ActionEvent(searchButton, ActionEvent.ACTION_PERFORMED, null);
+        treeView.actionPerformed(event);
+        verify(treeView).clear(any(FixInfoTreeNode.class));
+        verify(treeView).collapseAll();
+        verify(treeView).search(any(FixInfoTreeNode.class), anyString());
+
+        event = new ActionEvent(clearButton, ActionEvent.ACTION_PERFORMED, null);
+        treeView.actionPerformed(event);
+        verify(treeView, times(2)).clear(any(FixInfoTreeNode.class));
+        verify(treeView, times(2)).collapseAll();
+    }
+
+    @Test
+    public void testKeyPressed() {
+        KeyEvent event = new KeyEvent(searchTextField, KeyEvent.KEY_PRESSED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED);
+        treeView.keyPressed(event);
+        verify(searchButton).doClick();
+    }
+
+    @Test
+    public void testKeyReleased() {
+        KeyEvent event = new KeyEvent(searchTextField, KeyEvent.KEY_RELEASED, System.currentTimeMillis(), 0, KeyEvent.VK_ENTER, KeyEvent.CHAR_UNDEFINED);
+        treeView.keyReleased(event);
+        // No action expected
+    }
+
+    @Test
+    public void testKeyTyped() {
+        KeyEvent event = new KeyEvent(searchTextField, KeyEvent.KEY_TYPED, System.currentTimeMillis(), 0, KeyEvent.VK_UNDEFINED, 'a');
+        treeView.keyTyped(event);
+        // No action expected
+    }
+
+    private JTree getFixTree() {
+        return (JTree) getFieldValue(treeView, "fixTree");
+    }
+
+    private JTextField getSearchTextField() {
+        return (JTextField) getFieldValue(treeView, "searchTextField");
+    }
+
+    private JButton getSearchButton() {
+        return (JButton) getFieldValue(treeView, "searchButton");
+    }
+
+    private JButton getClearButton() {
+        return (JButton) getFieldValue(treeView, "clearButton");
+    }
+
+    private JButton getExpandButton() {
+        return (JButton) getFieldValue(treeView, "expandButton");
+    }
+
+    private JButton getCollapseButton() {
+        return (JButton) getFieldValue(treeView, "collapseButton");
+    }
+
+    private Object getFieldValue(Object obj, String fieldName) {
+        try {
+            java.lang.reflect.Field field = obj.getClass().getDeclaredField(fieldName);
+            field.setAccessible(true);
+            return field.get(obj);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```

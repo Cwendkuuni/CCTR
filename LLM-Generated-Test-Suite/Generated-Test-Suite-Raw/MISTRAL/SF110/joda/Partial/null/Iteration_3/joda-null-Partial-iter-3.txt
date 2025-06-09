@@ -1,0 +1,246 @@
+```java
+package org.joda.time;
+
+import org.joda.time.base.AbstractPartial;
+import org.joda.time.format.DateTimeFormatter;
+import org.joda.time.format.ISODateTimeFormat;
+import org.joda.time.format.DateTimeFormat;
+import org.joda.time.field.DateTimeFieldType;
+import org.joda.time.field.DurationFieldType;
+import org.joda.time.field.FieldUtils;
+import org.joda.time.ReadableInstant;
+import org.joda.time.ReadablePartial;
+import org.joda.time.ReadablePeriod;
+import org.joda.time.Chronology;
+import org.joda.time.DateTimeUtils;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class PartialTest {
+
+    private Partial partial;
+    private Chronology chronology;
+    private DateTimeFieldType fieldType;
+    private int value;
+
+    @Before
+    public void setUp() {
+        chronology = DateTimeUtils.getChronology(null).withUTC();
+        fieldType = DateTimeFieldType.dayOfMonth();
+        value = 15;
+        partial = new Partial(fieldType, value, chronology);
+    }
+
+    @Test
+    public void testConstructorWithChronology() {
+        Partial p = new Partial(chronology);
+        assertNotNull(p);
+        assertEquals(chronology, p.getChronology());
+    }
+
+    @Test
+    public void testConstructorWithDateTimeFieldTypeAndValue() {
+        Partial p = new Partial(fieldType, value);
+        assertNotNull(p);
+        assertEquals(fieldType, p.getFieldType(0));
+        assertEquals(value, p.getValue(0));
+    }
+
+    @Test
+    public void testConstructorWithDateTimeFieldTypeAndValueAndChronology() {
+        Partial p = new Partial(fieldType, value, chronology);
+        assertNotNull(p);
+        assertEquals(fieldType, p.getFieldType(0));
+        assertEquals(value, p.getValue(0));
+        assertEquals(chronology, p.getChronology());
+    }
+
+    @Test
+    public void testConstructorWithDateTimeFieldTypeArrayAndValueArray() {
+        DateTimeFieldType[] types = {fieldType};
+        int[] values = {value};
+        Partial p = new Partial(types, values);
+        assertNotNull(p);
+        assertEquals(fieldType, p.getFieldType(0));
+        assertEquals(value, p.getValue(0));
+    }
+
+    @Test
+    public void testConstructorWithDateTimeFieldTypeArrayAndValueArrayAndChronology() {
+        DateTimeFieldType[] types = {fieldType};
+        int[] values = {value};
+        Partial p = new Partial(types, values, chronology);
+        assertNotNull(p);
+        assertEquals(fieldType, p.getFieldType(0));
+        assertEquals(value, p.getValue(0));
+        assertEquals(chronology, p.getChronology());
+    }
+
+    @Test
+    public void testConstructorWithReadablePartial() {
+        Partial p = new Partial(partial);
+        assertNotNull(p);
+        assertEquals(partial.getFieldType(0), p.getFieldType(0));
+        assertEquals(partial.getValue(0), p.getValue(0));
+        assertEquals(partial.getChronology(), p.getChronology());
+    }
+
+    @Test
+    public void testSize() {
+        assertEquals(1, partial.size());
+    }
+
+    @Test
+    public void testGetChronology() {
+        assertEquals(chronology, partial.getChronology());
+    }
+
+    @Test
+    public void testGetField() {
+        assertEquals(fieldType.getField(chronology), partial.getField(0, chronology));
+    }
+
+    @Test
+    public void testGetFieldType() {
+        assertEquals(fieldType, partial.getFieldType(0));
+    }
+
+    @Test
+    public void testGetFieldTypes() {
+        DateTimeFieldType[] types = partial.getFieldTypes();
+        assertEquals(1, types.length);
+        assertEquals(fieldType, types[0]);
+    }
+
+    @Test
+    public void testGetValue() {
+        assertEquals(value, partial.getValue(0));
+    }
+
+    @Test
+    public void testGetValues() {
+        int[] values = partial.getValues();
+        assertEquals(1, values.length);
+        assertEquals(value, values[0]);
+    }
+
+    @Test
+    public void testWithChronologyRetainFields() {
+        Chronology newChronology = DateTimeUtils.getChronology(null).withUTC();
+        Partial p = partial.withChronologyRetainFields(newChronology);
+        assertEquals(newChronology, p.getChronology());
+    }
+
+    @Test
+    public void testWith() {
+        DateTimeFieldType newFieldType = DateTimeFieldType.monthOfYear();
+        int newValue = 5;
+        Partial p = partial.with(newFieldType, newValue);
+        assertEquals(newFieldType, p.getFieldType(1));
+        assertEquals(newValue, p.getValue(1));
+    }
+
+    @Test
+    public void testWithout() {
+        Partial p = partial.without(fieldType);
+        assertEquals(0, p.size());
+    }
+
+    @Test
+    public void testWithField() {
+        int newValue = 20;
+        Partial p = partial.withField(fieldType, newValue);
+        assertEquals(newValue, p.getValue(0));
+    }
+
+    @Test
+    public void testWithFieldAdded() {
+        DurationFieldType durationFieldType = DurationFieldType.days();
+        int amount = 5;
+        Partial p = partial.withFieldAdded(durationFieldType, amount);
+        assertEquals(value + amount, p.getValue(0));
+    }
+
+    @Test
+    public void testWithFieldAddWrapped() {
+        DurationFieldType durationFieldType = DurationFieldType.days();
+        int amount = 5;
+        Partial p = partial.withFieldAddWrapped(durationFieldType, amount);
+        assertEquals(value + amount, p.getValue(0));
+    }
+
+    @Test
+    public void testWithPeriodAdded() {
+        ReadablePeriod period = new Period(PeriodType.days(), 5);
+        int amount = 1;
+        Partial p = partial.withPeriodAdded(period, amount);
+        assertEquals(value + 5, p.getValue(0));
+    }
+
+    @Test
+    public void testPlus() {
+        ReadablePeriod period = new Period(PeriodType.days(), 5);
+        Partial p = partial.plus(period);
+        assertEquals(value + 5, p.getValue(0));
+    }
+
+    @Test
+    public void testMinus() {
+        ReadablePeriod period = new Period(PeriodType.days(), 5);
+        Partial p = partial.minus(period);
+        assertEquals(value - 5, p.getValue(0));
+    }
+
+    @Test
+    public void testProperty() {
+        Partial.Property property = partial.property(fieldType);
+        assertEquals(value, property.get());
+    }
+
+    @Test
+    public void testIsMatchReadableInstant() {
+        ReadableInstant instant = new Instant(DateTimeUtils.currentTimeMillis());
+        assertFalse(partial.isMatch(instant));
+    }
+
+    @Test
+    public void testIsMatchReadablePartial() {
+        Partial p = new Partial(fieldType, value);
+        assertTrue(partial.isMatch(p));
+    }
+
+    @Test
+    public void testGetFormatter() {
+        DateTimeFormatter formatter = partial.getFormatter();
+        assertNotNull(formatter);
+    }
+
+    @Test
+    public void testToString() {
+        String str = partial.toString();
+        assertNotNull(str);
+    }
+
+    @Test
+    public void testToStringList() {
+        String str = partial.toStringList();
+        assertNotNull(str);
+    }
+
+    @Test
+    public void testToStringWithPattern() {
+        String pattern = "yyyy-MM-dd";
+        String str = partial.toString(pattern);
+        assertNotNull(str);
+    }
+
+    @Test
+    public void testToStringWithPatternAndLocale() {
+        String pattern = "yyyy-MM-dd";
+        Locale locale = Locale.ENGLISH;
+        String str = partial.toString(pattern, locale);
+        assertNotNull(str);
+    }
+}
+```

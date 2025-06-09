@@ -1,0 +1,98 @@
+To create a comprehensive JUnit 4 test suite for the `BrentOptimizer` class, we need to test the constructors, the `doOptimize` method, and the `best` method. We will also need to handle exceptions that might be thrown by the constructors. Here's a complete test suite:
+
+```java
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
+import org.apache.commons.math3.exception.NumberIsTooSmallException;
+import org.apache.commons.math3.optim.GoalType;
+import org.apache.commons.math3.optim.univariate.BrentOptimizer;
+import org.apache.commons.math3.optim.univariate.UnivariatePointValuePair;
+import org.apache.commons.math3.optim.ConvergenceChecker;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class BrentOptimizerTest {
+
+    private static final double RELATIVE_THRESHOLD = 1e-8;
+    private static final double ABSOLUTE_THRESHOLD = 1e-8;
+
+    private BrentOptimizer optimizer;
+
+    @Before
+    public void setUp() {
+        optimizer = new BrentOptimizer(RELATIVE_THRESHOLD, ABSOLUTE_THRESHOLD);
+    }
+
+    @Test(expected = NumberIsTooSmallException.class)
+    public void testConstructorWithSmallRelativeThreshold() {
+        new BrentOptimizer(1e-20, ABSOLUTE_THRESHOLD);
+    }
+
+    @Test(expected = NotStrictlyPositiveException.class)
+    public void testConstructorWithNonPositiveAbsoluteThreshold() {
+        new BrentOptimizer(RELATIVE_THRESHOLD, 0.0);
+    }
+
+    @Test
+    public void testConstructorWithValidParameters() {
+        BrentOptimizer optimizer = new BrentOptimizer(RELATIVE_THRESHOLD, ABSOLUTE_THRESHOLD);
+        assertNotNull(optimizer);
+    }
+
+    @Test
+    public void testDoOptimize() {
+        // Define a simple quadratic function for testing
+        optimizer = new BrentOptimizer(RELATIVE_THRESHOLD, ABSOLUTE_THRESHOLD, new ConvergenceChecker<UnivariatePointValuePair>() {
+            @Override
+            public boolean converged(int iteration, UnivariatePointValuePair previous, UnivariatePointValuePair current) {
+                return Math.abs(previous.getValue() - current.getValue()) < ABSOLUTE_THRESHOLD;
+            }
+        });
+
+        optimizer.setGoalType(GoalType.MINIMIZE);
+        optimizer.setMin(-10);
+        optimizer.setMax(10);
+        optimizer.setStartValue(0);
+
+        UnivariatePointValuePair result = optimizer.optimize(new org.apache.commons.math3.analysis.UnivariateFunction() {
+            @Override
+            public double value(double x) {
+                return (x - 2) * (x - 2);
+            }
+        });
+
+        assertNotNull(result);
+        assertEquals(2.0, result.getPoint(), ABSOLUTE_THRESHOLD);
+    }
+
+    @Test
+    public void testBestMethod() {
+        UnivariatePointValuePair a = new UnivariatePointValuePair(1.0, 2.0);
+        UnivariatePointValuePair b = new UnivariatePointValuePair(2.0, 1.0);
+
+        UnivariatePointValuePair resultMin = optimizer.best(a, b, true);
+        assertEquals(b, resultMin);
+
+        UnivariatePointValuePair resultMax = optimizer.best(a, b, false);
+        assertEquals(a, resultMax);
+    }
+}
+```
+
+### Explanation:
+
+1. **Constructor Tests**:
+   - We test the constructor with valid parameters to ensure it initializes correctly.
+   - We test the constructor with a relative threshold smaller than the minimum allowed to ensure it throws a `NumberIsTooSmallException`.
+   - We test the constructor with a non-positive absolute threshold to ensure it throws a `NotStrictlyPositiveException`.
+
+2. **`doOptimize` Method Test**:
+   - We set up a simple quadratic function `(x - 2)^2` to test the optimization process.
+   - We configure the optimizer with a convergence checker that checks if the change in value is below the absolute threshold.
+   - We verify that the optimizer finds the minimum at `x = 2`.
+
+3. **`best` Method Test**:
+   - We test the `best` method to ensure it correctly identifies the better of two `UnivariatePointValuePair` instances based on whether we are minimizing or maximizing.
+
+This test suite should cover the main functionalities and edge cases of the `BrentOptimizer` class.

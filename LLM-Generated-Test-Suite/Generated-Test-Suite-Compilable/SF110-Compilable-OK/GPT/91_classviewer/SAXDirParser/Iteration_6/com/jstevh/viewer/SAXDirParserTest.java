@@ -1,0 +1,110 @@
+package com.jstevh.viewer;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.Attributes;
+import org.xml.sax.helpers.AttributesImpl;
+
+import java.util.HashMap;
+
+public class SAXDirParserTest {
+
+    private SAXDirParser parser;
+
+    @Before
+    public void setUp() throws Exception {
+        parser = new SAXDirParser();
+    }
+
+    @Test
+    public void testGetWebData() {
+        assertEquals("", parser.getWebData());
+    }
+
+    @Test
+    public void testStartElementBrowserLoc() throws Exception {
+        Attributes atts = new AttributesImpl();
+        parser.startElement("", "", "BrowserLoc", atts);
+        parser.characters("http://example.com".toCharArray(), 0, "http://example.com".length());
+        assertEquals("http://example.com", SAXDirParser.getLocalBrowser());
+    }
+
+    @Test
+    public void testStartElementEditor() throws Exception {
+        Attributes atts = new AttributesImpl();
+        parser.startElement("", "", "Editor", atts);
+        parser.characters("vim".toCharArray(), 0, "vim".length());
+        assertEquals("vim", SAXDirParser.getEditor());
+    }
+
+    @Test
+    public void testStartElementAcceptsLineNumberYes() throws Exception {
+        Attributes atts = new AttributesImpl();
+        parser.startElement("", "", "acceptsLineNumber", atts);
+        parser.characters("Yes".toCharArray(), 0, "Yes".length());
+        assertTrue(SAXDirParser.acceptsLineNumber());
+    }
+
+    @Test
+    public void testStartElementAcceptsLineNumberNo() throws Exception {
+        Attributes atts = new AttributesImpl();
+        parser.startElement("", "", "acceptsLineNumber", atts);
+        parser.characters("No".toCharArray(), 0, "No".length());
+        assertFalse(SAXDirParser.acceptsLineNumber());
+    }
+
+    @Test
+    public void testStartElementParameter() throws Exception {
+        Attributes atts = new AttributesImpl();
+        parser.startElement("", "", "parameter", atts);
+        parser.characters("paramValue".toCharArray(), 0, "paramValue".length());
+        assertEquals("paramValue", SAXDirParser.lineNumberParameter());
+    }
+
+    @Test
+    public void testStartElementWeb() throws Exception {
+        Attributes atts = new AttributesImpl();
+        parser.startElement("", "", "Web", atts);
+        parser.characters("http://web.example.com".toCharArray(), 0, "http://web.example.com".length());
+        assertEquals("http://web.example.com", parser.location);
+    }
+
+    @Test
+    public void testStartElementLocalYes() throws Exception {
+        Attributes atts = new AttributesImpl();
+        parser.startElement("", "", "Local", atts);
+        parser.characters("Yes".toCharArray(), 0, "Yes".length());
+        assertTrue(parser.local);
+    }
+
+    @Test
+    public void testStartElementLocalNo() throws Exception {
+        Attributes atts = new AttributesImpl();
+        parser.startElement("", "", "Local", atts);
+        parser.characters("No".toCharArray(), 0, "No".length());
+        assertFalse(parser.local);
+    }
+
+    @Test
+    public void testStartElementPkg() throws Exception {
+        Attributes atts = new AttributesImpl();
+        parser.startElement("", "", "Web", atts);
+        parser.characters("http://web.example.com".toCharArray(), 0, "http://web.example.com".length());
+        parser.startElement("", "", "Local", atts);
+        parser.characters("Yes".toCharArray(), 0, "Yes".length());
+        parser.startElement("", "", "pkg", atts);
+        parser.characters("com.example.".toCharArray(), 0, "com.example.".length());
+        HashMap<String, String> directory = SAXDirParser.getDirectory();
+        assertEquals("http://web.example.com", directory.get("com.example"));
+        assertTrue(SAXDirParser.getLocalPackages().contains("com.example"));
+    }
+
+    @Test
+    public void testEndElementGroup() throws Exception {
+        Attributes atts = new AttributesImpl();
+        parser.startElement("", "", "Group", atts);
+        parser.endElement("", "", "Group");
+        assertFalse(parser.check);
+    }
+}

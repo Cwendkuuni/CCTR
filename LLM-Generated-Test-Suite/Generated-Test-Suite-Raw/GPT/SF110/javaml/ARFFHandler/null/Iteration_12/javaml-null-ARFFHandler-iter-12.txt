@@ -1,0 +1,117 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `ARFFHandler` class. This suite includes tests for both `loadARFF` methods, checking various scenarios such as valid input, invalid input, and edge cases.
+
+```java
+import net.sf.javaml.tools.data.ARFFHandler;
+import net.sf.javaml.core.Dataset;
+import net.sf.javaml.core.Instance;
+import net.sf.javaml.core.DefaultDataset;
+import net.sf.javaml.core.DenseInstance;
+import org.junit.Test;
+import org.junit.Before;
+import org.junit.After;
+import static org.junit.Assert.*;
+
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.Iterator;
+
+public class ARFFHandlerTest {
+
+    private File tempFile;
+
+    @Before
+    public void setUp() throws IOException {
+        // Create a temporary ARFF file for testing
+        tempFile = File.createTempFile("test", ".arff");
+        FileWriter writer = new FileWriter(tempFile);
+        writer.write("@relation test\n");
+        writer.write("@attribute attr1 numeric\n");
+        writer.write("@attribute attr2 numeric\n");
+        writer.write("@attribute class {A, B}\n");
+        writer.write("@data\n");
+        writer.write("1.0,2.0,A\n");
+        writer.write("3.0,4.0,B\n");
+        writer.close();
+    }
+
+    @After
+    public void tearDown() {
+        // Delete the temporary file after tests
+        if (tempFile != null && tempFile.exists()) {
+            tempFile.delete();
+        }
+    }
+
+    @Test
+    public void testLoadARFFWithDefaultClassIndex() throws IOException {
+        Dataset dataset = ARFFHandler.loadARFF(tempFile);
+        assertNotNull(dataset);
+        assertEquals(2, dataset.size());
+
+        Iterator<Instance> iterator = dataset.iterator();
+        Instance instance1 = iterator.next();
+        assertArrayEquals(new double[]{1.0, 2.0}, instance1.toArray(), 0.001);
+        assertEquals("A", instance1.classValue());
+
+        Instance instance2 = iterator.next();
+        assertArrayEquals(new double[]{3.0, 4.0}, instance2.toArray(), 0.001);
+        assertEquals("B", instance2.classValue());
+    }
+
+    @Test
+    public void testLoadARFFWithSpecifiedClassIndex() throws IOException {
+        Dataset dataset = ARFFHandler.loadARFF(tempFile, 2);
+        assertNotNull(dataset);
+        assertEquals(2, dataset.size());
+
+        Iterator<Instance> iterator = dataset.iterator();
+        Instance instance1 = iterator.next();
+        assertArrayEquals(new double[]{1.0, 2.0}, instance1.toArray(), 0.001);
+        assertEquals("A", instance1.classValue());
+
+        Instance instance2 = iterator.next();
+        assertArrayEquals(new double[]{3.0, 4.0}, instance2.toArray(), 0.001);
+        assertEquals("B", instance2.classValue());
+    }
+
+    @Test(expected = FileNotFoundException.class)
+    public void testLoadARFFWithNonExistentFile() throws IOException {
+        File nonExistentFile = new File("non_existent_file.arff");
+        ARFFHandler.loadARFF(nonExistentFile);
+    }
+
+    @Test
+    public void testLoadARFFWithInvalidData() throws IOException {
+        File invalidFile = File.createTempFile("invalid", ".arff");
+        FileWriter writer = new FileWriter(invalidFile);
+        writer.write("@relation test\n");
+        writer.write("@attribute attr1 numeric\n");
+        writer.write("@attribute attr2 numeric\n");
+        writer.write("@attribute class {A, B}\n");
+        writer.write("@data\n");
+        writer.write("1.0,invalid,A\n");
+        writer.close();
+
+        Dataset dataset = ARFFHandler.loadARFF(invalidFile, 2);
+        assertNotNull(dataset);
+        assertEquals(1, dataset.size());
+
+        Iterator<Instance> iterator = dataset.iterator();
+        Instance instance1 = iterator.next();
+        assertTrue(Double.isNaN(instance1.value(1)));
+        assertEquals("A", instance1.classValue());
+
+        invalidFile.delete();
+    }
+}
+```
+
+### Explanation:
+- **Setup and Teardown**: The `setUp` method creates a temporary ARFF file with valid data, and the `tearDown` method ensures the file is deleted after tests.
+- **Test Cases**:
+  - `testLoadARFFWithDefaultClassIndex`: Tests loading ARFF with the default class index.
+  - `testLoadARFFWithSpecifiedClassIndex`: Tests loading ARFF with a specified class index.
+  - `testLoadARFFWithNonExistentFile`: Tests behavior when a non-existent file is provided.
+  - `testLoadARFFWithInvalidData`: Tests handling of invalid numeric data in the ARFF file.
+- **Assertions**: The tests use assertions to verify the correctness of the dataset size, instance values, and class values.

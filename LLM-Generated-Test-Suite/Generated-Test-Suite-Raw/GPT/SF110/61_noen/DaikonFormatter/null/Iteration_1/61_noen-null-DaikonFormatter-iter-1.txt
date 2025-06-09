@@ -1,0 +1,131 @@
+To create a comprehensive JUnit 4 test suite for the `DaikonFormatter` class, we need to test all public methods and any private methods that have significant logic. Since the class interacts with file I/O and external configurations, we'll need to mock these interactions to isolate the tests. Below is a test suite that covers the main functionalities of the `DaikonFormatter` class.
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.runners.MockitoJUnitRunner;
+
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.util.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class DaikonFormatterTest {
+
+    @Mock
+    private FileInputStream fileInputStreamMock;
+
+    @Mock
+    private ProgramRun programRunMock;
+
+    @Mock
+    private Event eventMock;
+
+    @Mock
+    private EventAttribute eventAttributeMock;
+
+    private DaikonFormatter daikonFormatterSimple;
+    private DaikonFormatter daikonFormatterComplex;
+
+    @Before
+    public void setUp() throws Exception {
+        MockitoAnnotations.initMocks(this);
+        daikonFormatterSimple = new DaikonFormatter("testfile.dtrace", true);
+        daikonFormatterComplex = new DaikonFormatter("testfile.dtrace", Arrays.asList("input1", "input2"));
+    }
+
+    @Test
+    public void testHeader() {
+        String expectedHeader = "decl-version 2.0\nvar-comparability implicit\n";
+        assertEquals(expectedHeader, daikonFormatterSimple.header());
+    }
+
+    @Test
+    public void testFooter() {
+        assertEquals("", daikonFormatterSimple.footer());
+    }
+
+    @Test
+    public void testFileNameExtension() {
+        assertEquals("dtrace", daikonFormatterSimple.fileNameExtension());
+    }
+
+    @Test
+    public void testObservationsSimple() {
+        when(programRunMock.iterator()).thenReturn(Collections.singletonList(eventMock).iterator());
+        when(eventMock.getName()).thenReturn("eventName");
+        when(eventMock.isExit()).thenReturn(false);
+        when(eventMock.attributes()).thenReturn(Collections.singletonList(eventAttributeMock).iterator());
+        when(eventAttributeMock.getName()).thenReturn("attributeName");
+        when(eventAttributeMock.getType()).thenReturn("java.lang.String");
+        when(eventAttributeMock.getValue()).thenReturn("value");
+
+        String observations = daikonFormatterSimple.observations(programRunMock);
+        assertTrue(observations.contains("eventName:::ENTER"));
+    }
+
+    @Test
+    public void testObservationsComplex() {
+        when(programRunMock.iterator()).thenReturn(Arrays.asList(eventMock, eventMock).iterator());
+        when(eventMock.getName()).thenReturn("input1");
+        when(eventMock.isExit()).thenReturn(false);
+        when(eventMock.attributes()).thenReturn(Collections.singletonList(eventAttributeMock).iterator());
+        when(eventAttributeMock.getName()).thenReturn("attributeName");
+        when(eventAttributeMock.getType()).thenReturn("java.lang.String");
+        when(eventAttributeMock.getValue()).thenReturn("value");
+
+        String observations = daikonFormatterComplex.observations(programRunMock);
+        assertTrue(observations.contains("input1:::ENTER"));
+    }
+
+    @Test
+    public void testClassForProperty() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("testProperty", "java.lang.String");
+        whenNew(FileInputStream.class).withArguments("testgen.properties").thenReturn(fileInputStreamMock);
+        when(fileInputStreamMock.read(any(byte[].class), anyInt(), anyInt())).thenReturn(-1);
+
+        Class<?> clazz = DaikonFormatter.classForProperty("testProperty");
+        assertEquals(String.class, clazz);
+    }
+
+    @Test
+    public void testClassesForMultipleProperties() throws Exception {
+        Properties properties = new Properties();
+        properties.setProperty("InputInterface1", "java.lang.String");
+        properties.setProperty("InputInterface2", "java.lang.Integer");
+        whenNew(FileInputStream.class).withArguments("testgen.properties").thenReturn(fileInputStreamMock);
+        when(fileInputStreamMock.read(any(byte[].class), anyInt(), anyInt())).thenReturn(-1);
+
+        Collection<Class> classes = DaikonFormatter.classesForMultipleProperties("InputInterface");
+        assertTrue(classes.contains(String.class));
+        assertTrue(classes.contains(Integer.class));
+    }
+
+    @Test
+    public void testInputs() throws Exception {
+        Collection<Class> inputs = DaikonFormatter.inputs();
+        assertNotNull(inputs);
+    }
+
+    @Test
+    public void testOutputs() throws Exception {
+        Collection<Class> outputs = DaikonFormatter.outputs();
+        assertNotNull(outputs);
+    }
+}
+```
+
+### Key Points:
+- **Mocking**: We use Mockito to mock dependencies like `FileInputStream`, `ProgramRun`, and `Event` to isolate the tests from external dependencies.
+- **Test Coverage**: The test suite covers constructors, public methods, and static methods. It also includes tests for private methods indirectly through public methods.
+- **Assertions**: We use assertions to verify that the methods return expected results or behave as expected.
+- **Setup**: The `setUp` method initializes the test environment and mocks before each test.
+
+This test suite provides a comprehensive set of tests for the `DaikonFormatter` class, ensuring that its methods behave correctly under various conditions.

@@ -1,0 +1,104 @@
+```java
+package com.puppycrawl.tools.checkstyle.api;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.Assert;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.charset.Charset;
+import java.util.Arrays;
+import java.util.List;
+
+public class FileTextTest {
+
+    private FileText fileText;
+    private File tempFile;
+
+    @Before
+    public void setUp() throws IOException {
+        tempFile = File.createTempFile("testFile", ".txt");
+        tempFile.deleteOnExit();
+        fileText = new FileText(tempFile, "UTF-8");
+    }
+
+    @Test
+    public void testConstructorWithFileAndCharset() throws IOException {
+        FileText fileText = new FileText(tempFile, "UTF-8");
+        Assert.assertNotNull(fileText);
+        Assert.assertEquals(tempFile, fileText.getFile());
+        Assert.assertEquals(Charset.forName("UTF-8"), fileText.getCharset());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testConstructorWithUnsupportedCharset() throws IOException {
+        new FileText(tempFile, "UnsupportedCharset");
+    }
+
+    @Test
+    public void testCopyConstructor() {
+        FileText copy = new FileText(fileText);
+        Assert.assertNotNull(copy);
+        Assert.assertEquals(fileText.getFile(), copy.getFile());
+        Assert.assertEquals(fileText.getCharset(), copy.getCharset());
+        Assert.assertEquals(fileText.getFullText(), copy.getFullText());
+        Assert.assertArrayEquals(fileText.toLinesArray(), copy.toLinesArray());
+    }
+
+    @Test
+    public void testFromLines() {
+        List<String> lines = Arrays.asList("line1", "line2", "line3");
+        FileText fileTextFromLines = FileText.fromLines(tempFile, lines);
+        Assert.assertNotNull(fileTextFromLines);
+        Assert.assertEquals(tempFile, fileTextFromLines.getFile());
+        Assert.assertArrayEquals(lines.toArray(new String[0]), fileTextFromLines.toLinesArray());
+    }
+
+    @Test
+    public void testGetFile() {
+        Assert.assertEquals(tempFile, fileText.getFile());
+    }
+
+    @Test
+    public void testGetCharset() {
+        Assert.assertEquals(Charset.forName("UTF-8"), fileText.getCharset());
+    }
+
+    @Test
+    public void testGetFullText() {
+        Assert.assertNotNull(fileText.getFullText());
+    }
+
+    @Test
+    public void testToLinesArray() {
+        Assert.assertNotNull(fileText.toLinesArray());
+    }
+
+    @Test
+    public void testLineColumn() {
+        List<String> lines = Arrays.asList("line1", "line2", "line3");
+        FileText fileTextFromLines = FileText.fromLines(tempFile, lines);
+        LineColumn lineColumn = fileTextFromLines.lineColumn(5);
+        Assert.assertNotNull(lineColumn);
+        Assert.assertEquals(1, lineColumn.getLine());
+        Assert.assertEquals(4, lineColumn.getColumn());
+    }
+
+    @Test
+    public void testGet() {
+        List<String> lines = Arrays.asList("line1", "line2", "line3");
+        FileText fileTextFromLines = FileText.fromLines(tempFile, lines);
+        Assert.assertEquals("line1", fileTextFromLines.get(0));
+        Assert.assertEquals("line2", fileTextFromLines.get(1));
+        Assert.assertEquals("line3", fileTextFromLines.get(2));
+    }
+
+    @Test
+    public void testSize() {
+        List<String> lines = Arrays.asList("line1", "line2", "line3");
+        FileText fileTextFromLines = FileText.fromLines(tempFile, lines);
+        Assert.assertEquals(3, fileTextFromLines.size());
+    }
+}
+```

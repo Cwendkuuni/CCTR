@@ -1,0 +1,146 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `FSPathExplorer` class. This test suite includes tests for the constructor, `configureExplorer`, `createFSPath`, and `start` methods.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.ByteArrayOutputStream;
+import java.io.File;
+import java.io.PrintStream;
+import java.util.HashMap;
+import java.util.Map;
+import net.sf.sugar.fspath.FSPath;
+import net.sf.sugar.fspath.FSPathFactory;
+import net.sf.sugar.fspath.cli.FSPathExplorer;
+import net.sf.sugar.fspath.cli.Prompt;
+
+public class FSPathExplorerTest {
+
+    private FSPathExplorer explorer;
+    private ByteArrayOutputStream outContent;
+    private ByteArrayOutputStream errContent;
+
+    @Before
+    public void setUp() {
+        outContent = new ByteArrayOutputStream();
+        errContent = new ByteArrayOutputStream();
+        System.setOut(new PrintStream(outContent));
+        System.setErr(new PrintStream(errContent));
+        explorer = new FSPathExplorer();
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(explorer.out);
+        assertNotNull(explorer.err);
+        assertNotNull(explorer.prompt);
+        assertEquals("fspath>", explorer.prompt.getPromptText());
+    }
+
+    @Test
+    public void testShowWelcome() {
+        FSPathExplorer.showWelcome();
+        assertTrue(outContent.toString().contains("FSPathExplorer"));
+    }
+
+    @Test
+    public void testShowHelp() {
+        FSPathExplorer.showHelp();
+        assertTrue(outContent.toString().contains("FSPathExplorer help"));
+    }
+
+    @Test
+    public void testConfigureExplorer() {
+        String[] args = {"-path", "/test/path", "-find", "query"};
+        explorer.configureExplorer(args);
+        assertEquals(new File("/test/path"), explorer.rootPath);
+        assertEquals("query", explorer.fsPathQuery);
+    }
+
+    @Test
+    public void testCreateFSPathWithRootPath() {
+        explorer.rootPath = new File("/test/path");
+        explorer.createFSPath();
+        assertNotNull(explorer.fsPath);
+        assertEquals("/test/path", explorer.fsPath.getRootDirectory().getPath());
+    }
+
+    @Test
+    public void testCreateFSPathWithoutRootPath() {
+        explorer.createFSPath();
+        assertNotNull(explorer.fsPath);
+        assertNotNull(explorer.fsPath.getRootDirectory());
+    }
+
+    @Test
+    public void testStartExitCommand() throws Exception {
+        Prompt mockPrompt = new Prompt(System.in, System.out, System.err) {
+            @Override
+            public String readLine() throws IOException {
+                return "exit";
+            }
+        };
+        explorer.prompt = mockPrompt;
+        explorer.start();
+        assertTrue(outContent.toString().contains("exiting....."));
+    }
+
+    @Test
+    public void testStartPwdCommand() throws Exception {
+        Prompt mockPrompt = new Prompt(System.in, System.out, System.err) {
+            @Override
+            public String readLine() throws IOException {
+                return "pwd";
+            }
+        };
+        explorer.prompt = mockPrompt;
+        explorer.createFSPath();
+        explorer.start();
+        assertTrue(outContent.toString().contains("Current directory :"));
+    }
+
+    @Test
+    public void testStartCdCommand() throws Exception {
+        Prompt mockPrompt = new Prompt(System.in, System.out, System.err) {
+            @Override
+            public String readLine() throws IOException {
+                return "cd /test/path";
+            }
+        };
+        explorer.prompt = mockPrompt;
+        explorer.createFSPath();
+        explorer.start();
+        assertTrue(outContent.toString().contains("changed to : /test/path"));
+    }
+
+    @Test
+    public void testStartHelpCommand() throws Exception {
+        Prompt mockPrompt = new Prompt(System.in, System.out, System.err) {
+            @Override
+            public String readLine() throws IOException {
+                return "help";
+            }
+        };
+        explorer.prompt = mockPrompt;
+        explorer.start();
+        assertTrue(outContent.toString().contains("FSPathExplorer help"));
+    }
+
+    @Test
+    public void testStartFSPathQuery() throws Exception {
+        Prompt mockPrompt = new Prompt(System.in, System.out, System.err) {
+            @Override
+            public String readLine() throws IOException {
+                return "//dir[@name = 'test']";
+            }
+        };
+        explorer.prompt = mockPrompt;
+        explorer.createFSPath();
+        explorer.start();
+        // Assuming the query returns some results
+        assertTrue(outContent.toString().contains("test"));
+    }
+}
+```
+
+This test suite covers the main functionalities of the `FSPathExplorer` class. It includes tests for the constructor, static methods, and instance methods. The `Prompt` class is mocked to simulate user input for the `start` method tests.

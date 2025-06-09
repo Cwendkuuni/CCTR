@@ -1,0 +1,105 @@
+```java
+package org.apache.commons.collections4.sequence;
+
+import org.apache.commons.collections4.Equator;
+import org.apache.commons.collections4.functors.DefaultEquator;
+import org.apache.commons.collections4.sequence.EditScript;
+import org.apache.commons.collections4.sequence.SequencesComparator;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class SequencesComparatorTest {
+
+    private List<String> sequence1;
+    private List<String> sequence2;
+    private SequencesComparator<String> comparator;
+
+    @Before
+    public void setUp() {
+        sequence1 = Arrays.asList("a", "b", "c", "d");
+        sequence2 = Arrays.asList("a", "c", "d", "e");
+        comparator = new SequencesComparator<>(sequence1, sequence2);
+    }
+
+    @Test
+    public void testConstructorWithDefaultEquator() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2);
+        assertNotNull(comparator);
+        assertEquals(DefaultEquator.defaultEquator(), comparator.getEquator());
+    }
+
+    @Test
+    public void testConstructorWithCustomEquator() {
+        Equator<String> customEquator = (o1, o2) -> o1.equalsIgnoreCase(o2);
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2, customEquator);
+        assertNotNull(comparator);
+        assertEquals(customEquator, comparator.getEquator());
+    }
+
+    @Test
+    public void testGetScript() {
+        EditScript<String> script = comparator.getScript();
+        assertNotNull(script);
+        assertEquals(5, script.size());
+        assertEquals(new KeepCommand<>("a"), script.get(0));
+        assertEquals(new DeleteCommand<>("b"), script.get(1));
+        assertEquals(new KeepCommand<>("c"), script.get(2));
+        assertEquals(new KeepCommand<>("d"), script.get(3));
+        assertEquals(new InsertCommand<>("e"), script.get(4));
+    }
+
+    @Test
+    public void testGetScriptWithEmptySequences() {
+        List<String> emptySequence1 = Arrays.asList();
+        List<String> emptySequence2 = Arrays.asList();
+        SequencesComparator<String> emptyComparator = new SequencesComparator<>(emptySequence1, emptySequence2);
+        EditScript<String> script = emptyComparator.getScript();
+        assertNotNull(script);
+        assertEquals(0, script.size());
+    }
+
+    @Test
+    public void testGetScriptWithIdenticalSequences() {
+        List<String> identicalSequence1 = Arrays.asList("a", "b", "c");
+        List<String> identicalSequence2 = Arrays.asList("a", "b", "c");
+        SequencesComparator<String> identicalComparator = new SequencesComparator<>(identicalSequence1, identicalSequence2);
+        EditScript<String> script = identicalComparator.getScript();
+        assertNotNull(script);
+        assertEquals(3, script.size());
+        assertEquals(new KeepCommand<>("a"), script.get(0));
+        assertEquals(new KeepCommand<>("b"), script.get(1));
+        assertEquals(new KeepCommand<>("c"), script.get(2));
+    }
+
+    @Test
+    public void testGetScriptWithCompletelyDifferentSequences() {
+        List<String> differentSequence1 = Arrays.asList("a", "b", "c");
+        List<String> differentSequence2 = Arrays.asList("x", "y", "z");
+        SequencesComparator<String> differentComparator = new SequencesComparator<>(differentSequence1, differentSequence2);
+        EditScript<String> script = differentComparator.getScript();
+        assertNotNull(script);
+        assertEquals(6, script.size());
+        assertEquals(new DeleteCommand<>("a"), script.get(0));
+        assertEquals(new DeleteCommand<>("b"), script.get(1));
+        assertEquals(new DeleteCommand<>("c"), script.get(2));
+        assertEquals(new InsertCommand<>("x"), script.get(3));
+        assertEquals(new InsertCommand<>("y"), script.get(4));
+        assertEquals(new InsertCommand<>("z"), script.get(5));
+    }
+
+    // Additional tests can be added here to cover more edge cases and scenarios
+
+    private Equator<?> getEquator(SequencesComparator<?> comparator) {
+        try {
+            return (Equator<?>) comparator.getClass().getDeclaredField("equator").get(comparator);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```

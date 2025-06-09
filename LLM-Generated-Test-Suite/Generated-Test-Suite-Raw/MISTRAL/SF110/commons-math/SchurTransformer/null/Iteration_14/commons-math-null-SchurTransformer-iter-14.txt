@@ -1,0 +1,137 @@
+```java
+package org.apache.commons.math3.linear;
+
+import org.apache.commons.math3.exception.NonSquareMatrixException;
+import org.apache.commons.math3.exception.MaxCountExceededException;
+import org.apache.commons.math3.util.Precision;
+import org.apache.commons.math3.util.FastMath;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class SchurTransformerTest {
+
+    private RealMatrix matrix;
+    private SchurTransformer schurTransformer;
+
+    @Before
+    public void setUp() {
+        double[][] data = {
+            {1, 2, 3},
+            {4, 5, 6},
+            {7, 8, 9}
+        };
+        matrix = MatrixUtils.createRealMatrix(data);
+        schurTransformer = new SchurTransformer(matrix);
+    }
+
+    @Test(expected = NonSquareMatrixException.class)
+    public void testNonSquareMatrix() {
+        double[][] nonSquareData = {
+            {1, 2, 3},
+            {4, 5, 6}
+        };
+        RealMatrix nonSquareMatrix = MatrixUtils.createRealMatrix(nonSquareData);
+        new SchurTransformer(nonSquareMatrix);
+    }
+
+    @Test
+    public void testGetP() {
+        RealMatrix p = schurTransformer.getP();
+        assertNotNull(p);
+        assertEquals(matrix.getRowDimension(), p.getRowDimension());
+        assertEquals(matrix.getColumnDimension(), p.getColumnDimension());
+    }
+
+    @Test
+    public void testGetPT() {
+        RealMatrix pt = schurTransformer.getPT();
+        assertNotNull(pt);
+        assertEquals(matrix.getRowDimension(), pt.getColumnDimension());
+        assertEquals(matrix.getColumnDimension(), pt.getRowDimension());
+    }
+
+    @Test
+    public void testGetT() {
+        RealMatrix t = schurTransformer.getT();
+        assertNotNull(t);
+        assertEquals(matrix.getRowDimension(), t.getRowDimension());
+        assertEquals(matrix.getColumnDimension(), t.getColumnDimension());
+    }
+
+    @Test
+    public void testTransform() {
+        // This test is more of a sanity check to ensure the transform method runs without exceptions
+        schurTransformer.transform();
+    }
+
+    @Test
+    public void testGetNorm() {
+        double norm = schurTransformer.getNorm();
+        assertTrue(norm > 0);
+    }
+
+    @Test
+    public void testFindSmallSubDiagonalElement() {
+        double norm = schurTransformer.getNorm();
+        int startIdx = matrix.getRowDimension() - 1;
+        int result = schurTransformer.findSmallSubDiagonalElement(startIdx, norm);
+        assertTrue(result >= 0 && result <= startIdx);
+    }
+
+    @Test
+    public void testComputeShift() {
+        ShiftInfo shift = new ShiftInfo();
+        int l = 0;
+        int idx = matrix.getRowDimension() - 1;
+        int iteration = 0;
+        schurTransformer.computeShift(l, idx, iteration, shift);
+        assertNotNull(shift);
+    }
+
+    @Test
+    public void testInitQRStep() {
+        ShiftInfo shift = new ShiftInfo();
+        double[] hVec = new double[3];
+        int il = 0;
+        int iu = matrix.getRowDimension() - 1;
+        int result = schurTransformer.initQRStep(il, iu, shift, hVec);
+        assertTrue(result >= il && result <= iu);
+    }
+
+    @Test
+    public void testPerformDoubleQRStep() {
+        ShiftInfo shift = new ShiftInfo();
+        double[] hVec = new double[3];
+        int il = 0;
+        int im = 1;
+        int iu = matrix.getRowDimension() - 1;
+        schurTransformer.performDoubleQRStep(il, im, iu, shift, hVec);
+        // This test is more of a sanity check to ensure the method runs without exceptions
+    }
+
+    @Test(expected = MaxCountExceededException.class)
+    public void testMaxIterationsExceeded() {
+        double[][] data = {
+            {1, 2},
+            {3, 4}
+        };
+        RealMatrix matrix = MatrixUtils.createRealMatrix(data);
+        SchurTransformer transformer = new SchurTransformer(matrix) {
+            @Override
+            protected void transform() {
+                // Simulate max iterations exceeded
+                throw new MaxCountExceededException(null, 100, new Object[0]);
+            }
+        };
+        transformer.transform();
+    }
+
+    private static class ShiftInfo {
+        double x;
+        double y;
+        double w;
+        double exShift;
+    }
+}
+```

@@ -1,0 +1,450 @@
+```java
+import org.apache.commons.csv.CSVFormat;
+import org.apache.commons.csv.CSVPrinter;
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+
+public class CSVPrinterTest {
+
+    private StringWriter stringWriter;
+    private CSVPrinter csvPrinter;
+    private CSVFormat csvFormat;
+
+    @Before
+    public void setUp() throws IOException {
+        stringWriter = new StringWriter();
+        csvFormat = CSVFormat.DEFAULT;
+        csvPrinter = new CSVPrinter(stringWriter, csvFormat);
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        csvPrinter.close();
+    }
+
+    @Test
+    public void testPrint() throws IOException {
+        csvPrinter.print("value1");
+        csvPrinter.print("value2");
+        csvPrinter.println();
+        assertEquals("value1,value2\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintNull() throws IOException {
+        csvPrinter.print(null);
+        csvPrinter.println();
+        assertEquals("\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordIterable() throws IOException {
+        csvPrinter.printRecord(Arrays.asList("value1", "value2"));
+        assertEquals("value1,value2\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordArray() throws IOException {
+        csvPrinter.printRecord("value1", "value2");
+        assertEquals("value1,value2\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordsIterable() throws IOException {
+        csvPrinter.printRecords(Arrays.asList(Arrays.asList("value1", "value2"), Arrays.asList("value3", "value4")));
+        assertEquals("value1,value2\nvalue3,value4\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordsArray() throws IOException {
+        csvPrinter.printRecords(new Object[]{"value1", "value2"}, new Object[]{"value3", "value4"});
+        assertEquals("value1,value2\nvalue3,value4\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintComment() throws IOException {
+        csvPrinter.printComment("This is a comment");
+        assertEquals("# This is a comment\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintCommentWithNewLine() throws IOException {
+        csvPrinter.printComment("This is a comment\nwith a new line");
+        assertEquals("# This is a comment\n# with a new line\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testPrintRecordsResultSet() throws IOException, SQLException {
+        ResultSet resultSet = new MockResultSet(new String[]{"col1", "col2"}, new String[][]{{"value1", "value2"}, {"value3", "value4"}});
+        csvPrinter.printRecords(resultSet);
+        assertEquals("value1,value2\nvalue3,value4\n", stringWriter.toString());
+    }
+
+    @Test
+    public void testGetOut() {
+        assertEquals(stringWriter, csvPrinter.getOut());
+    }
+
+    @Test
+    public void testClose() throws IOException {
+        csvPrinter.close();
+        assertTrue(stringWriter.toString().isEmpty());
+    }
+
+    @Test
+    public void testFlush() throws IOException {
+        csvPrinter.flush();
+        assertTrue(stringWriter.toString().isEmpty());
+    }
+
+    private static class MockResultSet implements ResultSet {
+        private final String[] columnNames;
+        private final String[][] data;
+        private int rowIndex = -1;
+
+        public MockResultSet(String[] columnNames, String[][] data) {
+            this.columnNames = columnNames;
+            this.data = data;
+        }
+
+        @Override
+        public boolean next() {
+            rowIndex++;
+            return rowIndex < data.length;
+        }
+
+        @Override
+        public String getString(int columnIndex) {
+            return data[rowIndex][columnIndex - 1];
+        }
+
+        @Override
+        public ResultSetMetaData getMetaData() {
+            return new MockResultSetMetaData(columnNames);
+        }
+
+        // Other methods not implemented for this test
+        @Override public boolean wasNull() { return false; }
+        @Override public boolean getBoolean(int columnIndex) { return false; }
+        @Override public byte getByte(int columnIndex) { return 0; }
+        @Override public short getShort(int columnIndex) { return 0; }
+        @Override public int getInt(int columnIndex) { return 0; }
+        @Override public long getLong(int columnIndex) { return 0; }
+        @Override public float getFloat(int columnIndex) { return 0; }
+        @Override public double getDouble(int columnIndex) { return 0; }
+        @Override public BigDecimal getBigDecimal(int columnIndex, int scale) { return null; }
+        @Override public byte[] getBytes(int columnIndex) { return new byte[0]; }
+        @Override public Date getDate(int columnIndex) { return null; }
+        @Override public Time getTime(int columnIndex) { return null; }
+        @Override public Timestamp getTimestamp(int columnIndex) { return null; }
+        @Override public InputStream getAsciiStream(int columnIndex) { return null; }
+        @Override public InputStream getUnicodeStream(int columnIndex) { return null; }
+        @Override public InputStream getBinaryStream(int columnIndex) { return null; }
+        @Override public String getString(String columnLabel) { return null; }
+        @Override public boolean getBoolean(String columnLabel) { return false; }
+        @Override public byte getByte(String columnLabel) { return 0; }
+        @Override public short getShort(String columnLabel) { return 0; }
+        @Override public int getInt(String columnLabel) { return 0; }
+        @Override public long getLong(String columnLabel) { return 0; }
+        @Override public float getFloat(String columnLabel) { return 0; }
+        @Override public double getDouble(String columnLabel) { return 0; }
+        @Override public BigDecimal getBigDecimal(String columnLabel, int scale) { return null; }
+        @Override public byte[] getBytes(String columnLabel) { return new byte[0]; }
+        @Override public Date getDate(String columnLabel) { return null; }
+        @Override public Time getTime(String columnLabel) { return null; }
+        @Override public Timestamp getTimestamp(String columnLabel) { return null; }
+        @Override public InputStream getAsciiStream(String columnLabel) { return null; }
+        @Override public InputStream getUnicodeStream(String columnLabel) { return null; }
+        @Override public InputStream getBinaryStream(String columnLabel) { return null; }
+        @Override public SQLWarning getWarnings() { return null; }
+        @Override public void clearWarnings() {}
+        @Override public String getCursorName() { return null; }
+        @Override public ResultSetMetaData getMetaData() { return null; }
+        @Override public Object getObject(int columnIndex) { return null; }
+        @Override public Object getObject(String columnLabel) { return null; }
+        @Override public int findColumn(String columnLabel) { return 0; }
+        @Override public Reader getCharacterStream(int columnIndex) { return null; }
+        @Override public Reader getCharacterStream(String columnLabel) { return null; }
+        @Override public BigDecimal getBigDecimal(int columnIndex) { return null; }
+        @Override public BigDecimal getBigDecimal(String columnLabel) { return null; }
+        @Override public boolean isBeforeFirst() { return false; }
+        @Override public boolean isAfterLast() { return false; }
+        @Override public boolean isFirst() { return false; }
+        @Override public boolean isLast() { return false; }
+        @Override public void beforeFirst() {}
+        @Override public void afterLast() {}
+        @Override public boolean first() { return false; }
+        @Override public boolean last() { return false; }
+        @Override public int getRow() { return 0; }
+        @Override public boolean absolute(int row) { return false; }
+        @Override public boolean relative(int rows) { return false; }
+        @Override public boolean previous() { return false; }
+        @Override public void setFetchDirection(int direction) {}
+        @Override public int getFetchDirection() { return 0; }
+        @Override public void setFetchSize(int rows) {}
+        @Override public int getFetchSize() { return 0; }
+        @Override public int getType() { return 0; }
+        @Override public int getConcurrency() { return 0; }
+        @Override public boolean rowUpdated() { return false; }
+        @Override public boolean rowInserted() { return false; }
+        @Override public boolean rowDeleted() { return false; }
+        @Override public void updateNull(int columnIndex) {}
+        @Override public void updateBoolean(int columnIndex, boolean x) {}
+        @Override public void updateByte(int columnIndex, byte x) {}
+        @Override public void updateShort(int columnIndex, short x) {}
+        @Override public void updateInt(int columnIndex, int x) {}
+        @Override public void updateLong(int columnIndex, long x) {}
+        @Override public void updateFloat(int columnIndex, float x) {}
+        @Override public void updateDouble(int columnIndex, double x) {}
+        @Override public void updateBigDecimal(int columnIndex, BigDecimal x) {}
+        @Override public void updateString(int columnIndex, String x) {}
+        @Override public void updateBytes(int columnIndex, byte[] x) {}
+        @Override public void updateDate(int columnIndex, Date x) {}
+        @Override public void updateTime(int columnIndex, Time x) {}
+        @Override public void updateTimestamp(int columnIndex, Timestamp x) {}
+        @Override public void updateAsciiStream(int columnIndex, InputStream x, int length) {}
+        @Override public void updateBinaryStream(int columnIndex, InputStream x, int length) {}
+        @Override public void updateCharacterStream(int columnIndex, Reader x, int length) {}
+        @Override public void updateObject(int columnIndex, Object x, int scaleOrLength) {}
+        @Override public void updateObject(int columnIndex, Object x) {}
+        @Override public void updateNull(String columnLabel) {}
+        @Override public void updateBoolean(String columnLabel, boolean x) {}
+        @Override public void updateByte(String columnLabel, byte x) {}
+        @Override public void updateShort(String columnLabel, short x) {}
+        @Override public void updateInt(String columnLabel, int x) {}
+        @Override public void updateLong(String columnLabel, long x) {}
+        @Override public void updateFloat(String columnLabel, float x) {}
+        @Override public void updateDouble(String columnLabel, double x) {}
+        @Override public void updateBigDecimal(String columnLabel, BigDecimal x) {}
+        @Override public void updateString(String columnLabel, String x) {}
+        @Override public void updateBytes(String columnLabel, byte[] x) {}
+        @Override public void updateDate(String columnLabel, Date x) {}
+        @Override public void updateTime(String columnLabel, Time x) {}
+        @Override public void updateTimestamp(String columnLabel, Timestamp x) {}
+        @Override public void updateAsciiStream(String columnLabel, InputStream x, int length) {}
+        @Override public void updateBinaryStream(String columnLabel, InputStream x, int length) {}
+        @Override public void updateCharacterStream(String columnLabel, Reader reader, int length) {}
+        @Override public void updateObject(String columnLabel, Object x, int scaleOrLength) {}
+        @Override public void updateObject(String columnLabel, Object x) {}
+        @Override public void insertRow() {}
+        @Override public void updateRow() {}
+        @Override public void deleteRow() {}
+        @Override public void refreshRow() {}
+        @Override public void cancelRowUpdates() {}
+        @Override public void moveToInsertRow() {}
+        @Override public void moveToCurrentRow() {}
+        @Override public Statement getStatement() { return null; }
+        @Override public Object getObject(int columnIndex, Map<String, Class<?>> map) { return null; }
+        @Override public Ref getRef(int columnIndex) { return null; }
+        @Override public Blob getBlob(int columnIndex) { return null; }
+        @Override public Clob getClob(int columnIndex) { return null; }
+        @Override public Array getArray(int columnIndex) { return null; }
+        @Override public Object getObject(String columnLabel, Map<String, Class<?>> map) { return null; }
+        @Override public Ref getRef(String columnLabel) { return null; }
+        @Override public Blob getBlob(String columnLabel) { return null; }
+        @Override public Clob getClob(String columnLabel) { return null; }
+        @Override public Array getArray(String columnLabel) { return null; }
+        @Override public Date getDate(int columnIndex, Calendar cal) { return null; }
+        @Override public Date getDate(String columnLabel, Calendar cal) { return null; }
+        @Override public Time getTime(int columnIndex, Calendar cal) { return null; }
+        @Override public Time getTime(String columnLabel, Calendar cal) { return null; }
+        @Override public Timestamp getTimestamp(int columnIndex, Calendar cal) { return null; }
+        @Override public Timestamp getTimestamp(String columnLabel, Calendar cal) { return null; }
+        @Override public URL getURL(int columnIndex) { return null; }
+        @Override public URL getURL(String columnLabel) { return null; }
+        @Override public void updateRef(int columnIndex, Ref x) {}
+        @Override public void updateRef(String columnLabel, Ref x) {}
+        @Override public void updateBlob(int columnIndex, Blob x) {}
+        @Override public void updateBlob(String columnLabel, Blob x) {}
+        @Override public void updateClob(int columnIndex, Clob x) {}
+        @Override public void updateClob(String columnLabel, Clob x) {}
+        @Override public void updateArray(int columnIndex, Array x) {}
+        @Override public void updateArray(String columnLabel, Array x) {}
+        @Override public RowId getRowId(int columnIndex) { return null; }
+        @Override public RowId getRowId(String columnLabel) { return null; }
+        @Override public void updateRowId(int columnIndex, RowId x) {}
+        @Override public void updateRowId(String columnLabel, RowId x) {}
+        @Override public int getHoldability() { return 0; }
+        @Override public boolean isClosed() { return false; }
+        @Override public void updateNString(int columnIndex, String nString) {}
+        @Override public void updateNString(String columnLabel, String nString) {}
+        @Override public void updateNClob(int columnIndex, NClob nClob) {}
+        @Override public void updateNClob(String columnLabel, NClob nClob) {}
+        @Override public NClob getNClob(int columnIndex) { return null; }
+        @Override public NClob getNClob(String columnLabel) { return null; }
+        @Override public SQLXML getSQLXML(int columnIndex) { return null; }
+        @Override public SQLXML getSQLXML(String columnLabel) { return null; }
+        @Override public void updateSQLXML(int columnIndex, SQLXML xmlObject) {}
+        @Override public void updateSQLXML(String columnLabel, SQLXML xmlObject) {}
+        @Override public String getNString(int columnIndex) { return null; }
+        @Override public String getNString(String columnLabel) { return null; }
+        @Override public Reader getNCharacterStream(int columnIndex) { return null; }
+        @Override public Reader getNCharacterStream(String columnLabel) { return null; }
+        @Override public void updateNCharacterStream(int columnIndex, Reader x, long length) {}
+        @Override public void updateNCharacterStream(String columnLabel, Reader reader, long length) {}
+        @Override public void updateAsciiStream(int columnIndex, InputStream x, long length) {}
+        @Override public void updateBinaryStream(int columnIndex, InputStream x, long length) {}
+        @Override public void updateCharacterStream(int columnIndex, Reader x, long length) {}
+        @Override public void updateAsciiStream(String columnLabel, InputStream x, long length) {}
+        @Override public void updateBinaryStream(String columnLabel, InputStream x, long length) {}
+        @Override public void updateCharacterStream(String columnLabel, Reader reader, long length) {}
+        @Override public void updateBlob(int columnIndex, InputStream inputStream, long length) {}
+        @Override public void updateBlob(String columnLabel, InputStream inputStream, long length) {}
+        @Override public void updateClob(int columnIndex, Reader reader, long length) {}
+        @Override public void updateClob(String columnLabel, Reader reader, long length) {}
+        @Override public void updateNClob(int columnIndex, Reader reader, long length) {}
+        @Override public void updateNClob(String columnLabel, Reader reader, long length) {}
+        @Override public void updateNCharacterStream(int columnIndex, Reader x) {}
+        @Override public void updateNCharacterStream(String columnLabel, Reader reader) {}
+        @Override public void updateAsciiStream(int columnIndex, InputStream x) {}
+        @Override public void updateBinaryStream(int columnIndex, InputStream x) {}
+        @Override public void updateCharacterStream(int columnIndex, Reader x) {}
+        @Override public void updateAsciiStream(String columnLabel, InputStream x) {}
+        @Override public void updateBinaryStream(String columnLabel, InputStream x) {}
+        @Override public void updateCharacterStream(String columnLabel, Reader reader) {}
+        @Override public void updateBlob(int columnIndex, InputStream inputStream) {}
+        @Override public void updateBlob(String columnLabel, InputStream inputStream) {}
+        @Override public void updateClob(int columnIndex, Reader reader) {}
+        @Override public void updateClob(String columnLabel, Reader reader) {}
+        @Override public void updateNClob(int columnIndex, Reader reader) {}
+        @Override public void updateNClob(String columnLabel, Reader reader) {}
+        @Override public <T> T getObject(int columnIndex, Class<T> type) { return null; }
+        @Override public <T> T getObject(String columnLabel, Class<T> type) { return null; }
+        @Override public <T> T unwrap(Class<T> iface) { return null; }
+        @Override public boolean isWrapperFor(Class<?> iface) { return false; }
+    }
+
+    private static class MockResultSetMetaData implements ResultSetMetaData {
+        private final String[] columnNames;
+
+        public MockResultSetMetaData(String[] columnNames) {
+            this.columnNames = columnNames;
+        }
+
+        @Override
+        public int getColumnCount() {
+            return columnNames.length;
+        }
+
+        @Override
+        public boolean isAutoIncrement(int column) {
+            return false;
+        }
+
+        @Override
+        public boolean isCaseSensitive(int column) {
+            return false;
+        }
+
+        @Override
+        public boolean isSearchable(int column) {
+            return false;
+        }
+
+        @Override
+        public boolean isCurrency(int column) {
+            return false;
+        }
+
+        @Override
+        public int isNullable(int column) {
+            return 0;
+        }
+
+        @Override
+        public boolean isSigned(int column) {
+            return false;
+        }
+
+        @Override
+        public int getColumnDisplaySize(int column) {
+            return 0;
+        }
+
+        @Override
+        public String getColumnLabel(int column) {
+            return columnNames[column - 1];
+        }
+
+        @Override
+        public String getColumnName(int column) {
+            return columnNames[column - 1];
+        }
+
+        @Override
+        public String getSchemaName(int column) {
+            return null;
+        }
+
+        @Override
+        public int getPrecision(int column) {
+            return 0;
+        }
+
+        @Override
+        public int getScale(int column) {
+            return 0;
+        }
+
+        @Override
+        public String getTableName(int column) {
+            return null;
+        }
+
+        @Override
+        public String getCatalogName(int column) {
+            return null;
+        }
+
+        @Override
+        public int getColumnType(int column) {
+            return 0;
+        }
+
+        @Override
+        public String getColumnTypeName(int column) {
+            return null;
+        }
+
+        @Override
+        public boolean isReadOnly(int column) {
+            return false;
+        }
+
+        @Override
+        public boolean isWritable(int column) {
+            return false;
+        }
+
+        @Override
+        public boolean isDefinitelyWritable(int column) {
+            return false;
+        }
+
+        @Override
+        public String getColumnClassName(int column) {
+            return null;
+        }
+
+        @Override
+        public <T> T unwrap(Class<T> iface) {
+            return null;
+        }
+
+        @Override
+        public boolean isWrapperFor(Class<?> iface) {
+            return false;
+        }
+    }
+}
+```

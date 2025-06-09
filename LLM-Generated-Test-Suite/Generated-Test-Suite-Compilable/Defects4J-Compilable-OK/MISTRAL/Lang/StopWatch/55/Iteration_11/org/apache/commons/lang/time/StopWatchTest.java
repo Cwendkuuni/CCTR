@@ -1,0 +1,138 @@
+package org.apache.commons.lang.time;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class StopWatchTest {
+
+    private StopWatch stopWatch;
+
+    @Before
+    public void setUp() {
+        stopWatch = new StopWatch();
+    }
+
+    @Test
+    public void testStart() {
+        stopWatch.start();
+        assertTrue(stopWatch.getTime() > 0);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testStartTwice() {
+        stopWatch.start();
+        stopWatch.start();
+    }
+
+    @Test
+    public void testStop() {
+        stopWatch.start();
+        stopWatch.stop();
+        assertTrue(stopWatch.getTime() > 0);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testStopWithoutStart() {
+        stopWatch.stop();
+    }
+
+    @Test
+    public void testReset() {
+        stopWatch.start();
+        stopWatch.stop();
+        stopWatch.reset();
+        assertEquals(0, stopWatch.getTime());
+    }
+
+    @Test
+    public void testSplit() {
+        stopWatch.start();
+        stopWatch.split();
+        assertTrue(stopWatch.getSplitTime() > 0);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testSplitWithoutStart() {
+        stopWatch.split();
+    }
+
+    @Test
+    public void testUnsplit() {
+        stopWatch.start();
+        stopWatch.split();
+        stopWatch.unsplit();
+        assertTrue(stopWatch.getTime() > 0);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testUnsplitWithoutSplit() {
+        stopWatch.start();
+        stopWatch.unsplit();
+    }
+
+    @Test
+    public void testSuspend() {
+        stopWatch.start();
+        stopWatch.suspend();
+        assertTrue(stopWatch.getTime() > 0);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testSuspendWithoutStart() {
+        stopWatch.suspend();
+    }
+
+    @Test
+    public void testResume() {
+        stopWatch.start();
+        stopWatch.suspend();
+        stopWatch.resume();
+        assertTrue(stopWatch.getTime() > 0);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testResumeWithoutSuspend() {
+        stopWatch.start();
+        stopWatch.resume();
+    }
+
+    @Test
+    public void testGetTime() {
+        stopWatch.start();
+        assertTrue(stopWatch.getTime() > 0);
+    }
+
+    @Test
+    public void testGetSplitTime() {
+        stopWatch.start();
+        stopWatch.split();
+        assertTrue(stopWatch.getSplitTime() > 0);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetSplitTimeWithoutSplit() {
+        stopWatch.start();
+        stopWatch.getSplitTime();
+    }
+
+    @Test
+    public void testToString() {
+        stopWatch.start();
+        stopWatch.stop();
+        assertNotNull(stopWatch.toString());
+    }
+
+    @Test
+    public void testToSplitString() {
+        stopWatch.start();
+        stopWatch.split();
+        assertNotNull(stopWatch.toSplitString());
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testToSplitStringWithoutSplit() {
+        stopWatch.start();
+        stopWatch.toSplitString();
+    }
+}

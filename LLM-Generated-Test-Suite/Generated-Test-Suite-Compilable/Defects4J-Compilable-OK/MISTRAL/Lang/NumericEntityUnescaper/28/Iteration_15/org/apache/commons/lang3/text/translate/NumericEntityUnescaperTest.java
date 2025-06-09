@@ -1,0 +1,100 @@
+package org.apache.commons.lang3.text.translate;
+
+import org.apache.commons.lang3.text.translate.NumericEntityUnescaper;
+import org.junit.Before;
+import org.junit.Test;
+import java.io.IOException;
+import java.io.StringWriter;
+import static org.junit.Assert.assertEquals;
+
+public class NumericEntityUnescaperTest {
+
+    private NumericEntityUnescaper unescaper;
+
+    @Before
+    public void setUp() {
+        unescaper = new NumericEntityUnescaper();
+    }
+
+    @Test
+    public void testTranslateDecimalEntity() throws IOException {
+        String input = "&#65;";
+        StringWriter out = new StringWriter();
+        int consumed = unescaper.translate(input, 0, out);
+        assertEquals("A", out.toString());
+        assertEquals(5, consumed);
+    }
+
+    @Test
+    public void testTranslateHexEntity() throws IOException {
+        String input = "&#x41;";
+        StringWriter out = new StringWriter();
+        int consumed = unescaper.translate(input, 0, out);
+        assertEquals("A", out.toString());
+        assertEquals(6, consumed);
+    }
+
+    @Test
+    public void testTranslateInvalidEntity() throws IOException {
+        String input = "&#xyz;";
+        StringWriter out = new StringWriter();
+        int consumed = unescaper.translate(input, 0, out);
+        assertEquals("", out.toString());
+        assertEquals(0, consumed);
+    }
+
+    @Test
+    public void testTranslateIncompleteEntity() throws IOException {
+        String input = "&#65";
+        StringWriter out = new StringWriter();
+        int consumed = unescaper.translate(input, 0, out);
+        assertEquals("", out.toString());
+        assertEquals(0, consumed);
+    }
+
+    @Test
+    public void testTranslateNonEntity() throws IOException {
+        String input = "abc";
+        StringWriter out = new StringWriter();
+        int consumed = unescaper.translate(input, 0, out);
+        assertEquals("", out.toString());
+        assertEquals(0, consumed);
+    }
+
+    @Test
+    public void testTranslateEntityWithinString() throws IOException {
+        String input = "Hello &#65; World";
+        StringWriter out = new StringWriter();
+        int consumed = unescaper.translate(input, 6, out);
+        assertEquals("A", out.toString());
+        assertEquals(5, consumed);
+    }
+
+    @Test
+    public void testTranslateEntityAtEndOfString() throws IOException {
+        String input = "Hello &#65;";
+        StringWriter out = new StringWriter();
+        int consumed = unescaper.translate(input, 6, out);
+        assertEquals("A", out.toString());
+        assertEquals(5, consumed);
+    }
+
+    @Test
+    public void testTranslateMultipleEntities() throws IOException {
+        String input = "&#65;&#66;&#67;";
+        StringWriter out = new StringWriter();
+        int consumed = unescaper.translate(input, 0, out);
+        assertEquals("A", out.toString());
+        assertEquals(5, consumed);
+
+        out = new StringWriter();
+        consumed = unescaper.translate(input, 5, out);
+        assertEquals("B", out.toString());
+        assertEquals(5, consumed);
+
+        out = new StringWriter();
+        consumed = unescaper.translate(input, 10, out);
+        assertEquals("C", out.toString());
+        assertEquals(5, consumed);
+    }
+}

@@ -1,0 +1,125 @@
+```java
+package org.jsoup.safety;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.nodes.TextNode;
+import org.jsoup.safety.Whitelist;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class CleanerTest {
+
+    private Cleaner cleaner;
+    private Whitelist whitelist;
+
+    @Before
+    public void setUp() {
+        whitelist = Whitelist.basic();
+        cleaner = new Cleaner(whitelist);
+    }
+
+    @Test
+    public void testCleanValidDocument() {
+        String html = "<div><p>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertEquals("Hello World", cleanDocument.body().text());
+    }
+
+    @Test
+    public void testCleanInvalidDocument() {
+        String html = "<div><script>alert('xss')</script><p>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertEquals("Hello World", cleanDocument.body().text());
+        assertFalse(cleanDocument.body().html().contains("script"));
+    }
+
+    @Test
+    public void testIsValidValidDocument() {
+        String html = "<div><p>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+
+        assertTrue(cleaner.isValid(dirtyDocument));
+    }
+
+    @Test
+    public void testIsValidInvalidDocument() {
+        String html = "<div><script>alert('xss')</script><p>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+
+        assertFalse(cleaner.isValid(dirtyDocument));
+    }
+
+    @Test
+    public void testCleanDocumentWithAttributes() {
+        String html = "<div id='safe'><p class='safe'>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertEquals("safe", cleanDocument.selectFirst("div").attr("id"));
+        assertEquals("safe", cleanDocument.selectFirst("p").attr("class"));
+    }
+
+    @Test
+    public void testCleanDocumentWithUnsafeAttributes() {
+        String html = "<div onclick='alert()'><p>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertNull(cleanDocument.selectFirst("div").attr("onclick"));
+    }
+
+    @Test
+    public void testCleanDocumentWithDataNode() {
+        String html = "<div><script>alert('xss')</script><p>Hello World</p><style>body { color: red; }</style></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertFalse(cleanDocument.body().html().contains("script"));
+        assertFalse(cleanDocument.body().html().contains("style"));
+    }
+
+    @Test
+    public void testCleanDocumentWithTextNode() {
+        String html = "<div><p>Hello World</p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertEquals("Hello World", cleanDocument.body().text());
+    }
+
+    @Test
+    public void testCleanDocumentWithNestedElements() {
+        String html = "<div><p><span>Hello World</span></p></div>";
+        Document dirtyDocument = Jsoup.parseBodyFragment(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertEquals("Hello World", cleanDocument.body().text());
+        assertEquals("span", cleanDocument.selectFirst("p > span").tagName());
+    }
+
+    @Test
+    public void testCleanDocumentWithEmptyBody() {
+        String html = "<html><body></body></html>";
+        Document dirtyDocument = Jsoup.parse(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertTrue(cleanDocument.body().html().isEmpty());
+    }
+
+    @Test
+    public void testCleanDocumentWithFrameset() {
+        String html = "<html><frameset></frameset></html>";
+        Document dirtyDocument = Jsoup.parse(html);
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertTrue(cleanDocument.body().html().isEmpty());
+    }
+}
+```

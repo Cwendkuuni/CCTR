@@ -1,0 +1,122 @@
+```java
+package macaw.presentationLayer;
+
+import macaw.businessLayer.*;
+import macaw.persistenceLayer.demo.*;
+import macaw.persistenceLayer.production.*;
+import macaw.system.*;
+import macaw.io.*;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class MacawWorkBenchTest {
+
+    private SessionProperties sessionProperties;
+    private UserInterfaceFactory userInterfaceFactory;
+    private MacawWorkBench macawWorkBench;
+
+    @Before
+    public void setUp() {
+        sessionProperties = mock(SessionProperties.class);
+        userInterfaceFactory = mock(UserInterfaceFactory.class);
+        when(sessionProperties.getUserInterfaceFactory()).thenReturn(userInterfaceFactory);
+        macawWorkBench = new MacawWorkBench(sessionProperties);
+    }
+
+    @Test
+    public void testMain() {
+        // This test is more of an integration test and might be better suited for a separate test suite
+        // Here we just ensure that the main method does not throw an exception
+        try {
+            MacawWorkBench.main(new String[]{});
+        } catch (Exception e) {
+            fail("Exception thrown in main method: " + e.getMessage());
+        }
+    }
+
+    @Test
+    public void testShow() {
+        macawWorkBench.show();
+        verify(macawWorkBench.dialog).setVisible(true);
+    }
+
+    @Test
+    public void testEditConstants() {
+        macawWorkBench.editConstants();
+        verify(sessionProperties).getProperty(anyString());
+    }
+
+    @Test
+    public void testEditVariables() {
+        macawWorkBench.editVariables();
+        verify(sessionProperties).getProperty(anyString());
+    }
+
+    @Test
+    public void testExportVariableData() {
+        macawWorkBench.exportVariableData();
+        verify(sessionProperties).getProperty(anyString());
+    }
+
+    @Test
+    public void testExit() {
+        macawWorkBench.exit();
+        // This test is tricky because System.exit(0) will terminate the JVM
+        // We can use a SecurityManager to prevent the JVM from exiting
+        SecurityManager securityManager = System.getSecurityManager();
+        System.setSecurityManager(new NoExitSecurityManager());
+        try {
+            macawWorkBench.exit();
+            fail("Expected SecurityException was not thrown");
+        } catch (SecurityException e) {
+            // Expected exception
+        } finally {
+            System.setSecurityManager(securityManager);
+        }
+    }
+
+    @Test
+    public void testActionPerformedEditConstants() {
+        macawWorkBench.actionPerformed(new ActionEvent(macawWorkBench.editConstants, 0, ""));
+        verify(macawWorkBench).editConstants();
+    }
+
+    @Test
+    public void testActionPerformedEditVariables() {
+        macawWorkBench.actionPerformed(new ActionEvent(macawWorkBench.editVariables, 0, ""));
+        verify(macawWorkBench).editVariables();
+    }
+
+    @Test
+    public void testActionPerformedExportVariableData() {
+        macawWorkBench.actionPerformed(new ActionEvent(macawWorkBench.exportVariableData, 0, ""));
+        verify(macawWorkBench).exportVariableData();
+    }
+
+    @Test
+    public void testActionPerformedExit() {
+        macawWorkBench.actionPerformed(new ActionEvent(macawWorkBench.exit, 0, ""));
+        // This test is tricky because System.exit(0) will terminate the JVM
+        // We can use a SecurityManager to prevent the JVM from exiting
+        SecurityManager securityManager = System.getSecurityManager();
+        System.setSecurityManager(new NoExitSecurityManager());
+        try {
+            macawWorkBench.actionPerformed(new ActionEvent(macawWorkBench.exit, 0, ""));
+            fail("Expected SecurityException was not thrown");
+        } catch (SecurityException e) {
+            // Expected exception
+        } finally {
+            System.setSecurityManager(securityManager);
+        }
+    }
+
+    private static class NoExitSecurityManager extends SecurityManager {
+        @Override
+        public void checkExit(int status) {
+            throw new SecurityException("Exit not allowed");
+        }
+    }
+}
+```

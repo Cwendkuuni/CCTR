@@ -1,0 +1,122 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.exceptions.Reporter;
+import org.mockito.internal.configuration.injection.filter.FinalMockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.MockCandidateFilter;
+import org.mockito.internal.configuration.injection.filter.OngoingInjecter;
+import org.mockito.internal.util.reflection.BeanPropertySetter;
+import org.mockito.internal.util.reflection.FieldSetter;
+
+import java.lang.reflect.Field;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.Collections;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class FinalMockCandidateFilterTest {
+
+    private FinalMockCandidateFilter filter;
+    private Field field;
+    private Object fieldInstance;
+
+    @Before
+    public void setUp() throws Exception {
+        filter = new FinalMockCandidateFilter();
+        field = TestClass.class.getDeclaredField("testField");
+        fieldInstance = new TestClass();
+    }
+
+    @Test
+    public void testFilterCandidateWithSingleMock() throws Exception {
+        Object mock = mock(Object.class);
+        Collection<Object> mocks = Collections.singletonList(mock);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        Object result = injecter.thenInject();
+
+        assertSame(mock, result);
+        verify(mock, times(0)).toString(); // Ensure no unexpected interactions
+    }
+
+    @Test
+    public void testFilterCandidateWithMultipleMocks() throws Exception {
+        Object mock1 = mock(Object.class);
+        Object mock2 = mock(Object.class);
+        Collection<Object> mocks = Arrays.asList(mock1, mock2);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        Object result = injecter.thenInject();
+
+        assertNull(result);
+        verify(mock1, times(0)).toString(); // Ensure no unexpected interactions
+        verify(mock2, times(0)).toString(); // Ensure no unexpected interactions
+    }
+
+    @Test
+    public void testFilterCandidateWithNoMocks() throws Exception {
+        Collection<Object> mocks = Collections.emptyList();
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        Object result = injecter.thenInject();
+
+        assertNull(result);
+    }
+
+    @Test
+    public void testFilterCandidateWithBeanPropertySetterSuccess() throws Exception {
+        Object mock = mock(Object.class);
+        Collection<Object> mocks = Collections.singletonList(mock);
+
+        BeanPropertySetter setter = mock(BeanPropertySetter.class);
+        when(setter.set(mock)).thenReturn(true);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        Object result = injecter.thenInject();
+
+        assertSame(mock, result);
+        verify(setter, times(1)).set(mock);
+    }
+
+    @Test
+    public void testFilterCandidateWithBeanPropertySetterFailure() throws Exception {
+        Object mock = mock(Object.class);
+        Collection<Object> mocks = Collections.singletonList(mock);
+
+        BeanPropertySetter setter = mock(BeanPropertySetter.class);
+        when(setter.set(mock)).thenReturn(false);
+
+        FieldSetter fieldSetter = mock(FieldSetter.class);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        Object result = injecter.thenInject();
+
+        assertSame(mock, result);
+        verify(setter, times(1)).set(mock);
+        verify(fieldSetter, times(1)).set(mock);
+    }
+
+    @Test
+    public void testFilterCandidateWithException() throws Exception {
+        Object mock = mock(Object.class);
+        Collection<Object> mocks = Collections.singletonList(mock);
+
+        BeanPropertySetter setter = mock(BeanPropertySetter.class);
+        when(setter.set(mock)).thenThrow(new RuntimeException("Test Exception"));
+
+        Reporter reporter = mock(Reporter.class);
+
+        OngoingInjecter injecter = filter.filterCandidate(mocks, field, fieldInstance);
+        Object result = injecter.thenInject();
+
+        assertSame(mock, result);
+        verify(reporter, times(1)).cannotInjectDependency(field, mock, any(RuntimeException.class));
+    }
+
+    private static class TestClass {
+        private Object testField;
+    }
+}
+```

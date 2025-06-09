@@ -1,0 +1,89 @@
+```java
+package org.apache.commons.compress.utils;
+
+import org.junit.After;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
+import java.nio.ByteOrder;
+
+import static org.junit.Assert.*;
+
+public class BitInputStreamTest {
+
+    private BitInputStream bitInputStream;
+    private ByteArrayInputStream byteArrayInputStream;
+
+    @Before
+    public void setUp() {
+        byte[] data = {0x01, 0x02, 0x03, 0x04};
+        byteArrayInputStream = new ByteArrayInputStream(data);
+        bitInputStream = new BitInputStream(byteArrayInputStream, ByteOrder.BIG_ENDIAN);
+    }
+
+    @After
+    public void tearDown() throws IOException {
+        bitInputStream.close();
+    }
+
+    @Test
+    public void testReadBits() throws IOException {
+        assertEquals(0x01, bitInputStream.readBits(8));
+        assertEquals(0x02, bitInputStream.readBits(8));
+        assertEquals(0x03, bitInputStream.readBits(8));
+        assertEquals(0x04, bitInputStream.readBits(8));
+        assertEquals(-1, bitInputStream.readBits(8)); // End of stream
+    }
+
+    @Test
+    public void testReadBitsLittleEndian() throws IOException {
+        byte[] data = {0x01, 0x02, 0x03, 0x04};
+        byteArrayInputStream = new ByteArrayInputStream(data);
+        bitInputStream = new BitInputStream(byteArrayInputStream, ByteOrder.LITTLE_ENDIAN);
+
+        assertEquals(0x01, bitInputStream.readBits(8));
+        assertEquals(0x02, bitInputStream.readBits(8));
+        assertEquals(0x03, bitInputStream.readBits(8));
+        assertEquals(0x04, bitInputStream.readBits(8));
+        assertEquals(-1, bitInputStream.readBits(8)); // End of stream
+    }
+
+    @Test
+    public void testReadBitsPartial() throws IOException {
+        assertEquals(0x01, bitInputStream.readBits(1));
+        assertEquals(0x02, bitInputStream.readBits(2));
+        assertEquals(0x04, bitInputStream.readBits(3));
+        assertEquals(0x08, bitInputStream.readBits(4));
+    }
+
+    @Test
+    public void testReadBitsOverflow() throws IOException {
+        byte[] data = {0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF};
+        byteArrayInputStream = new ByteArrayInputStream(data);
+        bitInputStream = new BitInputStream(byteArrayInputStream, ByteOrder.BIG_ENDIAN);
+
+        assertEquals(0xFFFFFFFFFFFFFFFFL, bitInputStream.readBits(63));
+        assertEquals(-1, bitInputStream.readBits(1)); // End of stream
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testReadBitsInvalidCount() throws IOException {
+        bitInputStream.readBits(64);
+    }
+
+    @Test
+    public void testClearBitCache() throws IOException {
+        bitInputStream.readBits(8);
+        bitInputStream.clearBitCache();
+        assertEquals(0x02, bitInputStream.readBits(8));
+    }
+
+    @Test
+    public void testClose() throws IOException {
+        bitInputStream.close();
+        assertEquals(-1, bitInputStream.readBits(8)); // Stream is closed
+    }
+}
+```

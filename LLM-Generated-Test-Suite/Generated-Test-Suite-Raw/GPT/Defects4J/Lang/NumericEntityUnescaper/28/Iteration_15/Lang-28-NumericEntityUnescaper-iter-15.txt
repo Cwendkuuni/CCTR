@@ -1,0 +1,114 @@
+Certainly! Below is a JUnit 4 test suite designed to comprehensively test the `NumericEntityUnescaper` class. This suite includes tests for various scenarios, including valid and invalid numeric entities, both decimal and hexadecimal.
+
+```java
+import org.apache.commons.lang3.text.translate.NumericEntityUnescaper;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.io.IOException;
+import java.io.StringWriter;
+import java.io.Writer;
+
+import static org.junit.Assert.assertEquals;
+
+public class NumericEntityUnescaperTest {
+
+    private NumericEntityUnescaper unescaper;
+
+    @Before
+    public void setUp() {
+        unescaper = new NumericEntityUnescaper();
+    }
+
+    @Test
+    public void testTranslateDecimalEntity() throws IOException {
+        String input = "&#65;";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(5, result);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateHexEntityLowerCase() throws IOException {
+        String input = "&#x41;";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(6, result);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateHexEntityUpperCase() throws IOException {
+        String input = "&#X41;";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(6, result);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateInvalidEntity() throws IOException {
+        String input = "&#xyz;";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(0, result);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateNonEntity() throws IOException {
+        String input = "A";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(0, result);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateIncompleteEntity() throws IOException {
+        String input = "&#123";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(0, result);
+        assertEquals("", out.toString());
+    }
+
+    @Test
+    public void testTranslateEntityWithExtraCharacters() throws IOException {
+        String input = "&#65;Extra";
+        Writer out = new StringWriter();
+        int result = unescaper.translate(input, 0, out);
+        assertEquals(5, result);
+        assertEquals("A", out.toString());
+    }
+
+    @Test
+    public void testTranslateMultipleEntities() throws IOException {
+        String input = "&#65;&#66;&#67;";
+        Writer out = new StringWriter();
+        int index = 0;
+        while (index < input.length()) {
+            int result = unescaper.translate(input, index, out);
+            if (result == 0) {
+                break;
+            }
+            index += result;
+        }
+        assertEquals("ABC", out.toString());
+    }
+}
+```
+
+### Explanation:
+- **Setup**: The `setUp` method initializes an instance of `NumericEntityUnescaper` before each test.
+- **Tests**:
+  - `testTranslateDecimalEntity`: Tests a valid decimal numeric entity.
+  - `testTranslateHexEntityLowerCase` and `testTranslateHexEntityUpperCase`: Test valid hexadecimal numeric entities with lowercase and uppercase 'x'.
+  - `testTranslateInvalidEntity`: Tests an invalid numeric entity.
+  - `testTranslateNonEntity`: Tests a string that is not a numeric entity.
+  - `testTranslateIncompleteEntity`: Tests an incomplete numeric entity.
+  - `testTranslateEntityWithExtraCharacters`: Tests a numeric entity followed by extra characters.
+  - `testTranslateMultipleEntities`: Tests multiple consecutive numeric entities in a string.
+
+These tests aim to cover a range of scenarios to ensure the `NumericEntityUnescaper` class functions correctly.

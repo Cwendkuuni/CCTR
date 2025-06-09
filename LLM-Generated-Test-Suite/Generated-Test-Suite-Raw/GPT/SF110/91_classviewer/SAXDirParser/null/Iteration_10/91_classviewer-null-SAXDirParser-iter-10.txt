@@ -1,0 +1,232 @@
+To create a comprehensive JUnit 4 test suite for the `SAXDirParser` class, we need to test each method, including the parsing logic in the `startElement`, `characters`, and `endElement` methods. We will also test the static methods that return the state of the class. Here's a test suite that covers these aspects:
+
+```java
+package com.jstevh.viewer;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.Attributes;
+import org.xml.sax.helpers.AttributesImpl;
+
+import static org.junit.Assert.*;
+
+public class SAXDirParserTest {
+
+    private SAXDirParser parser;
+
+    @Before
+    public void setUp() throws Exception {
+        parser = new SAXDirParser();
+    }
+
+    @Test
+    public void testGetWebData() {
+        assertEquals("", parser.getWebData());
+    }
+
+    @Test
+    public void testStartElementBrowserLoc() throws Exception {
+        Attributes attributes = new AttributesImpl();
+        parser.startElement("", "", "BrowserLoc", attributes);
+        assertTrue(parser.check);
+        assertEquals(0, parser.level);
+    }
+
+    @Test
+    public void testStartElementEditor() throws Exception {
+        Attributes attributes = new AttributesImpl();
+        parser.startElement("", "", "Editor", attributes);
+        assertTrue(parser.check);
+        assertEquals(10, parser.level);
+    }
+
+    @Test
+    public void testStartElementAcceptsLineNumber() throws Exception {
+        Attributes attributes = new AttributesImpl();
+        parser.startElement("", "", "acceptsLineNumber", attributes);
+        assertTrue(parser.check);
+        assertEquals(11, parser.level);
+    }
+
+    @Test
+    public void testStartElementParameter() throws Exception {
+        Attributes attributes = new AttributesImpl();
+        parser.startElement("", "", "parameter", attributes);
+        assertTrue(parser.check);
+        assertEquals(12, parser.level);
+    }
+
+    @Test
+    public void testStartElementGroup() throws Exception {
+        Attributes attributes = new AttributesImpl();
+        parser.startElement("", "", "Group", attributes);
+        assertFalse(parser.check);
+        assertEquals(2, parser.level);
+    }
+
+    @Test
+    public void testStartElementWeb() throws Exception {
+        Attributes attributes = new AttributesImpl();
+        parser.startElement("", "", "Web", attributes);
+        assertTrue(parser.check);
+        assertEquals(30, parser.level);
+    }
+
+    @Test
+    public void testStartElementLocal() throws Exception {
+        Attributes attributes = new AttributesImpl();
+        parser.startElement("", "", "Local", attributes);
+        assertTrue(parser.check);
+        assertEquals(31, parser.level);
+    }
+
+    @Test
+    public void testStartElementNames() throws Exception {
+        Attributes attributes = new AttributesImpl();
+        parser.startElement("", "", "Names", attributes);
+        assertTrue(parser.check);
+    }
+
+    @Test
+    public void testStartElementPkg() throws Exception {
+        Attributes attributes = new AttributesImpl();
+        parser.startElement("", "", "pkg", attributes);
+        assertEquals(4, parser.level);
+    }
+
+    @Test
+    public void testCharactersLocalBrowser() {
+        parser.check = true;
+        parser.level = 0;
+        char[] chars = "testBrowser".toCharArray();
+        parser.characters(chars, 0, chars.length);
+        assertEquals("testBrowser", SAXDirParser.getLocalBrowser());
+    }
+
+    @Test
+    public void testCharactersFileEditor() {
+        parser.check = true;
+        parser.level = 10;
+        char[] chars = "testEditor".toCharArray();
+        parser.characters(chars, 0, chars.length);
+        assertEquals("testEditor", SAXDirParser.getEditor());
+    }
+
+    @Test
+    public void testCharactersLineNumAcceptedYes() {
+        parser.check = true;
+        parser.level = 11;
+        char[] chars = "Yes".toCharArray();
+        parser.characters(chars, 0, chars.length);
+        assertTrue(SAXDirParser.acceptsLineNumber());
+    }
+
+    @Test
+    public void testCharactersLineNumAcceptedNo() {
+        parser.check = true;
+        parser.level = 11;
+        char[] chars = "No".toCharArray();
+        parser.characters(chars, 0, chars.length);
+        assertFalse(SAXDirParser.acceptsLineNumber());
+    }
+
+    @Test
+    public void testCharactersLineNumParam() {
+        parser.check = true;
+        parser.level = 12;
+        char[] chars = "param".toCharArray();
+        parser.characters(chars, 0, chars.length);
+        assertEquals("param", SAXDirParser.lineNumberParameter());
+    }
+
+    @Test
+    public void testCharactersLocation() {
+        parser.check = true;
+        parser.level = 30;
+        char[] chars = "location".toCharArray();
+        parser.characters(chars, 0, chars.length);
+        assertEquals("location", parser.location);
+    }
+
+    @Test
+    public void testCharactersLocalYes() {
+        parser.check = true;
+        parser.level = 31;
+        char[] chars = "Yes".toCharArray();
+        parser.characters(chars, 0, chars.length);
+        assertTrue(parser.local);
+    }
+
+    @Test
+    public void testCharactersLocalNo() {
+        parser.check = true;
+        parser.level = 31;
+        char[] chars = "No".toCharArray();
+        parser.characters(chars, 0, chars.length);
+        assertFalse(parser.local);
+    }
+
+    @Test
+    public void testCharactersPkg() {
+        parser.check = true;
+        parser.level = 4;
+        parser.location = "testLocation";
+        char[] chars = "test.pkg.".toCharArray();
+        parser.characters(chars, 0, chars.length);
+        assertEquals("testLocation", SAXDirParser.getDirectory().get("test.pkg"));
+        assertTrue(SAXDirParser.getLocalPackages().contains("test.pkg"));
+    }
+
+    @Test
+    public void testEndElementGroup() throws Exception {
+        parser.check = true;
+        parser.endElement("", "", "Group");
+        assertFalse(parser.check);
+    }
+
+    @Test
+    public void testGetDirectory() {
+        SAXDirParser.directory.put("testKey", "testValue");
+        HashMap<String, String> directory = SAXDirParser.getDirectory();
+        assertEquals("testValue", directory.get("testKey"));
+    }
+
+    @Test
+    public void testGetLocalPackages() {
+        SAXDirParser.localPackages.add("testPackage");
+        assertNotNull(SAXDirParser.getLocalPackages());
+        assertTrue(SAXDirParser.getLocalPackages().contains("testPackage"));
+    }
+
+    @Test
+    public void testGetLocalBrowser() {
+        SAXDirParser.localBrowser = "testBrowser";
+        assertEquals("testBrowser", SAXDirParser.getLocalBrowser());
+    }
+
+    @Test
+    public void testGetEditor() {
+        SAXDirParser.file_editor = "testEditor";
+        assertEquals("testEditor", SAXDirParser.getEditor());
+    }
+
+    @Test
+    public void testAcceptsLineNumber() {
+        SAXDirParser.lineNumAccepted = true;
+        assertTrue(SAXDirParser.acceptsLineNumber());
+    }
+
+    @Test
+    public void testLineNumberParameter() {
+        SAXDirParser.lineNumParam = "testParam";
+        assertEquals("testParam", SAXDirParser.lineNumberParameter());
+    }
+}
+```
+
+This test suite covers the following:
+- Initialization and basic getter methods.
+- Parsing logic in `startElement`, `characters`, and `endElement` methods.
+- Static methods that return the state of the class.
+
+Note: The `StringList` class is assumed to have a method `add` and a method `contains` for adding and checking elements, respectively. Adjust the test cases if the actual implementation differs.

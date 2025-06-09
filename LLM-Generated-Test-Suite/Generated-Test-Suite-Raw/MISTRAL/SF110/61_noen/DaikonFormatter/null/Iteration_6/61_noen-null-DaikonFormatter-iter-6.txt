@@ -1,0 +1,144 @@
+```java
+package fi.vtt.noen.testgen.observations.formatter;
+
+import fi.vtt.noen.testgen.parser.InterfaceParser;
+import fi.vtt.noen.testgen.model.Event;
+import fi.vtt.noen.testgen.model.ProgramRun;
+import fi.vtt.noen.testgen.observations.data.OutputBuffer;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Iterator;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class DaikonFormatterTest {
+
+    private DaikonFormatter daikonFormatterSimple;
+    private DaikonFormatter daikonFormatterWithInputs;
+
+    @Before
+    public void setUp() throws IOException {
+        daikonFormatterSimple = new DaikonFormatter("testFile.txt", true);
+        Collection<String> inputs = Arrays.asList("input1", "input2");
+        daikonFormatterWithInputs = new DaikonFormatter("testFile.txt", inputs);
+    }
+
+    @Test
+    public void testConstructorSimple() {
+        assertTrue(daikonFormatterSimple.simple);
+        assertNull(daikonFormatterSimple.inputs);
+    }
+
+    @Test
+    public void testConstructorWithInputs() {
+        assertFalse(daikonFormatterWithInputs.simple);
+        assertEquals(2, daikonFormatterWithInputs.inputs.size());
+        assertTrue(daikonFormatterWithInputs.inputs.contains("input1"));
+        assertTrue(daikonFormatterWithInputs.inputs.contains("input2"));
+    }
+
+    @Test
+    public void testHeader() {
+        String expectedHeader = "decl-version 2.0\nvar-comparability implicit\n";
+        assertEquals(expectedHeader, daikonFormatterSimple.header());
+    }
+
+    @Test
+    public void testFooter() {
+        assertEquals("", daikonFormatterSimple.footer());
+    }
+
+    @Test
+    public void testFileNameExtension() {
+        assertEquals("dtrace", daikonFormatterSimple.fileNameExtension());
+    }
+
+    @Test
+    public void testObservationsSimple() {
+        ProgramRun mockRun = mock(ProgramRun.class);
+        Event mockEvent = mock(Event.class);
+        when(mockEvent.getName()).thenReturn("testEvent");
+        when(mockEvent.isExit()).thenReturn(false);
+        when(mockRun.iterator()).thenReturn(Arrays.asList(mockEvent).iterator());
+
+        String result = daikonFormatterSimple.observations(mockRun);
+        assertTrue(result.contains("testEvent:::ENTER"));
+    }
+
+    @Test
+    public void testObservationsWithInputs() {
+        ProgramRun mockRun = mock(ProgramRun.class);
+        Event mockEvent1 = mock(Event.class);
+        Event mockEvent2 = mock(Event.class);
+        when(mockEvent1.getName()).thenReturn("input1");
+        when(mockEvent1.isExit()).thenReturn(false);
+        when(mockEvent2.getName()).thenReturn("input2");
+        when(mockEvent2.isExit()).thenReturn(false);
+        when(mockRun.iterator()).thenReturn(Arrays.asList(mockEvent1, mockEvent2).iterator());
+
+        String result = daikonFormatterWithInputs.observations(mockRun);
+        assertTrue(result.contains("input1:::ENTER"));
+        assertTrue(result.contains("input2:::ENTER"));
+    }
+
+    @Test
+    public void testSimplePoint() {
+        Event mockEvent = mock(Event.class);
+        when(mockEvent.getName()).thenReturn("testEvent");
+        when(mockEvent.isExit()).thenReturn(false);
+        OutputBuffer out = new OutputBuffer();
+
+        daikonFormatterSimple.simplePoint(mockEvent, "10", out);
+        String result = out.toString();
+        assertTrue(result.contains("testEvent:::ENTER"));
+    }
+
+    @Test
+    public void testPoint() {
+        Event mockEvent = mock(Event.class);
+        when(mockEvent.getName()).thenReturn("testEvent");
+        when(mockEvent.isExit()).thenReturn(false);
+        OutputBuffer out = new OutputBuffer();
+
+        daikonFormatterSimple.point("testEvent", mockEvent, "11", out);
+        String result = out.toString();
+        assertTrue(result.contains("testEvent:::ENTER"));
+    }
+
+    @Test
+    public void testDeclarations() {
+        Event mockEvent = mock(Event.class);
+        when(mockEvent.getName()).thenReturn("testEvent");
+        when(mockEvent.isExit()).thenReturn(false);
+        OutputBuffer out = new OutputBuffer();
+
+        daikonFormatterSimple.declarations(mockEvent, "testEvent", out, "10");
+        String result = out.toString();
+        assertTrue(result.contains("ppt testEvent"));
+        assertTrue(result.contains("ppt-type enter"));
+    }
+
+    @Test
+    public void testAttributes() {
+        Event mockEvent = mock(Event.class);
+        EventAttribute mockAttribute = mock(EventAttribute.class);
+        when(mockEvent.attributes()).thenReturn(Arrays.asList(mockAttribute).iterator());
+        when(mockAttribute.getName()).thenReturn("testAttribute");
+        when(mockAttribute.getType()).thenReturn("java.lang.String");
+        when(mockAttribute.getValue()).thenReturn("testValue");
+        OutputBuffer out = new OutputBuffer();
+
+        daikonFormatterSimple.attributes(mockEvent, out);
+        String result = out.toString();
+        assertTrue(result.contains("testAttribute"));
+        assertTrue(result.contains("\"testValue\""));
+    }
+}
+```

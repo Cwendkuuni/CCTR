@@ -1,0 +1,110 @@
+Certainly! Below is a comprehensive JUnit 4 test suite for the `FoxHuntFrame` class. This test suite includes tests for the constructor, `actionPerformed`, `addPoint`, and other methods.
+
+```java
+package Joshua.FoxHunt;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import javax.swing.JButton;
+import javax.swing.JTextField;
+
+public class FoxHuntFrameTest {
+
+    private FoxHuntFrame frame;
+
+    @Before
+    public void setUp() {
+        frame = new FoxHuntFrame();
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(frame);
+        assertEquals("Triangulation", frame.getTitle());
+        assertTrue(frame.isVisible());
+    }
+
+    @Test
+    public void testActionPerformed() {
+        ActionEvent event = new ActionEvent(frame.add, ActionEvent.ACTION_PERFORMED, null);
+        frame.actionPerformed(event);
+        // Assuming addPoint is called, we can check if points are added
+        assertEquals(1, frame.points.size());
+    }
+
+    @Test
+    public void testAddPoint() {
+        frame.theta.setText("90");
+        frame.lat.setText("34.0522");
+        frame.lon.setText("-118.2437");
+        frame.addPoint();
+        assertEquals(1, frame.points.size());
+        assertEquals(0, frame.fox.size()); // No fox point should be added with only one point
+
+        frame.theta.setText("180");
+        frame.lat.setText("34.0522");
+        frame.lon.setText("-118.2437");
+        frame.addPoint();
+        assertEquals(2, frame.points.size());
+        assertEquals(1, frame.fox.size()); // Fox point should be added with two points
+    }
+
+    @Test
+    public void testLoadLandmarks() throws IOException {
+        File tempFile = File.createTempFile("landmarks", ".cfg");
+        try (FileWriter writer = new FileWriter(tempFile)) {
+            writer.write("NUM 1\n");
+            writer.write("FILE icon.gif\n");
+            writer.write("LAT 34.0522\n");
+            writer.write("LON -118.2437\n");
+        }
+
+        // Mock the loadLandmarks method to use the temp file
+        frame.loadLandmarks();
+
+        assertEquals(1, frame.display.getLandmarks().size());
+    }
+
+    @Test
+    public void testErrorDialog() {
+        frame.error("Test Error");
+        // This test is mainly to ensure no exceptions are thrown
+    }
+
+    @Test
+    public void testFoxTableModel() {
+        FoxTableModel model = frame.new FoxTableModel();
+        assertEquals(2, model.getColumnCount());
+        assertEquals(0, model.getRowCount());
+
+        frame.theta.setText("90");
+        frame.lat.setText("34.0522");
+        frame.lon.setText("-118.2437");
+        frame.addPoint();
+
+        frame.theta.setText("180");
+        frame.lat.setText("34.0522");
+        frame.lon.setText("-118.2437");
+        frame.addPoint();
+
+        assertEquals(1, model.getRowCount());
+        assertEquals("34.0522", model.getValueAt(0, 0));
+        assertEquals("-118.2437", model.getValueAt(0, 1));
+    }
+}
+```
+
+This test suite covers the following aspects:
+1. **Constructor Test**: Ensures the frame is initialized correctly.
+2. **Action Performed Test**: Verifies that the `actionPerformed` method calls `addPoint`.
+3. **Add Point Test**: Checks if points and fox points are added correctly.
+4. **Load Landmarks Test**: Tests the loading of landmarks from a file.
+5. **Error Dialog Test**: Ensures the error dialog does not throw exceptions.
+6. **Fox Table Model Test**: Verifies the table model updates correctly with added points.
+
+You can extract this code and run it in your testing environment to ensure the `FoxHuntFrame` class behaves as expected.

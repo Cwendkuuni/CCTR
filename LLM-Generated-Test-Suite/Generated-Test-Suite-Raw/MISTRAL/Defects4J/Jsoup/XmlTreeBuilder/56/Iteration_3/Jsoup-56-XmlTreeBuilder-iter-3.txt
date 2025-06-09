@@ -1,0 +1,152 @@
+```java
+package org.jsoup.parser;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.*;
+import org.jsoup.parser.ParseErrorList;
+import org.jsoup.parser.ParseSettings;
+import org.jsoup.parser.Token;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+public class XmlTreeBuilderTest {
+
+    private XmlTreeBuilder xmlTreeBuilder;
+
+    @Before
+    public void setUp() {
+        xmlTreeBuilder = new XmlTreeBuilder();
+    }
+
+    @Test
+    public void testDefaultSettings() {
+        ParseSettings settings = xmlTreeBuilder.defaultSettings();
+        assertEquals(ParseSettings.preserveCase, settings);
+    }
+
+    @Test
+    public void testParse() {
+        String input = "<root><child>Content</child></root>";
+        String baseUri = "http://example.com";
+        Document doc = xmlTreeBuilder.parse(input, baseUri);
+
+        assertNotNull(doc);
+        assertEquals("root", doc.child(0).tagName());
+        assertEquals("child", doc.child(0).child(0).tagName());
+        assertEquals("Content", doc.child(0).child(0).text());
+    }
+
+    @Test
+    public void testInitialiseParse() {
+        String input = "<root></root>";
+        String baseUri = "http://example.com";
+        ParseErrorList errors = ParseErrorList.noTracking();
+        ParseSettings settings = ParseSettings.preserveCase;
+
+        xmlTreeBuilder.initialiseParse(input, baseUri, errors, settings);
+
+        assertEquals(Document.OutputSettings.Syntax.xml, xmlTreeBuilder.doc.outputSettings().syntax());
+    }
+
+    @Test
+    public void testProcess() {
+        Token token = new Token.StartTag().name("root");
+        assertTrue(xmlTreeBuilder.process(token));
+
+        token = new Token.EndTag().name("root");
+        assertTrue(xmlTreeBuilder.process(token));
+
+        token = new Token.Comment().data("comment");
+        assertTrue(xmlTreeBuilder.process(token));
+
+        token = new Token.Character().data("text");
+        assertTrue(xmlTreeBuilder.process(token));
+
+        token = new Token.Doctype().name("doctype");
+        assertTrue(xmlTreeBuilder.process(token));
+
+        token = new Token.EOF();
+        assertTrue(xmlTreeBuilder.process(token));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testProcessUnexpectedToken() {
+        Token token = new Token.Character().data("text");
+        token.type = Token.TokenType.Character; // Simulate unexpected token type
+        xmlTreeBuilder.process(token);
+    }
+
+    @Test
+    public void testInsertNode() {
+        Element element = new Element(Tag.valueOf("div"), "http://example.com");
+        xmlTreeBuilder.insertNode(element);
+
+        assertEquals(element, xmlTreeBuilder.doc.child(0));
+    }
+
+    @Test
+    public void testInsertStartTag() {
+        Token.StartTag startTag = new Token.StartTag().name("root");
+        Element element = xmlTreeBuilder.insert(startTag);
+
+        assertEquals("root", element.tagName());
+        assertEquals(element, xmlTreeBuilder.doc.child(0));
+    }
+
+    @Test
+    public void testInsertComment() {
+        Token.Comment commentToken = new Token.Comment().data("comment");
+        xmlTreeBuilder.insert(commentToken);
+
+        Comment comment = (Comment) xmlTreeBuilder.doc.child(0);
+        assertEquals("comment", comment.getData());
+    }
+
+    @Test
+    public void testInsertCharacter() {
+        Token.Character characterToken = new Token.Character().data("text");
+        xmlTreeBuilder.insert(characterToken);
+
+        TextNode textNode = (TextNode) xmlTreeBuilder.doc.child(0);
+        assertEquals("text", textNode.text());
+    }
+
+    @Test
+    public void testInsertDoctype() {
+        Token.Doctype doctypeToken = new Token.Doctype().name("doctype");
+        xmlTreeBuilder.insert(doctypeToken);
+
+        DocumentType doctypeNode = (DocumentType) xmlTreeBuilder.doc.child(0);
+        assertEquals("doctype", doctypeNode.nodeName());
+    }
+
+    @Test
+    public void testPopStackToClose() {
+        Token.StartTag startTag = new Token.StartTag().name("root");
+        xmlTreeBuilder.insert(startTag);
+
+        Token.EndTag endTag = new Token.EndTag().name("root");
+        xmlTreeBuilder.popStackToClose(endTag);
+
+        assertTrue(xmlTreeBuilder.stack.isEmpty());
+    }
+
+    @Test
+    public void testParseFragment() {
+        String inputFragment = "<child>Content</child>";
+        String baseUri = "http://example.com";
+        ParseErrorList errors = ParseErrorList.noTracking();
+        ParseSettings settings = ParseSettings.preserveCase;
+
+        List<Node> nodes = xmlTreeBuilder.parseFragment(inputFragment, baseUri, errors, settings);
+
+        assertEquals(1, nodes.size());
+        assertEquals("child", nodes.get(0).nodeName());
+        assertEquals("Content", nodes.get(0).childNode(0).outerHtml());
+    }
+}
+```

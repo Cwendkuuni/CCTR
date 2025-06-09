@@ -1,0 +1,117 @@
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.Mock;
+import org.mockito.MockitoAnnotations;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.awt.event.ActionEvent;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.util.Observable;
+
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class IndexFileActionTest {
+
+    @Mock
+    private JTailMainModel jTailMainModel;
+
+    @Mock
+    private OpenFileModel openFileModel;
+
+    @Mock
+    private ActionEvent actionEvent;
+
+    @Mock
+    private FileIndexer fileIndexer;
+
+    @Mock
+    private FileIndexerWorker fileIndexerWorker;
+
+    @Mock
+    private File file;
+
+    private IndexFileAction indexFileAction;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.openMocks(this);
+        indexFileAction = new IndexFileAction(jTailMainModel, openFileModel);
+    }
+
+    @Test
+    public void testActionPerformed_NoFileSelected() {
+        when(openFileModel.getFile()).thenReturn(null);
+
+        indexFileAction.actionPerformed(actionEvent);
+
+        verify(InformationHandler, times(1)).handle(true, UIMessage.INFO_NO_FILE_SELECTED, new Object[0]);
+    }
+
+    @Test
+    public void testActionPerformed_MemoryBasedIndex() throws FileNotFoundException {
+        when(openFileModel.getFile()).thenReturn(file);
+        when(openFileModel.getIndexType()).thenReturn(IndexType.MEMORY_BASED);
+        when(actionEvent.getSource()).thenReturn(new JDialog());
+
+        indexFileAction.actionPerformed(actionEvent);
+
+        verify(fileIndexerWorker, times(1)).execute();
+    }
+
+    @Test
+    public void testActionPerformed_FileBasedIndex() throws FileNotFoundException {
+        when(openFileModel.getFile()).thenReturn(file);
+        when(openFileModel.getIndexType()).thenReturn(IndexType.FILE_BASED);
+        when(actionEvent.getSource()).thenReturn(new JDialog());
+
+        indexFileAction.actionPerformed(actionEvent);
+
+        verify(fileIndexerWorker, times(1)).execute();
+    }
+
+    @Test
+    public void testActionPerformed_FileNotFoundException() throws FileNotFoundException {
+        when(openFileModel.getFile()).thenReturn(file);
+        when(openFileModel.getIndexType()).thenReturn(IndexType.MEMORY_BASED);
+        when(actionEvent.getSource()).thenReturn(new JDialog());
+        doThrow(new FileNotFoundException()).when(fileIndexer).addObserver(any());
+
+        indexFileAction.actionPerformed(actionEvent);
+
+        verify(ExceptionHandler, times(1)).handle(any(FileNotFoundException.class), eq(UIMessage.ERROR_FILE_NOT_FOUND), eq(file.getName()));
+    }
+
+    @Test
+    public void testUpdate_NotificationReceived() {
+        when(fileIndexer.getFile()).thenReturn(file);
+
+        indexFileAction.update(fileIndexer, 100);
+
+        verify(jTailMainModel, times(1)).add(any(JTailModel.class));
+    }
+
+    @Test
+    public void testUpdate_FileNotFoundException() throws FileNotFoundException {
+        when(fileIndexer.getFile()).thenReturn(file);
+        doThrow(new FileNotFoundException()).when(fileIndexer).getFile();
+
+        indexFileAction.update(fileIndexer, 100);
+
+        verify(ExceptionHandler, times(1)).handle(any(FileNotFoundException.class), eq(UIMessage.ERROR_FILE_NOT_FOUND), eq(file.getName()));
+    }
+
+    @Test
+    public void testUpdate_GenericException() {
+        when(fileIndexer.getFile()).thenReturn(file);
+        doThrow(new RuntimeException()).when(fileIndexer).getFile();
+
+        indexFileAction.update(fileIndexer, 100);
+
+        verify(ExceptionHandler, times(1)).handle(any(Exception.class), eq(UIMessage.ERROR_GENERIC_MESSAGE), any());
+    }
+}
+```

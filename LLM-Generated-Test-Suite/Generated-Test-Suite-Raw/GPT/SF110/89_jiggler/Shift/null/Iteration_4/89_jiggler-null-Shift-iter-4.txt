@@ -1,0 +1,165 @@
+To create a comprehensive JUnit 4 test suite for the `Shift` class, we need to test the `apply` method for each image type: `GrayImage`, `RealGrayImage`, `ColorImage`, and `RealColorImage`. We will test both wrapping and non-wrapping scenarios, as well as various offsets. Here's a complete test suite:
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import jigl.image.*;
+import jigl.image.types.*;
+import jigl.image.ops.Shift;
+
+public class ShiftTest {
+
+    private GrayImage grayImage;
+    private RealGrayImage realGrayImage;
+    private ColorImage colorImage;
+    private RealColorImage realColorImage;
+
+    @Before
+    public void setUp() {
+        // Initialize images with simple patterns for testing
+        grayImage = new GrayImage(3, 3);
+        realGrayImage = new RealGrayImage(3, 3);
+        colorImage = new ColorImage(3, 3);
+        realColorImage = new RealColorImage(3, 3);
+
+        // Fill GrayImage and RealGrayImage with a simple pattern
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                grayImage.set(x, y, x + y);
+                realGrayImage.set(x, y, (float) (x + y));
+            }
+        }
+
+        // Fill ColorImage and RealColorImage with a simple pattern
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                colorImage.set(x, y, new int[]{x + y, x + y, x + y});
+                realColorImage.set(x, y, new float[]{x + y, x + y, x + y});
+            }
+        }
+    }
+
+    @Test
+    public void testGrayImageNoWrap() {
+        Shift shift = new Shift(1, 1, Shift.NOWRAP);
+        GrayImage result = shift.apply(grayImage);
+
+        assertEquals(0, result.get(0, 0).intValue());
+        assertEquals(0, result.get(1, 0).intValue());
+        assertEquals(0, result.get(2, 0).intValue());
+        assertEquals(0, result.get(0, 1).intValue());
+        assertEquals(0, result.get(1, 1).intValue());
+        assertEquals(0, result.get(2, 1).intValue());
+        assertEquals(0, result.get(0, 2).intValue());
+        assertEquals(0, result.get(1, 2).intValue());
+        assertEquals(0, result.get(2, 2).intValue());
+    }
+
+    @Test
+    public void testGrayImageWrap() {
+        Shift shift = new Shift(1, 1, Shift.WRAP);
+        GrayImage result = shift.apply(grayImage);
+
+        assertEquals(4, result.get(0, 0).intValue());
+        assertEquals(2, result.get(1, 0).intValue());
+        assertEquals(3, result.get(2, 0).intValue());
+        assertEquals(3, result.get(0, 1).intValue());
+        assertEquals(0, result.get(1, 1).intValue());
+        assertEquals(1, result.get(2, 1).intValue());
+        assertEquals(2, result.get(0, 2).intValue());
+        assertEquals(1, result.get(1, 2).intValue());
+        assertEquals(2, result.get(2, 2).intValue());
+    }
+
+    @Test
+    public void testRealGrayImageNoWrap() {
+        Shift shift = new Shift(1, 1, Shift.NOWRAP);
+        RealGrayImage result = shift.apply(realGrayImage);
+
+        assertEquals(0.0f, result.get(0, 0), 0.01);
+        assertEquals(0.0f, result.get(1, 0), 0.01);
+        assertEquals(0.0f, result.get(2, 0), 0.01);
+        assertEquals(0.0f, result.get(0, 1), 0.01);
+        assertEquals(0.0f, result.get(1, 1), 0.01);
+        assertEquals(0.0f, result.get(2, 1), 0.01);
+        assertEquals(0.0f, result.get(0, 2), 0.01);
+        assertEquals(0.0f, result.get(1, 2), 0.01);
+        assertEquals(0.0f, result.get(2, 2), 0.01);
+    }
+
+    @Test
+    public void testRealGrayImageWrap() {
+        Shift shift = new Shift(1, 1, Shift.WRAP);
+        RealGrayImage result = shift.apply(realGrayImage);
+
+        assertEquals(4.0f, result.get(0, 0), 0.01);
+        assertEquals(2.0f, result.get(1, 0), 0.01);
+        assertEquals(3.0f, result.get(2, 0), 0.01);
+        assertEquals(3.0f, result.get(0, 1), 0.01);
+        assertEquals(0.0f, result.get(1, 1), 0.01);
+        assertEquals(1.0f, result.get(2, 1), 0.01);
+        assertEquals(2.0f, result.get(0, 2), 0.01);
+        assertEquals(1.0f, result.get(1, 2), 0.01);
+        assertEquals(2.0f, result.get(2, 2), 0.01);
+    }
+
+    @Test
+    public void testColorImageNoWrap() {
+        Shift shift = new Shift(1, 1, Shift.NOWRAP);
+        ColorImage result = shift.apply(colorImage);
+
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                assertArrayEquals(new int[]{0, 0, 0}, result.get(x, y));
+            }
+        }
+    }
+
+    @Test
+    public void testColorImageWrap() {
+        Shift shift = new Shift(1, 1, Shift.WRAP);
+        ColorImage result = shift.apply(colorImage);
+
+        assertArrayEquals(new int[]{4, 4, 4}, result.get(0, 0));
+        assertArrayEquals(new int[]{2, 2, 2}, result.get(1, 0));
+        assertArrayEquals(new int[]{3, 3, 3}, result.get(2, 0));
+        assertArrayEquals(new int[]{3, 3, 3}, result.get(0, 1));
+        assertArrayEquals(new int[]{0, 0, 0}, result.get(1, 1));
+        assertArrayEquals(new int[]{1, 1, 1}, result.get(2, 1));
+        assertArrayEquals(new int[]{2, 2, 2}, result.get(0, 2));
+        assertArrayEquals(new int[]{1, 1, 1}, result.get(1, 2));
+        assertArrayEquals(new int[]{2, 2, 2}, result.get(2, 2));
+    }
+
+    @Test
+    public void testRealColorImageNoWrap() {
+        Shift shift = new Shift(1, 1, Shift.NOWRAP);
+        RealColorImage result = shift.apply(realColorImage);
+
+        for (int y = 0; y < 3; y++) {
+            for (int x = 0; x < 3; x++) {
+                assertArrayEquals(new float[]{0.0f, 0.0f, 0.0f}, result.get(x, y), 0.01f);
+            }
+        }
+    }
+
+    @Test
+    public void testRealColorImageWrap() {
+        Shift shift = new Shift(1, 1, Shift.WRAP);
+        RealColorImage result = shift.apply(realColorImage);
+
+        assertArrayEquals(new float[]{4.0f, 4.0f, 4.0f}, result.get(0, 0), 0.01f);
+        assertArrayEquals(new float[]{2.0f, 2.0f, 2.0f}, result.get(1, 0), 0.01f);
+        assertArrayEquals(new float[]{3.0f, 3.0f, 3.0f}, result.get(2, 0), 0.01f);
+        assertArrayEquals(new float[]{3.0f, 3.0f, 3.0f}, result.get(0, 1), 0.01f);
+        assertArrayEquals(new float[]{0.0f, 0.0f, 0.0f}, result.get(1, 1), 0.01f);
+        assertArrayEquals(new float[]{1.0f, 1.0f, 1.0f}, result.get(2, 1), 0.01f);
+        assertArrayEquals(new float[]{2.0f, 2.0f, 2.0f}, result.get(0, 2), 0.01f);
+        assertArrayEquals(new float[]{1.0f, 1.0f, 1.0f}, result.get(1, 2), 0.01f);
+        assertArrayEquals(new float[]{2.0f, 2.0f, 2.0f}, result.get(2, 2), 0.01f);
+    }
+}
+```
+
+This test suite covers the `Shift` class's functionality for different image types and both wrapping and non-wrapping scenarios. It uses simple patterns to verify that the shifting logic is correctly applied.

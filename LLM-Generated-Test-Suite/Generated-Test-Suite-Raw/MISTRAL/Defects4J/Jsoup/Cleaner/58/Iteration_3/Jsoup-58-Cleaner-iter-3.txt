@@ -1,0 +1,89 @@
+```java
+package org.jsoup.safety;
+
+import org.jsoup.Jsoup;
+import org.jsoup.nodes.Document;
+import org.jsoup.nodes.Element;
+import org.jsoup.safety.Whitelist;
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class CleanerTest {
+
+    private Cleaner cleaner;
+    private Whitelist whitelist;
+
+    @Before
+    public void setUp() {
+        whitelist = Whitelist.basic();
+        cleaner = new Cleaner(whitelist);
+    }
+
+    @Test
+    public void testClean() {
+        String dirtyHtml = "<html><body><p>Hello</p><script>alert('xss')</script></body></html>";
+        Document dirtyDocument = Jsoup.parse(dirtyHtml);
+
+        Document cleanDocument = cleaner.clean(dirtyDocument);
+
+        assertNotNull(cleanDocument);
+        assertEquals("Hello", cleanDocument.body().text());
+        assertNull(cleanDocument.selectFirst("script"));
+    }
+
+    @Test
+    public void testIsValid() {
+        String validHtml = "<html><body><p>Hello</p></body></html>";
+        String invalidHtml = "<html><body><p>Hello</p><script>alert('xss')</script></body></html>";
+
+        Document validDocument = Jsoup.parse(validHtml);
+        Document invalidDocument = Jsoup.parse(invalidHtml);
+
+        assertTrue(cleaner.isValid(validDocument));
+        assertFalse(cleaner.isValid(invalidDocument));
+    }
+
+    @Test
+    public void testCopySafeNodes() {
+        String html = "<html><body><p>Hello</p><script>alert('xss')</script></body></html>";
+        Document document = Jsoup.parse(html);
+
+        Element source = document.body();
+        Element dest = Document.createShell(document.baseUri()).body();
+
+        int numDiscarded = cleaner.copySafeNodes(source, dest);
+
+        assertEquals(1, numDiscarded); // script tag should be discarded
+        assertNull(dest.selectFirst("script"));
+    }
+
+    @Test
+    public void testCreateSafeElement() {
+        String html = "<html><body><p id='safe' onclick='alert()'>Hello</p></body></html>";
+        Document document = Jsoup.parse(html);
+
+        Element sourceEl = document.selectFirst("p");
+        Cleaner.ElementMeta elementMeta = cleaner.createSafeElement(sourceEl);
+
+        assertEquals("p", elementMeta.el.tagName());
+        assertEquals(1, elementMeta.numAttribsDiscarded); // onclick attribute should be discarded
+        assertNull(elementMeta.el.attr("onclick"));
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCleanerConstructorNullWhitelist() {
+        new Cleaner(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testCleanNullDocument() {
+        cleaner.clean(null);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testIsValidNullDocument() {
+        cleaner.isValid(null);
+    }
+}
+```

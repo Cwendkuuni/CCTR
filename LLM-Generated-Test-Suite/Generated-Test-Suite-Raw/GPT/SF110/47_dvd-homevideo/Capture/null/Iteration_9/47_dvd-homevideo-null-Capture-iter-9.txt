@@ -1,0 +1,134 @@
+To create a comprehensive JUnit 4 test suite for the `Capture` class, we need to mock the dependencies and simulate various scenarios. The `Capture` class interacts with a `GUI` object and performs file operations, so we'll use mocking to isolate the class from these dependencies. We'll use the Mockito framework for mocking.
+
+Here's a complete JUnit 4 test suite for the `Capture` class:
+
+```java
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.mockito.*;
+import org.mockito.junit.MockitoJUnitRunner;
+
+import java.io.File;
+import java.io.IOException;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+@RunWith(MockitoJUnitRunner.class)
+public class CaptureTest {
+
+    @Mock
+    private GUI mockGUI;
+
+    @InjectMocks
+    private Capture capture;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+        when(mockGUI.strOutputDir).thenReturn("testOutputDir");
+    }
+
+    @Test
+    public void testInitWithThreadSelected() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(true);
+        boolean result = capture.init();
+        assertFalse(result);
+        assertNotNull(capture.m_Thread);
+        assertTrue(capture.m_Thread.isAlive());
+    }
+
+    @Test
+    public void testInitWithoutThreadSelected() {
+        when(mockGUI.menuChkThread.isSelected()).thenReturn(false);
+        when(mockGUI.ErrorCheck(anyString())).thenReturn(false);
+        boolean result = capture.init();
+        assertFalse(result);
+    }
+
+    @Test
+    public void testDV_CaptureOutputDirExistsAsDirectory() throws Exception {
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(true);
+        when(mockDir.isDirectory()).thenReturn(true);
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+        whenNew(File.class).withArguments("testOutputDir").thenReturn(mockDir);
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(anyString());
+    }
+
+    @Test
+    public void testDV_CaptureOutputDirExistsAsFile() throws Exception {
+        File mockFile = mock(File.class);
+        when(mockFile.exists()).thenReturn(true);
+        when(mockFile.isDirectory()).thenReturn(false);
+        when(mockGUI.MessageBox(anyString())).thenReturn(0);
+        whenNew(File.class).withArguments("testOutputDir").thenReturn(mockFile);
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(anyString());
+    }
+
+    @Test
+    public void testDV_CaptureOutputDirDoesNotExist() throws Exception {
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(false);
+        whenNew(File.class).withArguments("testOutputDir").thenReturn(mockDir);
+
+        capture.DV_Capture();
+
+        verify(mockDir, times(4)).mkdir();
+    }
+
+    @Test
+    public void testDV_CaptureIOException() throws Exception {
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(false);
+        whenNew(File.class).withArguments("testOutputDir").thenReturn(mockDir);
+        doThrow(new IOException()).when(mockDir).mkdir();
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(contains("IO Error"));
+    }
+
+    @Test
+    public void testDV_CaptureInterruptedException() throws Exception {
+        File mockDir = mock(File.class);
+        when(mockDir.exists()).thenReturn(false);
+        whenNew(File.class).withArguments("testOutputDir").thenReturn(mockDir);
+        doThrow(new InterruptedException()).when(mockDir).mkdir();
+
+        capture.DV_Capture();
+
+        verify(mockGUI, times(1)).MessageBox(contains("thread was interrupted"));
+    }
+
+    // Additional tests for other exceptions and scenarios can be added here
+}
+```
+
+### Explanation:
+
+1. **Mocking**: We use Mockito to mock the `GUI` class, which is a dependency of `Capture`. This allows us to control its behavior during tests.
+
+2. **Test Initialization**: The `setUp` method initializes the mocks and sets up common behavior for the `mockGUI`.
+
+3. **Test Cases**:
+   - **testInitWithThreadSelected**: Tests the `init` method when the thread option is selected.
+   - **testInitWithoutThreadSelected**: Tests the `init` method when the thread option is not selected.
+   - **testDV_CaptureOutputDirExistsAsDirectory**: Tests `DV_Capture` when the output directory already exists as a directory.
+   - **testDV_CaptureOutputDirExistsAsFile**: Tests `DV_Capture` when the output directory exists as a file.
+   - **testDV_CaptureOutputDirDoesNotExist**: Tests `DV_Capture` when the output directory does not exist.
+   - **testDV_CaptureIOException**: Tests `DV_Capture` handling of `IOException`.
+   - **testDV_CaptureInterruptedException**: Tests `DV_Capture` handling of `InterruptedException`.
+
+4. **Mockito and PowerMock**: The tests use Mockito for mocking and verifying interactions. PowerMock (not shown here) would be needed if you want to mock static methods or constructors, but this example assumes that the `File` constructor can be mocked directly.
+
+5. **Assertions and Verifications**: Each test uses assertions to check the expected outcomes and verifications to ensure that the correct methods are called on the mocks.
+
+This test suite provides a comprehensive set of tests for the `Capture` class, covering various scenarios and edge cases.

@@ -1,0 +1,157 @@
+To create a comprehensive JUnit 4 test suite for the `ExportHook` class, we need to consider testing each method in the class. This includes testing both public and protected methods. Since some methods depend on external components or resources, we'll need to use mocking to simulate these dependencies. We'll use the Mockito framework for mocking.
+
+Below is the JUnit 4 test suite for the `ExportHook` class:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentMatchers;
+
+import javax.swing.*;
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.InputStream;
+import java.io.OutputStream;
+import java.net.URL;
+
+public class ExportHookTest {
+
+    private ExportHook exportHook;
+    private ModeController mockController;
+    private MapView mockView;
+    private FreeMindFileDialog mockFileDialog;
+    private Map mockMap;
+    private Container mockContainer;
+    private JFrame mockFrame;
+
+    @Before
+    public void setUp() {
+        exportHook = spy(new ExportHook());
+        mockController = mock(ModeController.class);
+        mockView = mock(MapView.class);
+        mockFileDialog = mock(FreeMindFileDialog.class);
+        mockMap = mock(Map.class);
+        mockContainer = mock(Container.class);
+        mockFrame = mock(JFrame.class);
+
+        doReturn(mockController).when(exportHook).getController();
+        when(mockController.getView()).thenReturn(mockView);
+        when(mockController.getFrame()).thenReturn(mockFrame);
+        when(mockFrame.getContentPane()).thenReturn(mockContainer);
+        when(mockController.getFileChooser(any())).thenReturn(mockFileDialog);
+        when(mockController.getMap()).thenReturn(mockMap);
+    }
+
+    @Test
+    public void testChooseFile() {
+        File expectedFile = new File("test.png");
+        doReturn(expectedFile).when(exportHook).chooseImageFile(anyString(), anyString(), anyString(), eq(mockController));
+
+        File result = exportHook.chooseFile("png", "Image Files", ".png");
+        assertEquals(expectedFile, result);
+    }
+
+    @Test
+    public void testChooseImageFile() {
+        when(mockFileDialog.showSaveDialog(mockContainer)).thenReturn(JFileChooser.APPROVE_OPTION);
+        when(mockFileDialog.getSelectedFile()).thenReturn(new File("test.png"));
+        when(mockMap.getFile()).thenReturn(new File("test.mm"));
+
+        File result = ExportHook.chooseImageFile("png", "Image Files", ".png", mockController);
+        assertNotNull(result);
+        assertTrue(result.getName().endsWith(".png"));
+    }
+
+    @Test
+    public void testGetTranslatableResourceString() {
+        doReturn("%testKey").when(exportHook).getResourceString("testKey");
+        when(mockController.getText("testKey")).thenReturn("Translated Text");
+
+        String result = exportHook.getTranslatableResourceString("testKey");
+        assertEquals("Translated Text", result);
+    }
+
+    @Test
+    public void testCreateBufferedImage() {
+        when(mockView.getWidth()).thenReturn(100);
+        when(mockView.getHeight()).thenReturn(100);
+        when(mockView.getInnerBounds()).thenReturn(new Rectangle(0, 0, 100, 100));
+        when(mockView.createImage(anyInt(), anyInt())).thenReturn(new BufferedImage(100, 100, BufferedImage.TYPE_INT_ARGB));
+
+        BufferedImage result = exportHook.createBufferedImage();
+        assertNotNull(result);
+        assertEquals(100, result.getWidth());
+        assertEquals(100, result.getHeight());
+    }
+
+    @Test
+    public void testCopyFromResource() throws Exception {
+        URL mockUrl = mock(URL.class);
+        InputStream mockInputStream = mock(InputStream.class);
+        OutputStream mockOutputStream = mock(OutputStream.class);
+
+        doReturn(mockUrl).when(exportHook).getResource(anyString());
+        when(mockUrl.openStream()).thenReturn(mockInputStream);
+        doNothing().when(mockOutputStream).close();
+
+        exportHook.copyFromResource("prefix", "fileName", "destinationDirectory");
+
+        verify(mockInputStream).close();
+    }
+
+    @Test
+    public void testCopyFromFile() throws Exception {
+        File mockFile = mock(File.class);
+        InputStream mockInputStream = mock(InputStream.class);
+        OutputStream mockOutputStream = mock(OutputStream.class);
+
+        when(mockFile.exists()).thenReturn(true);
+        whenNew(File.class).withArguments(anyString(), anyString()).thenReturn(mockFile);
+        whenNew(FileInputStream.class).withArguments(mockFile).thenReturn(mockInputStream);
+        whenNew(FileOutputStream.class).withArguments(anyString()).thenReturn(mockOutputStream);
+
+        exportHook.copyFromFile("dir", "fileName", "destinationDirectory");
+
+        verify(mockInputStream).close();
+    }
+
+    @Test
+    public void testImageFilterAccept() {
+        ExportHook.ImageFilter filter = new ExportHook.ImageFilter("png", "Image Files");
+        File directory = mock(File.class);
+        File pngFile = mock(File.class);
+        File txtFile = mock(File.class);
+
+        when(directory.isDirectory()).thenReturn(true);
+        when(pngFile.isDirectory()).thenReturn(false);
+        when(txtFile.isDirectory()).thenReturn(false);
+        when(pngFile.getName()).thenReturn("image.png");
+        when(txtFile.getName()).thenReturn("document.txt");
+
+        assertTrue(filter.accept(directory));
+        assertTrue(filter.accept(pngFile));
+        assertFalse(filter.accept(txtFile));
+    }
+
+    @Test
+    public void testImageFilterGetDescription() {
+        ExportHook.ImageFilter filter = new ExportHook.ImageFilter("png", "Image Files");
+        assertEquals("Image Files", filter.getDescription());
+
+        ExportHook.ImageFilter filterNoDescription = new ExportHook.ImageFilter("png", null);
+        assertEquals("png", filterNoDescription.getDescription());
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock dependencies like `ModeController`, `MapView`, `FreeMindFileDialog`, etc., which are required for testing methods that interact with these components.
+- **Test Methods**: Each method in the `ExportHook` class is tested. For methods that involve file operations or UI components, we simulate the behavior using mocks.
+- **Assertions**: We use assertions to verify that the methods return expected results or perform expected actions.
+- **ImageFilter**: We also test the nested `ImageFilter` class to ensure it behaves correctly.
+
+This test suite should cover the functionality of the `ExportHook` class comprehensively.

@@ -1,0 +1,114 @@
+Certainly! Below is a JUnit 4 test suite for the `Entities` class. This test suite aims to cover the public methods and some of the static methods within the class. Note that testing private methods directly is not possible without using reflection, so the focus is on the public API and static methods that are accessible.
+
+```java
+import org.jsoup.nodes.Entities;
+import org.jsoup.nodes.Document;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+
+import static org.junit.Assert.*;
+
+public class EntitiesTest {
+
+    private Document.OutputSettings outputSettings;
+
+    @Before
+    public void setUp() {
+        outputSettings = new Document.OutputSettings();
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertTrue(Entities.isNamedEntity("amp"));
+        assertFalse(Entities.isNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testIsBaseNamedEntity() {
+        assertTrue(Entities.isBaseNamedEntity("lt"));
+        assertTrue(Entities.isBaseNamedEntity("amp"));
+        assertFalse(Entities.isBaseNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertEquals(Character.valueOf('&'), Entities.getCharacterByName("amp"));
+        assertNull(Entities.getCharacterByName("nonexistent"));
+    }
+
+    @Test
+    public void testEscape() {
+        outputSettings.charset(Charset.forName("UTF-8"));
+        outputSettings.escapeMode(Entities.EscapeMode.base);
+
+        String input = "<div>Sample & text</div>";
+        String expected = "&lt;div&gt;Sample &amp; text&lt;/div&gt;";
+        assertEquals(expected, Entities.escape(input, outputSettings));
+    }
+
+    @Test
+    public void testUnescape() {
+        String input = "&lt;div&gt;Sample &amp; text&lt;/div&gt;";
+        String expected = "<div>Sample & text</div>";
+        assertEquals(expected, Entities.unescape(input));
+    }
+
+    @Test
+    public void testUnescapeStrict() {
+        String input = "&lt;div&gt;Sample &amp; text&lt;/div&gt;";
+        String expected = "<div>Sample & text</div>";
+        assertEquals(expected, Entities.unescape(input, true));
+    }
+
+    @Test
+    public void testEscapeWithDifferentEscapeModes() {
+        String input = "<div>Sample & text</div>";
+
+        outputSettings.escapeMode(Entities.EscapeMode.xhtml);
+        String expectedXhtml = "&lt;div&gt;Sample &amp; text&lt;/div&gt;";
+        assertEquals(expectedXhtml, Entities.escape(input, outputSettings));
+
+        outputSettings.escapeMode(Entities.EscapeMode.extended);
+        String expectedExtended = "&lt;div&gt;Sample &amp; text&lt;/div&gt;";
+        assertEquals(expectedExtended, Entities.escape(input, outputSettings));
+    }
+
+    @Test
+    public void testEscapeWithDifferentCharsets() {
+        String input = "Sample text with € symbol";
+
+        outputSettings.charset(Charset.forName("US-ASCII"));
+        String expectedAscii = "Sample text with &#x20ac; symbol";
+        assertEquals(expectedAscii, Entities.escape(input, outputSettings));
+
+        outputSettings.charset(Charset.forName("UTF-8"));
+        String expectedUtf8 = "Sample text with € symbol";
+        assertEquals(expectedUtf8, Entities.escape(input, outputSettings));
+    }
+
+    @Test
+    public void testCanEncode() {
+        CharsetEncoder asciiEncoder = Charset.forName("US-ASCII").newEncoder();
+        CharsetEncoder utf8Encoder = Charset.forName("UTF-8").newEncoder();
+
+        assertTrue(Entities.canEncode(Entities.CoreCharset.ascii, 'A', asciiEncoder));
+        assertFalse(Entities.canEncode(Entities.CoreCharset.ascii, '€', asciiEncoder));
+        assertTrue(Entities.canEncode(Entities.CoreCharset.utf, '€', utf8Encoder));
+    }
+}
+```
+
+### Explanation:
+- **Setup**: A `setUp` method initializes a `Document.OutputSettings` object to be used in the tests.
+- **Test Methods**: Each test method is designed to test a specific functionality of the `Entities` class.
+- **Escape and Unescape**: Tests cover different escape modes and character sets to ensure comprehensive coverage.
+- **Named Entity Checks**: Tests for checking if a string is a named entity or a base named entity.
+- **Character Retrieval**: Tests for retrieving characters by their entity names.
+- **Encoding**: Tests for the `canEncode` method to ensure it behaves correctly with different character sets.
+
+This test suite should provide a good level of coverage for the `Entities` class.

@@ -1,0 +1,82 @@
+```java
+package org.mockito.internal.util;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+
+public class TimerTest {
+
+    private Timer timer;
+    private static final long DURATION_MILLIS = 1000;
+
+    @Before
+    public void setUp() {
+        timer = new Timer(DURATION_MILLIS);
+    }
+
+    @Test
+    public void testTimerInitialization() {
+        assertNotNull(timer);
+        assertEquals(DURATION_MILLIS, timer.getDurationMillis());
+    }
+
+    @Test
+    public void testStart() {
+        timer.start();
+        long startTime = timer.getStartTime();
+        assertTrue(startTime > 0);
+    }
+
+    @Test
+    public void testIsCountingBeforeStart() {
+        try {
+            timer.isCounting();
+            fail("Expected AssertionError");
+        } catch (AssertionError e) {
+            // Expected
+        }
+    }
+
+    @Test
+    public void testIsCountingAfterStart() throws InterruptedException {
+        timer.start();
+        assertTrue(timer.isCounting());
+
+        // Wait for the duration to pass
+        Thread.sleep(DURATION_MILLIS + 100);
+        assertFalse(timer.isCounting());
+    }
+
+    @Test
+    public void testIsCountingExactDuration() throws InterruptedException {
+        timer.start();
+        assertTrue(timer.isCounting());
+
+        // Wait for exactly the duration
+        Thread.sleep(DURATION_MILLIS);
+        assertFalse(timer.isCounting());
+    }
+
+    // Helper methods to access private fields for testing purposes
+    private long getDurationMillis(Timer timer) {
+        try {
+            java.lang.reflect.Field field = Timer.class.getDeclaredField("durationMillis");
+            field.setAccessible(true);
+            return field.getLong(timer);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private long getStartTime(Timer timer) {
+        try {
+            java.lang.reflect.Field field = Timer.class.getDeclaredField("startTime");
+            field.setAccessible(true);
+            return field.getLong(timer);
+        } catch (Exception e) {
+            throw new RuntimeException(e);
+        }
+    }
+}
+```

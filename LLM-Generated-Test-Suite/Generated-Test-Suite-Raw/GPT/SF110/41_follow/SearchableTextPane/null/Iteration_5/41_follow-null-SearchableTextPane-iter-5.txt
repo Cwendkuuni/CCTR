@@ -1,0 +1,113 @@
+To create a comprehensive JUnit 4 test suite for the `SearchableTextPane` class, we need to test each public method and ensure that the class behaves as expected. Below is a test suite that covers the functionality of the `SearchableTextPane` class. Note that this test suite assumes the existence of `LineResult`, `WordResult`, and `SearchEngine` classes, which are referenced in the `SearchableTextPane` class.
+
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.text.BadLocationException;
+import javax.swing.text.Document;
+import java.awt.*;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.logging.Logger;
+
+public class SearchableTextPaneTest {
+
+    private SearchableTextPane textPane;
+    private Document mockDocument;
+    private Logger mockLogger;
+
+    @Before
+    public void setUp() {
+        Font font = new Font("Arial", Font.PLAIN, 12);
+        textPane = new SearchableTextPane(font, 4);
+        mockDocument = Mockito.mock(Document.class);
+        mockLogger = Mockito.mock(Logger.class);
+        textPane.setDocument(mockDocument);
+        textPane.log = mockLogger;
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth() {
+        // Test when parent is null
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+
+        // Test when parent is not null and preferred size is less than or equal to parent size
+        Component mockParent = Mockito.mock(Component.class);
+        Mockito.when(mockParent.getSize()).thenReturn(new Dimension(100, 100));
+        textPane.setParent(mockParent);
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testHighlight() throws BadLocationException {
+        String text = "This is a test text for highlighting.";
+        Mockito.when(mockDocument.getText(0, text.length())).thenReturn(text);
+        Mockito.when(mockDocument.getLength()).thenReturn(text.length());
+
+        List<WordResult> mockWordResults = new ArrayList<>();
+        mockWordResults.add(new WordResult(0, 4)); // "This"
+        mockWordResults.add(new WordResult(10, 14)); // "test"
+
+        SearchEngine mockSearchEngine = Mockito.mock(SearchEngine.class);
+        Mockito.when(mockSearchEngine.search("test", text)).thenReturn(mockWordResults);
+
+        List<LineResult> lineResults = textPane.highlight("test", 0);
+        assertEquals(1, lineResults.size());
+        assertEquals(1, lineResults.get(0).getWordResults().size());
+    }
+
+    @Test
+    public void testRemoveHighlights() {
+        // This method should not throw any exceptions
+        textPane.removeHighlights();
+    }
+
+    @Test
+    public void testSearch() throws BadLocationException {
+        String text = "This is a test text for searching.";
+        Mockito.when(mockDocument.getText(0, text.length())).thenReturn(text);
+        Mockito.when(mockDocument.getLength()).thenReturn(text.length());
+
+        int pos = textPane.search("test");
+        assertEquals(10, pos);
+
+        pos = textPane.search("nonexistent");
+        assertEquals(-1, pos);
+    }
+
+    @Test
+    public void testSearchWithStartPos() throws BadLocationException {
+        String text = "This is a test text for searching.";
+        Mockito.when(mockDocument.getText(0, text.length())).thenReturn(text);
+        Mockito.when(mockDocument.getLength()).thenReturn(text.length());
+
+        int pos = textPane.search("test", 0);
+        assertEquals(10, pos);
+
+        pos = textPane.search("test", 11);
+        assertEquals(-1, pos);
+    }
+
+    @Test
+    public void testConvertWords2Lines() throws BadLocationException {
+        List<WordResult> wordResults = new ArrayList<>();
+        wordResults.add(new WordResult(0, 4)); // "This"
+        wordResults.add(new WordResult(10, 14)); // "test"
+
+        List<LineResult> lineResults = textPane.convertWords2Lines(wordResults);
+        assertEquals(2, lineResults.size());
+    }
+}
+```
+
+### Notes:
+- The test suite uses Mockito to mock dependencies like `Document` and `Logger`.
+- The `highlight` method test assumes the existence of a `SearchEngine` class and its `search` method.
+- The `convertWords2Lines` method test assumes the existence of `LineResult` and `WordResult` classes.
+- The `getScrollableTracksViewportWidth` test checks behavior when the parent component is null and when it has a size.
+- The `search` and `searchWithStartPos` tests verify the search functionality with different terms and starting positions.
+
+This test suite should be adjusted based on the actual implementations of `LineResult`, `WordResult`, and `SearchEngine`.

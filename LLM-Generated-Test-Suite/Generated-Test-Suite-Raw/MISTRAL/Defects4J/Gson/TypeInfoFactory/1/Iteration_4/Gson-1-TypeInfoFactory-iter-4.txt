@@ -1,0 +1,185 @@
+```java
+package com.google.gson;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.junit.runners.JUnit4;
+
+import java.lang.reflect.Field;
+import java.lang.reflect.ParameterizedType;
+import java.lang.reflect.Type;
+import java.lang.reflect.TypeVariable;
+import java.util.ArrayList;
+import java.util.List;
+
+import static org.junit.Assert.*;
+
+@RunWith(JUnit4.class)
+public class TypeInfoFactoryTest {
+
+    private Field field;
+    private Type typeDefiningField;
+
+    @Before
+    public void setUp() throws NoSuchFieldException {
+        // Example setup for a field in a class
+        class ExampleClass<T> {
+            List<T> list;
+        }
+        field = ExampleClass.class.getDeclaredField("list");
+        typeDefiningField = new ExampleClass<String>() {}.getClass().getGenericSuperclass();
+    }
+
+    @Test
+    public void testGetTypeInfoForArray() {
+        Type arrayType = String[].class;
+        TypeInfoArray typeInfoArray = TypeInfoFactory.getTypeInfoForArray(arrayType);
+        assertNotNull(typeInfoArray);
+        assertEquals(arrayType, typeInfoArray.getType());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetTypeInfoForArrayWithNonArrayType() {
+        Type nonArrayType = String.class;
+        TypeInfoFactory.getTypeInfoForArray(nonArrayType);
+    }
+
+    @Test
+    public void testGetTypeInfoForField() {
+        TypeInfo typeInfo = TypeInfoFactory.getTypeInfoForField(field, typeDefiningField);
+        assertNotNull(typeInfo);
+        assertTrue(typeInfo.getType() instanceof ParameterizedType);
+        ParameterizedType parameterizedType = (ParameterizedType) typeInfo.getType();
+        assertEquals(List.class, parameterizedType.getRawType());
+        assertEquals(String.class, parameterizedType.getActualTypeArguments()[0]);
+    }
+
+    @Test
+    public void testGetActualTypeForClass() {
+        Type actualType = TypeInfoFactory.getActualType(String.class, typeDefiningField, ExampleClass.class);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test
+    public void testGetActualTypeForParameterizedType() {
+        Type parameterizedType = new ExampleClass<String>() {}.getClass().getGenericSuperclass();
+        Type actualType = TypeInfoFactory.getActualType(parameterizedType, typeDefiningField, ExampleClass.class);
+        assertTrue(actualType instanceof ParameterizedType);
+        ParameterizedType castedType = (ParameterizedType) actualType;
+        assertEquals(ExampleClass.class, castedType.getRawType());
+        assertEquals(String.class, castedType.getActualTypeArguments()[0]);
+    }
+
+    @Test
+    public void testGetActualTypeForGenericArrayType() {
+        Type genericArrayType = new TypeInfoFactoryTest.GenericArrayTypeImpl(String.class);
+        Type actualType = TypeInfoFactory.getActualType(genericArrayType, typeDefiningField, ExampleClass.class);
+        assertTrue(actualType instanceof GenericArrayType);
+        GenericArrayType castedType = (GenericArrayType) actualType;
+        assertEquals(String.class, castedType.getGenericComponentType());
+    }
+
+    @Test
+    public void testGetActualTypeForTypeVariable() {
+        TypeVariable<?> typeVariable = ExampleClass.class.getTypeParameters()[0];
+        Type actualType = TypeInfoFactory.getActualType(typeVariable, typeDefiningField, ExampleClass.class);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test
+    public void testGetActualTypeForWildcardType() {
+        Type wildcardType = new TypeInfoFactoryTest.WildcardTypeImpl(new Type[]{String.class});
+        Type actualType = TypeInfoFactory.getActualType(wildcardType, typeDefiningField, ExampleClass.class);
+        assertEquals(String.class, actualType);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetActualTypeForUnsupportedType() {
+        Type unsupportedType = new TypeInfoFactoryTest.UnsupportedTypeImpl();
+        TypeInfoFactory.getActualType(unsupportedType, typeDefiningField, ExampleClass.class);
+    }
+
+    @Test
+    public void testExtractRealTypes() {
+        Type[] actualTypeArguments = {String.class, Integer.class};
+        Type[] realTypes = TypeInfoFactory.extractRealTypes(actualTypeArguments, typeDefiningField, ExampleClass.class);
+        assertArrayEquals(actualTypeArguments, realTypes);
+    }
+
+    @Test
+    public void testGetIndex() {
+        TypeVariable<?>[] typeVariables = ExampleClass.class.getTypeParameters();
+        TypeVariable<?> typeVariable = typeVariables[0];
+        int index = TypeInfoFactory.getIndex(typeVariables, typeVariable);
+        assertEquals(0, index);
+    }
+
+    @Test(expected = IllegalStateException.class)
+    public void testGetIndexWithNonExistentTypeVariable() {
+        TypeVariable<?>[] typeVariables = ExampleClass.class.getTypeParameters();
+        TypeVariable<?> nonExistentTypeVariable = new TypeInfoFactoryTest.NonExistentTypeVariableImpl();
+        TypeInfoFactory.getIndex(typeVariables, nonExistentTypeVariable);
+    }
+
+    // Helper classes for testing
+    private static class ExampleClass<T> {
+        List<T> list;
+    }
+
+    private static class GenericArrayTypeImpl implements GenericArrayType {
+        private final Type componentType;
+
+        public GenericArrayTypeImpl(Type componentType) {
+            this.componentType = componentType;
+        }
+
+        @Override
+        public Type getGenericComponentType() {
+            return componentType;
+        }
+    }
+
+    private static class WildcardTypeImpl implements WildcardType {
+        private final Type[] upperBounds;
+
+        public WildcardTypeImpl(Type[] upperBounds) {
+            this.upperBounds = upperBounds;
+        }
+
+        @Override
+        public Type[] getUpperBounds() {
+            return upperBounds;
+        }
+
+        @Override
+        public Type[] getLowerBounds() {
+            return new Type[0];
+        }
+    }
+
+    private static class UnsupportedTypeImpl implements Type {
+        @Override
+        public String getTypeName() {
+            return "UnsupportedType";
+        }
+    }
+
+    private static class NonExistentTypeVariableImpl implements TypeVariable<Class<?>> {
+        @Override
+        public Type[] getBounds() {
+            return new Type[0];
+        }
+
+        @Override
+        public D getGenericDeclaration() {
+            return null;
+        }
+
+        @Override
+        public String getName() {
+            return "NonExistentTypeVariable";
+        }
+    }
+}
+```

@@ -1,0 +1,105 @@
+Certainly! Below is a JUnit 4 test suite for the `Entities` class. This test suite covers the public methods and some of the static methods within the class. Note that for testing purposes, some assumptions are made about the content of the properties files and the behavior of the `Document.OutputSettings` class, which is not provided in the original code snippet.
+
+```java
+import org.jsoup.nodes.Entities;
+import org.jsoup.nodes.Document;
+import org.junit.BeforeClass;
+import org.junit.Test;
+
+import java.nio.charset.Charset;
+import java.nio.charset.CharsetEncoder;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class EntitiesTest {
+
+    private static Entities.EscapeMode xhtmlEscapeMode;
+    private static Entities.EscapeMode baseEscapeMode;
+    private static Entities.EscapeMode extendedEscapeMode;
+
+    @BeforeClass
+    public static void setUp() {
+        xhtmlEscapeMode = Entities.EscapeMode.xhtml;
+        baseEscapeMode = Entities.EscapeMode.base;
+        extendedEscapeMode = Entities.EscapeMode.extended;
+    }
+
+    @Test
+    public void testIsNamedEntity() {
+        assertTrue(Entities.isNamedEntity("lt"));
+        assertTrue(Entities.isNamedEntity("amp"));
+        assertFalse(Entities.isNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testIsBaseNamedEntity() {
+        assertTrue(Entities.isBaseNamedEntity("lt"));
+        assertTrue(Entities.isBaseNamedEntity("amp"));
+        assertFalse(Entities.isBaseNamedEntity("nonexistent"));
+    }
+
+    @Test
+    public void testGetCharacterByName() {
+        assertEquals(Character.valueOf('<'), Entities.getCharacterByName("lt"));
+        assertEquals(Character.valueOf('&'), Entities.getCharacterByName("amp"));
+        assertNull(Entities.getCharacterByName("nonexistent"));
+    }
+
+    @Test
+    public void testEscape() {
+        Document.OutputSettings out = new Document.OutputSettings();
+        out.escapeMode(Entities.EscapeMode.base);
+        out.charset(Charset.forName("UTF-8"));
+
+        String input = "This is a test & < > \"";
+        String expected = "This is a test &amp; &lt; &gt; \"";
+        assertEquals(expected, Entities.escape(input, out));
+    }
+
+    @Test
+    public void testUnescape() {
+        String input = "This is a test &amp; &lt; &gt; &quot;";
+        String expected = "This is a test & < > \"";
+        assertEquals(expected, Entities.unescape(input));
+    }
+
+    @Test
+    public void testUnescapeStrict() {
+        String input = "This is a test &amp; &lt; &gt; &quot;";
+        String expected = "This is a test & < > \"";
+        assertEquals(expected, Entities.unescape(input, true));
+    }
+
+    @Test
+    public void testEscapeModeGetMap() {
+        Map<Character, String> xhtmlMap = xhtmlEscapeMode.getMap();
+        assertNotNull(xhtmlMap);
+        assertTrue(xhtmlMap.containsKey('<'));
+
+        Map<Character, String> baseMap = baseEscapeMode.getMap();
+        assertNotNull(baseMap);
+        assertTrue(baseMap.containsKey('<'));
+
+        Map<Character, String> extendedMap = extendedEscapeMode.getMap();
+        assertNotNull(extendedMap);
+        assertTrue(extendedMap.containsKey('<'));
+    }
+
+    @Test
+    public void testCanEncode() {
+        CharsetEncoder encoder = Charset.forName("US-ASCII").newEncoder();
+        assertTrue(Entities.canEncode(Entities.CoreCharset.ascii, 'A', encoder));
+        assertFalse(Entities.canEncode(Entities.CoreCharset.ascii, '€', encoder));
+
+        encoder = Charset.forName("UTF-8").newEncoder();
+        assertTrue(Entities.canEncode(Entities.CoreCharset.utf, '€', encoder));
+    }
+}
+```
+
+### Notes:
+- The test suite assumes that the `entities-base.properties` and `entities-full.properties` files are correctly loaded and contain the expected mappings for named entities.
+- The `Document.OutputSettings` class is assumed to have methods `escapeMode()` and `charset()` for setting escape mode and character set, respectively.
+- The `canEncode` method is tested with assumptions about the behavior of `CharsetEncoder` for different character sets.
+- The test suite uses JUnit 4 annotations and assertions to verify the behavior of the `Entities` class methods.

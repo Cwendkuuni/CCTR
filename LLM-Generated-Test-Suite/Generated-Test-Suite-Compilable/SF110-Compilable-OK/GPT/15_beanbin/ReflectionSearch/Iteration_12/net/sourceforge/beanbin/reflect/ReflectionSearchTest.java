@@ -1,0 +1,111 @@
+package net.sourceforge.beanbin.reflect;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+import java.lang.annotation.Annotation;
+import java.lang.reflect.Method;
+import java.util.ArrayList;
+import java.util.List;
+
+public class ReflectionSearchTest {
+
+    private ReflectionSearch reflectionSearch;
+    private Class<?> clazzMock;
+    private Annotation annotationMock;
+    private Method methodMock;
+
+    @Before
+    public void setUp() {
+        clazzMock = Mockito.mock(Class.class);
+        annotationMock = Mockito.mock(Annotation.class);
+        methodMock = Mockito.mock(Method.class);
+        reflectionSearch = new ReflectionSearch(clazzMock);
+    }
+
+    @Test
+    public void testHasAnnotationWithExactMatch() {
+        Mockito.when(clazzMock.getAnnotations()).thenReturn(new Annotation[]{annotationMock});
+        Mockito.when(annotationMock.annotationType()).thenReturn((Class) clazzMock);
+        Mockito.when(clazzMock.getName()).thenReturn("TestAnnotation");
+
+        assertTrue(reflectionSearch.hasAnnotation("TestAnnotation"));
+    }
+
+    @Test
+    public void testHasAnnotationWithWildcardMatch() {
+        Mockito.when(clazzMock.getAnnotations()).thenReturn(new Annotation[]{annotationMock});
+        Mockito.when(annotationMock.annotationType()).thenReturn((Class) clazzMock);
+        Mockito.when(clazzMock.getName()).thenReturn("TestAnnotation");
+
+        assertTrue(reflectionSearch.hasAnnotation("*Annotation"));
+    }
+
+    @Test
+    public void testHasAnnotationWithNoMatch() {
+        Mockito.when(clazzMock.getAnnotations()).thenReturn(new Annotation[]{annotationMock});
+        Mockito.when(annotationMock.annotationType()).thenReturn((Class) clazzMock);
+        Mockito.when(clazzMock.getName()).thenReturn("TestAnnotation");
+
+        assertFalse(reflectionSearch.hasAnnotation("NonExistent"));
+    }
+
+    @Test
+    public void testMethodsThatHave() throws Exception {
+        reflectionSearch.methodsThatHave("testMethod");
+        // Assuming Query and MethodReflectionCriteria are correctly implemented
+        // This test would need to verify that the query was correctly updated
+    }
+
+    @Test
+    public void testMethodsThatDontHave() throws Exception {
+        reflectionSearch.methodsThatDontHave("testMethod");
+        // Assuming Query and MethodReflectionCriteria are correctly implemented
+        // This test would need to verify that the query was correctly updated
+    }
+
+    @Test
+    public void testAnd() {
+        reflectionSearch.and();
+        // Assuming Query and Conditional are correctly implemented
+        // This test would need to verify that the query was correctly updated
+    }
+
+    @Test
+    public void testOr() {
+        reflectionSearch.or();
+        // Assuming Query and Conditional are correctly implemented
+        // This test would need to verify that the query was correctly updated
+    }
+
+    @Test
+    public void testGetMethods() throws Exception {
+        List<Method> methods = new ArrayList<>();
+        methods.add(methodMock);
+
+        // Assuming ReflectionShelf and Criteria are correctly implemented
+        // This test would need to verify that the correct methods are returned
+    }
+
+    @Test
+    public void testIntersect() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        master.add(methodMock);
+        toAdd.add(methodMock);
+
+        reflectionSearch.intersect(master, toAdd);
+        assertEquals(1, master.size());
+    }
+
+    @Test
+    public void testUnion() {
+        List<Method> master = new ArrayList<>();
+        List<Method> toAdd = new ArrayList<>();
+        toAdd.add(methodMock);
+
+        reflectionSearch.union(master, toAdd);
+        assertEquals(1, master.size());
+    }
+}

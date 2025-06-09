@@ -1,0 +1,236 @@
+```java
+import static org.junit.Assert.*;
+
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.List;
+import java.util.ListIterator;
+import java.util.Set;
+import java.util.SortedMap;
+import java.util.TreeMap;
+
+import org.apache.commons.cli2.Argument;
+import org.apache.commons.cli2.DisplaySetting;
+import org.apache.commons.cli2.Group;
+import org.apache.commons.cli2.HelpLine;
+import org.apache.commons.cli2.Option;
+import org.apache.commons.cli2.OptionException;
+import org.apache.commons.cli2.WriteableCommandLine;
+import org.apache.commons.cli2.resource.ResourceConstants;
+import org.junit.Before;
+import org.junit.Test;
+
+public class GroupImplTest {
+
+    private GroupImpl group;
+    private List<Option> options;
+    private WriteableCommandLine commandLine;
+
+    @Before
+    public void setUp() {
+        options = new ArrayList<>();
+        commandLine = new WriteableCommandLine() {
+            @Override
+            public boolean looksLikeOption(String trigger) {
+                return false;
+            }
+
+            @Override
+            public boolean hasOption(Option option) {
+                return false;
+            }
+        };
+        group = new GroupImpl(options, "testGroup", "Test Group", 1, 3, true);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertNotNull(group);
+        assertEquals("testGroup", group.getPreferredName());
+        assertEquals("Test Group", group.getDescription());
+        assertEquals(1, group.getMinimum());
+        assertEquals(3, group.getMaximum());
+        assertTrue(group.isRequired());
+    }
+
+    @Test
+    public void testCanProcess() {
+        Option option = new OptionImpl(1, true);
+        options.add(option);
+        group = new GroupImpl(options, "testGroup", "Test Group", 1, 3, true);
+
+        assertTrue(group.canProcess(commandLine, "testOption"));
+        assertFalse(group.canProcess(commandLine, null));
+    }
+
+    @Test
+    public void testGetPrefixes() {
+        Set<String> prefixes = new HashSet<>();
+        prefixes.add("--");
+        Option option = new OptionImpl(1, true) {
+            @Override
+            public Set<String> getPrefixes() {
+                return prefixes;
+            }
+        };
+        options.add(option);
+        group = new GroupImpl(options, "testGroup", "Test Group", 1, 3, true);
+
+        assertEquals(prefixes, group.getPrefixes());
+    }
+
+    @Test
+    public void testGetTriggers() {
+        Set<String> triggers = new HashSet<>();
+        triggers.add("testTrigger");
+        Option option = new OptionImpl(1, true) {
+            @Override
+            public Set<String> getTriggers() {
+                return triggers;
+            }
+        };
+        options.add(option);
+        group = new GroupImpl(options, "testGroup", "Test Group", 1, 3, true);
+
+        assertEquals(triggers, group.getTriggers());
+    }
+
+    @Test
+    public void testProcess() throws OptionException {
+        List<String> arguments = new ArrayList<>();
+        arguments.add("testArgument");
+        ListIterator<String> iterator = arguments.listIterator();
+
+        Option option = new OptionImpl(1, true) {
+            @Override
+            public boolean canProcess(WriteableCommandLine commandLine, String arg) {
+                return true;
+            }
+
+            @Override
+            public void process(WriteableCommandLine commandLine, ListIterator<String> arguments) {
+                // Do nothing
+            }
+        };
+        options.add(option);
+        group = new GroupImpl(options, "testGroup", "Test Group", 1, 3, true);
+
+        group.process(commandLine, iterator);
+    }
+
+    @Test
+    public void testValidate() throws OptionException {
+        Option option = new OptionImpl(1, true) {
+            @Override
+            public boolean isRequired() {
+                return true;
+            }
+
+            @Override
+            public void validate(WriteableCommandLine commandLine) {
+                // Do nothing
+            }
+        };
+        options.add(option);
+        group = new GroupImpl(options, "testGroup", "Test Group", 1, 3, true);
+
+        group.validate(commandLine);
+    }
+
+    @Test
+    public void testGetPreferredName() {
+        assertEquals("testGroup", group.getPreferredName());
+    }
+
+    @Test
+    public void testGetDescription() {
+        assertEquals("Test Group", group.getDescription());
+    }
+
+    @Test
+    public void testAppendUsage() {
+        StringBuffer buffer = new StringBuffer();
+        Set<DisplaySetting> helpSettings = new HashSet<>();
+        helpSettings.add(DisplaySetting.DISPLAY_GROUP_NAME);
+
+        group.appendUsage(buffer, helpSettings, null);
+
+        assertEquals("[testGroup]", buffer.toString());
+    }
+
+    @Test
+    public void testHelpLines() {
+        Set<DisplaySetting> helpSettings = new HashSet<>();
+        helpSettings.add(DisplaySetting.DISPLAY_GROUP_NAME);
+
+        List<HelpLine> helpLines = group.helpLines(0, helpSettings, null);
+
+        assertNotNull(helpLines);
+        assertEquals(1, helpLines.size());
+    }
+
+    @Test
+    public void testGetOptions() {
+        assertEquals(options, group.getOptions());
+    }
+
+    @Test
+    public void testGetAnonymous() {
+        List<Option> anonymous = new ArrayList<>();
+        group = new GroupImpl(options, "testGroup", "Test Group", 1, 3, true) {
+            @Override
+            public List<Option> getAnonymous() {
+                return anonymous;
+            }
+        };
+
+        assertEquals(anonymous, group.getAnonymous());
+    }
+
+    @Test
+    public void testFindOption() {
+        Option option = new OptionImpl(1, true) {
+            @Override
+            public Option findOption(String trigger) {
+                return this;
+            }
+        };
+        options.add(option);
+        group = new GroupImpl(options, "testGroup", "Test Group", 1, 3, true);
+
+        assertNotNull(group.findOption("testTrigger"));
+    }
+
+    @Test
+    public void testGetMinimum() {
+        assertEquals(1, group.getMinimum());
+    }
+
+    @Test
+    public void testGetMaximum() {
+        assertEquals(3, group.getMaximum());
+    }
+
+    @Test
+    public void testIsRequired() {
+        assertTrue(group.isRequired());
+    }
+
+    @Test
+    public void testDefaults() {
+        Option option = new OptionImpl(1, true) {
+            @Override
+            public void defaults(WriteableCommandLine commandLine) {
+                // Do nothing
+            }
+        };
+        options.add(option);
+        group = new GroupImpl(options, "testGroup", "Test Group", 1, 3, true);
+
+        group.defaults(commandLine);
+    }
+}
+```

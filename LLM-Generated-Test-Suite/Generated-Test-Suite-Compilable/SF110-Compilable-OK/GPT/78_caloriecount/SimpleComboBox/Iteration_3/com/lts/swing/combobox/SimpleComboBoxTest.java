@@ -1,0 +1,125 @@
+package com.lts.swing.combobox;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.Mockito;
+
+import javax.swing.ComboBoxModel;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class SimpleComboBoxTest {
+
+    private SimpleComboBoxModel mockModel;
+    private SimpleComboBox simpleComboBox;
+
+    @Before
+    public void setUp() {
+        mockModel = mock(SimpleComboBoxModel.class);
+        simpleComboBox = new SimpleComboBox(mockModel);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertEquals(mockModel, simpleComboBox.getModel());
+    }
+
+    @Test
+    public void testSetModelWithSimpleComboBoxModel() {
+        SimpleComboBoxModel newModel = mock(SimpleComboBoxModel.class);
+        simpleComboBox.setModel(newModel);
+        assertEquals(newModel, simpleComboBox.getModel());
+    }
+
+    @Test
+    public void testSetModelWithNonSimpleComboBoxModel() {
+        ComboBoxModel nonSimpleModel = mock(ComboBoxModel.class);
+        simpleComboBox.setModel(nonSimpleModel);
+        assertEquals(nonSimpleModel, simpleComboBox.getModel());
+    }
+
+    @Test
+    public void testGetSelectedValue() {
+        when(mockModel.getSelectedValue()).thenReturn("TestValue");
+        assertEquals("TestValue", simpleComboBox.getSelectedValue());
+    }
+
+    @Test
+    public void testSetSelectedValue() {
+        simpleComboBox.setSelectedValue("NewValue");
+        verify(mockModel).setSelectedValue("NewValue");
+    }
+
+    @Test
+    public void testGetSelectedIntWithInteger() {
+        when(mockModel.getSelectedValue()).thenReturn(42);
+        assertEquals(42, simpleComboBox.getSelectedInt());
+    }
+
+    @Test
+    public void testGetSelectedIntWithLong() {
+        when(mockModel.getSelectedValue()).thenReturn(42L);
+        assertEquals(42, simpleComboBox.getSelectedInt());
+    }
+
+    @Test
+    public void testGetSelectedIntWithShort() {
+        when(mockModel.getSelectedValue()).thenReturn((short) 42);
+        assertEquals(42, simpleComboBox.getSelectedInt());
+    }
+
+    @Test
+    public void testGetSelectedIntWithByte() {
+        when(mockModel.getSelectedValue()).thenReturn((byte) 42);
+        assertEquals(42, simpleComboBox.getSelectedInt());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetSelectedIntWithInvalidType() {
+        when(mockModel.getSelectedValue()).thenReturn("InvalidType");
+        simpleComboBox.getSelectedInt();
+    }
+
+    @Test
+    public void testGetSelectedIntWithNull() {
+        when(mockModel.getSelectedValue()).thenReturn(null);
+        assertEquals(-1, simpleComboBox.getSelectedInt());
+    }
+
+    @Test
+    public void testGetSelectedLongWithInteger() {
+        when(mockModel.getSelectedValue()).thenReturn(42);
+        assertEquals(42L, simpleComboBox.getSelectedLong());
+    }
+
+    @Test
+    public void testGetSelectedLongWithLong() {
+        when(mockModel.getSelectedValue()).thenReturn(42L);
+        assertEquals(42L, simpleComboBox.getSelectedLong());
+    }
+
+    @Test
+    public void testGetSelectedLongWithShort() {
+        when(mockModel.getSelectedValue()).thenReturn((short) 42);
+        assertEquals(42L, simpleComboBox.getSelectedLong());
+    }
+
+    @Test
+    public void testGetSelectedLongWithByte() {
+        when(mockModel.getSelectedValue()).thenReturn((byte) 42);
+        assertEquals(42L, simpleComboBox.getSelectedLong());
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testGetSelectedLongWithInvalidType() {
+        when(mockModel.getSelectedValue()).thenReturn("InvalidType");
+        simpleComboBox.getSelectedLong();
+    }
+
+    @Test
+    public void testGetSelectedLongWithNull() {
+        when(mockModel.getSelectedValue()).thenReturn(null);
+        assertEquals(-1L, simpleComboBox.getSelectedLong());
+    }
+}

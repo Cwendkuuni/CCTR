@@ -1,0 +1,100 @@
+To create a comprehensive JUnit 4 test suite for the `SequencesComparator` class, we need to test the public methods and ensure that the class behaves as expected under various scenarios. The primary method to test is `getScript()`, which relies on the private methods `buildSnake`, `getMiddleSnake`, and `buildScript`. Since these methods are private, we will focus on testing the public interface and the expected outcomes.
+
+Below is a JUnit 4 test suite for the `SequencesComparator` class:
+
+```java
+import org.apache.commons.collections4.sequence.EditScript;
+import org.apache.commons.collections4.sequence.SequencesComparator;
+import org.apache.commons.collections4.functors.DefaultEquator;
+import org.junit.Assert;
+import org.junit.Before;
+import org.junit.Test;
+
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
+public class SequencesComparatorTest {
+
+    private List<String> sequence1;
+    private List<String> sequence2;
+
+    @Before
+    public void setUp() {
+        sequence1 = Arrays.asList("A", "B", "C", "D");
+        sequence2 = Arrays.asList("A", "C", "E", "D");
+    }
+
+    @Test
+    public void testGetScriptWithDefaultEquator() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2);
+        EditScript<String> script = comparator.getScript();
+
+        Assert.assertEquals(4, script.getModifications());
+        Assert.assertEquals("A", script.getLCS().get(0));
+        Assert.assertEquals("C", script.getLCS().get(1));
+        Assert.assertEquals("D", script.getLCS().get(2));
+    }
+
+    @Test
+    public void testGetScriptWithCustomEquator() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence2, DefaultEquator.defaultEquator());
+        EditScript<String> script = comparator.getScript();
+
+        Assert.assertEquals(4, script.getModifications());
+        Assert.assertEquals("A", script.getLCS().get(0));
+        Assert.assertEquals("C", script.getLCS().get(1));
+        Assert.assertEquals("D", script.getLCS().get(2));
+    }
+
+    @Test
+    public void testGetScriptWithEmptySequences() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(Collections.emptyList(), Collections.emptyList());
+        EditScript<String> script = comparator.getScript();
+
+        Assert.assertEquals(0, script.getModifications());
+        Assert.assertTrue(script.getLCS().isEmpty());
+    }
+
+    @Test
+    public void testGetScriptWithOneEmptySequence() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, Collections.emptyList());
+        EditScript<String> script = comparator.getScript();
+
+        Assert.assertEquals(sequence1.size(), script.getModifications());
+        Assert.assertTrue(script.getLCS().isEmpty());
+    }
+
+    @Test
+    public void testGetScriptWithIdenticalSequences() {
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence1);
+        EditScript<String> script = comparator.getScript();
+
+        Assert.assertEquals(0, script.getModifications());
+        Assert.assertEquals(sequence1, script.getLCS());
+    }
+
+    @Test
+    public void testGetScriptWithCompletelyDifferentSequences() {
+        List<String> sequence3 = Arrays.asList("X", "Y", "Z");
+        SequencesComparator<String> comparator = new SequencesComparator<>(sequence1, sequence3);
+        EditScript<String> script = comparator.getScript();
+
+        Assert.assertEquals(sequence1.size() + sequence3.size(), script.getModifications());
+        Assert.assertTrue(script.getLCS().isEmpty());
+    }
+}
+```
+
+### Explanation:
+
+- **Setup**: The `setUp` method initializes two sequences that will be used in multiple tests.
+- **Test Cases**:
+  - `testGetScriptWithDefaultEquator`: Tests the `getScript` method using the default equator.
+  - `testGetScriptWithCustomEquator`: Tests the `getScript` method with a custom equator, which in this case is the same as the default.
+  - `testGetScriptWithEmptySequences`: Tests the behavior when both sequences are empty.
+  - `testGetScriptWithOneEmptySequence`: Tests the behavior when one sequence is empty.
+  - `testGetScriptWithIdenticalSequences`: Tests the behavior when both sequences are identical.
+  - `testGetScriptWithCompletelyDifferentSequences`: Tests the behavior when sequences have no common elements.
+
+These tests cover various scenarios to ensure that the `SequencesComparator` class behaves as expected.

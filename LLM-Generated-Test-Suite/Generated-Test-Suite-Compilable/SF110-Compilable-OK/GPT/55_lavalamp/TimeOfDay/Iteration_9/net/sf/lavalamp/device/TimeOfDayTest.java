@@ -1,0 +1,96 @@
+package net.sf.lavalamp.device;
+
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+
+public class TimeOfDayTest {
+
+    private TimeOfDay time1;
+    private TimeOfDay time2;
+    private TimeOfDay time3;
+
+    @Before
+    public void setUp() {
+        time1 = new TimeOfDay(10, 30);
+        time2 = new TimeOfDay("10:30");
+        time3 = new TimeOfDay(11, 45);
+    }
+
+    @Test
+    public void testConstructorWithIntegers() {
+        assertEquals(Integer.valueOf(10), time1.getHours());
+        assertEquals(Integer.valueOf(30), time1.getMinutes());
+    }
+
+    @Test
+    public void testConstructorWithString() {
+        assertEquals(Integer.valueOf(10), time2.getHours());
+        assertEquals(Integer.valueOf(30), time2.getMinutes());
+    }
+
+    @Test
+    public void testCompareToEqual() {
+        assertEquals(0, time1.compareTo(time2));
+    }
+
+    @Test
+    public void testCompareToLessThan() {
+        assertTrue(time1.compareTo(time3) < 0);
+    }
+
+    @Test
+    public void testCompareToGreaterThan() {
+        assertTrue(time3.compareTo(time1) > 0);
+    }
+
+    @Test
+    public void testGetHours() {
+        assertEquals(Integer.valueOf(10), time1.getHours());
+    }
+
+    @Test
+    public void testGetMinutes() {
+        assertEquals(Integer.valueOf(30), time1.getMinutes());
+    }
+
+    @Test
+    public void testToString() {
+        assertEquals("10:30", time1.toString());
+    }
+
+    @Test
+    public void testHashCodeEqualObjects() {
+        assertEquals(time1.hashCode(), time2.hashCode());
+    }
+
+    @Test
+    public void testHashCodeDifferentObjects() {
+        assertNotEquals(time1.hashCode(), time3.hashCode());
+    }
+
+    @Test
+    public void testEqualsSameObject() {
+        assertTrue(time1.equals(time1));
+    }
+
+    @Test
+    public void testEqualsEqualObjects() {
+        assertTrue(time1.equals(time2));
+    }
+
+    @Test
+    public void testEqualsDifferentObjects() {
+        assertFalse(time1.equals(time3));
+    }
+
+    @Test
+    public void testEqualsNullObject() {
+        assertFalse(time1.equals(null));
+    }
+
+    @Test
+    public void testEqualsDifferentClass() {
+        assertFalse(time1.equals("10:30"));
+    }
+}

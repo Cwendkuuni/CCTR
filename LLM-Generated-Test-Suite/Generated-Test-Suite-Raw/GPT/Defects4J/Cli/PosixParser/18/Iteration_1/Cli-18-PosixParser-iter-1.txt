@@ -1,0 +1,103 @@
+```java
+import org.apache.commons.cli.Option;
+import org.apache.commons.cli.Options;
+import org.apache.commons.cli.PosixParser;
+import org.junit.Before;
+import org.junit.Test;
+
+import static org.junit.Assert.*;
+
+public class PosixParserTest {
+
+    private PosixParser parser;
+    private Options options;
+
+    @Before
+    public void setUp() {
+        parser = new PosixParser();
+        options = new Options();
+        options.addOption("a", false, "Option a");
+        options.addOption("b", true, "Option b");
+        options.addOption("c", false, "Option c");
+    }
+
+    @Test
+    public void testFlattenWithSingleHyphen() {
+        String[] args = {"-"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-"}, result);
+    }
+
+    @Test
+    public void testFlattenWithDoubleHyphen() {
+        String[] args = {"--"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"--"}, result);
+    }
+
+    @Test
+    public void testFlattenWithOptionWithoutArg() {
+        String[] args = {"-a"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-a"}, result);
+    }
+
+    @Test
+    public void testFlattenWithOptionWithArg() {
+        String[] args = {"-b", "value"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-b", "value"}, result);
+    }
+
+    @Test
+    public void testFlattenWithUnknownOption() {
+        String[] args = {"-x"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-x"}, result);
+    }
+
+    @Test
+    public void testFlattenWithStopAtNonOption() {
+        String[] args = {"-a", "non-option", "-b", "value"};
+        String[] result = parser.flatten(options, args, true);
+        assertArrayEquals(new String[]{"-a", "--", "non-option", "-b", "value"}, result);
+    }
+
+    @Test
+    public void testFlattenWithoutStopAtNonOption() {
+        String[] args = {"-a", "non-option", "-b", "value"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-a", "non-option", "-b", "value"}, result);
+    }
+
+    @Test
+    public void testFlattenWithBurstToken() {
+        String[] args = {"-abc"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-a", "-b", "-c"}, result);
+    }
+
+    @Test
+    public void testFlattenWithBurstTokenAndArg() {
+        String[] args = {"-abvalue"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"-a", "-b", "value"}, result);
+    }
+
+    @Test
+    public void testFlattenWithEqualSignInDoubleHyphen() {
+        String[] args = {"--option=value"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"--option", "value"}, result);
+    }
+
+    @Test
+    public void testFlattenWithNonOptionArgument() {
+        String[] args = {"non-option"};
+        String[] result = parser.flatten(options, args, false);
+        assertArrayEquals(new String[]{"non-option"}, result);
+    }
+}
+```
+
+This test suite covers various scenarios for the `PosixParser` class, including handling of single and double hyphens, options with and without arguments, unknown options, and the behavior of the `stopAtNonOption` flag. Each test case is designed to verify the expected behavior of the `flatten` method under different conditions.

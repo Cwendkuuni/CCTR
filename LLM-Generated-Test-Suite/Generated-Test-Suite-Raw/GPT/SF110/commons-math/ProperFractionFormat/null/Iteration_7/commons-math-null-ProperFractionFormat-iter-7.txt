@@ -1,0 +1,111 @@
+```java
+import static org.junit.Assert.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.apache.commons.math3.fraction.Fraction;
+import org.apache.commons.math3.fraction.ProperFractionFormat;
+import java.text.NumberFormat;
+import java.text.ParsePosition;
+
+public class ProperFractionFormatTest {
+
+    private ProperFractionFormat properFractionFormat;
+    private NumberFormat numberFormat;
+
+    @Before
+    public void setUp() {
+        numberFormat = NumberFormat.getInstance();
+        properFractionFormat = new ProperFractionFormat(numberFormat);
+    }
+
+    @Test
+    public void testConstructorWithDefaultFormat() {
+        ProperFractionFormat format = new ProperFractionFormat();
+        assertNotNull(format.getWholeFormat());
+        assertNotNull(format.getNumeratorFormat());
+        assertNotNull(format.getDenominatorFormat());
+    }
+
+    @Test
+    public void testConstructorWithCustomFormats() {
+        NumberFormat customWholeFormat = NumberFormat.getInstance();
+        NumberFormat customNumeratorFormat = NumberFormat.getInstance();
+        NumberFormat customDenominatorFormat = NumberFormat.getInstance();
+        ProperFractionFormat format = new ProperFractionFormat(customWholeFormat, customNumeratorFormat, customDenominatorFormat);
+        assertEquals(customWholeFormat, format.getWholeFormat());
+        assertEquals(customNumeratorFormat, format.getNumeratorFormat());
+        assertEquals(customDenominatorFormat, format.getDenominatorFormat());
+    }
+
+    @Test
+    public void testFormatProperFraction() {
+        Fraction fraction = new Fraction(7, 3); // 2 1/3
+        StringBuffer buffer = new StringBuffer();
+        properFractionFormat.format(fraction, buffer, new FieldPosition(0));
+        assertEquals("2 1 / 3", buffer.toString());
+    }
+
+    @Test
+    public void testFormatImproperFraction() {
+        Fraction fraction = new Fraction(4, 2); // 2
+        StringBuffer buffer = new StringBuffer();
+        properFractionFormat.format(fraction, buffer, new FieldPosition(0));
+        assertEquals("2 0 / 2", buffer.toString());
+    }
+
+    @Test
+    public void testFormatNegativeFraction() {
+        Fraction fraction = new Fraction(-7, 3); // -2 1/3
+        StringBuffer buffer = new StringBuffer();
+        properFractionFormat.format(fraction, buffer, new FieldPosition(0));
+        assertEquals("-2 1 / 3", buffer.toString());
+    }
+
+    @Test
+    public void testParseValidProperFraction() {
+        ParsePosition pos = new ParsePosition(0);
+        Fraction fraction = properFractionFormat.parse("2 1 / 3", pos);
+        assertNotNull(fraction);
+        assertEquals(7, fraction.getNumerator());
+        assertEquals(3, fraction.getDenominator());
+    }
+
+    @Test
+    public void testParseValidImproperFraction() {
+        ParsePosition pos = new ParsePosition(0);
+        Fraction fraction = properFractionFormat.parse("4 / 2", pos);
+        assertNotNull(fraction);
+        assertEquals(2, fraction.getNumerator());
+        assertEquals(1, fraction.getDenominator());
+    }
+
+    @Test
+    public void testParseNegativeFraction() {
+        ParsePosition pos = new ParsePosition(0);
+        Fraction fraction = properFractionFormat.parse("-2 1 / 3", pos);
+        assertNotNull(fraction);
+        assertEquals(-7, fraction.getNumerator());
+        assertEquals(3, fraction.getDenominator());
+    }
+
+    @Test
+    public void testParseInvalidFraction() {
+        ParsePosition pos = new ParsePosition(0);
+        Fraction fraction = properFractionFormat.parse("invalid", pos);
+        assertNull(fraction);
+        assertEquals(0, pos.getIndex());
+    }
+
+    @Test(expected = NullArgumentException.class)
+    public void testSetWholeFormatWithNull() {
+        properFractionFormat.setWholeFormat(null);
+    }
+
+    @Test
+    public void testSetWholeFormat() {
+        NumberFormat newWholeFormat = NumberFormat.getInstance();
+        properFractionFormat.setWholeFormat(newWholeFormat);
+        assertEquals(newWholeFormat, properFractionFormat.getWholeFormat());
+    }
+}
+```

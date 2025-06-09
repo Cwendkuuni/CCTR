@@ -1,0 +1,183 @@
+```java
+package wheel.util;
+
+import org.junit.Before;
+import org.junit.Test;
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+import wheel.components.*;
+import wheel.*;
+import java.util.*;
+
+public class DynamicSelectModelTest {
+
+    private DynamicSelectModel dynamicSelectModel;
+    private ElExpression mockCollection;
+    private ElExpression mockLabel;
+    private ElExpression mockValue;
+    private Component mockComponent;
+    private StandaloneComponent mockTopLevelComponent;
+
+    @Before
+    public void setUp() {
+        mockCollection = mock(ElExpression.class);
+        mockLabel = mock(ElExpression.class);
+        mockValue = mock(ElExpression.class);
+        mockComponent = mock(Component.class);
+        mockTopLevelComponent = mock(StandaloneComponent.class);
+
+        dynamicSelectModel = new DynamicSelectModel(mockCollection, mockLabel, mockValue);
+        dynamicSelectModel.setComponent(mockComponent);
+        dynamicSelectModel.setTopLevelComponent(mockTopLevelComponent);
+    }
+
+    @Test
+    public void testConstructorWithExpressions() {
+        assertNotNull(dynamicSelectModel);
+        assertEquals(mockCollection, dynamicSelectModel.collection);
+        assertEquals(mockLabel, dynamicSelectModel.label);
+        assertEquals(mockValue, dynamicSelectModel.value);
+    }
+
+    @Test
+    public void testDefaultConstructor() {
+        DynamicSelectModel model = new DynamicSelectModel();
+        assertNotNull(model);
+    }
+
+    @Test
+    public void testCollectionMethod() {
+        String collectionExpr = "collectionExpr";
+        DynamicSelectModel model = new DynamicSelectModel().collection(collectionExpr);
+        verify(mockCollection).getExpression();
+        assertEquals(collectionExpr, model.collection.getExpression());
+    }
+
+    @Test
+    public void testLabelMethod() {
+        String labelExpr = "labelExpr";
+        DynamicSelectModel model = new DynamicSelectModel().label(labelExpr);
+        verify(mockLabel).getExpression();
+        assertEquals(labelExpr, model.label.getExpression());
+    }
+
+    @Test
+    public void testValueMethod() {
+        String valueExpr = "valueExpr";
+        DynamicSelectModel model = new DynamicSelectModel().value(valueExpr);
+        verify(mockValue).getExpression();
+        assertEquals(valueExpr, model.value.getExpression());
+    }
+
+    @Test
+    public void testEnumerationMethod() {
+        String enumeration = "enumeration";
+        DynamicSelectModel model = new DynamicSelectModel().enumeration(enumeration);
+        assertEquals(enumeration + ".values()", model.collection.getExpression());
+        assertEquals("toString()", model.label.getExpression());
+        assertEquals("ordinal()", model.value.getExpression());
+    }
+
+    @Test
+    public void testTranslatorMethod() {
+        String translatorExpr = "translatorExpr";
+        DynamicSelectModel model = new DynamicSelectModel().translator(translatorExpr);
+        assertEquals(translatorExpr, model.translator.getExpression());
+    }
+
+    @Test
+    public void testEmptyMethod() {
+        Object emptyObj = new Object();
+        DynamicSelectModel model = new DynamicSelectModel().empty(emptyObj);
+        assertEquals(emptyObj, model.emptyObject);
+    }
+
+    @Test
+    public void testGetOptionCount() {
+        Collection<Object> mockObjects = Arrays.asList(new Object(), new Object());
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(mockObjects);
+        assertEquals(2, dynamicSelectModel.getOptionCount());
+    }
+
+    @Test
+    public void testGetLabel() {
+        Collection<Object> mockObjects = Arrays.asList(new Object(), new Object());
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(mockObjects);
+        when(mockLabel.eval(mockObjects.toArray()[0], mockComponent)).thenReturn("Label0");
+        assertEquals("Label0", dynamicSelectModel.getLabel(0));
+    }
+
+    @Test
+    public void testGetValue() {
+        Collection<Object> mockObjects = Arrays.asList(new Object(), new Object());
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(mockObjects);
+        when(mockValue.eval(mockObjects.toArray()[0], mockComponent)).thenReturn("Value0");
+        assertEquals("Value0", dynamicSelectModel.getValue(0));
+    }
+
+    @Test
+    public void testTranslateValue() {
+        Collection<Object> mockObjects = Arrays.asList(new Object(), new Object());
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(mockObjects);
+        when(mockValue.eval(mockObjects.toArray()[0], mockComponent)).thenReturn("Value0");
+        when(mockTranslator.eval(mockObjects.toArray()[0], mockComponent)).thenReturn("TranslatedValue0");
+        assertEquals("TranslatedValue0", dynamicSelectModel.translateValue("Value0"));
+    }
+
+    @Test
+    public void testGetObjects() {
+        Collection<Object> mockObjects = Arrays.asList(new Object(), new Object());
+        when(mockCollection.eval(mockTopLevelComponent, mockComponent)).thenReturn(mockObjects);
+        assertEquals(mockObjects, dynamicSelectModel.getObjects());
+    }
+
+    @Test
+    public void testGetComponent() {
+        assertEquals(mockComponent, dynamicSelectModel.getComponent());
+    }
+
+    @Test
+    public void testSetComponent() {
+        Component newComponent = mock(Component.class);
+        dynamicSelectModel.setComponent(newComponent);
+        assertEquals(newComponent, dynamicSelectModel.getComponent());
+    }
+
+    @Test
+    public void testGetTopLevelComponent() {
+        assertEquals(mockTopLevelComponent, dynamicSelectModel.getTopLevelComponent());
+    }
+
+    @Test
+    public void testSetTopLevelComponent() {
+        StandaloneComponent newTopLevelComponent = mock(StandaloneComponent.class);
+        dynamicSelectModel.setTopLevelComponent(newTopLevelComponent);
+        assertEquals(newTopLevelComponent, dynamicSelectModel.getTopLevelComponent());
+    }
+
+    @Test(expected = WheelException.class)
+    public void testValidateNullCollection() {
+        dynamicSelectModel.collection = null;
+        dynamicSelectModel.validate();
+    }
+
+    @Test(expected = WheelException.class)
+    public void testValidateNullLabel() {
+        dynamicSelectModel.label = null;
+        dynamicSelectModel.validate();
+    }
+
+    @Test(expected = WheelException.class)
+    public void testValidateNullValue() {
+        dynamicSelectModel.value = null;
+        dynamicSelectModel.validate();
+    }
+
+    @Test
+    public void testReset() {
+        dynamicSelectModel.objects = new ArrayList<>();
+        dynamicSelectModel.reset();
+        assertNull(dynamicSelectModel.objects);
+    }
+}
+```

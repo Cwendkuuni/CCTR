@@ -1,0 +1,74 @@
+```java
+package com.puppycrawl.tools.checkstyle.api;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.xml.sax.SAXException;
+import org.xml.sax.SAXParseException;
+import org.xml.sax.helpers.DefaultHandler;
+import org.xml.sax.InputSource;
+
+import javax.xml.parsers.ParserConfigurationException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.HashMap;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+public class AbstractLoaderTest {
+
+    private static class TestLoader extends AbstractLoader {
+        protected TestLoader(String publicId, String dtdResourceName) throws SAXException, ParserConfigurationException {
+            super(publicId, dtdResourceName);
+        }
+
+        protected TestLoader(Map<String, String> publicIdToResourceNameMap) throws SAXException, ParserConfigurationException {
+            super(publicIdToResourceNameMap);
+        }
+    }
+
+    private TestLoader testLoader;
+
+    @Before
+    public void setUp() throws SAXException, ParserConfigurationException {
+        Map<String, String> publicIdToResourceNameMap = new HashMap<>();
+        publicIdToResourceNameMap.put("testPublicId", "testDtdResourceName");
+        testLoader = new TestLoader(publicIdToResourceNameMap);
+    }
+
+    @Test
+    public void testParseInputSource() throws IOException, SAXException {
+        InputSource inputSource = new InputSource(new InputStream() {
+            @Override
+            public int read() throws IOException {
+                return -1; // End of stream
+            }
+        });
+        testLoader.parseInputSource(inputSource);
+        // Add assertions based on the expected behavior of parseInputSource
+    }
+
+    @Test
+    public void testResolveEntity() throws SAXException, IOException {
+        InputSource inputSource = testLoader.resolveEntity("testPublicId", null);
+        assertNotNull(inputSource);
+        assertNotNull(inputSource.getByteStream());
+
+        InputSource defaultInputSource = testLoader.resolveEntity("unknownPublicId", null);
+        assertNull(defaultInputSource);
+    }
+
+    @Test(expected = SAXParseException.class)
+    public void testError() throws SAXException {
+        SAXParseException exception = new SAXParseException("Test error", null);
+        testLoader.error(exception);
+    }
+
+    @Test(expected = SAXParseException.class)
+    public void testFatalError() throws SAXException {
+        SAXParseException exception = new SAXParseException("Test fatal error", null);
+        testLoader.fatalError(exception);
+    }
+}
+```

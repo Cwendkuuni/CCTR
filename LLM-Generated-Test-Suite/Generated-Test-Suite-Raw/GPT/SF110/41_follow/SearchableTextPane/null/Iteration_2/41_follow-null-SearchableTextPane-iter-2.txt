@@ -1,0 +1,123 @@
+To create a comprehensive JUnit 4 test suite for the `SearchableTextPane` class, we need to test each method, including the constructor, `getScrollableTracksViewportWidth`, `highlight`, `removeHighlights`, `search`, and any private methods that can be accessed indirectly through public methods. Below is a test suite that covers these methods:
+
+```java
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.ArgumentCaptor;
+
+import javax.swing.text.*;
+import java.awt.*;
+import java.util.List;
+import java.util.ArrayList;
+import java.util.logging.Logger;
+
+public class SearchableTextPaneTest {
+
+    private SearchableTextPane textPane;
+    private Font mockFont;
+    private Document mockDocument;
+    private Logger mockLogger;
+
+    @Before
+    public void setUp() {
+        mockFont = mock(Font.class);
+        textPane = new SearchableTextPane(mockFont, 4);
+        mockDocument = mock(Document.class);
+        mockLogger = mock(Logger.class);
+        textPane.setDocument(mockDocument);
+    }
+
+    @Test
+    public void testConstructor() {
+        assertEquals(mockFont, textPane.getFont());
+        assertEquals(4, textPane.getTabSize());
+    }
+
+    @Test
+    public void testGetScrollableTracksViewportWidth() {
+        Component mockParent = mock(Component.class);
+        ComponentUI mockUI = mock(ComponentUI.class);
+
+        when(textPane.getParent()).thenReturn(mockParent);
+        when(textPane.getUI()).thenReturn(mockUI);
+        when(mockUI.getPreferredSize(textPane)).thenReturn(new Dimension(100, 100));
+        when(mockParent.getSize()).thenReturn(new Dimension(100, 100));
+
+        assertTrue(textPane.getScrollableTracksViewportWidth());
+
+        when(mockParent.getSize()).thenReturn(new Dimension(50, 100));
+        assertFalse(textPane.getScrollableTracksViewportWidth());
+    }
+
+    @Test
+    public void testHighlight() throws Exception {
+        String text = "This is a test text for highlighting.";
+        when(mockDocument.getText(0, text.length())).thenReturn(text);
+        when(mockDocument.getLength()).thenReturn(text.length());
+
+        List<WordResult> wordResults = new ArrayList<>();
+        wordResults.add(new WordResult(0, 4)); // "This"
+        wordResults.add(new WordResult(10, 14)); // "test"
+
+        SearchEngine mockSearchEngine = mock(SearchEngine.class);
+        when(mockSearchEngine.search("test", text)).thenReturn(wordResults);
+
+        List<LineResult> lineResults = textPane.highlight("test", 0);
+
+        assertEquals(1, lineResults.size());
+        assertEquals(1, lineResults.get(0).getWordResults().size());
+    }
+
+    @Test
+    public void testRemoveHighlights() throws Exception {
+        Highlighter mockHighlighter = mock(Highlighter.class);
+        textPane.setHighlighter(mockHighlighter);
+
+        textPane.removeHighlights();
+
+        verify(mockHighlighter).removeAllHighlights();
+    }
+
+    @Test
+    public void testSearch() throws Exception {
+        String text = "This is a test text for searching.";
+        when(mockDocument.getText(0, text.length())).thenReturn(text);
+        when(mockDocument.getLength()).thenReturn(text.length());
+
+        int pos = textPane.search("test");
+        assertEquals(10, pos);
+
+        pos = textPane.search("nonexistent");
+        assertEquals(-1, pos);
+    }
+
+    @Test
+    public void testSearchWithStartPos() throws Exception {
+        String text = "This is a test text for searching.";
+        when(mockDocument.getText(0, text.length())).thenReturn(text);
+        when(mockDocument.getLength()).thenReturn(text.length());
+
+        int pos = textPane.search("test", 0);
+        assertEquals(10, pos);
+
+        pos = textPane.search("test", 11);
+        assertEquals(-1, pos);
+    }
+}
+```
+
+### Explanation:
+- **Constructor Test**: Verifies that the font and tab size are set correctly.
+- **`getScrollableTracksViewportWidth` Test**: Mocks the parent component and UI to test the method's logic.
+- **`highlight` Test**: Mocks the document and search engine to test the highlighting logic.
+- **`removeHighlights` Test**: Verifies that all highlights are removed.
+- **`search` and `searchWithStartPos` Tests**: Test the search functionality with different terms and starting positions.
+
+### Note:
+- The `SearchEngine`, `WordResult`, and `LineResult` classes are assumed to be part of the codebase. You may need to adjust the tests based on their actual implementations.
+- The `Logger` is mocked to avoid actual logging during tests.
+- The `Highlighter` is mocked to verify highlight removal without actual UI operations.
+- This test suite uses Mockito for mocking dependencies and capturing interactions.

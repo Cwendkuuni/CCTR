@@ -1,0 +1,191 @@
+To create a comprehensive JUnit 4 test suite for the `DisplayableListPanel` class, we need to consider testing the public methods and the behavior of the class. Since the class interacts with various components and has dependencies, we'll need to mock these dependencies using a mocking framework like Mockito. Below is a test suite that covers the main functionalities of the `DisplayableListPanel` class.
+
+```java
+import macaw.util.DisplayableListPanel;
+import macaw.businessLayer.*;
+import macaw.system.*;
+import org.junit.Before;
+import org.junit.Test;
+import org.mockito.*;
+
+import javax.swing.*;
+import java.awt.event.ActionEvent;
+import java.util.ArrayList;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class DisplayableListPanelTest {
+
+    @Mock
+    private SessionProperties sessionProperties;
+    @Mock
+    private DisplayableListParentForm parentForm;
+    @Mock
+    private UserInterfaceFactory userInterfaceFactory;
+    @Mock
+    private Log log;
+    @Mock
+    private DisplayableList displayableList;
+    @Mock
+    private DisplayableListItemSelector listItemSelector;
+    @Mock
+    private DisplayableListItemAdder listItemAdder;
+    @Mock
+    private DisplayableListItemEditor listItemEditor;
+    @Mock
+    private DisplayableListItemViewer listItemViewer;
+    @Mock
+    private DisplayableListItemDeleter listItemDeleter;
+    @Mock
+    private User currentUser;
+    @Mock
+    private ActionEvent actionEvent;
+
+    private DisplayableListPanel displayableListPanel;
+
+    @Before
+    public void setUp() {
+        MockitoAnnotations.initMocks(this);
+
+        when(sessionProperties.getLog()).thenReturn(log);
+        when(sessionProperties.getUserInterfaceFactory()).thenReturn(userInterfaceFactory);
+        when(sessionProperties.getProperty("currentUser")).thenReturn(currentUser);
+        when(currentUser.getUserID()).thenReturn("testUser");
+
+        displayableListPanel = new DisplayableListPanel(sessionProperties, parentForm, "Test Panel", true, true);
+        displayableListPanel.setDisplayableListItemSelector(listItemSelector);
+        displayableListPanel.setDisplayableListItemAdder(listItemAdder);
+        displayableListPanel.setDisplayableListItemEditor(listItemEditor);
+        displayableListPanel.setDisplayableListItemViewer(listItemViewer);
+        displayableListPanel.setDisplayableListItemDeleter(listItemDeleter);
+    }
+
+    @Test
+    public void testSetNewRecord() {
+        displayableListPanel.setNewRecord(true);
+        // Verify that updateButtonStates is called
+        verify(userInterfaceFactory, times(1)).createButton(anyString());
+    }
+
+    @Test
+    public void testGetPanel() {
+        JPanel panel = displayableListPanel.getPanel();
+        assertNotNull(panel);
+    }
+
+    @Test
+    public void testSetDisplayableListItemSelector() {
+        displayableListPanel.setDisplayableListItemSelector(listItemSelector);
+        assertEquals(listItemSelector, displayableListPanel.listItemSelector);
+    }
+
+    @Test
+    public void testSetDisplayableListItemAdder() {
+        displayableListPanel.setDisplayableListItemAdder(listItemAdder);
+        assertEquals(listItemAdder, displayableListPanel.listItemAdder);
+    }
+
+    @Test
+    public void testSetDisplayableListItemEditor() {
+        displayableListPanel.setDisplayableListItemEditor(listItemEditor);
+        assertEquals(listItemEditor, displayableListPanel.listItemEditor);
+    }
+
+    @Test
+    public void testSetDisplayableListItemViewer() {
+        displayableListPanel.setDisplayableListItemViewer(listItemViewer);
+        assertEquals(listItemViewer, displayableListPanel.listItemViewer);
+    }
+
+    @Test
+    public void testSetDisplayableListItemDeleter() {
+        displayableListPanel.setDisplayableListItemDeleter(listItemDeleter);
+        assertEquals(listItemDeleter, displayableListPanel.listItemDeleter);
+    }
+
+    @Test
+    public void testAddListItem() {
+        displayableListPanel.addListItem();
+        verify(listItemAdder, times(1)).addItems(anyString(), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testDeleteSelectedListItems() {
+        when(displayableList.itemsAreSelected()).thenReturn(true);
+        displayableListPanel.deleteSelectedListItems();
+        verify(listItemDeleter, times(1)).deleteListItems(anyString(), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testSetDisplayableItems() {
+        ArrayList<Displayable> items = new ArrayList<>();
+        displayableListPanel.setDisplayableItems(items);
+        assertEquals(items, displayableListPanel.masterList);
+    }
+
+    @Test
+    public void testSave() {
+        ArrayList<Displayable> items = new ArrayList<>();
+        when(displayableList.getAllItems()).thenReturn(items);
+        displayableListPanel.save();
+        assertEquals(items, displayableListPanel.masterList);
+    }
+
+    @Test
+    public void testGetAllListItems() {
+        ArrayList<Displayable> items = new ArrayList<>();
+        when(displayableList.getAllItems()).thenReturn(items);
+        assertEquals(items, displayableListPanel.getAllListItems());
+    }
+
+    @Test
+    public void testSetListOwnerName() {
+        displayableListPanel.setListOwnerName("Owner");
+        assertEquals("Owner", displayableListPanel.listOwnerName);
+    }
+
+    @Test
+    public void testActionPerformedSelect() {
+        when(actionEvent.getSource()).thenReturn(displayableListPanel.select);
+        displayableListPanel.actionPerformed(actionEvent);
+        verify(listItemSelector, times(1)).selectListItems(anyString(), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testActionPerformedAdd() {
+        when(actionEvent.getSource()).thenReturn(displayableListPanel.add);
+        displayableListPanel.actionPerformed(actionEvent);
+        verify(listItemAdder, times(1)).addItems(anyString(), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testActionPerformedEdit() {
+        when(actionEvent.getSource()).thenReturn(displayableListPanel.edit);
+        displayableListPanel.actionPerformed(actionEvent);
+        verify(listItemEditor, times(1)).editListItem(anyString(), any(Displayable.class), any(DisplayableList.class));
+    }
+
+    @Test
+    public void testActionPerformedView() {
+        when(actionEvent.getSource()).thenReturn(displayableListPanel.view);
+        displayableListPanel.actionPerformed(actionEvent);
+        verify(listItemViewer, times(1)).viewListItem(any(Displayable.class));
+    }
+
+    @Test
+    public void testActionPerformedDelete() {
+        when(actionEvent.getSource()).thenReturn(displayableListPanel.delete);
+        displayableListPanel.actionPerformed(actionEvent);
+        verify(listItemDeleter, times(1)).deleteListItems(anyString(), any(DisplayableList.class));
+    }
+}
+```
+
+### Explanation:
+- **Mocking**: We use Mockito to mock dependencies like `SessionProperties`, `DisplayableListParentForm`, `UserInterfaceFactory`, etc.
+- **Setup**: In the `setUp` method, we initialize the mocks and the `DisplayableListPanel` instance.
+- **Tests**: Each test method checks a specific functionality of the `DisplayableListPanel` class. We verify interactions with mocked objects and assert expected outcomes.
+- **Action Events**: We simulate button clicks by setting the source of `ActionEvent` and verify the corresponding method calls.
+
+This test suite provides a comprehensive coverage of the `DisplayableListPanel` class's functionalities.

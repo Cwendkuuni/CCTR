@@ -1,0 +1,114 @@
+package net.sourceforge.schemaspy.model.xml;
+
+import org.junit.Before;
+import org.junit.Test;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NamedNodeMap;
+import org.w3c.dom.NodeList;
+import org.w3c.dom.Attr;
+import org.w3c.dom.DOMImplementation;
+import org.w3c.dom.bootstrap.DOMImplementationRegistry;
+import org.w3c.dom.ls.DOMImplementationLS;
+import org.w3c.dom.ls.LSParser;
+
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+
+import java.util.List;
+
+import static org.junit.Assert.*;
+import static org.mockito.Mockito.*;
+
+public class TableMetaTest {
+
+    private Document document;
+    private Element tableNode;
+    private TableMeta tableMeta;
+
+    @Before
+    public void setUp() throws Exception {
+        // Create a mock XML document
+        DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+        DocumentBuilder builder = factory.newDocumentBuilder();
+        document = builder.newDocument();
+
+        // Create a mock table node
+        tableNode = document.createElement("table");
+        tableNode.setAttribute("name", "testTable");
+        tableNode.setAttribute("comments", "Test comments");
+        tableNode.setAttribute("remoteCatalog", "testCatalog");
+        tableNode.setAttribute("remoteSchema", "testSchema");
+
+        // Create a mock column node
+        Element columnNode = document.createElement("column");
+        tableNode.appendChild(columnNode);
+
+        // Initialize TableMeta with the mock node
+        tableMeta = new TableMeta(tableNode);
+    }
+
+    @Test
+    public void testGetName() {
+        assertEquals("testTable", tableMeta.getName());
+    }
+
+    @Test
+    public void testGetComments() {
+        assertEquals("Test comments", tableMeta.getComments());
+    }
+
+    @Test
+    public void testGetColumns() {
+        List<TableColumnMeta> columns = tableMeta.getColumns();
+        assertNotNull(columns);
+        assertEquals(1, columns.size());
+    }
+
+    @Test
+    public void testGetRemoteCatalog() {
+        assertEquals("testCatalog", tableMeta.getRemoteCatalog());
+    }
+
+    @Test
+    public void testGetRemoteSchema() {
+        assertEquals("testSchema", tableMeta.getRemoteSchema());
+    }
+
+    @Test
+    public void testConstructorWithNoComments() {
+        tableNode.removeAttribute("comments");
+        tableMeta = new TableMeta(tableNode);
+        assertNull(tableMeta.getComments());
+    }
+
+    @Test
+    public void testConstructorWithRemarks() {
+        tableNode.removeAttribute("comments");
+        tableNode.setAttribute("remarks", "Test remarks");
+        tableMeta = new TableMeta(tableNode);
+        assertEquals("Test remarks", tableMeta.getComments());
+    }
+
+    @Test
+    public void testConstructorWithEmptyComments() {
+        tableNode.setAttribute("comments", "");
+        tableMeta = new TableMeta(tableNode);
+        assertNull(tableMeta.getComments());
+    }
+
+    @Test
+    public void testConstructorWithNoRemoteCatalog() {
+        tableNode.removeAttribute("remoteCatalog");
+        tableMeta = new TableMeta(tableNode);
+        assertNull(tableMeta.getRemoteCatalog());
+    }
+
+    @Test
+    public void testConstructorWithNoRemoteSchema() {
+        tableNode.removeAttribute("remoteSchema");
+        tableMeta = new TableMeta(tableNode);
+        assertNull(tableMeta.getRemoteSchema());
+    }
+}
