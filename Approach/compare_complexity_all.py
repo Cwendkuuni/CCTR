@@ -90,7 +90,7 @@ class CognitiveComplexityCalculatorTestAware:
                     self.complexity += 1
                 if "assert" in text or "fail(" in text:
                     self.complexity += 1
-            elif kind == "annotation":
+            elif kind in ("annotation", "marker_annotation"):
                 if "@Test" in text:
                     self.complexity += 1
                 elif "@ParameterizedTest" in text:
